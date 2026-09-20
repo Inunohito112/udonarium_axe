@@ -8,6 +8,7 @@ import { CutInService } from '@axe/application/media/cut-in.service';
 import { TriggerFireService } from '@axe/application/tabletop/trigger-fire.service';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
+import { newStatusAilment } from '@axe/domain/character/status-ailment';
 import { DataElement, DataElementType } from '@axe/domain/data/data-element';
 import { CutIn } from '@axe/domain/media/cut-in';
 import { SoundEffect } from '@axe/domain/media/sound-effect';
@@ -17,6 +18,7 @@ import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger } from '@axe/domain/tabletop/table-trigger';
 import { TriggerMoment } from '@axe/domain/tabletop/trigger-event';
+import { TurnState } from '@axe/domain/tabletop/turn-state';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 import { vi } from 'vitest';
 
@@ -472,7 +474,9 @@ describe('TriggerFireService and the state it leaves a piece in', () => {
   });
 
   it('leaves it as the room keeps it, so one poison is every poison', () => {
-    ailments.save([{ name: '毒', color: 'red', icon: '☠', rounds: 4, timing: 'roundEnd', effect: '継続 2' }]);
+    ailments.save([
+      { ...newStatusAilment('毒'), color: 'red', icon: '☠', rounds: 4, timing: 'roundEnd', effect: '継続 2' },
+    ]);
     trapAt(5, 5, { ailment: '毒' });
     const piece = hero();
 
@@ -482,7 +486,7 @@ describe('TriggerFireService and the state it leaves a piece in', () => {
   });
 
   it('holds it as long as the ground says, over what the room keeps', () => {
-    ailments.save([{ name: '毒', color: '', icon: '', rounds: 4, timing: 'none', effect: '' }]);
+    ailments.save([{ ...newStatusAilment('毒'), rounds: 4 }]);
     trapAt(5, 5, { ailment: '毒', ailmentRounds: 9 });
     const piece = hero();
 
@@ -873,6 +877,110 @@ describe('TriggerFireService and the ground a turn brings round', () => {
 
     service.standingOn(piece, 'turnStart');
     service.standingOn(piece, 'turnStart');
+
+    expect(hpOf(piece)).toBe(14);
+  });
+});
+
+describe('TriggerFireService and how often ground has another go', () => {
+  let service: TriggerFireService;
+  let table: GameTable;
+  let turnState: TurnState;
+
+  const grid = () => cellGridOf(table.width, table.height, GRID, GridType.SQUARE);
+  const at = (col: number, row: number) => cellIndexOf(grid(), col, row);
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.initialize();
+    TestBed.inject(TableSelecter).viewTableIdentifier = table.identifier;
+    turnState = TestBed.inject(TurnState);
+    turnState.round = 1;
+    service = TestBed.inject(TriggerFireService);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+  });
+
+  function swampAt(repeat: string): void {
+    const trigger = new TableTrigger();
+    trigger.col = 5;
+    trigger.row = 5;
+    trigger.repeat = repeat;
+    trigger.element = 'ライフ';
+    trigger.amount = '3';
+    trigger.initialize();
+    table.appendChild(trigger);
+  }
+
+  function heroWith(hp = 20): GameCharacter {
+    const piece = GameCharacter.create('英雄', 1, '');
+    const resource = DataElement.create('ライフ', hp, { type: DataElementType.NUMBER_RESOURCE, currentValue: hp });
+    piece.detailDataElement!.appendChild(resource);
+    return piece;
+  }
+
+  const hpOf = (piece: GameCharacter) =>
+    Number(DataElement.findElementByReference(piece.rootDataElement!, 'ライフ')!.currentValue);
+  const wadeIn = (piece: GameCharacter) => service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+
+  it('takes from every piece that wades in, where it has one go apiece', () => {
+    swampAt('oncePerPiece');
+    const first = heroWith();
+    const second = heroWith();
+
+    wadeIn(first);
+    wadeIn(second);
+
+    expect(hpOf(first)).toBe(17);
+    expect(hpOf(second)).toBe(17);
+  });
+
+  it('takes from the same piece once and no more, where it has one go apiece', () => {
+    swampAt('oncePerPiece');
+    const piece = heroWith();
+
+    wadeIn(piece);
+    wadeIn(piece);
+
+    expect(hpOf(piece)).toBe(17);
+  });
+
+  it('is spent by whoever reaches it first, where it has one go at all', () => {
+    swampAt('once');
+    const first = heroWith();
+    const second = heroWith();
+
+    wadeIn(first);
+    wadeIn(second);
+
+    expect(hpOf(first)).toBe(17);
+    expect(hpOf(second)).toBe(20);
+  });
+
+  it('comes round again with the round, where it has one go a round', () => {
+    swampAt('oncePerRound');
+    const piece = heroWith();
+
+    wadeIn(piece);
+    wadeIn(piece);
+    turnState.round = 2;
+    wadeIn(piece);
+
+    expect(hpOf(piece)).toBe(14);
+  });
+
+  it('takes as often as it is walked into where nothing was said', () => {
+    swampAt('');
+    const piece = heroWith();
+
+    wadeIn(piece);
+    wadeIn(piece);
 
     expect(hpOf(piece)).toBe(14);
   });

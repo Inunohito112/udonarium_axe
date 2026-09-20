@@ -3286,7 +3286,6 @@
         "triggerTargets_all": "全部のコマ",
         "triggerTargets_pc": "PC のコマ",
         "triggerTargets_npc": "NPC のコマ",
-        "triggerOnce": "一度きり",
         "triggerOpen": "全員に見せる",
         "triggerColor": "色",
         "triggerEffect": "エフェクト",
@@ -3318,7 +3317,12 @@
         "triggerWarpRow": "飛び先の行",
         "triggerWarpHint": "飛ぶのは、そのマスで移動が終わったときだけです。途中で踏んでも飛びません。飛んだ先の仕掛けはその移動では発動しません",
         "triggerMoment_turnStart": "手番の開始時（そのマスにいたら）",
-        "triggerMoment_turnEnd": "手番の終了時（そのマスにいたら）"
+        "triggerMoment_turnEnd": "手番の終了時（そのマスにいたら）",
+        "triggerRepeat": "何回起きるか",
+        "triggerRepeat_always": "何度でも",
+        "triggerRepeat_once": "一度きり（全体で 1 回）",
+        "triggerRepeat_oncePerPiece": "コマごとに 1 回",
+        "triggerRepeat_oncePerRound": "1 ラウンドに 1 回"
       },
       "stampCategories": {
         "door": "扉",
@@ -4065,7 +4069,10 @@
       "effect": "効果",
       "effectPlaceholder": "バフに添える一行（例: 毎ラウンド HP-1）",
       "iconImage": "画像",
-      "pickIconImage": "画像から選ぶ"
+      "pickIconImage": "画像から選ぶ",
+      "stat": "動かす項目",
+      "statPlaceholder": "移動",
+      "statHint": "シートの項目名を書くと、付いている間その値を動かし、外すと動かした分だけ戻します。空欄なら何も動かしません"
     },
     "seatDisplay": {
       "title": "この端末の表示",

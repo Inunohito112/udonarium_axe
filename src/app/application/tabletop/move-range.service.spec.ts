@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { StatusAilmentService } from '@axe/application/character/status-ailment.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { MoveRangeService } from '@axe/application/tabletop/move-range.service';
 import { VisionService } from '@axe/application/tabletop/vision.service';
 import { SelectionSignalService } from '@axe/application/ui/selection-signal.service';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
+import { newStatusAilment, StatusAilment } from '@axe/domain/character/status-ailment';
 import { DataElement, DataElementAttribute } from '@axe/domain/data/data-element';
 import { Config } from '@axe/domain/peer/config';
 import { cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
@@ -1074,5 +1076,73 @@ describe('MoveRangeService and the ground another piece stands on', () => {
     // Everything the piece could reach before is still reached, bar the one cell it may now
     // only cross: nothing has been walked round, since walking through costs the same.
     expect(countCells(service.range()!.cells)).toBe(shared - 1);
+  });
+});
+
+describe('MoveRangeService and a piece a state has stopped', () => {
+  let service: MoveRangeService;
+  let ailments: StatusAilmentService;
+  let table: GameTable;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.initialize();
+    service = TestBed.inject(MoveRangeService);
+    ailments = TestBed.inject(StatusAilmentService);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+  });
+
+  function pieceAt(col: number, row: number, walk: number): GameCharacter {
+    const character = GameCharacter.create('コマ', 1, '');
+    character.location = { name: 'table', x: col * GRID, y: row * GRID };
+    DataElement.findElementByReference(character.rootDataElement!, '移動')!.value = walk;
+    return character;
+  }
+
+  const binding = (): StatusAilment => ({ ...newStatusAilment('拘束'), stat: '移動', op: '=', amount: '0' });
+
+  it('draws a reach for a piece nothing has hold of', () => {
+    const piece = pieceAt(5, 5, 2);
+
+    service.show(piece);
+
+    expect(countCells(service.range()!.cells)).toBe(24);
+  });
+
+  // The reach is read off the sheet, and a state that holds the sheet at nought therefore stops
+  // the piece without anything in the reckoning of movement knowing states exist at all.
+  it('draws no reach at all for a piece a state is holding still', () => {
+    const piece = pieceAt(5, 5, 2);
+    ailments.plant(piece, binding());
+
+    service.show(piece);
+
+    expect(service.range()).toBeNull();
+  });
+
+  it('draws it again once the state comes off', () => {
+    const piece = pieceAt(5, 5, 2);
+    ailments.plant(piece, binding());
+    ailments.pull(piece, '拘束');
+
+    service.show(piece);
+
+    expect(countCells(service.range()!.cells)).toBe(24);
+  });
+
+  it('draws a shorter reach for a piece a state has merely slowed', () => {
+    const piece = pieceAt(5, 5, 3);
+    ailments.plant(piece, { ...binding(), name: '鈍足', op: '-', amount: '2' });
+
+    service.show(piece);
+
+    expect(countCells(service.range()!.cells)).toBe(8);
   });
 });

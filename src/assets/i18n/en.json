@@ -3286,7 +3286,6 @@
         "triggerTargets_all": "every piece",
         "triggerTargets_pc": "the players' pieces",
         "triggerTargets_npc": "the master's pieces",
-        "triggerOnce": "Only once",
         "triggerOpen": "Show the room",
         "triggerColor": "Colour",
         "triggerEffect": "Effect",
@@ -3318,7 +3317,12 @@
         "triggerWarpRow": "Row",
         "triggerWarpHint": "Only a walk that ends here is carried away; one that merely passes over is not. Ground where it lands does not go off during that move",
         "triggerMoment_turnStart": "As its turn begins, if it stands here",
-        "triggerMoment_turnEnd": "As its turn ends, if it stands here"
+        "triggerMoment_turnEnd": "As its turn ends, if it stands here",
+        "triggerRepeat": "How often it goes off",
+        "triggerRepeat_always": "Every time",
+        "triggerRepeat_once": "Once, and no more",
+        "triggerRepeat_oncePerPiece": "Once a piece",
+        "triggerRepeat_oncePerRound": "Once a round"
       },
       "stampCategories": {
         "door": "Doors",
@@ -4065,7 +4069,10 @@
       "effect": "Effect",
       "effectPlaceholder": "A line to carry on the buff (e.g. HP-1 each round)",
       "iconImage": "Picture",
-      "pickIconImage": "Pick a picture"
+      "pickIconImage": "Pick a picture",
+      "stat": "Status it moves",
+      "statPlaceholder": "Speed",
+      "statHint": "Name a status on the sheet and the state moves it while it is worn, giving back exactly that much when it comes off. Empty moves nothing"
     },
     "seatDisplay": {
       "title": "Display on this device",

@@ -3286,7 +3286,6 @@
         "triggerTargets_all": "모든 말",
         "triggerTargets_pc": "PC의 말",
         "triggerTargets_npc": "NPC의 말",
-        "triggerOnce": "한 번만",
         "triggerOpen": "모두에게 보이기",
         "triggerColor": "색",
         "triggerEffect": "이펙트",
@@ -3318,7 +3317,12 @@
         "triggerWarpRow": "도착 행",
         "triggerWarpHint": "그 칸에서 이동이 끝났을 때만 보냅니다. 지나가기만 하면 보내지 않습니다. 도착한 칸의 장치는 그 이동에서는 발동하지 않습니다",
         "triggerMoment_turnStart": "차례 시작 시(그 칸에 있으면)",
-        "triggerMoment_turnEnd": "차례 종료 시(그 칸에 있으면)"
+        "triggerMoment_turnEnd": "차례 종료 시(그 칸에 있으면)",
+        "triggerRepeat": "발동 횟수",
+        "triggerRepeat_always": "몇 번이든",
+        "triggerRepeat_once": "한 번만(전체에서 1회)",
+        "triggerRepeat_oncePerPiece": "말마다 1회",
+        "triggerRepeat_oncePerRound": "라운드마다 1회"
       },
       "stampCategories": {
         "door": "문",
@@ -4312,7 +4316,10 @@
       "effect": "효과",
       "effectPlaceholder": "버프에 붙는 한 줄(예: 매 라운드 HP-1)",
       "iconImage": "이미지",
-      "pickIconImage": "이미지에서 고르기"
+      "pickIconImage": "이미지에서 고르기",
+      "stat": "변경할 항목",
+      "statPlaceholder": "이동",
+      "statHint": "시트의 항목 이름을 쓰면 붙어 있는 동안 그 값을 움직이고, 떼면 움직인 만큼 되돌립니다. 비워 두면 아무것도 움직이지 않습니다"
     },
     "seatDisplay": {
       "title": "이 기기의 표시",
