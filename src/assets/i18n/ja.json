@@ -3322,7 +3322,17 @@
         "triggerRepeat_always": "何度でも",
         "triggerRepeat_once": "一度きり（全体で 1 回）",
         "triggerRepeat_oncePerPiece": "コマごとに 1 回",
-        "triggerRepeat_oncePerRound": "1 ラウンドに 1 回"
+        "triggerRepeat_oncePerRound": "1 ラウンドに 1 回",
+        "role_hazard": "危険地帯",
+        "hazardHint": "見た目・通りにくさ・起きることを 1 回で置きます。置いたあとは 3 つ別々に直せます",
+        "hazardKind": "種類",
+        "hazardElement": "削るリソース",
+        "hazardKind_bog": "沼（足を取られる）",
+        "hazardKind_lava": "溶岩（居続けると焼ける）",
+        "hazardKind_fog": "濃霧（進みにくい）",
+        "hazardKind_ice": "氷（踏むと転ぶ）",
+        "hazardKind_briar": "茨（踏むと傷つく）",
+        "hazardKind_vent": "噴出口（居続けると焼ける）"
       },
       "stampCategories": {
         "door": "扉",

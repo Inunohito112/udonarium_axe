@@ -3322,7 +3322,17 @@
         "triggerRepeat_always": "몇 번이든",
         "triggerRepeat_once": "한 번만(전체에서 1회)",
         "triggerRepeat_oncePerPiece": "말마다 1회",
-        "triggerRepeat_oncePerRound": "라운드마다 1회"
+        "triggerRepeat_oncePerRound": "라운드마다 1회",
+        "role_hazard": "위험 지대",
+        "hazardHint": "겉모습·통행 난이도·발생하는 일을 한 번에 놓습니다. 놓은 뒤에는 셋을 따로 고칠 수 있습니다",
+        "hazardKind": "종류",
+        "hazardElement": "깎을 리소스",
+        "hazardKind_bog": "늪(발이 묶임)",
+        "hazardKind_lava": "용암(머물면 탐)",
+        "hazardKind_fog": "짙은 안개(나아가기 어려움)",
+        "hazardKind_ice": "얼음(밟으면 넘어짐)",
+        "hazardKind_briar": "가시덤불(밟으면 다침)",
+        "hazardKind_vent": "분출구(머물면 탐)"
       },
       "stampCategories": {
         "door": "문",

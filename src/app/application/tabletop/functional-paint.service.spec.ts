@@ -133,6 +133,7 @@ describe('FunctionalPaintService', () => {
         mask: { add: [], remove: [] },
         trigger: { add: [], remove: [] },
         moveCost: { add: [], remove: [] },
+        ambience: { add: [], remove: [] },
         ...over,
       };
     }
@@ -427,6 +428,33 @@ describe('FunctionalPaintService', () => {
       expect(moveCostsOn(table)).toEqual([]);
     });
 
+    it('lays a look over the ground, and reads it back where it stood', () => {
+      const look = { col: 2, row: 3, width: 4, height: 2, spec: { kind: 'lava', color: '', density: 0.6 } };
+
+      service.apply(plan({ ambience: { add: [look], remove: [] } }));
+
+      expect(service.snapshot()!.ambienceBlocks).toEqual([look]);
+    });
+
+    it('leaves a look that was laid again exactly where it stood', () => {
+      const look = { col: 2, row: 3, width: 4, height: 2, spec: { kind: 'lava', color: '', density: 0.6 } };
+      service.apply(plan({ ambience: { add: [look], remove: [] } }));
+      const laid = table.ambiences[0];
+
+      service.apply(plan({ ambience: { add: [], remove: [] } }));
+
+      expect(table.ambiences[0]).toBe(laid);
+    });
+
+    it('takes a look away when the painting stops holding it', () => {
+      const look = { col: 2, row: 3, width: 4, height: 2, spec: { kind: 'lava', color: '', density: 0.6 } };
+      service.apply(plan({ ambience: { add: [look], remove: [] } }));
+
+      service.apply(plan({ ambience: { add: [], remove: [look] } }));
+
+      expect(table.ambiences).toEqual([]);
+    });
+
     it('will not lay anything with no table out', () => {
       table.gridSize = 0;
 
@@ -442,6 +470,7 @@ describe('FunctionalPaintService', () => {
         mask: { add: [], remove: [] },
         trigger: { add: [], remove: [] },
         moveCost: { add: [], remove: [] },
+        ambience: { add: [], remove: [] },
         ...over,
       };
     }

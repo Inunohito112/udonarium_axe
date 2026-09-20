@@ -74,6 +74,7 @@ function snapshot(over: Partial<TableSnapshot> = {}): TableSnapshot {
     terrainBlocks: [],
     maskBlocks: [],
     moveCostBlocks: [],
+    ambienceBlocks: [],
     triggerBlocks: [],
     ...over,
   };
@@ -413,5 +414,85 @@ describe('reading painted ground that goes off back in and laying it down again'
     const plan = planFunctionPaint(sceneFromTable(table), table)!;
 
     expect(changesNothing(plan, table)).toBe(true);
+  });
+});
+
+describe('painting dangerous ground', () => {
+  function hazardLayer(cells: string[], kind: string, element = 'HP'): FunctionLayer {
+    return layerOf('hazard', cells, {
+      name: 'poison',
+      spec: { ...DEFAULT_FUNCTION_SPEC, hazard: { kind, element } },
+    });
+  }
+
+  it('lays a look, a going and a thing that happens from one stroke', () => {
+    const plan = planFunctionPaint(sceneWith(hazardLayer(['1,1'], 'briar')), snapshot())!;
+
+    expect(plan.ambience.add).toHaveLength(1);
+    expect(plan.moveCost.add).toHaveLength(1);
+    expect(plan.trigger.add).toHaveLength(1);
+  });
+
+  it('draws the look its kind is drawn as', () => {
+    const plan = planFunctionPaint(sceneWith(hazardLayer(['1,1'], 'lava')), snapshot())!;
+
+    expect(plan.ambience.add[0].spec.kind).toBe('lava');
+  });
+
+  it('takes from the resource the brush was pointed at', () => {
+    const plan = planFunctionPaint(sceneWith(hazardLayer(['1,1'], 'briar', 'ライフ')), snapshot())!;
+
+    expect(plan.trigger.add[0].spec.element).toBe('ライフ');
+    expect(plan.trigger.add[0].spec.amount).toBe('1d6');
+  });
+
+  it('lays nothing that happens where the kind takes nothing and marks nobody', () => {
+    const plan = planFunctionPaint(sceneWith(hazardLayer(['1,1'], 'bog')), snapshot())!;
+
+    expect(plan.trigger.add).toHaveLength(0);
+    expect(plan.moveCost.add).toHaveLength(1);
+  });
+
+  it('lays what happens even where nothing is taken, for a kind that leaves a mark', () => {
+    const plan = planFunctionPaint(sceneWith(hazardLayer(['1,1'], 'ice', '')), snapshot())!;
+
+    expect(plan.trigger.add).toHaveLength(1);
+    expect(plan.trigger.add[0].spec.ailment).toBe('転倒');
+    expect(plan.trigger.add[0].spec.element).toBe('');
+  });
+
+  it('leaves the looks a table already holds alone where the scene never picks the brush up', () => {
+    const table = snapshot({
+      ambienceBlocks: [{ col: 0, row: 0, width: 1, height: 1, spec: { kind: 'swamp', color: '', density: 0.6 } }],
+    });
+
+    const plan = planFunctionPaint(sceneWith(layerOf('mask', ['1,1'])), table)!;
+
+    expect(plan.ambience).toEqual({ add: [], remove: [] });
+  });
+
+  it('lays dangerous ground beside ground painted one part at a time', () => {
+    const dear = { ...DEFAULT_FUNCTION_SPEC, moveCost: { ...DEFAULT_FUNCTION_SPEC.moveCost, extraCost: 2 } };
+    const scene = sceneWith(hazardLayer(['1,1'], 'bog'), layerOf('moveCost', ['5,5'], { spec: dear }));
+
+    const plan = planFunctionPaint(scene, snapshot())!;
+
+    expect(plan.moveCost.add).toHaveLength(2);
+  });
+
+  it('leaves what it laid exactly where it stood when the same stroke is applied again', () => {
+    const scene = sceneWith(hazardLayer(['1,1'], 'briar'));
+    const first = planFunctionPaint(scene, snapshot())!;
+    const table = snapshot({
+      ambienceBlocks: first.ambience.add,
+      moveCostBlocks: first.moveCost.add,
+      triggerBlocks: first.trigger.add,
+    });
+
+    const again = planFunctionPaint(scene, table)!;
+
+    expect(again.ambience).toEqual({ add: [], remove: [] });
+    expect(again.moveCost).toEqual({ add: [], remove: [] });
+    expect(again.trigger).toEqual({ add: [], remove: [] });
   });
 });

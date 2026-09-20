@@ -1,10 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { GameObject } from '@axe/core/sync/game-object';
+import { ambienceKindOf } from '@axe/domain/effect/ambience/ambience-kind';
 import { parseCellKey } from '@axe/domain/tabletop/cell-key';
 import { cellKeyOf, CellRect } from '@axe/domain/tabletop/cell-rectangles';
 import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
 import { cellColRow, CellGrid, cellGridOf, cellIndexAt, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import {
+  AmbienceBlock,
+  AmbiencePaintSpec,
   blockKey,
   BlockPlacement,
   FunctionPaintPlan,
@@ -22,6 +25,7 @@ import { GameTableMask } from '@axe/domain/tabletop/game-table-mask';
 import { isHexGrid } from '@axe/domain/tabletop/hex-geometry';
 import { blockOrigin as gridBlockOrigin, cellCentre } from '@axe/domain/tabletop/map-grid';
 import { ensureMoveBlockMapOn, moveBlockMapOn } from '@axe/domain/tabletop/move/move-block-map';
+import { TableAmbience } from '@axe/domain/tabletop/table-ambience';
 import { moveCostsOn, TableMoveCost } from '@axe/domain/tabletop/table-move-cost';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableSnapshot } from '@axe/domain/tabletop/table-snapshot';
@@ -318,6 +322,11 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
   };
 }
 
+/** What one look laid over the ground is, which is everything the editor put into it. */
+function ambienceSpecOf(area: TableAmbience): AmbiencePaintSpec {
+  return { kind: area.ambienceKind, color: area.ambienceColor, density: area.ambienceDensity };
+}
+
 /** What one stretch of dear ground looks like to the editor, which is all of what it is. */
 function moveCostSpecOf(area: TableMoveCost): MoveCostPaintSpec {
   // Nothing on the table is dear and shut at once: the shut cells are a map of their own, and
@@ -342,6 +351,7 @@ export class FunctionalPaintService {
       this.layMasks(table, grid, plan);
       this.layTriggers(table, plan);
       this.layMoveCosts(table, plan);
+      this.layAmbiences(table, grid, plan);
     });
     return true;
   }
@@ -490,6 +500,30 @@ export class FunctionalPaintService {
     }
   }
 
+  /**
+   * Lays the looks that go over dangerous ground.
+   *
+   * Only the dangerous-ground brush lays these, and a scene that never picks it up asks for
+   * none, so an area a master dropped on the table by hand is left exactly where they put it.
+   */
+  private layAmbiences(table: GameTable, grid: CellGrid, plan: FunctionPaintPlan): void {
+    this.takeAway(
+      table.ambiences.map((held) => {
+        const stood = blockFootprintOf(held, held.width, held.height, grid);
+        return { object: held, key: stood ? blockKey(stood.rect, ambienceSpecOf(held)) : null };
+      }),
+      plan.ambience.remove
+    );
+
+    for (const block of plan.ambience.add) {
+      const area = TableAmbience.create('', ambienceKindOf(block.spec.kind, 'swamp'), block.width, block.height);
+      area.ambienceColor = block.spec.color;
+      area.ambienceDensity = block.spec.density;
+      area.location = { name: 'table', x: block.col * grid.sizePx, y: block.row * grid.sizePx };
+      table.appendChild(area);
+    }
+  }
+
   /** The table the editor would be reading, or nothing where none is out. */
   snapshot(): TableSnapshot | null {
     const table = this.tableSelecter.viewTable;
@@ -518,6 +552,12 @@ export class FunctionalPaintService {
         .filter((block): block is MaskBlock => block !== null),
       triggerBlocks: triggersOn(table).map((held) => ({ ...held.rect, spec: triggerSpecOf(held) })),
       moveCostBlocks: moveCostsOn(table).map((held) => ({ ...held.rect, spec: moveCostSpecOf(held) })),
+      ambienceBlocks: table.ambiences
+        .map((held) => {
+          const stood = blockFootprintOf(held, held.width, held.height, grid);
+          return stood ? { ...stood.rect, spec: ambienceSpecOf(held) } : null;
+        })
+        .filter((block): block is AmbienceBlock => block !== null),
     };
   }
 }

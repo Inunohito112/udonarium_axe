@@ -647,6 +647,37 @@
             </label>
           }
 
+          @if (state.functionRole() === 'hazard') {
+            <p class="text-ui-muted text-[10px] leading-snug">
+              {{ 'feature.mapEditor.function.hazardHint' | transloco }}
+            </p>
+            <label class="flex items-center justify-between gap-2">
+              <span class="text-ui-muted">{{ 'feature.mapEditor.function.hazardKind' | transloco }}</span>
+              <select
+                class="bg-ui-input rounded-ui-sm w-40 px-1 py-0.5"
+                data-testid="hazard-kind"
+                [ngModel]="state.functionSpec().hazard.kind"
+                (ngModelChange)="setHazardPaint({ kind: $event })"
+                name="hazardKind"
+              >
+                @for (kind of hazardKinds; track kind) {
+                  <option [value]="kind">{{ 'feature.mapEditor.function.hazardKind_' + kind | transloco }}</option>
+                }
+              </select>
+            </label>
+            <label class="flex items-center justify-between gap-2">
+              <span class="text-ui-muted">{{ 'feature.mapEditor.function.hazardElement' | transloco }}</span>
+              <input
+                type="text"
+                class="bg-ui-input rounded-ui-sm w-28 px-1 py-0.5"
+                data-testid="hazard-element"
+                list="trigger-resource-names"
+                [ngModel]="state.functionSpec().hazard.element"
+                (ngModelChange)="setHazardPaint({ element: $event })"
+              />
+            </label>
+          }
+
           @if (state.functionRole() === 'moveCost') {
             <p class="text-ui-muted text-[10px] leading-snug">
               {{ 'feature.mapEditor.function.moveCostHint' | transloco }}

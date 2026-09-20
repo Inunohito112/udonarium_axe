@@ -1,4 +1,5 @@
 import { CellRect, rectCells } from '@axe/domain/tabletop/cell-rectangles';
+import { asHazardKind, DEFAULT_HAZARD_ELEMENT, DEFAULT_HAZARD_KIND } from '@axe/domain/tabletop/hazard-presets';
 import {
   asMoveCostExtra,
   DEFAULT_MOVE_COST_COLOR,
@@ -22,7 +23,7 @@ import {
  * editor: a cell closed to walking is closed however it came to be.
  */
 
-export const MAP_FUNCTION_ROLES = ['moveCost', 'terrain', 'mask', 'trigger'] as const;
+export const MAP_FUNCTION_ROLES = ['moveCost', 'hazard', 'terrain', 'mask', 'trigger'] as const;
 
 export type MapFunctionRole = (typeof MAP_FUNCTION_ROLES)[number];
 
@@ -213,9 +214,24 @@ export interface MoveCostPaintSpec {
   color: string;
 }
 
+/**
+ * Dangerous ground laid in one stroke: a look, a going and a thing that happens.
+ *
+ * Only the kind and what it takes from are painted. What each kind comes to is a table of its
+ * own, so that a bog is the same bog in every room and adding another is a line there rather
+ * than a new brush here.
+ */
+export interface HazardPaintSpec {
+  /** Which of HAZARD_KINDS it is. */
+  kind: string;
+  /** The resource it takes from, by name. Empty takes nothing whatever the kind says. */
+  element: string;
+}
+
 /** What a role lays on the table, the same for every cell the layer holds. */
 export interface FunctionSpec {
   moveCost: MoveCostPaintSpec;
+  hazard: HazardPaintSpec;
   terrain: TerrainPaintSpec;
   mask: MaskPaintSpec;
   trigger: TriggerPaintSpec;
@@ -248,6 +264,10 @@ export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
     blocks: false,
     extraCost: DEFAULT_MOVE_COST_EXTRA,
     color: DEFAULT_MOVE_COST_COLOR,
+  },
+  hazard: {
+    kind: DEFAULT_HAZARD_KIND,
+    element: DEFAULT_HAZARD_ELEMENT,
   },
   terrain: {
     name: '',
@@ -397,12 +417,17 @@ function sanitizeLight(value: unknown): TerrainLightSpec {
 export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
   const held = asRecord(value);
   const moveCost = asRecord(held['moveCost']);
+  const hazard = asRecord(held['hazard']);
   const terrain = asRecord(held['terrain']);
   const mask = asRecord(held['mask']);
   const trigger = asRecord(held['trigger']);
   const fallback = DEFAULT_FUNCTION_SPEC;
 
   return {
+    hazard: {
+      kind: asHazardKind(hazard['kind']),
+      element: textIn(hazard, 'element', fallback.hazard.element),
+    },
     moveCost: {
       blocks: flagIn(moveCost, 'blocks', fallback.moveCost.blocks),
       extraCost: asMoveCostExtra(moveCost['extraCost']),
@@ -490,6 +515,19 @@ export interface MoveCostBlock extends CellRect {
   spec: MoveCostPaintSpec;
 }
 
+/** The look of dangerous ground as the table carries it, apart from what it does. */
+export interface AmbienceBlock extends CellRect {
+  spec: AmbiencePaintSpec;
+}
+
+/** Everything the look of a stretch of dangerous ground is. */
+export interface AmbiencePaintSpec {
+  /** Which of the ground-clinging AmbienceKinds it is drawn as. */
+  kind: string;
+  color: string;
+  density: number;
+}
+
 /** A block as far as stacking cares: the cells it covers, the altitude it is laid by and its height in cells. */
 type StandingBlock = CellRect & { spec: { altitude: number; height: number } };
 
@@ -552,6 +590,8 @@ export interface FunctionPaintPlan {
    */
   blocked: string[];
   moveCost: BlockChange<MoveCostBlock>;
+  /** The looks of dangerous ground, which only the hazard brush ever lays. */
+  ambience: BlockChange<AmbienceBlock>;
   terrain: BlockChange<TerrainBlock>;
   mask: BlockChange<MaskBlock>;
   trigger: BlockChange<TriggerBlock>;

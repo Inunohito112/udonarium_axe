@@ -3322,7 +3322,17 @@
         "triggerRepeat_always": "Every time",
         "triggerRepeat_once": "Once, and no more",
         "triggerRepeat_oncePerPiece": "Once a piece",
-        "triggerRepeat_oncePerRound": "Once a round"
+        "triggerRepeat_oncePerRound": "Once a round",
+        "role_hazard": "Dangerous ground",
+        "hazardHint": "Lays the look, the going and what happens in one stroke. All three can be edited once they are down",
+        "hazardKind": "Kind",
+        "hazardElement": "Resource it takes from",
+        "hazardKind_bog": "Bog (heavy going)",
+        "hazardKind_lava": "Lava (burns those who stay)",
+        "hazardKind_fog": "Fog (slow going)",
+        "hazardKind_ice": "Ice (puts a piece off its feet)",
+        "hazardKind_briar": "Briars (cut whoever steps in)",
+        "hazardKind_vent": "Vent (burns those who stay)"
       },
       "stampCategories": {
         "door": "Doors",

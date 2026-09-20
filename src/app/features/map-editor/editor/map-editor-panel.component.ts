@@ -50,6 +50,7 @@ import {
 } from '@axe/domain/media/texture-catalog';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import {
+  HazardPaintSpec,
   MAP_FUNCTION_ROLES,
   MaskPaintSpec,
   MoveCostPaintSpec,
@@ -59,6 +60,7 @@ import {
   TriggerPaintSpec,
 } from '@axe/domain/tabletop/function-paint';
 import { GridType } from '@axe/domain/tabletop/game-table';
+import { HAZARD_KINDS } from '@axe/domain/tabletop/hazard-presets';
 import { MOST_MOVE_COST_EXTRA } from '@axe/domain/tabletop/table-move-cost';
 import { TerrainViewState } from '@axe/domain/tabletop/terrain';
 import { asTriggerRepeat, TRIGGER_REPEATS, TriggerRepeat } from '@axe/domain/tabletop/trigger-event';
@@ -246,6 +248,13 @@ export class MapEditorPanelComponent implements AfterViewInit {
    */
   protected setTriggerRepeat(repeat: TriggerRepeat): void {
     this.setTriggerPaint({ repeat, once: repeat === 'once' });
+  }
+
+  protected readonly hazardKinds = HAZARD_KINDS;
+
+  protected setHazardPaint(patch: Partial<HazardPaintSpec>): void {
+    const spec = this.state.functionSpec();
+    this.state.setFunctionSpec({ ...spec, hazard: { ...spec.hazard, ...patch } });
   }
 
   protected setMoveCostPaint(patch: Partial<MoveCostPaintSpec>): void {

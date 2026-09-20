@@ -21,6 +21,7 @@ import { DUNGEON_ROOM_ROLES, FURNISHING_IDS } from '@axe/domain/tabletop/dungeon
 import { FIELD_ATMOSPHERE_IDS, FIELD_PROP_IDS } from '@axe/domain/tabletop/field/field-atmosphere';
 import { TOWN_PIECE_IDS } from '@axe/domain/tabletop/field/field-blocks';
 import { MAP_FUNCTION_ROLES } from '@axe/domain/tabletop/function-paint';
+import { HAZARD_KINDS } from '@axe/domain/tabletop/hazard-presets';
 import { PIECE_PASSAGE_MODES } from '@axe/domain/tabletop/move/piece-passage';
 import { ZOC_MODES } from '@axe/domain/tabletop/move/zone-of-control';
 import { TABLE_FACING_MARKS } from '@axe/domain/tabletop/table-facing-mark';
@@ -60,6 +61,7 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.mapEditor.function.role_': MAP_FUNCTION_ROLES,
   'feature.mapEditor.function.triggerMoment_': TRIGGER_MOMENTS,
   'feature.mapEditor.function.triggerRepeat_': TRIGGER_REPEATS,
+  'feature.mapEditor.function.hazardKind_': HAZARD_KINDS,
   'feature.mapEditor.function.triggerTargets_': TRIGGER_TARGETS,
   'feature.roomSettings.turnOrderMode_': TURN_ORDER_MODES,
   'feature.roomSettings.factionPhaseMode_': FACTION_PHASE_MODES,

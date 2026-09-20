@@ -1,4 +1,10 @@
-import { MaskBlock, MoveCostBlock, TerrainBlock, TriggerBlock } from '@axe/domain/tabletop/function-paint';
+import {
+  AmbienceBlock,
+  MaskBlock,
+  MoveCostBlock,
+  TerrainBlock,
+  TriggerBlock,
+} from '@axe/domain/tabletop/function-paint';
 import { GridType } from '@axe/domain/tabletop/game-table';
 
 /**
@@ -24,4 +30,6 @@ export interface TableSnapshot {
   triggerBlocks: readonly TriggerBlock[];
   /** The ground on the table that costs more to cross than plain footing. */
   moveCostBlocks: readonly MoveCostBlock[];
+  /** The looks laid over the ground, which the dangerous-ground brush puts down. */
+  ambienceBlocks: readonly AmbienceBlock[];
 }
