@@ -11,6 +11,11 @@ import {
   DEFAULT_MOVE_RANGE_ELEMENT_NAMES,
 } from '@axe/domain/tabletop/move/move-cells';
 import {
+  asPiecePassageMode,
+  DEFAULT_PIECE_PASSAGE_COST,
+  PiecePassageMode,
+} from '@axe/domain/tabletop/move/piece-passage';
+import {
   asZocMode,
   DEFAULT_ZOC_EXTRA_COST,
   DEFAULT_ZOC_MODE,
@@ -28,6 +33,19 @@ export interface RoomRules {
   /** How a corner is counted: see {@link DiagonalMove}. */
   diagonalMove: DiagonalMove;
   piecesShareCells: boolean;
+  /**
+   * What the ground a piece of one's own party stands on does to a piece walking into it.
+   *
+   * These three are a finer way of asking what piecesShareCells asks, and a room that has never
+   * been asked them is answered from it: see {@link PiecePassageMode}.
+   */
+  samePartyPassage: PiecePassageMode;
+  /** The same, for a piece of some other party. */
+  otherPartyPassage: PiecePassageMode;
+  /** The same, for a piece in no party at all, which is what most pieces are. */
+  noPartyPassage: PiecePassageMode;
+  /** What crossing somebody costs on top of the one step, where the table charges for it. */
+  piecePassageCost: number;
   moveRangeAlways: boolean;
   zocAlways: boolean;
   cellDistance: number;
@@ -60,10 +78,16 @@ export interface RoomRules {
 }
 
 /** The same rules in the looser terms a table holds them and an attribute carries them. */
-export type RoomRuleValues = Omit<RoomRules, 'zocMode' | 'diagonalMove' | 'breakOutMode'> & {
+export type RoomRuleValues = Omit<
+  RoomRules,
+  'zocMode' | 'diagonalMove' | 'breakOutMode' | 'samePartyPassage' | 'otherPartyPassage' | 'noPartyPassage'
+> & {
   zocMode: string;
   diagonalMove: string;
   breakOutMode: string;
+  samePartyPassage: string;
+  otherPartyPassage: string;
+  noPartyPassage: string;
 };
 
 /** The same questions as the room hears them, where null is one it has not answered. */
@@ -75,6 +99,10 @@ export const ROOM_RULE_DEFAULTS: RoomRules = {
   moveDiagonally: true,
   diagonalMove: DEFAULT_DIAGONAL_MOVE,
   piecesShareCells: true,
+  samePartyPassage: 'share',
+  otherPartyPassage: 'share',
+  noPartyPassage: 'share',
+  piecePassageCost: DEFAULT_PIECE_PASSAGE_COST,
   moveRangeAlways: false,
   zocAlways: false,
   cellDistance: DEFAULT_CELL_DISTANCE,
@@ -98,6 +126,10 @@ export const ROOM_RULE_GROUPS = {
     'moveDiagonally',
     'diagonalMove',
     'piecesShareCells',
+    'samePartyPassage',
+    'otherPartyPassage',
+    'noPartyPassage',
+    'piecePassageCost',
     'moveRangeElementNames',
     'cellDistance',
     'cellDistanceUnit',
@@ -189,6 +221,14 @@ export function resolveRoomRules(
   };
 
   const cutsCorners = settled('moveDiagonally');
+  const sharesCells = settled('piecesShareCells');
+  // Whether two pieces may share a cell is an older, coarser question than what one does with
+  // the ground the other holds, so the older answer stands in for the newer ones rather than a
+  // default doing. A table that only ever said "pieces share cells" is saying a piece walks
+  // onto another and stops there, which is what it did when that was all a table could say.
+  const crossing = (rule: 'samePartyPassage' | 'otherPartyPassage' | 'noPartyPassage'): PiecePassageMode =>
+    asPiecePassageMode(room?.[rule]) ?? asPiecePassageMode(table?.[rule]) ?? (sharesCells ? 'share' : 'block');
+
   return {
     moveRangeEnabled: settled('moveRangeEnabled'),
     moveRangeElementNames: settled('moveRangeElementNames'),
@@ -201,7 +241,11 @@ export function resolveRoomRules(
       asDiagonalMove(room?.diagonalMove) ??
       asDiagonalMove(table?.diagonalMove) ??
       (cutsCorners ? DEFAULT_DIAGONAL_MOVE : 'none'),
-    piecesShareCells: settled('piecesShareCells'),
+    piecesShareCells: sharesCells,
+    samePartyPassage: crossing('samePartyPassage'),
+    otherPartyPassage: crossing('otherPartyPassage'),
+    noPartyPassage: crossing('noPartyPassage'),
+    piecePassageCost: settled('piecePassageCost'),
     moveRangeAlways: settled('moveRangeAlways'),
     zocAlways: settled('zocAlways'),
     cellDistance: settled('cellDistance'),

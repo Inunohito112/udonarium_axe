@@ -25,8 +25,9 @@ import { isLevelWith, isWalkableStep, landingHeightsOn } from '@axe/domain/table
 import { moveBlockMapOn } from '@axe/domain/tabletop/move/move-block-map';
 import { moveCellsOf } from '@axe/domain/tabletop/move/move-cells';
 import { moveCostCells } from '@axe/domain/tabletop/move/move-cost-cells';
-import { occupiedCells } from '@axe/domain/tabletop/move/occupied-cells';
 import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
+import { passageCells, PiecePassageMode } from '@axe/domain/tabletop/move/piece-passage';
+import { PieceRelation } from '@axe/domain/tabletop/move/piece-relation';
 import { reachableCells, ReachOptions } from '@axe/domain/tabletop/move/reachable-cells';
 import { isHostileTo, zoneOfControl } from '@axe/domain/tabletop/move/zone-of-control';
 import { resolveRoomRules, RoomRules } from '@axe/domain/tabletop/room-rules';
@@ -34,6 +35,12 @@ import { moveCostsOn, TableMoveCost } from '@axe/domain/tabletop/table-move-cost
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { surfaceOf } from '@axe/domain/tabletop/tabletop-object';
 import { Terrain } from '@axe/domain/tabletop/terrain';
+
+/** What the table does with the ground a piece of this standing stands on. */
+function passageModeOf(rules: RoomRules, relation: PieceRelation): PiecePassageMode {
+  if (relation === 'same') return rules.samePartyPassage;
+  return relation === 'other' ? rules.otherPartyPassage : rules.noPartyPassage;
+}
 
 /** How many pieces' reaches are kept at once, well above what a table draws. */
 const REACH_CACHE_LIMIT = 64;
@@ -444,9 +451,10 @@ export class MoveRangeService {
     if (painted) otherwise.or(painted);
 
     const standing = this.objectStore.getObjects<GameCharacter>(GameCharacter);
-    // Two pieces that may not share a cell may not pass through one either: the ground
-    // somebody stands on is in the way, and a reach has to go round it.
-    if (!rules.piecesShareCells) otherwise.or(occupiedCells(grid, standing, character.identifier));
+    // The ground somebody else stands on is in the way of a reach as the table has it: shut to
+    // the piece, dear to cross, or ground it walks over without being able to stop on.
+    const passage = passageCells(grid, standing, character, (relation) => passageModeOf(rules, relation));
+    otherwise.or(passage.blocked);
 
     // What the ground itself charges, which is owed by whoever enters it whatever else is
     // happening on the board.
@@ -461,19 +469,23 @@ export class MoveRangeService {
     const extra = Math.max(0, Math.floor(rules.zocExtraCost));
     const fights = rules.breakOutMode === 'free' ? null : (ground?.fights ?? null);
     const flat = Math.max(0, Math.floor(rules.breakOutCost));
-    const charges = dear !== null || (held !== null && mode === 'cost') || fights !== null;
+    const crossing = passage.costly.isEmpty ? 0 : Math.max(0, Math.floor(rules.piecePassageCost));
+    const charges = dear !== null || crossing > 0 || (held !== null && mode === 'cost') || fights !== null;
+    const noStop = passage.noStop.isEmpty ? null : passage.noStop;
 
     const options: ReachOptions = {
       diagonals: rules.diagonalMove,
       costOf: charges
         ? (index, from) => {
             let price = 1 + (dear ? dear[index] : 0);
+            if (crossing > 0 && passage.costly.get(index)) price += crossing;
             if (held && mode === 'cost' && held.get(index)) price += extra;
             if (!fights || !leavesFight(fights, from, index)) return price;
             return price + breakOutToll(rules.breakOutMode, fights.prices[from], flat);
           }
         : undefined,
       stopsAt: held && mode === 'stop' ? (index) => held.get(index) : undefined,
+      restsAt: noStop ? (index) => !noStop.get(index) : undefined,
     };
     const cells = reachableCells(grid, start, walk, (index) => blocked.get(index), options);
     return {

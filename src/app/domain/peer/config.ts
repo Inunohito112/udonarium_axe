@@ -51,6 +51,10 @@ export class Config extends ObjectNode implements InnerXml {
   @SyncVar('_moveDiagonally') private _moveDiagonally: string = '';
   @SyncVar('_diagonalMove') private _diagonalMove: string = '';
   @SyncVar('_piecesShareCells') private _piecesShareCells: string = '';
+  @SyncVar('_samePartyPassage') private _samePartyPassage: string = '';
+  @SyncVar('_otherPartyPassage') private _otherPartyPassage: string = '';
+  @SyncVar('_noPartyPassage') private _noPartyPassage: string = '';
+  @SyncVar('_piecePassageCost') private _piecePassageCost: number = -1;
   @SyncVar('_moveRangeAlways') private _moveRangeAlways: string = '';
   @SyncVar('_zocAlways') private _zocAlways: string = '';
   @SyncVar('_cellDistance') private _cellDistance: number = -1;
@@ -236,6 +240,38 @@ export class Config extends ObjectNode implements InnerXml {
     this._piecesShareCells = writeRuleFlag(answer);
   }
 
+  /** What a piece does with the ground its own party holds, or null to leave it to the table. */
+  get samePartyPassage(): string | null {
+    return readRuleText(this._samePartyPassage);
+  }
+  set samePartyPassage(answer: string | null) {
+    this._samePartyPassage = writeRuleText(answer);
+  }
+
+  /** The same, for the ground some other party holds. */
+  get otherPartyPassage(): string | null {
+    return readRuleText(this._otherPartyPassage);
+  }
+  set otherPartyPassage(answer: string | null) {
+    this._otherPartyPassage = writeRuleText(answer);
+  }
+
+  /** The same, for the ground a piece in no party holds. */
+  get noPartyPassage(): string | null {
+    return readRuleText(this._noPartyPassage);
+  }
+  set noPartyPassage(answer: string | null) {
+    this._noPartyPassage = writeRuleText(answer);
+  }
+
+  /** What crossing somebody costs where the table charges for it, or null to leave it to the table. */
+  get piecePassageCost(): number | null {
+    return readRuleNumber(this._piecePassageCost);
+  }
+  set piecePassageCost(answer: number | null) {
+    this._piecePassageCost = writeRuleNumber(answer);
+  }
+
   /** Whether the selected piece's reach stays shown without picking it up, or null to leave it to the table. */
   get moveRangeAlways(): boolean | null {
     return readRuleFlag(this._moveRangeAlways);
@@ -348,6 +384,10 @@ export class Config extends ObjectNode implements InnerXml {
       moveDiagonally: this.moveDiagonally,
       diagonalMove: this.diagonalMove,
       piecesShareCells: this.piecesShareCells,
+      samePartyPassage: this.samePartyPassage,
+      otherPartyPassage: this.otherPartyPassage,
+      noPartyPassage: this.noPartyPassage,
+      piecePassageCost: this.piecePassageCost,
       moveRangeAlways: this.moveRangeAlways,
       zocAlways: this.zocAlways,
       cellDistance: this.cellDistance,

@@ -948,3 +948,121 @@ describe('MoveRangeService and ground that costs more to cross', () => {
     }
   });
 });
+
+describe('MoveRangeService and the ground another piece stands on', () => {
+  let service: MoveRangeService;
+  let table: GameTable;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    // Corners are left uncut so that walking round a piece costs more than walking through it,
+    // which is the whole of what these rules change.
+    table.moveDiagonally = false;
+    table.initialize();
+    service = TestBed.inject(MoveRangeService);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+  });
+
+  function pieceAt(col: number, row: number, walk: number, party = ''): GameCharacter {
+    const character = GameCharacter.create('コマ', 1, '');
+    character.location = { name: 'table', x: col * GRID, y: row * GRID };
+    DataElement.findElementByReference(character.rootDataElement!, '移動')!.value = walk;
+    character.partyIdentifier = party;
+    return character;
+  }
+
+  function reached(col: number, row: number): boolean {
+    const view = service.range()!;
+    return view.cells.get(cellIndexOf(view.grid, col, row));
+  }
+
+  it('walks onto another piece on a table that has said nothing about it', () => {
+    pieceAt(6, 5, 1, 'heroes');
+    service.show(pieceAt(5, 5, 2, 'heroes'));
+
+    expect(reached(6, 5)).toBe(true);
+    expect(reached(7, 5)).toBe(true);
+  });
+
+  it('keeps off every piece on a table that said pieces may not share a cell', () => {
+    table.piecesShareCells = false;
+    pieceAt(6, 5, 1, 'heroes');
+    service.show(pieceAt(5, 5, 2, 'heroes'));
+
+    expect(reached(6, 5)).toBe(false);
+    expect(reached(7, 5)).toBe(false);
+  });
+
+  it('squeezes past its own side without stopping on it', () => {
+    table.samePartyPassage = 'pass';
+    pieceAt(6, 5, 1, 'heroes');
+    service.show(pieceAt(5, 5, 2, 'heroes'));
+
+    expect(reached(6, 5)).toBe(false);
+    expect(reached(7, 5)).toBe(true);
+  });
+
+  it('pays for squeezing past where the table charges for it', () => {
+    table.samePartyPassage = 'cost';
+    table.piecePassageCost = 1;
+    pieceAt(6, 5, 1, 'heroes');
+    service.show(pieceAt(5, 5, 2, 'heroes'));
+
+    expect(reached(6, 5)).toBe(false);
+    expect(reached(7, 5)).toBe(false);
+    expect(reached(3, 5)).toBe(true);
+  });
+
+  it('is turned back by the other side', () => {
+    table.otherPartyPassage = 'block';
+    pieceAt(6, 5, 1, 'goblins');
+    service.show(pieceAt(5, 5, 2, 'heroes'));
+
+    expect(reached(6, 5)).toBe(false);
+    expect(reached(7, 5)).toBe(false);
+  });
+
+  it('tells its own side from the other, and both from a piece in no party', () => {
+    table.samePartyPassage = 'pass';
+    table.otherPartyPassage = 'block';
+    table.noPartyPassage = 'share';
+    pieceAt(6, 5, 1, 'heroes');
+    pieceAt(4, 5, 1, 'goblins');
+    pieceAt(5, 4, 1);
+    service.show(pieceAt(5, 5, 2, 'heroes'));
+
+    expect(reached(7, 5)).toBe(true);
+    expect(reached(3, 5)).toBe(false);
+    expect(reached(5, 4)).toBe(true);
+  });
+
+  it('reads a piece of a party it is in no party itself as one of the others', () => {
+    table.otherPartyPassage = 'block';
+    pieceAt(6, 5, 1, 'goblins');
+    service.show(pieceAt(5, 5, 2));
+
+    expect(reached(6, 5)).toBe(false);
+  });
+
+  it('squeezes past its own side on a board of hexes as well', () => {
+    table.gridType = GridType.HEX_VERTICAL;
+    pieceAt(6, 5, 1, 'heroes');
+    const hero = pieceAt(5, 5, 2, 'heroes');
+    service.show(hero);
+    const shared = countCells(service.range()!.cells);
+
+    table.samePartyPassage = 'pass';
+    service.show(hero);
+
+    // Everything the piece could reach before is still reached, bar the one cell it may now
+    // only cross: nothing has been walked round, since walking through costs the same.
+    expect(countCells(service.range()!.cells)).toBe(shared - 1);
+  });
+});

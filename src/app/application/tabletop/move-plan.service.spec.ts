@@ -158,6 +158,25 @@ describe('MovePlanService', () => {
     expect(plan.ahead[plan.ahead.length - 1]).toBe(cell(7, 5));
   });
 
+  it('draws a way through its own side rather than round it, and not onto it', () => {
+    // Corners are left uncut so that one way through is the only cheapest way there is.
+    table.moveDiagonally = false;
+    table.samePartyPassage = 'pass';
+    const ally = pieceAt(6, 5, 1);
+    ally.partyIdentifier = 'heroes';
+    const hero = pieceAt(5, 5, 3);
+    hero.partyIdentifier = 'heroes';
+    service.begin(hero);
+
+    service.lookAt(6 * GRID + 10, 5 * GRID + 10);
+    expect(service.plan()!.ahead).toEqual([]);
+
+    service.lookAt(7 * GRID + 10, 5 * GRID + 10);
+    const plan = service.plan()!;
+    expect(plan.ahead).toContain(cell(6, 5));
+    expect(plan.ahead[plan.ahead.length - 1]).toBe(cell(7, 5));
+  });
+
   it('settles the way drawn, and works the next one out from where it ended', () => {
     service.begin(pieceAt(5, 5, 4));
     service.lookAt(7 * GRID + 10, 5 * GRID + 10);

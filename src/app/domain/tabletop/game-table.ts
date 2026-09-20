@@ -13,6 +13,7 @@ import {
   DEFAULT_CELL_DISTANCE_UNIT,
   DEFAULT_MOVE_RANGE_ELEMENT_NAMES,
 } from '@axe/domain/tabletop/move/move-cells';
+import { DEFAULT_PIECE_PASSAGE_COST } from '@axe/domain/tabletop/move/piece-passage';
 import { DEFAULT_ZOC_EXTRA_COST, DEFAULT_ZOC_MODE, DEFAULT_ZOC_RANGE } from '@axe/domain/tabletop/move/zone-of-control';
 import { MultiAngleMotionMode } from '@axe/domain/tabletop/multi-angle';
 import { MultiAngleFontScale } from '@axe/domain/tabletop/multi-angle-font-scale';
@@ -116,6 +117,17 @@ export class GameTable extends ObjectNode {
   @SyncVar() moveDiagonally: boolean = true;
   /** Whether two pieces may stand on one cell. Left off, a piece walks past rather than onto. */
   @SyncVar() piecesShareCells: boolean = true;
+  /**
+   * What the ground a piece of one's own party holds does to a piece walking into it, as one of
+   * PIECE_PASSAGE_MODES. Empty leaves it to whatever piecesShareCells says.
+   */
+  @SyncVar() samePartyPassage: string = '';
+  /** The same, for the ground some other party holds. */
+  @SyncVar() otherPartyPassage: string = '';
+  /** The same, for the ground a piece in no party holds. */
+  @SyncVar() noPartyPassage: string = '';
+  /** What crossing somebody costs on top of the one step, where the table charges for it. */
+  @SyncVar() piecePassageCost: number = DEFAULT_PIECE_PASSAGE_COST;
   /** Whether the piece a reader has picked keeps showing its reach, not only while carried. */
   @SyncVar() moveRangeAlways: boolean = false;
   /** Whether the ground held against the piece a reader has picked keeps showing. */
