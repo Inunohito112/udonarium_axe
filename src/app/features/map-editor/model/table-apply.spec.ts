@@ -21,7 +21,9 @@ function changesNothing(plan: FunctionPaintPlan, table: TableSnapshot): boolean 
     plan.mask.add.length === 0 &&
     plan.mask.remove.length === 0 &&
     plan.trigger.add.length === 0 &&
-    plan.trigger.remove.length === 0
+    plan.trigger.remove.length === 0 &&
+    plan.moveCost.add.length === 0 &&
+    plan.moveCost.remove.length === 0
   );
 }
 
@@ -64,6 +66,7 @@ function snapshot(over: Partial<TableSnapshot> = {}): TableSnapshot {
     blockedCells: [],
     terrainBlocks: [],
     maskBlocks: [],
+    moveCostBlocks: [],
     triggerBlocks: [],
     ...over,
   };
@@ -328,6 +331,44 @@ describe('painting ground that goes off', () => {
     const plan = planFunctionPaint(scene, snapshot({ triggerBlocks: [held] }))!;
 
     expect(plan.trigger.remove).toEqual([held]);
+  });
+});
+
+describe('painting ground that costs more to cross', () => {
+  it('answers with the blocks the layer holds, and what each of them charges', () => {
+    const spec = { ...DEFAULT_FUNCTION_SPEC, moveCost: { extraCost: 2, color: '#445566' } };
+    const scene = sceneWith(layerOf('moveCost', ['1,1', '2,1'], { spec }));
+
+    const plan = planFunctionPaint(scene, snapshot())!;
+
+    expect(plan.moveCost.add.length).toBe(1);
+    expect(plan.moveCost.add[0]).toMatchObject({ col: 1, row: 1, width: 2, height: 1 });
+    expect(plan.moveCost.add[0].spec).toEqual({ extraCost: 2, color: '#445566' });
+  });
+
+  it('leaves the ground a table already holds alone where the scene never mentions it', () => {
+    const scene = sceneWith(layerOf('mask', ['1,1']));
+
+    expect(planFunctionPaint(scene, snapshot())!.moveCost).toEqual({ add: [], remove: [] });
+  });
+
+  it('takes away ground the scene has stopped holding', () => {
+    const held = { col: 3, row: 3, width: 1, height: 1, spec: { ...DEFAULT_FUNCTION_SPEC.moveCost } };
+    const scene = sceneWith(layerOf('moveCost', []));
+
+    const plan = planFunctionPaint(scene, snapshot({ moveCostBlocks: [held] }))!;
+
+    expect(plan.moveCost.remove).toEqual([held]);
+  });
+
+  it('leaves a stretch that was painted again exactly where it stood', () => {
+    const held = { col: 1, row: 1, width: 2, height: 1, spec: { ...DEFAULT_FUNCTION_SPEC.moveCost } };
+    const scene = sceneWith(layerOf('moveCost', ['1,1', '2,1']));
+
+    expect(planFunctionPaint(scene, snapshot({ moveCostBlocks: [held] }))!.moveCost).toEqual({
+      add: [],
+      remove: [],
+    });
   });
 });
 

@@ -6,6 +6,7 @@ import {
   FunctionPaintPlan,
   MapFunctionRole,
   MaskBlock,
+  MoveCostBlock,
   TerrainBlock,
   TriggerBlock,
 } from '@axe/domain/tabletop/function-paint';
@@ -105,6 +106,16 @@ function triggerBlocksOf(scene: MapScene, hex: boolean): TriggerBlock[] {
   return blocks;
 }
 
+function moveCostBlocksOf(scene: MapScene, hex: boolean): MoveCostBlock[] {
+  const blocks: MoveCostBlock[] = [];
+  for (const layer of functionLayersOf(scene, 'moveCost')) {
+    for (const rect of blockRectsOf(Object.keys(layer.cells), hex)) {
+      blocks.push({ ...rect, spec: layer.spec.moveCost });
+    }
+  }
+  return blocks;
+}
+
 /**
  * Whether the scene says anything at all about what the table's cells do.
  *
@@ -143,6 +154,9 @@ export function planFunctionPaint(scene: MapScene, table: TableSnapshot): Functi
   // scene that only ever had walls painted on it must not take the table's masks away with them.
   return {
     blocked: sceneCarriesFunctions(scene, 'moveBlock') ? cellsForRole(scene, 'moveBlock') : [...table.blockedCells],
+    moveCost: sceneCarriesFunctions(scene, 'moveCost')
+      ? blockChange(moveCostBlocksOf(scene, hex), table.moveCostBlocks)
+      : { add: [], remove: [] },
     terrain: sceneCarriesFunctions(scene, 'terrain')
       ? blockChange(terrainBlocksOf(scene, table.cellPx, hex), table.terrainBlocks)
       : { add: [], remove: [] },

@@ -49,6 +49,7 @@ import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import {
   MAP_FUNCTION_ROLES,
   MaskPaintSpec,
+  MoveCostPaintSpec,
   TERRAIN_FACE_KEYS,
   TerrainFaceImages,
   TerrainPaintSpec,
@@ -221,6 +222,11 @@ export class MapEditorPanelComponent implements AfterViewInit {
   protected setTerrainPaint(patch: Partial<TerrainPaintSpec>): void {
     const spec = this.state.functionSpec();
     this.state.setFunctionSpec({ ...spec, terrain: { ...spec.terrain, ...patch } });
+  }
+
+  protected setMoveCostPaint(patch: Partial<MoveCostPaintSpec>): void {
+    const spec = this.state.functionSpec();
+    this.state.setFunctionSpec({ ...spec, moveCost: { ...spec.moveCost, ...patch } });
   }
 
   protected setMaskPaint(patch: Partial<MaskPaintSpec>): void {

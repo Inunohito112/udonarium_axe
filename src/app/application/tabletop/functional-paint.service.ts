@@ -10,6 +10,7 @@ import {
   FunctionPaintPlan,
   MaskBlock,
   MaskPaintSpec,
+  MoveCostPaintSpec,
   NO_FACE_IMAGES,
   TERRAIN_FACE_KEYS,
   TerrainBlock,
@@ -21,6 +22,7 @@ import { GameTableMask } from '@axe/domain/tabletop/game-table-mask';
 import { isHexGrid } from '@axe/domain/tabletop/hex-geometry';
 import { blockOrigin as gridBlockOrigin, cellCentre } from '@axe/domain/tabletop/map-grid';
 import { ensureMoveBlockMapOn, moveBlockMapOn } from '@axe/domain/tabletop/move/move-block-map';
+import { moveCostsOn, TableMoveCost } from '@axe/domain/tabletop/table-move-cost';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableSnapshot } from '@axe/domain/tabletop/table-snapshot';
 import { TableTrigger, triggersOn } from '@axe/domain/tabletop/table-trigger';
@@ -302,6 +304,11 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
   };
 }
 
+/** What one stretch of dear ground looks like to the editor, which is all of what it is. */
+function moveCostSpecOf(area: TableMoveCost): MoveCostPaintSpec {
+  return { extraCost: area.charge, color: area.color };
+}
+
 @Injectable({ providedIn: 'root' })
 export class FunctionalPaintService {
   private readonly tableSelecter = inject(TableSelecter);
@@ -318,6 +325,7 @@ export class FunctionalPaintService {
       this.layTerrain(table, grid, plan);
       this.layMasks(table, grid, plan);
       this.layTriggers(table, plan);
+      this.layMoveCosts(table, plan);
     });
     return true;
   }
@@ -434,6 +442,26 @@ export class FunctionalPaintService {
     }
   }
 
+  /** Lays the ground that costs more to cross, which the table carries as it was painted. */
+  private layMoveCosts(table: GameTable, plan: FunctionPaintPlan): void {
+    this.takeAway(
+      moveCostsOn(table).map((held) => ({ object: held, key: blockKey(held.rect, moveCostSpecOf(held)) })),
+      plan.moveCost.remove
+    );
+
+    for (const block of plan.moveCost.add) {
+      const area = new TableMoveCost();
+      area.col = block.col;
+      area.row = block.row;
+      area.width = block.width;
+      area.height = block.height;
+      area.extraCost = block.spec.extraCost;
+      area.color = block.spec.color;
+      area.initialize();
+      table.appendChild(area);
+    }
+  }
+
   /** The table the editor would be reading, or nothing where none is out. */
   snapshot(): TableSnapshot | null {
     const table = this.tableSelecter.viewTable;
@@ -461,6 +489,7 @@ export class FunctionalPaintService {
         })
         .filter((block): block is MaskBlock => block !== null),
       triggerBlocks: triggersOn(table).map((held) => ({ ...held.rect, spec: triggerSpecOf(held) })),
+      moveCostBlocks: moveCostsOn(table).map((held) => ({ ...held.rect, spec: moveCostSpecOf(held) })),
     };
   }
 }

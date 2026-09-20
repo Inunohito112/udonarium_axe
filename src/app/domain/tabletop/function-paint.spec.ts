@@ -35,6 +35,20 @@ describe('sanitizeFunctionSpec()', () => {
     expect(spec.mask.color).toBe('#112233');
   });
 
+  it('keeps what a stretch of dear ground was painted with', () => {
+    const spec = sanitizeFunctionSpec({ moveCost: { extraCost: 3, color: '#445566' } });
+
+    expect(spec.moveCost.extraCost).toBe(3);
+    expect(spec.moveCost.color).toBe('#445566');
+  });
+
+  it('holds what dear ground charges to a whole step worth charging', () => {
+    expect(sanitizeFunctionSpec({ moveCost: { extraCost: 0 } }).moveCost.extraCost).toBe(1);
+    expect(sanitizeFunctionSpec({ moveCost: { extraCost: -2 } }).moveCost.extraCost).toBe(1);
+    expect(sanitizeFunctionSpec({ moveCost: { extraCost: 40 } }).moveCost.extraCost).toBe(9);
+    expect(sanitizeFunctionSpec({ moveCost: { extraCost: 'deep' } }).moveCost.extraCost).toBe(1);
+  });
+
   it('holds a wall to a height a table can draw', () => {
     expect(sanitizeFunctionSpec({ terrain: { height: -4 } }).terrain.height).toBe(0);
     expect(sanitizeFunctionSpec({ terrain: { height: 1000 } }).terrain.height).toBe(99);

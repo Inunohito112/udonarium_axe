@@ -1,4 +1,9 @@
 import { CellRect, rectCells } from '@axe/domain/tabletop/cell-rectangles';
+import {
+  asMoveCostExtra,
+  DEFAULT_MOVE_COST_COLOR,
+  DEFAULT_MOVE_COST_EXTRA,
+} from '@axe/domain/tabletop/table-move-cost';
 import { encodeSlopeSides, parseSlopeSides } from '@axe/domain/tabletop/terrain-slope';
 import {
   asTriggerMoment,
@@ -17,7 +22,7 @@ import {
  * editor: a cell closed to walking is closed however it came to be.
  */
 
-export const MAP_FUNCTION_ROLES = ['moveBlock', 'terrain', 'mask', 'trigger'] as const;
+export const MAP_FUNCTION_ROLES = ['moveBlock', 'moveCost', 'terrain', 'mask', 'trigger'] as const;
 
 export type MapFunctionRole = (typeof MAP_FUNCTION_ROLES)[number];
 
@@ -143,8 +148,16 @@ export interface TriggerPaintSpec {
   effect: string;
 }
 
+/** Everything painted ground that is dear to cross is, which is what it charges and how it looks. */
+export interface MoveCostPaintSpec {
+  /** What entering it costs on top of the one step the ground is worth. */
+  extraCost: number;
+  color: string;
+}
+
 /** What a role lays on the table, the same for every cell the layer holds. */
 export interface FunctionSpec {
+  moveCost: MoveCostPaintSpec;
   terrain: TerrainPaintSpec;
   mask: MaskPaintSpec;
   trigger: TriggerPaintSpec;
@@ -173,6 +186,10 @@ export const TERRAIN_FACE_KEYS: readonly (keyof TerrainFaceImages)[] = [
 ];
 
 export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
+  moveCost: {
+    extraCost: DEFAULT_MOVE_COST_EXTRA,
+    color: DEFAULT_MOVE_COST_COLOR,
+  },
   terrain: {
     name: '',
     imageIdentifier: '',
@@ -308,12 +325,17 @@ function sanitizeLight(value: unknown): TerrainLightSpec {
  */
 export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
   const held = asRecord(value);
+  const moveCost = asRecord(held['moveCost']);
   const terrain = asRecord(held['terrain']);
   const mask = asRecord(held['mask']);
   const trigger = asRecord(held['trigger']);
   const fallback = DEFAULT_FUNCTION_SPEC;
 
   return {
+    moveCost: {
+      extraCost: asMoveCostExtra(moveCost['extraCost']),
+      color: textIn(moveCost, 'color', fallback.moveCost.color),
+    },
     terrain: {
       name: textIn(terrain, 'name', fallback.terrain.name),
       imageIdentifier: textIn(terrain, 'imageIdentifier', fallback.terrain.imageIdentifier),
@@ -380,6 +402,10 @@ export interface TriggerBlock extends CellRect {
   spec: TriggerPaintSpec;
 }
 
+export interface MoveCostBlock extends CellRect {
+  spec: MoveCostPaintSpec;
+}
+
 /** A block as far as stacking cares: the cells it covers, the altitude it is laid by and its height in cells. */
 type StandingBlock = CellRect & { spec: { altitude: number; height: number } };
 
@@ -435,6 +461,7 @@ export interface BlockChange<T extends CellRect> {
 export interface FunctionPaintPlan {
   /** Every cell the table should be closed on, which replaces whatever it held before. */
   blocked: string[];
+  moveCost: BlockChange<MoveCostBlock>;
   terrain: BlockChange<TerrainBlock>;
   mask: BlockChange<MaskBlock>;
   trigger: BlockChange<TriggerBlock>;

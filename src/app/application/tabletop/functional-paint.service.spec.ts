@@ -16,6 +16,7 @@ import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
 import { GameTableMask } from '@axe/domain/tabletop/game-table-mask';
 import { cellCentre } from '@axe/domain/tabletop/map-grid';
 import { ensureMoveBlockMapOn } from '@axe/domain/tabletop/move/move-block-map';
+import { moveCostsOn } from '@axe/domain/tabletop/table-move-cost';
 import { Terrain } from '@axe/domain/tabletop/terrain';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
@@ -131,6 +132,7 @@ describe('FunctionalPaintService', () => {
         terrain: { add: [], remove: [] },
         mask: { add: [], remove: [] },
         trigger: { add: [], remove: [] },
+        moveCost: { add: [], remove: [] },
         ...over,
       };
     }
@@ -398,6 +400,33 @@ describe('FunctionalPaintService', () => {
       expect(service.snapshot()!.blockedCells).toEqual(['2,1']);
     });
 
+    it('lays dear ground with what it charges, and reads it back the same', () => {
+      const dear = { col: 1, row: 2, width: 3, height: 1, spec: { extraCost: 2, color: '#445566' } };
+
+      service.apply(plan({ moveCost: { add: [dear], remove: [] } }));
+
+      expect(service.snapshot()!.moveCostBlocks).toEqual([dear]);
+    });
+
+    it('leaves dear ground that was painted again exactly where it stood', () => {
+      const dear = { col: 1, row: 2, width: 3, height: 1, spec: { extraCost: 2, color: '#445566' } };
+      service.apply(plan({ moveCost: { add: [dear], remove: [] } }));
+      const laid = moveCostsOn(table)[0];
+
+      service.apply(plan({ moveCost: { add: [], remove: [] } }));
+
+      expect(moveCostsOn(table)[0]).toBe(laid);
+    });
+
+    it('takes dear ground away when the painting stops holding it', () => {
+      const dear = { col: 1, row: 2, width: 3, height: 1, spec: { extraCost: 2, color: '#445566' } };
+      service.apply(plan({ moveCost: { add: [dear], remove: [] } }));
+
+      service.apply(plan({ moveCost: { add: [], remove: [dear] } }));
+
+      expect(moveCostsOn(table)).toEqual([]);
+    });
+
     it('will not lay anything with no table out', () => {
       table.gridSize = 0;
 
@@ -412,6 +441,7 @@ describe('FunctionalPaintService', () => {
         terrain: { add: [], remove: [] },
         mask: { add: [], remove: [] },
         trigger: { add: [], remove: [] },
+        moveCost: { add: [], remove: [] },
         ...over,
       };
     }
