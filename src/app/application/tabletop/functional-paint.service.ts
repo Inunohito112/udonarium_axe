@@ -306,7 +306,9 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
 
 /** What one stretch of dear ground looks like to the editor, which is all of what it is. */
 function moveCostSpecOf(area: TableMoveCost): MoveCostPaintSpec {
-  return { extraCost: area.charge, color: area.color };
+  // Nothing on the table is dear and shut at once: the shut cells are a map of their own, and
+  // what is read back from here always has a price rather than a bar.
+  return { blocks: false, extraCost: area.charge, color: area.color };
 }
 
 @Injectable({ providedIn: 'root' })

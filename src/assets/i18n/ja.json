@@ -3235,7 +3235,6 @@
         "title": "機能塗り",
         "hint": "見た目ではなく卓のはたらきを塗ります。書き出す画像には入りません。",
         "role": "種類",
-        "role_moveBlock": "立入禁止",
         "role_moveCost": "移動コスト",
         "role_terrain": "地形（壁）",
         "role_mask": "マップマスク",
@@ -3245,8 +3244,7 @@
         "terrainBlocksClimb": "登れない",
         "maskColor": "マスクの色",
         "maskOpacity": "マスクの濃さ",
-        "moveCostHint": "塗ったマスに入るのに、余分に移動力を使います。茂み・瓦礫・浅瀬・氷のための塗りです。",
-        "moveCostExtra": "追加コスト（マス）",
+        "moveCostHint": "塗ったマスの通りにくさを決めます。通れないマスも、渡るのに移動力を余分に使うマスも、この 1 つで塗ります。",
         "moveCostColor": "地面の色",
         "terrainMode": "見せ方",
         "terrainMode_both": "壁と床",
@@ -3294,7 +3292,10 @@
         "triggerAmountPlaceholder": "2d6",
         "triggerAmountHint": "数かダイス式。マイナスを書けば回復です（例: 5 / 2d6 / 1d6+2 / -3）",
         "triggerEffectNone": "出さない",
-        "triggerReveals": "発動したら見せる"
+        "triggerReveals": "発動したら見せる",
+        "moveCostCharge": "通りにくさ",
+        "moveCostBlocks": "通れない",
+        "moveCostStep": "+{{count}} マス"
       },
       "stampCategories": {
         "door": "扉",

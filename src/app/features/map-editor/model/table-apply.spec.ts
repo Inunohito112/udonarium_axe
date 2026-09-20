@@ -27,6 +27,13 @@ function changesNothing(plan: FunctionPaintPlan, table: TableSnapshot): boolean 
   );
 }
 
+/** A layer of the one movement brush at its far end, where nothing gets through. */
+function shutLayer(cells: string[]): FunctionLayer {
+  return layerOf('moveCost', cells, {
+    spec: { ...DEFAULT_FUNCTION_SPEC, moveCost: { ...DEFAULT_FUNCTION_SPEC.moveCost, blocks: true } },
+  });
+}
+
 function layerOf(role: MapFunctionRole, cells: string[], over: Partial<FunctionLayer> = {}): FunctionLayer {
   const held: Record<string, true> = {};
   for (const key of cells) held[key] = true;
@@ -108,7 +115,7 @@ describe('sceneCarriesFunctions()', () => {
 
 describe('planFunctionPaint()', () => {
   it('closes the table on whatever the scene holds, replacing what was there', () => {
-    const plan = planFunctionPaint(sceneWith(layerOf('moveBlock', ['1,1'])), snapshot({ blockedCells: ['5,5'] }))!;
+    const plan = planFunctionPaint(sceneWith(shutLayer(['1,1'])), snapshot({ blockedCells: ['5,5'] }))!;
 
     expect(plan.blocked).toEqual(['1,1']);
   });
@@ -173,7 +180,7 @@ describe('planFunctionPaint()', () => {
 
   it('takes away what a layer that has been emptied used to hold', () => {
     const plan = planFunctionPaint(
-      sceneWith(layerOf('terrain', []), layerOf('mask', []), layerOf('moveBlock', [])),
+      sceneWith(layerOf('terrain', []), layerOf('mask', []), shutLayer([])),
       snapshot({
         terrainBlocks: [terrainBlock({ col: 0, row: 0, width: 1, height: 1 })],
         maskBlocks: [maskBlock({ col: 1, row: 1, width: 1, height: 1 })],
@@ -210,14 +217,14 @@ describe('changesNothing()', () => {
       blockedCells: ['1,1'],
       terrainBlocks: [terrainBlock({ col: 2, row: 2, width: 1, height: 1 })],
     });
-    const plan = planFunctionPaint(sceneWith(layerOf('moveBlock', ['1,1']), layerOf('terrain', ['2,2'])), table)!;
+    const plan = planFunctionPaint(sceneWith(shutLayer(['1,1']), layerOf('terrain', ['2,2'])), table)!;
 
     expect(changesNothing(plan, table)).toBe(true);
   });
 
   it('says otherwise for a cell that would be closed and was not', () => {
     const table = snapshot();
-    const plan = planFunctionPaint(sceneWith(layerOf('moveBlock', ['1,1'])), table)!;
+    const plan = planFunctionPaint(sceneWith(shutLayer(['1,1'])), table)!;
 
     expect(changesNothing(plan, table)).toBe(false);
   });
@@ -336,14 +343,14 @@ describe('painting ground that goes off', () => {
 
 describe('painting ground that costs more to cross', () => {
   it('answers with the blocks the layer holds, and what each of them charges', () => {
-    const spec = { ...DEFAULT_FUNCTION_SPEC, moveCost: { extraCost: 2, color: '#445566' } };
+    const spec = { ...DEFAULT_FUNCTION_SPEC, moveCost: { blocks: false, extraCost: 2, color: '#445566' } };
     const scene = sceneWith(layerOf('moveCost', ['1,1', '2,1'], { spec }));
 
     const plan = planFunctionPaint(scene, snapshot())!;
 
     expect(plan.moveCost.add.length).toBe(1);
     expect(plan.moveCost.add[0]).toMatchObject({ col: 1, row: 1, width: 2, height: 1 });
-    expect(plan.moveCost.add[0].spec).toEqual({ extraCost: 2, color: '#445566' });
+    expect(plan.moveCost.add[0].spec).toEqual({ blocks: false, extraCost: 2, color: '#445566' });
   });
 
   it('leaves the ground a table already holds alone where the scene never mentions it', () => {
@@ -359,6 +366,23 @@ describe('painting ground that costs more to cross', () => {
     const plan = planFunctionPaint(scene, snapshot({ moveCostBlocks: [held] }))!;
 
     expect(plan.moveCost.remove).toEqual([held]);
+  });
+
+  it('sorts what one brush painted into the shut cells and the dear blocks', () => {
+    const dear = { ...DEFAULT_FUNCTION_SPEC, moveCost: { ...DEFAULT_FUNCTION_SPEC.moveCost, extraCost: 2 } };
+    const scene = sceneWith(shutLayer(['1,1']), layerOf('moveCost', ['3,3'], { spec: dear }));
+
+    const plan = planFunctionPaint(scene, snapshot())!;
+
+    expect(plan.blocked).toEqual(['1,1']);
+    expect(plan.moveCost.add).toHaveLength(1);
+    expect(plan.moveCost.add[0]).toMatchObject({ col: 3, row: 3 });
+  });
+
+  it('leaves the shut cells a table holds alone where the scene never picks the brush up', () => {
+    const plan = planFunctionPaint(sceneWith(layerOf('mask', ['1,1'])), snapshot({ blockedCells: ['5,5'] }))!;
+
+    expect(plan.blocked).toEqual(['5,5']);
   });
 
   it('leaves a stretch that was painted again exactly where it stood', () => {

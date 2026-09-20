@@ -652,27 +652,33 @@
               {{ 'feature.mapEditor.function.moveCostHint' | transloco }}
             </p>
             <label class="flex items-center justify-between gap-2">
-              <span class="text-ui-muted">{{ 'feature.mapEditor.function.moveCostExtra' | transloco }}</span>
-              <input
-                type="number"
-                min="1"
-                max="9"
-                step="1"
-                class="bg-ui-input rounded-ui-sm w-16 px-1 py-0.5"
-                data-testid="move-cost-extra"
-                [ngModel]="state.functionSpec().moveCost.extraCost"
-                (ngModelChange)="setMoveCostPaint({ extraCost: +$event })"
-              />
+              <span class="text-ui-muted">{{ 'feature.mapEditor.function.moveCostCharge' | transloco }}</span>
+              <select
+                class="bg-ui-input rounded-ui-sm w-28 px-1 py-0.5"
+                data-testid="move-cost-charge"
+                [ngModel]="moveCostCharge()"
+                (ngModelChange)="setMoveCostCharge($event)"
+                name="moveCostCharge"
+              >
+                <option [ngValue]="0">{{ 'feature.mapEditor.function.moveCostBlocks' | transloco }}</option>
+                @for (step of moveCostSteps; track step) {
+                  <option [ngValue]="step">
+                    {{ 'feature.mapEditor.function.moveCostStep' | transloco: { count: step } }}
+                  </option>
+                }
+              </select>
             </label>
-            <label class="flex items-center justify-between gap-2">
-              <span class="text-ui-muted">{{ 'feature.mapEditor.function.moveCostColor' | transloco }}</span>
-              <input
-                type="color"
-                class="bg-ui-input rounded-ui-sm h-7 w-12 p-0.5"
-                [ngModel]="state.functionSpec().moveCost.color"
-                (ngModelChange)="setMoveCostPaint({ color: $event })"
-              />
-            </label>
+            @if (!state.functionSpec().moveCost.blocks) {
+              <label class="flex items-center justify-between gap-2">
+                <span class="text-ui-muted">{{ 'feature.mapEditor.function.moveCostColor' | transloco }}</span>
+                <input
+                  type="color"
+                  class="bg-ui-input rounded-ui-sm h-7 w-12 p-0.5"
+                  [ngModel]="state.functionSpec().moveCost.color"
+                  (ngModelChange)="setMoveCostPaint({ color: $event })"
+                />
+              </label>
+            }
           }
 
           @if (state.functionRole() === 'mask') {

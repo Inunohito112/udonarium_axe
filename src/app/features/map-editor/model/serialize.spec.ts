@@ -599,7 +599,16 @@ describe('the cells painted for what they do', () => {
 
     const layer = deserializeScene(json)?.layers[0] as FunctionLayer;
 
-    expect(layer.role).toBe('moveBlock');
+    expect(layer.role).toBe('moveCost');
+  });
+
+  it('reads a scene painted before the two brushes were one as ground nobody may enter', () => {
+    const json = serializeScene(sceneWithFunction()).replace('"role":"terrain"', '"role":"moveBlock"');
+
+    const layer = deserializeScene(json)?.layers[0] as FunctionLayer;
+
+    expect(layer.role).toBe('moveCost');
+    expect(layer.spec.moveCost.blocks).toBe(true);
   });
 
   it('keeps only the cells that were written down as painted', () => {

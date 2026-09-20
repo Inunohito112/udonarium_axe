@@ -1,5 +1,5 @@
 import { GridType } from '@axe/domain/tabletop/game-table';
-import { asFunctionRole, sanitizeFunctionSpec } from '@axe/features/map-editor/model/function-layer';
+import { sanitizeFunctionLayerLook } from '@axe/features/map-editor/model/function-layer';
 import {
   DEFAULT_SCENE_BACKGROUND,
   DEFAULT_SCENE_GRID_COLOR,
@@ -192,14 +192,16 @@ function sanitizeLayer(raw: Record<string, unknown>): MapLayer {
           ? raw['cells']
           : {}) as Record<string, never>,
       };
-    case 'function':
+    case 'function': {
+      const look = sanitizeFunctionLayerLook(raw['role'], raw['spec']);
       return {
         ...base,
         kind: 'function',
-        role: asFunctionRole(raw['role']),
+        role: look.role,
         cells: sanitizeFunctionCells(raw['cells']),
-        spec: sanitizeFunctionSpec(raw['spec']),
+        spec: look.spec,
       };
+    }
     case 'shape':
       return {
         ...base,

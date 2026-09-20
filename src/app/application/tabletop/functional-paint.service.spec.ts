@@ -401,7 +401,7 @@ describe('FunctionalPaintService', () => {
     });
 
     it('lays dear ground with what it charges, and reads it back the same', () => {
-      const dear = { col: 1, row: 2, width: 3, height: 1, spec: { extraCost: 2, color: '#445566' } };
+      const dear = { col: 1, row: 2, width: 3, height: 1, spec: { blocks: false, extraCost: 2, color: '#445566' } };
 
       service.apply(plan({ moveCost: { add: [dear], remove: [] } }));
 
@@ -409,7 +409,7 @@ describe('FunctionalPaintService', () => {
     });
 
     it('leaves dear ground that was painted again exactly where it stood', () => {
-      const dear = { col: 1, row: 2, width: 3, height: 1, spec: { extraCost: 2, color: '#445566' } };
+      const dear = { col: 1, row: 2, width: 3, height: 1, spec: { blocks: false, extraCost: 2, color: '#445566' } };
       service.apply(plan({ moveCost: { add: [dear], remove: [] } }));
       const laid = moveCostsOn(table)[0];
 
@@ -419,7 +419,7 @@ describe('FunctionalPaintService', () => {
     });
 
     it('takes dear ground away when the painting stops holding it', () => {
-      const dear = { col: 1, row: 2, width: 3, height: 1, spec: { extraCost: 2, color: '#445566' } };
+      const dear = { col: 1, row: 2, width: 3, height: 1, spec: { blocks: false, extraCost: 2, color: '#445566' } };
       service.apply(plan({ moveCost: { add: [dear], remove: [] } }));
 
       service.apply(plan({ moveCost: { add: [], remove: [dear] } }));

@@ -156,7 +156,14 @@ export function sceneFromTable(table: TableSnapshot): MapScene {
       moveCost: block.spec,
     }))
   );
-  if (table.blockedCells.length > 0) layers.push(functionLayer('moveBlock', 'no entry', table.blockedCells));
+  if (table.blockedCells.length > 0) {
+    layers.push(
+      functionLayer('moveCost', 'no entry', table.blockedCells, {
+        ...DEFAULT_FUNCTION_SPEC,
+        moveCost: { ...DEFAULT_FUNCTION_SPEC.moveCost, blocks: true },
+      })
+    );
+  }
 
   return { ...scene, layers };
 }

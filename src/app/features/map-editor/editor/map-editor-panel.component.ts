@@ -56,6 +56,7 @@ import {
   TriggerPaintSpec,
 } from '@axe/domain/tabletop/function-paint';
 import { GridType } from '@axe/domain/tabletop/game-table';
+import { MOST_MOVE_COST_EXTRA } from '@axe/domain/tabletop/table-move-cost';
 import { TerrainViewState } from '@axe/domain/tabletop/terrain';
 import { TRIGGER_MOMENTS, TRIGGER_TARGETS } from '@axe/domain/tabletop/trigger-event';
 import { imageStampIdentifier, isImageStampId } from '@axe/features/map-editor/assets/image-stamp';
@@ -227,6 +228,23 @@ export class MapEditorPanelComponent implements AfterViewInit {
   protected setMoveCostPaint(patch: Partial<MoveCostPaintSpec>): void {
     const spec = this.state.functionSpec();
     this.state.setFunctionSpec({ ...spec, moveCost: { ...spec.moveCost, ...patch } });
+  }
+
+  /** The steps a brush may charge, which the reader picks between along with shutting the cell. */
+  protected readonly moveCostSteps = Array.from({ length: MOST_MOVE_COST_EXTRA }, (_, step) => step + 1);
+
+  /** What the brush costs as one number, where nought is ground nobody may enter. */
+  protected moveCostCharge(): number {
+    const spec = this.state.functionSpec().moveCost;
+    return spec.blocks ? 0 : spec.extraCost;
+  }
+
+  protected setMoveCostCharge(charge: number): void {
+    if (charge <= 0) {
+      this.setMoveCostPaint({ blocks: true });
+      return;
+    }
+    this.setMoveCostPaint({ blocks: false, extraCost: charge });
   }
 
   protected setMaskPaint(patch: Partial<MaskPaintSpec>): void {

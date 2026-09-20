@@ -3235,7 +3235,6 @@
         "title": "기능 칠하기",
         "hint": "겉모습이 아니라 테이블의 작용을 칠합니다. 내보내는 이미지에는 들어가지 않습니다.",
         "role": "종류",
-        "role_moveBlock": "진입 금지",
         "role_moveCost": "이동 비용",
         "role_terrain": "지형(벽)",
         "role_mask": "맵 마스크",
@@ -3245,8 +3244,7 @@
         "terrainBlocksClimb": "오를 수 없음",
         "maskColor": "마스크 색",
         "maskOpacity": "마스크 농도",
-        "moveCostHint": "칠한 칸에 들어갈 때 이동력을 더 씁니다. 덤불·잔해·여울·얼음을 나타냅니다.",
-        "moveCostExtra": "추가 비용(칸)",
+        "moveCostHint": "칠한 칸을 지나기 어려운 정도를 정합니다. 지나갈 수 없는 칸도, 이동력을 더 쓰는 칸도 이 하나로 칠합니다.",
         "moveCostColor": "지면 색",
         "terrainMode": "표시 방식",
         "terrainMode_both": "벽과 바닥",
@@ -3294,7 +3292,10 @@
         "triggerAmountPlaceholder": "2d6",
         "triggerAmountHint": "숫자나 주사위식. 마이너스를 쓰면 회복입니다 (5 / 2d6 / 1d6+2 / -3)",
         "triggerEffectNone": "표시 안 함",
-        "triggerReveals": "발동하면 보이기"
+        "triggerReveals": "발동하면 보이기",
+        "moveCostCharge": "지나기 어려움",
+        "moveCostBlocks": "지나갈 수 없음",
+        "moveCostStep": "+{{count}}칸"
       },
       "stampCategories": {
         "door": "문",

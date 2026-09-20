@@ -109,11 +109,27 @@ function triggerBlocksOf(scene: MapScene, hex: boolean): TriggerBlock[] {
 function moveCostBlocksOf(scene: MapScene, hex: boolean): MoveCostBlock[] {
   const blocks: MoveCostBlock[] = [];
   for (const layer of functionLayersOf(scene, 'moveCost')) {
+    if (layer.spec.moveCost.blocks) continue;
     for (const rect of blockRectsOf(Object.keys(layer.cells), hex)) {
       blocks.push({ ...rect, spec: layer.spec.moveCost });
     }
   }
   return blocks;
+}
+
+/**
+ * The cells the one brush shuts outright, as against the ones it merely puts a price on.
+ *
+ * The table carries the two differently — a map of shut cells, and a block apiece for the rest —
+ * so what was painted with one brush is sorted back into two here and nowhere else.
+ */
+function blockedCellsOf(scene: MapScene): string[] {
+  const held = new Set<string>();
+  for (const layer of functionLayersOf(scene, 'moveCost')) {
+    if (!layer.spec.moveCost.blocks) continue;
+    for (const key of Object.keys(layer.cells)) held.add(key);
+  }
+  return [...held];
 }
 
 /**
@@ -153,7 +169,7 @@ export function planFunctionPaint(scene: MapScene, table: TableSnapshot): Functi
   // is not the same as saying none. Emptying a layer still speaks — the layer is there — but a
   // scene that only ever had walls painted on it must not take the table's masks away with them.
   return {
-    blocked: sceneCarriesFunctions(scene, 'moveBlock') ? cellsForRole(scene, 'moveBlock') : [...table.blockedCells],
+    blocked: sceneCarriesFunctions(scene, 'moveCost') ? blockedCellsOf(scene) : [...table.blockedCells],
     moveCost: sceneCarriesFunctions(scene, 'moveCost')
       ? blockChange(moveCostBlocksOf(scene, hex), table.moveCostBlocks)
       : { add: [], remove: [] },

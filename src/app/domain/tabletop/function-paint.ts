@@ -22,19 +22,47 @@ import {
  * editor: a cell closed to walking is closed however it came to be.
  */
 
-export const MAP_FUNCTION_ROLES = ['moveBlock', 'moveCost', 'terrain', 'mask', 'trigger'] as const;
+export const MAP_FUNCTION_ROLES = ['moveCost', 'terrain', 'mask', 'trigger'] as const;
 
 export type MapFunctionRole = (typeof MAP_FUNCTION_ROLES)[number];
 
-export const DEFAULT_FUNCTION_ROLE: MapFunctionRole = 'moveBlock';
+export const DEFAULT_FUNCTION_ROLE: MapFunctionRole = 'moveCost';
 
 /**
- * Reads a stored map editor function role, falling back to blocking movement for anything unknown.
+ * The role a scene saved before the two were one calls ground nobody may enter.
+ *
+ * What a cell costs and whether it may be entered at all are one question with one answer at
+ * the far end of it, and they were two roles before they were one. A layer saved under the old
+ * name is read as the new one with nothing getting through it.
+ */
+const LEGACY_BLOCK_ROLE = 'moveBlock';
+
+/**
+ * Reads a stored map editor function role, falling back to what movement costs for anything
+ * unknown, the old name for ground nobody may enter included.
  */
 export function asFunctionRole(value: unknown): MapFunctionRole {
   return typeof value === 'string' && (MAP_FUNCTION_ROLES as readonly string[]).includes(value)
     ? (value as MapFunctionRole)
     : DEFAULT_FUNCTION_ROLE;
+}
+
+/**
+ * The role and the look of a stored layer read together, since one can change the other.
+ *
+ * A layer saved under the old name for ground nobody may enter carries no word about what
+ * crossing it costs, and reading the two apart would hand it the default — ground a step dearer
+ * than plain footing, which anybody may walk over. Read together it comes back shut.
+ */
+export function sanitizeFunctionLayerLook(
+  rawRole: unknown,
+  rawSpec: unknown
+): { role: MapFunctionRole; spec: FunctionSpec } {
+  const spec = sanitizeFunctionSpec(rawSpec);
+  if (rawRole === LEGACY_BLOCK_ROLE) {
+    return { role: 'moveCost', spec: { ...spec, moveCost: { ...spec.moveCost, blocks: true } } };
+  }
+  return { role: asFunctionRole(rawRole), spec };
 }
 
 /** The pictures a painted wall wears. Empty is glass: the wall stands but is not seen. */
@@ -148,8 +176,15 @@ export interface TriggerPaintSpec {
   effect: string;
 }
 
-/** Everything painted ground that is dear to cross is, which is what it charges and how it looks. */
+/**
+ * Everything painted ground that is dear to cross is, which is what it charges and how it looks.
+ *
+ * Shut ground is the far end of the same question rather than a thing of its own: a cell nobody
+ * may enter is a cell that costs more than anybody has, so one brush paints both.
+ */
 export interface MoveCostPaintSpec {
+  /** Whether nothing gets through it at all, whatever it would otherwise charge. */
+  blocks: boolean;
   /** What entering it costs on top of the one step the ground is worth. */
   extraCost: number;
   color: string;
@@ -187,6 +222,7 @@ export const TERRAIN_FACE_KEYS: readonly (keyof TerrainFaceImages)[] = [
 
 export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
   moveCost: {
+    blocks: false,
     extraCost: DEFAULT_MOVE_COST_EXTRA,
     color: DEFAULT_MOVE_COST_COLOR,
   },
@@ -333,6 +369,7 @@ export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
 
   return {
     moveCost: {
+      blocks: flagIn(moveCost, 'blocks', fallback.moveCost.blocks),
       extraCost: asMoveCostExtra(moveCost['extraCost']),
       color: textIn(moveCost, 'color', fallback.moveCost.color),
     },
@@ -459,7 +496,13 @@ export interface BlockChange<T extends CellRect> {
 
 /** What has to change on the table for it to match what was painted. */
 export interface FunctionPaintPlan {
-  /** Every cell the table should be closed on, which replaces whatever it held before. */
+  /**
+   * Every cell the table should be closed on, which replaces whatever it held before.
+   *
+   * Painted with the same brush as the ground that merely costs more, and kept apart here only
+   * because the table carries the two differently: one map of shut cells, and a block apiece for
+   * everything with a price on it.
+   */
   blocked: string[];
   moveCost: BlockChange<MoveCostBlock>;
   terrain: BlockChange<TerrainBlock>;

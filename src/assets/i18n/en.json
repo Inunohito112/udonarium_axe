@@ -3235,7 +3235,6 @@
         "title": "Function paint",
         "hint": "Paints what a cell does rather than how it looks. It never reaches the exported image.",
         "role": "Kind",
-        "role_moveBlock": "No entry",
         "role_moveCost": "Movement cost",
         "role_terrain": "Terrain (wall)",
         "role_mask": "Map mask",
@@ -3245,8 +3244,7 @@
         "terrainBlocksClimb": "Cannot be climbed",
         "maskColor": "Mask colour",
         "maskOpacity": "Mask strength",
-        "moveCostHint": "Entering a painted cell takes extra movement. For undergrowth, rubble, a ford or ice.",
-        "moveCostExtra": "Extra cost (cells)",
+        "moveCostHint": "Sets how hard a cell is to cross. Cells nobody may enter and cells that merely cost extra are painted with this one brush.",
         "moveCostColor": "Ground colour",
         "terrainMode": "Shows as",
         "terrainMode_both": "Wall and floor",
@@ -3294,7 +3292,10 @@
         "triggerAmountPlaceholder": "2d6",
         "triggerAmountHint": "A number or dice. A negative gives back (5 / 2d6 / 1d6+2 / -3)",
         "triggerEffectNone": "none",
-        "triggerReveals": "Show once sprung"
+        "triggerReveals": "Show once sprung",
+        "moveCostCharge": "How hard to cross",
+        "moveCostBlocks": "Cannot enter",
+        "moveCostStep": "+{{count}} cells"
       },
       "stampCategories": {
         "door": "Doors",

@@ -78,7 +78,8 @@ describe('sceneFromTable()', () => {
     const scene = sceneFromTable(snapshot({ blockedCells: ['1,1', '2,3'] }));
 
     const layer = scene.layers.find((held) => held.kind === 'function') as FunctionLayer;
-    expect(layer.role).toBe('moveBlock');
+    expect(layer.role).toBe('moveCost');
+    expect(layer.spec.moveCost.blocks).toBe(true);
     expect(Object.keys(layer.cells).sort()).toEqual(['1,1', '2,3']);
   });
 
@@ -92,7 +93,7 @@ describe('sceneFromTable()', () => {
     );
 
     const roles = scene.layers.filter((held) => held.kind === 'function').map((held) => (held as FunctionLayer).role);
-    expect(roles.sort()).toEqual(['mask', 'moveBlock', 'terrain']);
+    expect(roles.sort()).toEqual(['mask', 'moveCost', 'terrain']);
   });
 
   it('lays the floor under everything it painted', () => {
@@ -238,7 +239,7 @@ describe('reading painted ground that costs more to cross back into the editor',
   }
 
   it('brings a stretch back with the cells it covers and what it charges', () => {
-    const spec = { extraCost: 2, color: '#445566' };
+    const spec = { blocks: false, extraCost: 2, color: '#445566' };
     const scene = sceneFromTable(snapshot({ moveCostBlocks: [{ col: 2, row: 3, width: 2, height: 1, spec }] }));
 
     const layer = costLayers(scene)[0];
@@ -252,8 +253,8 @@ describe('reading painted ground that costs more to cross back into the editor',
     const scene = sceneFromTable(
       snapshot({
         moveCostBlocks: [
-          { col: 1, row: 1, width: 1, height: 1, spec: { extraCost: 1, color: '#445566' } },
-          { col: 5, row: 5, width: 1, height: 1, spec: { extraCost: 2, color: '#445566' } },
+          { col: 1, row: 1, width: 1, height: 1, spec: { blocks: false, extraCost: 1, color: '#445566' } },
+          { col: 5, row: 5, width: 1, height: 1, spec: { blocks: false, extraCost: 2, color: '#445566' } },
         ],
       })
     );
