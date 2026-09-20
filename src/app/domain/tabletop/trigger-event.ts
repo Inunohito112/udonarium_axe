@@ -22,6 +22,41 @@ export function isTurnMoment(moment: TriggerMoment): boolean {
   return moment === 'turnStart' || moment === 'turnEnd';
 }
 
+/**
+ * How often a piece of ground has another go in it.
+ *
+ * `once` is the whole stretch spent by whoever reaches it first, which is what a collapsing
+ * bridge is. A swamp is not: it has as many goes in it as there are pieces to wade in, and a
+ * fire burns each of them once a round however many times they step in and out of it.
+ */
+export const TRIGGER_REPEATS = ['always', 'once', 'oncePerPiece', 'oncePerRound'] as const;
+
+export type TriggerRepeat = (typeof TRIGGER_REPEATS)[number];
+
+export const DEFAULT_TRIGGER_REPEAT: TriggerRepeat = 'always';
+
+/** Reads a stored repeat, falling back to ground with no end of goes in it. */
+export function asTriggerRepeat(value: unknown): TriggerRepeat {
+  return typeof value === 'string' && (TRIGGER_REPEATS as readonly string[]).includes(value)
+    ? (value as TriggerRepeat)
+    : DEFAULT_TRIGGER_REPEAT;
+}
+
+/**
+ * The pieces a stretch of ground has already had, read from and written back as one line.
+ *
+ * Kept as a line of identifiers rather than a list, since what the table carries between peers
+ * is written down as text. Sorted so that two peers that sprang it in different orders write
+ * the same line and neither keeps overwriting the other.
+ */
+export function readSpentBy(held: string): string[] {
+  return held.split(' ').filter((one) => one.length > 0);
+}
+
+export function writeSpentBy(identifiers: readonly string[]): string {
+  return [...new Set(identifiers)].sort().join(' ');
+}
+
 export const TRIGGER_TARGETS = ['all', 'pc', 'npc'] as const;
 
 export type TriggerTarget = (typeof TRIGGER_TARGETS)[number];

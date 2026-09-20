@@ -780,13 +780,20 @@
               </select>
             </label>
             <label class="flex items-center justify-between gap-2">
-              <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerOnce' | transloco }}</span>
-              <input
-                type="checkbox"
-                class="size-3.5 [accent-color:var(--ui-accent)]"
-                [ngModel]="state.functionSpec().trigger.once"
-                (ngModelChange)="setTriggerPaint({ once: $event })"
-              />
+              <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerRepeat' | transloco }}</span>
+              <select
+                class="bg-ui-input rounded-ui-sm w-36 px-1 py-0.5"
+                data-testid="trigger-repeat"
+                [ngModel]="triggerRepeat()"
+                (ngModelChange)="setTriggerRepeat($event)"
+                name="triggerRepeat"
+              >
+                @for (repeat of triggerRepeats; track repeat) {
+                  <option [value]="repeat">
+                    {{ 'feature.mapEditor.function.triggerRepeat_' + repeat | transloco }}
+                  </option>
+                }
+              </select>
             </label>
             <label class="flex flex-col gap-1">
               <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerSay' | transloco }}</span>

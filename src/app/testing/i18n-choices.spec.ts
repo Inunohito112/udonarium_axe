@@ -24,7 +24,7 @@ import { MAP_FUNCTION_ROLES } from '@axe/domain/tabletop/function-paint';
 import { PIECE_PASSAGE_MODES } from '@axe/domain/tabletop/move/piece-passage';
 import { ZOC_MODES } from '@axe/domain/tabletop/move/zone-of-control';
 import { TABLE_FACING_MARKS } from '@axe/domain/tabletop/table-facing-mark';
-import { TRIGGER_MOMENTS, TRIGGER_TARGETS } from '@axe/domain/tabletop/trigger-event';
+import { TRIGGER_MOMENTS, TRIGGER_REPEATS, TRIGGER_TARGETS } from '@axe/domain/tabletop/trigger-event';
 import { FACTION_PHASE_MODES, TURN_ORDER_MODES } from '@axe/domain/tabletop/turn-order-mode';
 import { LightPreset } from '@axe/domain/tabletop/vision-types';
 import { FAB_ENTRIES } from '@axe/domain/ui/fab-menu';
@@ -59,6 +59,7 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.roomSettings.piecePassage_': PIECE_PASSAGE_MODES,
   'feature.mapEditor.function.role_': MAP_FUNCTION_ROLES,
   'feature.mapEditor.function.triggerMoment_': TRIGGER_MOMENTS,
+  'feature.mapEditor.function.triggerRepeat_': TRIGGER_REPEATS,
   'feature.mapEditor.function.triggerTargets_': TRIGGER_TARGETS,
   'feature.roomSettings.turnOrderMode_': TURN_ORDER_MODES,
   'feature.roomSettings.factionPhaseMode_': FACTION_PHASE_MODES,

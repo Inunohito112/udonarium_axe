@@ -162,8 +162,10 @@ export interface TriggerPaintSpec {
   moment: TriggerMoment;
   /** Whose pieces it has anything to say to. */
   targets: TriggerTarget;
-  /** Whether going off once is the end of it. */
+  /** Whether going off once is the end of it. The older, coarser form of {@link repeat}. */
   once: boolean;
+  /** How often it has another go in it, as one of TRIGGER_REPEATS. Empty falls back to `once`. */
+  repeat: string;
   /** Whether the room sees the ground, or only the master does. */
   open: boolean;
   /** Whether going off shows it to the room, so a sprung trap gives itself away. */
@@ -300,6 +302,7 @@ export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
     moment: DEFAULT_TRIGGER_MOMENT,
     targets: DEFAULT_TRIGGER_TARGET,
     once: false,
+    repeat: '',
     open: false,
     reveals: false,
     say: '',
@@ -448,6 +451,7 @@ export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
       moment: asTriggerMoment(trigger['moment']),
       targets: asTriggerTarget(trigger['targets']),
       once: flagIn(trigger, 'once', fallback.trigger.once),
+      repeat: textIn(trigger, 'repeat', fallback.trigger.repeat),
       open: flagIn(trigger, 'open', fallback.trigger.open),
       reveals: flagIn(trigger, 'reveals', fallback.trigger.reveals),
       say: textIn(trigger, 'say', fallback.trigger.say),

@@ -18,6 +18,7 @@ import { pieceCellOf, pieceCornerOn } from '@axe/domain/tabletop/move/piece-on-g
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger, triggersOn } from '@axe/domain/tabletop/table-trigger';
 import { isTurnMoment, rollTriggerAmount, triggerCatches, TriggerMoment } from '@axe/domain/tabletop/trigger-event';
+import { TurnState } from '@axe/domain/tabletop/turn-state';
 
 /** One piece of ground going off, and what it came to. */
 export interface TriggerFiring {
@@ -73,6 +74,18 @@ export class TriggerFireService {
     const to = this.cellOf(piece);
     if (to < 0 || to === from) return [];
     return this.walked(piece, grid, [from, to]);
+  }
+
+  /**
+   * The round the table is counting, or -1 where it is counting none.
+   *
+   * Read rather than asked of whoever keeps the round, so that the ground and the round do not
+   * have to know about one another: the ground only needs a number that changes when the round
+   * does.
+   */
+  private round(): number {
+    const held = this.objectStore.get<TurnState>('TurnState');
+    return held instanceof TurnState ? held.round : -1;
   }
 
   private cellOf(piece: GameCharacter): number {
@@ -150,18 +163,19 @@ export class TriggerFireService {
     const table = this.tableSelecter.viewTable;
     const { col, row } = cellColRow(grid, cell);
     const firings: TriggerFiring[] = [];
+    const round = this.round();
     for (const trigger of triggersOn(table)) {
       // Asked again each time: ground with one go in it is spent by the first cell of it.
-      if (!trigger.isArmed) continue;
+      if (!trigger.hasGoFor(piece.identifier, round)) continue;
       if (!trigger.covers(col, row)) continue;
       if (!wants(trigger)) continue;
       if (!triggerCatches(trigger.catches, piece.isNpc)) continue;
-      firings.push(this.spring(trigger, piece, ending));
+      firings.push(this.spring(trigger, piece, ending, round));
     }
     return firings;
   }
 
-  private spring(trigger: TableTrigger, piece: GameCharacter, ending: boolean): TriggerFiring {
+  private spring(trigger: TableTrigger, piece: GameCharacter, ending: boolean, round: number): TriggerFiring {
     const taken = rollTriggerAmount(trigger.amount);
     const held = this.resourceOf(piece, trigger.element);
     if (held) {
@@ -172,7 +186,7 @@ export class TriggerFireService {
       held.currentValue = taken < 0 && Number.isFinite(most) ? Math.min(most, next) : next;
     }
     this.leave(trigger, piece);
-    if (trigger.once) trigger.spent = true;
+    trigger.spend(piece.identifier, round);
     // Ground that was to give itself away does so by being seen, which is the one change to it
     // the room is allowed to notice.
     if (trigger.reveals && !trigger.found) trigger.found = true;

@@ -1,8 +1,13 @@
 import {
   asTriggerMoment,
+  asTriggerRepeat,
   asTriggerTarget,
+  DEFAULT_TRIGGER_REPEAT,
+  readSpentBy,
   rollTriggerAmount,
+  TRIGGER_REPEATS,
   triggerCatches,
+  writeSpentBy,
 } from '@axe/domain/tabletop/trigger-event';
 
 describe('when painted ground goes off', () => {
@@ -60,5 +65,30 @@ describe('what painted ground takes', () => {
   it('refuses a handful nobody could throw', () => {
     expect(rollTriggerAmount('1000d6')).toBe(0);
     expect(rollTriggerAmount('1d2000')).toBe(0);
+  });
+});
+
+describe('how often a piece of ground has another go', () => {
+  it('reads the answers it knows', () => {
+    for (const repeat of TRIGGER_REPEATS) expect(asTriggerRepeat(repeat)).toBe(repeat);
+  });
+
+  it('reads anything else as ground with no end of goes in it', () => {
+    expect(asTriggerRepeat('twice')).toBe(DEFAULT_TRIGGER_REPEAT);
+    expect(asTriggerRepeat(undefined)).toBe(DEFAULT_TRIGGER_REPEAT);
+  });
+
+  it('writes the pieces it has had in one line, each of them once', () => {
+    expect(writeSpentBy(['b', 'a', 'b'])).toBe('a b');
+  });
+
+  it('writes them in the same order whichever order they came in', () => {
+    expect(writeSpentBy(['c', 'a', 'b'])).toBe(writeSpentBy(['b', 'c', 'a']));
+  });
+
+  it('reads back what it wrote, and nothing at all from an empty line', () => {
+    expect(readSpentBy(writeSpentBy(['a', 'b']))).toEqual(['a', 'b']);
+    expect(readSpentBy('')).toEqual([]);
+    expect(readSpentBy('   ')).toEqual([]);
   });
 });

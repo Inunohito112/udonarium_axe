@@ -61,6 +61,7 @@ import {
 import { GridType } from '@axe/domain/tabletop/game-table';
 import { MOST_MOVE_COST_EXTRA } from '@axe/domain/tabletop/table-move-cost';
 import { TerrainViewState } from '@axe/domain/tabletop/terrain';
+import { asTriggerRepeat, TRIGGER_REPEATS, TriggerRepeat } from '@axe/domain/tabletop/trigger-event';
 import { TRIGGER_MOMENTS, TRIGGER_TARGETS } from '@axe/domain/tabletop/trigger-event';
 import { imageStampIdentifier, isImageStampId } from '@axe/features/map-editor/assets/image-stamp';
 import { StampDef } from '@axe/features/map-editor/assets/stamp-types';
@@ -226,6 +227,25 @@ export class MapEditorPanelComponent implements AfterViewInit {
   protected setTerrainPaint(patch: Partial<TerrainPaintSpec>): void {
     const spec = this.state.functionSpec();
     this.state.setFunctionSpec({ ...spec, terrain: { ...spec.terrain, ...patch } });
+  }
+
+  protected readonly triggerRepeats = TRIGGER_REPEATS;
+
+  /** How often the brush's ground has a go, reading a brush that only ever said whether it had one. */
+  protected triggerRepeat(): TriggerRepeat {
+    const spec = this.state.functionSpec().trigger;
+    if (spec.repeat.length > 0) return asTriggerRepeat(spec.repeat);
+    return spec.once ? 'once' : 'always';
+  }
+
+  /**
+   * Writes the newer answer and the older one together.
+   *
+   * A peer that has never heard of the finer answer reads the plain yes or no beside it, so a
+   * stretch with one go in it is still spent for them.
+   */
+  protected setTriggerRepeat(repeat: TriggerRepeat): void {
+    this.setTriggerPaint({ repeat, once: repeat === 'once' });
   }
 
   protected setMoveCostPaint(patch: Partial<MoveCostPaintSpec>): void {

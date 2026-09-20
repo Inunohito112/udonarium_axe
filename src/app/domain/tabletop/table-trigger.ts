@@ -4,12 +4,16 @@ import { CellRect } from '@axe/domain/tabletop/cell-rectangles';
 import { GameTable } from '@axe/domain/tabletop/game-table';
 import {
   asTriggerMoment,
+  asTriggerRepeat,
   asTriggerTarget,
   DEFAULT_TRIGGER_COLOR,
   DEFAULT_TRIGGER_MOMENT,
   DEFAULT_TRIGGER_TARGET,
+  readSpentBy,
   TriggerMoment,
+  TriggerRepeat,
   TriggerTarget,
+  writeSpentBy,
 } from '@axe/domain/tabletop/trigger-event';
 
 /**
@@ -31,8 +35,20 @@ export class TableTrigger extends ObjectNode {
   @SyncVar() moment: string = DEFAULT_TRIGGER_MOMENT;
   /** One of TRIGGER_TARGETS: everyone, the players' pieces, or the master's. */
   @SyncVar() targets: string = DEFAULT_TRIGGER_TARGET;
-  /** Whether springing it once is the end of it. */
+  /**
+   * Whether springing it once is the end of it.
+   *
+   * The older, coarser form of {@link repeats}, kept so that a table painted before there was
+   * anything finer goes on meaning what it meant. Written alongside the newer answer rather
+   * than in place of it, so an older peer reading this table still finds a trap that is spent.
+   */
   @SyncVar() once: boolean = false;
+  /** How often it has another go in it, as one of TRIGGER_REPEATS. Empty falls back to `once`. */
+  @SyncVar() repeat: string = '';
+  /** The pieces it has already had, where it has one go apiece. Identifiers, space separated. */
+  @SyncVar() spentBy: string = '';
+  /** The round it last went off in, where it has one go a round. */
+  @SyncVar() spentRound: number = -1;
   /** Whether the room sees the ground, or only the master does. */
   @SyncVar() open: boolean = false;
   /** Whether going off is what shows the ground to the room, a trap giving itself away. */
@@ -131,7 +147,40 @@ export class TableTrigger extends ObjectNode {
 
   /** Whether this ground still has anything left in it. */
   get isArmed(): boolean {
-    return !(this.once && this.spent);
+    return !(this.repeats === 'once' && this.spent);
+  }
+
+  /**
+   * How often it has another go in it, reading a table that only ever said whether it had one.
+   *
+   * The plain yes or no came first, so it stands in where nothing finer was written: a table
+   * saying only `once` is a table saying the whole stretch is spent by whoever reaches it.
+   */
+  get repeats(): TriggerRepeat {
+    if (this.repeat.length > 0) return asTriggerRepeat(this.repeat);
+    return this.once ? 'once' : 'always';
+  }
+
+  /**
+   * Whether it has a go left for this piece, in this round.
+   *
+   * Asked of the piece rather than of the ground alone, since a swamp spent on one wader is
+   * not a swamp spent on the next. A round below nought is a table counting no rounds, where
+   * ground with one go a round has one go and no more.
+   */
+  hasGoFor(identifier: string, round: number): boolean {
+    if (!this.isArmed) return false;
+    if (this.repeats === 'oncePerPiece') return !readSpentBy(this.spentBy).includes(identifier);
+    if (this.repeats === 'oncePerRound') return this.spentRound !== round;
+    return true;
+  }
+
+  /** Writes down that it has been had, by this piece, in this round. */
+  spend(identifier: string, round: number): void {
+    const repeats = this.repeats;
+    if (repeats === 'once') this.spent = true;
+    if (repeats === 'oncePerPiece') this.spentBy = writeSpentBy([...readSpentBy(this.spentBy), identifier]);
+    if (repeats === 'oncePerRound') this.spentRound = round;
   }
 
   /** Whether the room is being shown it: painted open, or given away by going off. */

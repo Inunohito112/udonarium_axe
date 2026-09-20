@@ -295,6 +295,9 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
     moment: trigger.firesOn,
     targets: trigger.catches,
     once: trigger.once,
+    // The written answer rather than the resolved one: ground painted before there was a finer
+    // answer carries none, and reading one back would make it look like a different painting.
+    repeat: trigger.repeat,
     open: trigger.open,
     reveals: trigger.reveals,
     say: trigger.say,
@@ -444,6 +447,7 @@ export class FunctionalPaintService {
       trigger.moment = block.spec.moment;
       trigger.targets = block.spec.targets;
       trigger.once = block.spec.once;
+      trigger.repeat = block.spec.repeat;
       trigger.open = block.spec.open;
       trigger.reveals = block.spec.reveals;
       trigger.say = block.spec.say;
