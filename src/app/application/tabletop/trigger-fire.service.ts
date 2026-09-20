@@ -1,9 +1,11 @@
 import { inject, Injectable } from '@angular/core';
+import { StatusAilmentService } from '@axe/application/character/status-ailment.service';
 import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { EffectCastService } from '@axe/application/effect/effect-cast.service';
 import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { GameCharacter } from '@axe/domain/character/game-character';
+import { newStatusAilment } from '@axe/domain/character/status-ailment';
 import { DataElement } from '@axe/domain/data/data-element';
 import { cellColRow, CellGrid, cellGridOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
@@ -33,6 +35,7 @@ export class TriggerFireService {
   private readonly effectLibrary = inject(EffectLibraryService);
   private readonly effectCast = inject(EffectCastService);
   private readonly chat = inject(ChatMessageService);
+  private readonly ailments = inject(StatusAilmentService);
   private readonly t = inject(TRANSLATE_FN);
 
   /** Where each piece was lifted from, so putting it down knows what it crossed to get here. */
@@ -124,6 +127,7 @@ export class TriggerFireService {
       // Given back rather than taken, a resource stops at the full it was written with.
       held.currentValue = taken < 0 && Number.isFinite(most) ? Math.min(most, next) : next;
     }
+    this.leave(trigger, piece);
     if (trigger.once) trigger.spent = true;
     // Ground that was to give itself away does so by being seen, which is the one change to it
     // the room is allowed to notice.
@@ -143,6 +147,22 @@ export class TriggerFireService {
       // Said or unsaid, the resource has already changed.
     }
     return firing;
+  }
+
+  /**
+   * Leaves the piece in whatever state the ground was told to leave it in.
+   *
+   * The state is looked up in the room's list so that a poison painted once is the same poison
+   * everywhere. A name the room has never heard of is put on all the same, as a plain mark: a
+   * master who types one in is naming a state rather than asking the room for one.
+   */
+  private leave(trigger: TableTrigger, piece: GameCharacter): void {
+    const named = trigger.ailment.trim();
+    if (named.length < 1) return;
+    const known = this.ailments.ailments().find((held) => held.name === named);
+    const held = known ?? newStatusAilment(named);
+    const rounds = Math.max(0, Math.floor(trigger.ailmentRounds));
+    this.ailments.plant(piece, rounds > 0 ? { ...held, rounds } : held);
   }
 
   /** Sets off whatever the ground was told to play, on the piece that set it off. */

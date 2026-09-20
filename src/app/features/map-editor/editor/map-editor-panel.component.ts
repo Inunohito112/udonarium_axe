@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { StatusAilmentService } from '@axe/application/character/status-ailment.service';
 import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
@@ -275,10 +276,20 @@ export class MapEditorPanelComponent implements AfterViewInit {
    * A trap takes from a resource by name, and a name nobody carries takes nothing at all. The
    * names on the table are the ones worth offering, so the field says what there is to hit.
    */
+  private readonly statusAilments = inject(StatusAilmentService);
+
   protected readonly resourceNames = computed<string[]>(() => {
     this.objectChange.collectionOf(GameCharacter.aliasName)();
     return resourceNamesOf(this.objectStore.getObjects<GameCharacter>(GameCharacter));
   });
+
+  /**
+   * The states the room keeps, offered to the brush that leaves a piece in one.
+   *
+   * A name the room has never heard of still works, so this is a list of what there is rather
+   * than a list of what is allowed.
+   */
+  protected readonly ailmentNames = computed<string[]>(() => this.statusAilments.ailments().map((held) => held.name));
 
   protected readonly terrainFaces = TERRAIN_FACE_KEYS;
 

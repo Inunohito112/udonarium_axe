@@ -46,6 +46,15 @@ export class TableTrigger extends ObjectNode {
    */
   @SyncVar() say: string = '';
   /**
+   * The state to leave a piece in, by the name the room keeps it under.
+   *
+   * A name the room has never heard of is put on all the same, as a plain mark with nothing
+   * written under it: a master who types one in is naming a state, not asking for one.
+   */
+  @SyncVar() ailment: string = '';
+  /** How long that state lasts. Nought leaves it however long the room says. */
+  @SyncVar() ailmentRounds: number = 0;
+  /**
    * Whether what it says is kept back from the room.
    *
    * A trip wire the party is not meant to notice still has to reach somebody, or nobody would

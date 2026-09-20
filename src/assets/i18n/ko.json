@@ -3300,7 +3300,10 @@
         "triggerSay": "표시할 문장",
         "triggerSayPlaceholder": "발밑의 돌이 가라앉았다",
         "triggerSayHint": "발동할 때 채팅에 나오는 한 줄. 비워 두면 밟았다고만 나옵니다",
-        "triggerSilent": "채팅을 숨김(GM만 읽을 수 있음)"
+        "triggerSilent": "채팅을 숨김(GM만 읽을 수 있음)",
+        "triggerAilment": "부여할 상태 이상",
+        "triggerAilmentPlaceholder": "독",
+        "triggerAilmentRounds": "상태 이상 라운드 수"
       },
       "stampCategories": {
         "door": "문",

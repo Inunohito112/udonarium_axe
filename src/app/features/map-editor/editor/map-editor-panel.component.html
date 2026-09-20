@@ -803,6 +803,38 @@
               </span>
             </label>
             <label class="flex items-center justify-between gap-2">
+              <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerAilment' | transloco }}</span>
+              <input
+                type="text"
+                class="bg-ui-input rounded-ui-sm w-28 px-1 py-0.5"
+                data-testid="trigger-ailment"
+                list="trigger-ailment-names"
+                [placeholder]="'feature.mapEditor.function.triggerAilmentPlaceholder' | transloco"
+                [ngModel]="state.functionSpec().trigger.ailment"
+                (ngModelChange)="setTriggerPaint({ ailment: $event })"
+              />
+              <datalist id="trigger-ailment-names">
+                @for (name of ailmentNames(); track name) {
+                  <option [value]="name"></option>
+                }
+              </datalist>
+            </label>
+            @if (state.functionSpec().trigger.ailment.length > 0) {
+              <label class="flex items-center justify-between gap-2">
+                <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerAilmentRounds' | transloco }}</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="99"
+                  step="1"
+                  class="bg-ui-input rounded-ui-sm w-16 px-1 py-0.5"
+                  data-testid="trigger-ailment-rounds"
+                  [ngModel]="state.functionSpec().trigger.ailmentRounds"
+                  (ngModelChange)="setTriggerPaint({ ailmentRounds: +$event })"
+                />
+              </label>
+            }
+            <label class="flex items-center justify-between gap-2">
               <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerSilent' | transloco }}</span>
               <input
                 type="checkbox"

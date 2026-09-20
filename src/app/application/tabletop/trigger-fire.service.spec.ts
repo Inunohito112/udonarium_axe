@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { StatusAilmentService } from '@axe/application/character/status-ailment.service';
 import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { EffectCastService } from '@axe/application/effect/effect-cast.service';
 import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
@@ -406,5 +407,100 @@ describe('TriggerFireService and what the room is told', () => {
     service.walked(hero, grid(), [at(4, 5), at(5, 5)]);
 
     expect(Number(DataElement.findElementByReference(hero.rootDataElement!, 'ライフ')!.currentValue)).toBe(17);
+  });
+});
+
+describe('TriggerFireService and the state it leaves a piece in', () => {
+  let service: TriggerFireService;
+  let ailments: StatusAilmentService;
+  let table: GameTable;
+
+  const grid = () => cellGridOf(table.width, table.height, GRID, GridType.SQUARE);
+  const at = (col: number, row: number) => cellIndexOf(grid(), col, row);
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.initialize();
+    TestBed.inject(TableSelecter).viewTableIdentifier = table.identifier;
+    service = TestBed.inject(TriggerFireService);
+    ailments = TestBed.inject(StatusAilmentService);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+  });
+
+  function trapAt(col: number, row: number, overrides: Partial<TableTrigger> = {}): TableTrigger {
+    const trigger = new TableTrigger();
+    trigger.col = col;
+    trigger.row = row;
+    Object.assign(trigger, overrides);
+    trigger.initialize();
+    table.appendChild(trigger);
+    return trigger;
+  }
+
+  const walkOnto = (piece: GameCharacter) => service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+  const hero = () => GameCharacter.create('英雄', 1, '');
+  const buffOf = (piece: GameCharacter, name: string) => piece.buffs.find(name);
+
+  it('leaves a piece in no state at all where the ground names none', () => {
+    trapAt(5, 5);
+    const piece = hero();
+
+    walkOnto(piece);
+
+    expect(piece.buffs.find('毒')).toBeFalsy();
+  });
+
+  it('leaves a piece in the state the ground names', () => {
+    trapAt(5, 5, { ailment: '毒' });
+    const piece = hero();
+
+    walkOnto(piece);
+
+    expect(buffOf(piece, '毒')).toBeTruthy();
+  });
+
+  it('leaves it as the room keeps it, so one poison is every poison', () => {
+    ailments.save([{ name: '毒', color: 'red', icon: '☠', rounds: 4, timing: 'roundEnd', effect: '継続 2' }]);
+    trapAt(5, 5, { ailment: '毒' });
+    const piece = hero();
+
+    walkOnto(piece);
+
+    expect(Number(buffOf(piece, '毒')!.value)).toBe(4);
+  });
+
+  it('holds it as long as the ground says, over what the room keeps', () => {
+    ailments.save([{ name: '毒', color: '', icon: '', rounds: 4, timing: 'none', effect: '' }]);
+    trapAt(5, 5, { ailment: '毒', ailmentRounds: 9 });
+    const piece = hero();
+
+    walkOnto(piece);
+
+    expect(Number(buffOf(piece, '毒')!.value)).toBe(9);
+  });
+
+  it('leaves a piece in a state the room has never heard of, as a plain mark', () => {
+    trapAt(5, 5, { ailment: '呪い' });
+    const piece = hero();
+
+    walkOnto(piece);
+
+    expect(buffOf(piece, '呪い')).toBeTruthy();
+  });
+
+  it('leaves nothing on a piece the ground has nothing to say to', () => {
+    trapAt(5, 5, { ailment: '毒', targets: 'npc' });
+    const piece = hero();
+
+    walkOnto(piece);
+
+    expect(piece.buffs.find('毒')).toBeFalsy();
   });
 });

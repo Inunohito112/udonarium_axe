@@ -170,6 +170,10 @@ export interface TriggerPaintSpec {
   reveals: boolean;
   /** A line to write in the room as it goes off, in place of saying only that it did. */
   say: string;
+  /** The state to leave a piece in, by the name the room keeps it under. Empty leaves none. */
+  ailment: string;
+  /** How long that state lasts. Nought leaves it however long the room says. */
+  ailmentRounds: number;
   /** Whether what it says is kept back from the room, for the master to read alone. */
   silent: boolean;
   color: string;
@@ -286,6 +290,8 @@ export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
     open: false,
     reveals: false,
     say: '',
+    ailment: '',
+    ailmentRounds: 0,
     silent: false,
     color: DEFAULT_TRIGGER_COLOR,
     element: '',
@@ -425,6 +431,8 @@ export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
       open: flagIn(trigger, 'open', fallback.trigger.open),
       reveals: flagIn(trigger, 'reveals', fallback.trigger.reveals),
       say: textIn(trigger, 'say', fallback.trigger.say),
+      ailment: textIn(trigger, 'ailment', fallback.trigger.ailment),
+      ailmentRounds: countIn(trigger, 'ailmentRounds', fallback.trigger.ailmentRounds, 0, 999),
       silent: flagIn(trigger, 'silent', fallback.trigger.silent),
       color: textIn(trigger, 'color', fallback.trigger.color),
       element: textIn(trigger, 'element', fallback.trigger.element),
