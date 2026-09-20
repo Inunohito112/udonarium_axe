@@ -174,6 +174,10 @@ export interface TriggerPaintSpec {
   ailment: string;
   /** How long that state lasts. Nought leaves it however long the room says. */
   ailmentRounds: number;
+  /** The roll the ground asks whoever walks into it for. Empty asks for none. */
+  check: string;
+  /** What that roll has to reach. Empty asks for the roll without naming a number. */
+  checkTarget: string;
   /** Whether what it says is kept back from the room, for the master to read alone. */
   silent: boolean;
   color: string;
@@ -292,6 +296,8 @@ export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
     say: '',
     ailment: '',
     ailmentRounds: 0,
+    check: '',
+    checkTarget: '',
     silent: false,
     color: DEFAULT_TRIGGER_COLOR,
     element: '',
@@ -433,6 +439,8 @@ export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
       say: textIn(trigger, 'say', fallback.trigger.say),
       ailment: textIn(trigger, 'ailment', fallback.trigger.ailment),
       ailmentRounds: countIn(trigger, 'ailmentRounds', fallback.trigger.ailmentRounds, 0, 999),
+      check: textIn(trigger, 'check', fallback.trigger.check),
+      checkTarget: textIn(trigger, 'checkTarget', fallback.trigger.checkTarget),
       silent: flagIn(trigger, 'silent', fallback.trigger.silent),
       color: textIn(trigger, 'color', fallback.trigger.color),
       element: textIn(trigger, 'element', fallback.trigger.element),

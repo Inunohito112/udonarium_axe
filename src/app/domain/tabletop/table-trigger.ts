@@ -55,6 +55,16 @@ export class TableTrigger extends ObjectNode {
   /** How long that state lasts. Nought leaves it however long the room says. */
   @SyncVar() ailmentRounds: number = 0;
   /**
+   * The roll the ground asks of whoever walks into it, such as a save or a resistance.
+   *
+   * Asked for rather than rolled. Which dice a table throws and what counts as making it are
+   * the game's business, not the ground's, and a room that was told what it rolled would have
+   * to be told in one game's terms.
+   */
+  @SyncVar() check: string = '';
+  /** What that roll has to reach. Empty asks for the roll without naming a number. */
+  @SyncVar() checkTarget: string = '';
+  /**
    * Whether what it says is kept back from the room.
    *
    * A trip wire the party is not meant to notice still has to reach somebody, or nobody would

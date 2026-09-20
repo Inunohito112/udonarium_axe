@@ -2326,7 +2326,9 @@
         "gave": "gained",
         "tookFrom": "[{{trigger}}] {{piece}} {{verb}} {{amount}} {{element}}",
         "sprang": "[{{trigger}}] {{piece}} stepped on it",
-        "said": "[{{trigger}}] {{say}}"
+        "said": "[{{trigger}}] {{say}}",
+        "asks": "[{{trigger}}] {{piece}} rolls {{check}}",
+        "asksFor": "[{{trigger}}] {{piece}} rolls {{check}} against {{target}}"
       }
     },
     "roomSettings": {
@@ -3303,7 +3305,11 @@
         "triggerSilent": "Keep the line back (only the master reads it)",
         "triggerAilment": "State to leave it in",
         "triggerAilmentPlaceholder": "Poisoned",
-        "triggerAilmentRounds": "Rounds it lasts"
+        "triggerAilmentRounds": "Rounds it lasts",
+        "triggerCheck": "Roll to ask for",
+        "triggerCheckPlaceholder": "Dexterity",
+        "triggerCheckTarget": "Target",
+        "triggerCheckHint": "A line asking for the roll is written in the room. Whoever walked in throws it, and the amount does not change with the answer"
       },
       "stampCategories": {
         "door": "Doors",

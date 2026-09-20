@@ -504,3 +504,78 @@ describe('TriggerFireService and the state it leaves a piece in', () => {
     expect(piece.buffs.find('毒')).toBeFalsy();
   });
 });
+
+describe('TriggerFireService and the roll it asks for', () => {
+  let service: TriggerFireService;
+  let table: GameTable;
+  let chat: ChatMessageService;
+
+  const grid = () => cellGridOf(table.width, table.height, GRID, GridType.SQUARE);
+  const at = (col: number, row: number) => cellIndexOf(grid(), col, row);
+  const spell: TranslateFn = (key, params) => [key, ...Object.values(params ?? {}).map((held) => `${held}`)].join('|');
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS, { provide: TRANSLATE_FN, useValue: spell }] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.initialize();
+    TestBed.inject(TableSelecter).viewTableIdentifier = table.identifier;
+    service = TestBed.inject(TriggerFireService);
+    chat = TestBed.inject(ChatMessageService);
+    vi.spyOn(chat, 'sendSystemMessageToMainTab').mockReturnValue(null!);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+    vi.restoreAllMocks();
+  });
+
+  function trapAt(overrides: Partial<TableTrigger>): void {
+    const trigger = new TableTrigger();
+    trigger.col = 5;
+    trigger.row = 5;
+    Object.assign(trigger, overrides);
+    trigger.initialize();
+    table.appendChild(trigger);
+  }
+
+  const spoken = () => vi.mocked(chat.sendSystemMessageToMainTab).mock.calls.map((call) => call[0]);
+  const walkOn = () => service.walked(GameCharacter.create('英雄', 1, ''), grid(), [at(4, 5), at(5, 5)]);
+
+  it('asks for nothing where the ground wants no roll', () => {
+    trapAt({});
+
+    walkOn();
+
+    expect(spoken().some((line) => line.includes('trigger.asks'))).toBe(false);
+  });
+
+  it('asks for the roll the ground wants, with the number it has to reach', () => {
+    trapAt({ check: '敏捷', checkTarget: '15' });
+
+    walkOn();
+
+    const asked = spoken().find((line) => line.includes('trigger.asksFor'))!;
+    expect(asked).toContain('敏捷');
+    expect(asked).toContain('15');
+  });
+
+  it('asks for the roll without a number where the ground names none', () => {
+    trapAt({ check: '生命抵抗' });
+
+    walkOn();
+
+    expect(spoken().some((line) => line.includes('trigger.asks|'))).toBe(true);
+    expect(spoken().some((line) => line.includes('trigger.asksFor'))).toBe(false);
+  });
+
+  it('asks before it says what was taken, so the table reads the roll first', () => {
+    trapAt({ check: '敏捷', checkTarget: '15', element: 'ライフ', amount: '3' });
+
+    walkOn();
+
+    expect(spoken()[0]).toContain('trigger.asksFor');
+  });
+});

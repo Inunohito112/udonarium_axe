@@ -2326,7 +2326,9 @@
         "gave": "回復した",
         "tookFrom": "【{{trigger}}】{{piece}} は {{element}} を {{amount}} {{verb}}",
         "sprang": "【{{trigger}}】{{piece}} が踏んだ",
-        "said": "【{{trigger}}】{{say}}"
+        "said": "【{{trigger}}】{{say}}",
+        "asks": "【{{trigger}}】{{piece}} は {{check}} で判定",
+        "asksFor": "【{{trigger}}】{{piece}} は {{check}} で {{target}} 以上"
       }
     },
     "roomSettings": {
@@ -3303,7 +3305,11 @@
         "triggerSilent": "チャットを伏せる（GM だけが読める）",
         "triggerAilment": "与える状態異常",
         "triggerAilmentPlaceholder": "毒",
-        "triggerAilmentRounds": "状態異常のラウンド数"
+        "triggerAilmentRounds": "状態異常のラウンド数",
+        "triggerCheck": "求める判定",
+        "triggerCheckPlaceholder": "敏捷",
+        "triggerCheckTarget": "目標値",
+        "triggerCheckHint": "チャットに判定を促す行が出ます。振るのは本人で、成否で量は変わりません"
       },
       "stampCategories": {
         "door": "扉",

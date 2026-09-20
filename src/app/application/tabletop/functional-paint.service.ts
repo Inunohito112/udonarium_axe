@@ -300,6 +300,8 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
     say: trigger.say,
     ailment: trigger.ailment,
     ailmentRounds: trigger.ailmentRounds,
+    check: trigger.check,
+    checkTarget: trigger.checkTarget,
     silent: trigger.silent,
     color: trigger.color,
     element: trigger.element,
@@ -442,6 +444,8 @@ export class FunctionalPaintService {
       trigger.say = block.spec.say;
       trigger.ailment = block.spec.ailment;
       trigger.ailmentRounds = block.spec.ailmentRounds;
+      trigger.check = block.spec.check;
+      trigger.checkTarget = block.spec.checkTarget;
       trigger.silent = block.spec.silent;
       trigger.color = block.spec.color;
       trigger.element = block.spec.element;

@@ -803,6 +803,32 @@
               </span>
             </label>
             <label class="flex items-center justify-between gap-2">
+              <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerCheck' | transloco }}</span>
+              <input
+                type="text"
+                class="bg-ui-input rounded-ui-sm w-28 px-1 py-0.5"
+                data-testid="trigger-check"
+                [placeholder]="'feature.mapEditor.function.triggerCheckPlaceholder' | transloco"
+                [ngModel]="state.functionSpec().trigger.check"
+                (ngModelChange)="setTriggerPaint({ check: $event })"
+              />
+            </label>
+            @if (state.functionSpec().trigger.check.length > 0) {
+              <label class="flex items-center justify-between gap-2">
+                <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerCheckTarget' | transloco }}</span>
+                <input
+                  type="text"
+                  class="bg-ui-input rounded-ui-sm w-16 px-1 py-0.5"
+                  data-testid="trigger-check-target"
+                  [ngModel]="state.functionSpec().trigger.checkTarget"
+                  (ngModelChange)="setTriggerPaint({ checkTarget: $event })"
+                />
+              </label>
+              <span class="text-ui-dim text-[10px] leading-snug">
+                {{ 'feature.mapEditor.function.triggerCheckHint' | transloco }}
+              </span>
+            }
+            <label class="flex items-center justify-between gap-2">
               <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerAilment' | transloco }}</span>
               <input
                 type="text"

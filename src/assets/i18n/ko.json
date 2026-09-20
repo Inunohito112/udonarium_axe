@@ -2326,7 +2326,9 @@
         "gave": "회복했다",
         "tookFrom": "[{{trigger}}] {{piece}}은(는) {{element}}을(를) {{amount}} {{verb}}",
         "sprang": "[{{trigger}}] {{piece}}이(가) 밟았다",
-        "said": "【{{trigger}}】{{say}}"
+        "said": "【{{trigger}}】{{say}}",
+        "asks": "【{{trigger}}】{{piece}} 은(는) {{check}} 판정",
+        "asksFor": "【{{trigger}}】{{piece}} 은(는) {{check}}(으)로 {{target}} 이상"
       }
     },
     "roomSettings": {
@@ -3303,7 +3305,11 @@
         "triggerSilent": "채팅을 숨김(GM만 읽을 수 있음)",
         "triggerAilment": "부여할 상태 이상",
         "triggerAilmentPlaceholder": "독",
-        "triggerAilmentRounds": "상태 이상 라운드 수"
+        "triggerAilmentRounds": "상태 이상 라운드 수",
+        "triggerCheck": "요구할 판정",
+        "triggerCheckPlaceholder": "민첩",
+        "triggerCheckTarget": "목표치",
+        "triggerCheckHint": "채팅에 판정을 요구하는 줄이 나옵니다. 굴리는 것은 본인이며 성패로 양은 달라지지 않습니다"
       },
       "stampCategories": {
         "door": "문",

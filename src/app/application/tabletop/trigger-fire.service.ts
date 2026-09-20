@@ -194,6 +194,7 @@ export class TriggerFireService {
     const called = name.length > 0 ? name : this.t('feature.tabletop.trigger.unnamed');
     const said = trigger.say.trim();
     if (said.length > 0) this.tell(trigger, this.t('feature.tabletop.trigger.said', { trigger: called, say: said }));
+    this.ask(trigger, piece, called);
     if (firing.from.length > 0) {
       this.tell(
         trigger,
@@ -211,6 +212,21 @@ export class TriggerFireService {
     // would have no way of telling a trap that did nothing from ground that is not trapped.
     if (said.length < 1)
       this.tell(trigger, this.t('feature.tabletop.trigger.sprang', { trigger: called, piece: piece.name }));
+  }
+
+  /**
+   * Asks whoever walked in for the roll the ground wants of them.
+   *
+   * Asked for rather than rolled. Which dice a table throws, and what counts as making it, are
+   * the game's business: a piece of ground that rolled for itself would have to know one game's
+   * terms, and a room playing another would be handed an answer in the wrong language.
+   */
+  private ask(trigger: TableTrigger, piece: GameCharacter, called: string): void {
+    const asked = trigger.check.trim();
+    if (asked.length < 1) return;
+    const target = trigger.checkTarget.trim();
+    const key = target.length > 0 ? 'feature.tabletop.trigger.asksFor' : 'feature.tabletop.trigger.asks';
+    this.tell(trigger, this.t(key, { trigger: called, piece: piece.name, check: asked, target }));
   }
 
   /**
