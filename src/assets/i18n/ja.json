@@ -3309,7 +3309,10 @@
         "triggerCheck": "求める判定",
         "triggerCheckPlaceholder": "敏捷",
         "triggerCheckTarget": "目標値",
-        "triggerCheckHint": "チャットに判定を促す行が出ます。振るのは本人で、成否で量は変わりません"
+        "triggerCheckHint": "チャットに判定を促す行が出ます。振るのは本人で、成否で量は変わりません",
+        "triggerSound": "効果音",
+        "triggerCutIn": "カットイン",
+        "triggerMediaNone": "鳴らさない"
       },
       "stampCategories": {
         "door": "扉",

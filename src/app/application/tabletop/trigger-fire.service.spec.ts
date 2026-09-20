@@ -4,10 +4,13 @@ import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { EffectCastService } from '@axe/application/effect/effect-cast.service';
 import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
 import { TRANSLATE_FN, TranslateFn } from '@axe/application/i18n/translate.token';
+import { CutInService } from '@axe/application/media/cut-in.service';
 import { TriggerFireService } from '@axe/application/tabletop/trigger-fire.service';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { DataElement, DataElementType } from '@axe/domain/data/data-element';
+import { CutIn } from '@axe/domain/media/cut-in';
+import { SoundEffect } from '@axe/domain/media/sound-effect';
 import { cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
@@ -577,5 +580,97 @@ describe('TriggerFireService and the roll it asks for', () => {
     walkOn();
 
     expect(spoken()[0]).toContain('trigger.asksFor');
+  });
+});
+
+describe('TriggerFireService and what is heard and seen', () => {
+  let service: TriggerFireService;
+  let cutIns: CutInService;
+  let table: GameTable;
+
+  const grid = () => cellGridOf(table.width, table.height, GRID, GridType.SQUARE);
+  const at = (col: number, row: number) => cellIndexOf(grid(), col, row);
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.initialize();
+    TestBed.inject(TableSelecter).viewTableIdentifier = table.identifier;
+    service = TestBed.inject(TriggerFireService);
+    cutIns = TestBed.inject(CutInService);
+    vi.spyOn(cutIns, 'launch').mockReturnValue(true);
+    vi.spyOn(SoundEffect, 'play').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+    vi.restoreAllMocks();
+  });
+
+  function trapAt(overrides: Partial<TableTrigger>): void {
+    const trigger = new TableTrigger();
+    trigger.col = 5;
+    trigger.row = 5;
+    Object.assign(trigger, overrides);
+    trigger.initialize();
+    table.appendChild(trigger);
+  }
+
+  function cutInNamed(name: string): CutIn {
+    const cutIn = new CutIn();
+    cutIn.name = name;
+    cutIn.initialize();
+    return cutIn;
+  }
+
+  const walkOn = () => service.walked(GameCharacter.create('英雄', 1, ''), grid(), [at(4, 5), at(5, 5)]);
+
+  it('makes no sound and shows nothing where the ground names neither', () => {
+    trapAt({});
+
+    walkOn();
+
+    expect(SoundEffect.play).not.toHaveBeenCalled();
+    expect(cutIns.launch).not.toHaveBeenCalled();
+  });
+
+  it('plays the cut-in the ground names', () => {
+    const shown = cutInNamed('落とし穴');
+    trapAt({ cutIn: '落とし穴' });
+
+    walkOn();
+
+    expect(cutIns.launch).toHaveBeenCalledWith(shown);
+  });
+
+  it('plays nothing for a name the room answers to twice, since neither is meant', () => {
+    cutInNamed('罠');
+    cutInNamed('罠');
+    trapAt({ cutIn: '罠' });
+
+    walkOn();
+
+    expect(cutIns.launch).not.toHaveBeenCalled();
+  });
+
+  it('plays nothing for a name the room does not answer to at all', () => {
+    trapAt({ cutIn: '無い' });
+
+    walkOn();
+
+    expect(cutIns.launch).not.toHaveBeenCalled();
+  });
+
+  it('shows the cut-in even where the sound is one the room has not got', () => {
+    cutInNamed('落とし穴');
+    trapAt({ sound: '無い', cutIn: '落とし穴' });
+
+    walkOn();
+
+    expect(SoundEffect.play).not.toHaveBeenCalled();
+    expect(cutIns.launch).toHaveBeenCalled();
   });
 });

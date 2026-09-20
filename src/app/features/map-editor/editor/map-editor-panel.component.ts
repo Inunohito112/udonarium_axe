@@ -27,6 +27,7 @@ import { PanelService } from '@axe/application/ui/panel.service';
 import { transientSignal } from '@axe/application/ui/transient-signal';
 import { ViewportService } from '@axe/application/ui/viewport.service';
 import { isTypingTarget } from '@axe/core/input/typing-target';
+import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { ImageFile } from '@axe/core/storage/image-file';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
@@ -35,6 +36,7 @@ import { PERF_MAP_EDITOR_DRAW, perfCounters } from '@axe/core/util/perf-counters
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { resourceNamesOf } from '@axe/domain/character/resource-catalog';
 import { isBuiltinMaterial } from '@axe/domain/media/builtin-materials';
+import { CutIn } from '@axe/domain/media/cut-in';
 import { ImageTag } from '@axe/domain/media/image-tag';
 import {
   isTextureId,
@@ -277,6 +279,7 @@ export class MapEditorPanelComponent implements AfterViewInit {
    * names on the table are the ones worth offering, so the field says what there is to hit.
    */
   private readonly statusAilments = inject(StatusAilmentService);
+  private readonly audioStorage = inject(AudioStorage);
 
   protected readonly resourceNames = computed<string[]>(() => {
     this.objectChange.collectionOf(GameCharacter.aliasName)();
@@ -290,6 +293,22 @@ export class MapEditorPanelComponent implements AfterViewInit {
    * than a list of what is allowed.
    */
   protected readonly ailmentNames = computed<string[]>(() => this.statusAilments.ailments().map((held) => held.name));
+
+  /**
+   * The sounds and cut-ins the room has, offered by name to the ground that plays one.
+   *
+   * Only a name that matches one and no other is any use, so a name two things answer to is
+   * left off: the ground would have no way of telling which was meant.
+   */
+  protected readonly soundNames = computed<string[]>(() => {
+    this.objectChange.fileVersion();
+    return onlyOnce(this.audioStorage.audios.map((held) => held.name.trim()));
+  });
+
+  protected readonly cutInNames = computed<string[]>(() => {
+    this.objectChange.collectionOf(CutIn.aliasName)();
+    return onlyOnce(this.objectStore.getObjects<CutIn>(CutIn).map((held) => held.name.trim()));
+  });
 
   protected readonly terrainFaces = TERRAIN_FACE_KEYS;
 
@@ -1721,4 +1740,11 @@ export class MapEditorPanelComponent implements AfterViewInit {
   protected zoomPercent(): number {
     return Math.round(this.state.zoom() * 100);
   }
+}
+
+/** The names that answer for one thing only, since a name two things share names neither. */
+function onlyOnce(names: readonly string[]): string[] {
+  const seen = new Map<string, number>();
+  for (const name of names) seen.set(name, (seen.get(name) ?? 0) + 1);
+  return [...seen.entries()].filter(([name, count]) => name.length > 0 && count === 1).map(([name]) => name);
 }

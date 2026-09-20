@@ -307,6 +307,8 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
     element: trigger.element,
     amount: trigger.amount,
     effect: trigger.effect,
+    sound: trigger.sound,
+    cutIn: trigger.cutIn,
   };
 }
 
@@ -451,6 +453,8 @@ export class FunctionalPaintService {
       trigger.element = block.spec.element;
       trigger.amount = block.spec.amount;
       trigger.effect = block.spec.effect;
+      trigger.sound = block.spec.sound;
+      trigger.cutIn = block.spec.cutIn;
       trigger.initialize();
       table.appendChild(trigger);
     }

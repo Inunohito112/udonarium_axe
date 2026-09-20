@@ -3309,7 +3309,10 @@
         "triggerCheck": "Roll to ask for",
         "triggerCheckPlaceholder": "Dexterity",
         "triggerCheckTarget": "Target",
-        "triggerCheckHint": "A line asking for the roll is written in the room. Whoever walked in throws it, and the amount does not change with the answer"
+        "triggerCheckHint": "A line asking for the roll is written in the room. Whoever walked in throws it, and the amount does not change with the answer",
+        "triggerSound": "Sound",
+        "triggerCutIn": "Cut-in",
+        "triggerMediaNone": "None"
       },
       "stampCategories": {
         "door": "Doors",

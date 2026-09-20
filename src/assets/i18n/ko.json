@@ -3309,7 +3309,10 @@
         "triggerCheck": "요구할 판정",
         "triggerCheckPlaceholder": "민첩",
         "triggerCheckTarget": "목표치",
-        "triggerCheckHint": "채팅에 판정을 요구하는 줄이 나옵니다. 굴리는 것은 본인이며 성패로 양은 달라지지 않습니다"
+        "triggerCheckHint": "채팅에 판정을 요구하는 줄이 나옵니다. 굴리는 것은 본인이며 성패로 양은 달라지지 않습니다",
+        "triggerSound": "효과음",
+        "triggerCutIn": "컷인",
+        "triggerMediaNone": "재생 안 함"
       },
       "stampCategories": {
         "door": "문",

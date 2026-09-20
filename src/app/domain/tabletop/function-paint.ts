@@ -186,6 +186,10 @@ export interface TriggerPaintSpec {
   amount: string;
   /** The effect to play on whoever set it off, by name. Empty plays nothing. */
   effect: string;
+  /** The sound to make as it goes off, by name. Empty makes none. */
+  sound: string;
+  /** The cut-in to play as it goes off, by name. Empty plays none. */
+  cutIn: string;
 }
 
 /**
@@ -303,6 +307,8 @@ export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
     element: '',
     amount: '',
     effect: '',
+    sound: '',
+    cutIn: '',
   },
 };
 
@@ -446,6 +452,8 @@ export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
       element: textIn(trigger, 'element', fallback.trigger.element),
       amount: textIn(trigger, 'amount', fallback.trigger.amount),
       effect: textIn(trigger, 'effect', fallback.trigger.effect),
+      sound: textIn(trigger, 'sound', fallback.trigger.sound),
+      cutIn: textIn(trigger, 'cutIn', fallback.trigger.cutIn),
     },
   };
 }

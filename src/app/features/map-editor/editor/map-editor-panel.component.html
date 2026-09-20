@@ -905,6 +905,36 @@
               </select>
             </label>
             <label class="flex items-center justify-between gap-2">
+              <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerSound' | transloco }}</span>
+              <select
+                class="bg-ui-input rounded-ui-sm w-28 px-1 py-0.5"
+                data-testid="trigger-sound"
+                [ngModel]="state.functionSpec().trigger.sound"
+                (ngModelChange)="setTriggerPaint({ sound: $event })"
+                name="triggerSound"
+              >
+                <option value="">{{ 'feature.mapEditor.function.triggerMediaNone' | transloco }}</option>
+                @for (name of soundNames(); track name) {
+                  <option [value]="name">{{ name }}</option>
+                }
+              </select>
+            </label>
+            <label class="flex items-center justify-between gap-2">
+              <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerCutIn' | transloco }}</span>
+              <select
+                class="bg-ui-input rounded-ui-sm w-28 px-1 py-0.5"
+                data-testid="trigger-cut-in"
+                [ngModel]="state.functionSpec().trigger.cutIn"
+                (ngModelChange)="setTriggerPaint({ cutIn: $event })"
+                name="triggerCutIn"
+              >
+                <option value="">{{ 'feature.mapEditor.function.triggerMediaNone' | transloco }}</option>
+                @for (name of cutInNames(); track name) {
+                  <option [value]="name">{{ name }}</option>
+                }
+              </select>
+            </label>
+            <label class="flex items-center justify-between gap-2">
               <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerColor' | transloco }}</span>
               <input
                 type="color"

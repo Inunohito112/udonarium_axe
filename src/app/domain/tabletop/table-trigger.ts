@@ -77,6 +77,16 @@ export class TableTrigger extends ObjectNode {
   @SyncVar() amount: string = '';
   /** The effect played on whoever sets it off, by name. Empty plays nothing. */
   @SyncVar() effect: string = '';
+  /**
+   * The sound it makes as it goes off, by the name the room's audio goes under.
+   *
+   * By name rather than by the identifier behind it, the way the effect is named: a map carried
+   * into another room holds identifiers that mean nothing there, and a name that matches one
+   * piece of audio and no other still finds it.
+   */
+  @SyncVar() sound: string = '';
+  /** The cut-in it plays as it goes off, by name. Empty plays none. */
+  @SyncVar() cutIn: string = '';
   /** Whether it has already gone off, which only ground that goes off once ever holds. */
   @SyncVar() spent: boolean = false;
   /**
