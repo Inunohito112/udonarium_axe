@@ -450,7 +450,13 @@ export class MoveRangeService {
     const painted = moveBlockMapOn(table)?.read(grid);
     if (painted) otherwise.or(painted);
 
-    const standing = this.objectStore.getObjects<GameCharacter>(GameCharacter);
+    // Only the pieces the person moving can see stand in the way. A reach with a bite taken out
+    // of it where nobody is standing tells the table there is something in the dark there, and
+    // the bite now says which side it is on as well, since a reach goes through one's own side
+    // and round the other.
+    const standing = this.objectStore
+      .getObjects<GameCharacter>(GameCharacter)
+      .filter((piece) => piece.identifier === character.identifier || this.vision.isTokenVisible(piece));
     // The ground somebody else stands on is in the way of a reach as the table has it: shut to
     // the piece, dear to cross, or ground it walks over without being able to stop on.
     const passage = passageCells(grid, standing, character, (relation) => passageModeOf(rules, relation));
@@ -498,9 +504,9 @@ export class MoveRangeService {
   /**
    * The ground the enemies on the board hold against this piece.
    *
-   * Only the ones the person moving can see hold any: a range with a bite taken out of it
-   * where nobody is standing tells the table there is something in the dark there, which is
-   * the one thing the fog is for.
+   * Only the ones the person moving can see hold any, which is what it is handed: a range with
+   * a bite taken out of it where nobody is standing tells the table there is something in the
+   * dark there, which is the one thing the fog is for.
    *
    * Where the table holds a fight as one place rather than as pairs, the whole of the fight
    * this piece is in holds it, allies and all, and getting out of it costs what the two sides
@@ -510,11 +516,10 @@ export class MoveRangeService {
   private heldGroundAround(
     grid: CellGrid,
     mover: GameCharacter,
-    standing: readonly GameCharacter[],
+    seen: readonly GameCharacter[],
     rules: RoomRules
   ): HeldGround | null {
     const cutsCorners = allowsDiagonal(rules.diagonalMove);
-    const seen = standing.filter((piece) => piece.identifier === mover.identifier || this.vision.isTokenVisible(piece));
     const foes = seen.filter((piece) => isHostileTo(piece, mover));
     if (!rules.zocEngages) {
       const held = zoneOfControl(grid, foes, rules.zocRange, cutsCorners);

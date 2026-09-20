@@ -1043,6 +1043,16 @@ describe('MoveRangeService and the ground another piece stands on', () => {
     expect(reached(5, 4)).toBe(true);
   });
 
+  it('is not turned back by a piece nobody can see', () => {
+    vi.spyOn(TestBed.inject(VisionService), 'isTokenVisible').mockReturnValue(false);
+    table.otherPartyPassage = 'block';
+    pieceAt(6, 5, 1, 'goblins');
+    service.show(pieceAt(5, 5, 2, 'heroes'));
+
+    expect(reached(6, 5)).toBe(true);
+    expect(reached(7, 5)).toBe(true);
+  });
+
   it('reads a piece of a party it is in no party itself as one of the others', () => {
     table.otherPartyPassage = 'block';
     pieceAt(6, 5, 1, 'goblins');
