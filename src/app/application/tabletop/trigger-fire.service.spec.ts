@@ -16,6 +16,7 @@ import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
 import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger } from '@axe/domain/tabletop/table-trigger';
+import { TriggerMoment } from '@axe/domain/tabletop/trigger-event';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 import { vi } from 'vitest';
 
@@ -773,5 +774,106 @@ describe('TriggerFireService and the ground that carries a piece away', () => {
     service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
 
     expect(cellOf(piece)).toBe(at(2, 9));
+  });
+});
+
+describe('TriggerFireService and the ground a turn brings round', () => {
+  let service: TriggerFireService;
+  let table: GameTable;
+
+  const grid = () => cellGridOf(table.width, table.height, GRID, GridType.SQUARE);
+  const at = (col: number, row: number) => cellIndexOf(grid(), col, row);
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.initialize();
+    TestBed.inject(TableSelecter).viewTableIdentifier = table.identifier;
+    service = TestBed.inject(TriggerFireService);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+  });
+
+  function fireAt(col: number, row: number, moment: TriggerMoment): void {
+    const trigger = new TableTrigger();
+    trigger.col = col;
+    trigger.row = row;
+    trigger.moment = moment;
+    trigger.element = 'ライフ';
+    trigger.amount = '3';
+    trigger.initialize();
+    table.appendChild(trigger);
+  }
+
+  function heroAt(col: number, row: number, hp = 20): GameCharacter {
+    const piece = GameCharacter.create('英雄', 1, '');
+    piece.location = { name: 'table', x: col * GRID, y: row * GRID };
+    const resource = DataElement.create('ライフ', hp, { type: DataElementType.NUMBER_RESOURCE, currentValue: hp });
+    piece.detailDataElement!.appendChild(resource);
+    return piece;
+  }
+
+  const hpOf = (piece: GameCharacter) =>
+    Number(DataElement.findElementByReference(piece.rootDataElement!, 'ライフ')!.currentValue);
+
+  it('burns a piece standing in it as its turn opens', () => {
+    fireAt(5, 5, 'turnStart');
+    const piece = heroAt(5, 5);
+
+    service.standingOn(piece, 'turnStart');
+
+    expect(hpOf(piece)).toBe(17);
+  });
+
+  it('leaves a piece standing somewhere else alone', () => {
+    fireAt(5, 5, 'turnStart');
+    const piece = heroAt(2, 2);
+
+    service.standingOn(piece, 'turnStart');
+
+    expect(hpOf(piece)).toBe(20);
+  });
+
+  it('tells the opening of a turn from the closing of one', () => {
+    fireAt(5, 5, 'turnEnd');
+    const piece = heroAt(5, 5);
+
+    service.standingOn(piece, 'turnStart');
+
+    expect(hpOf(piece)).toBe(20);
+  });
+
+  it('leaves ground that answers to walking alone when a turn comes round', () => {
+    fireAt(5, 5, 'stop');
+    const piece = heroAt(5, 5);
+
+    service.standingOn(piece, 'turnStart');
+    service.standingOn(piece, 'turnEnd');
+
+    expect(hpOf(piece)).toBe(20);
+  });
+
+  it('leaves ground that answers to the round alone when a piece merely walks over it', () => {
+    fireAt(5, 5, 'turnStart');
+    const piece = heroAt(4, 5);
+
+    service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+
+    expect(hpOf(piece)).toBe(20);
+  });
+
+  it('burns a piece standing in it every turn, since standing is not crossing', () => {
+    fireAt(5, 5, 'turnStart');
+    const piece = heroAt(5, 5);
+
+    service.standingOn(piece, 'turnStart');
+    service.standingOn(piece, 'turnStart');
+
+    expect(hpOf(piece)).toBe(14);
   });
 });

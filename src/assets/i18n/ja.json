@@ -3316,7 +3316,9 @@
         "triggerWarps": "別のマスへ飛ばす",
         "triggerWarpCol": "飛び先の列",
         "triggerWarpRow": "飛び先の行",
-        "triggerWarpHint": "飛ぶのは、そのマスで移動が終わったときだけです。途中で踏んでも飛びません。飛んだ先の仕掛けはその移動では発動しません"
+        "triggerWarpHint": "飛ぶのは、そのマスで移動が終わったときだけです。途中で踏んでも飛びません。飛んだ先の仕掛けはその移動では発動しません",
+        "triggerMoment_turnStart": "手番の開始時（そのマスにいたら）",
+        "triggerMoment_turnEnd": "手番の終了時（そのマスにいたら）"
       },
       "stampCategories": {
         "door": "扉",

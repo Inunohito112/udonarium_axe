@@ -17,7 +17,7 @@ import { cellColRow, CellGrid, cellGridOf, cellIndexOf } from '@axe/domain/table
 import { pieceCellOf, pieceCornerOn } from '@axe/domain/tabletop/move/piece-on-grid';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger, triggersOn } from '@axe/domain/tabletop/table-trigger';
-import { rollTriggerAmount, triggerCatches } from '@axe/domain/tabletop/trigger-event';
+import { isTurnMoment, rollTriggerAmount, triggerCatches, TriggerMoment } from '@axe/domain/tabletop/trigger-event';
 
 /** One piece of ground going off, and what it came to. */
 export interface TriggerFiring {
@@ -112,6 +112,41 @@ export class TriggerFireService {
    * would land four explosions on the far side of a swamp the piece waded through.
    */
   stepped(piece: GameCharacter, grid: CellGrid, cell: number, ending: boolean): TriggerFiring[] {
+    return this.fire(piece, grid, cell, ending, (trigger) => {
+      // Ground that answers to the round is not ground a walk reaches: crossing a fire is not
+      // standing in one, and the round is what says a piece stood anywhere at all.
+      if (isTurnMoment(trigger.firesOn)) return false;
+      return trigger.firesOn !== 'stop' || ending;
+    });
+  }
+
+  /**
+   * Springs whatever the piece is standing on as a turn of theirs opens or closes.
+   *
+   * Ground that burns, chokes or heals is ground a piece stands in rather than ground it
+   * crosses, and no counting of steps says how long it stood there. The round says it: the
+   * piece that is up is the piece the ground has hold of.
+   *
+   * The round hands the moment in rather than being asked for it, so that nothing here has to
+   * know how a table counts its turns.
+   */
+  standingOn(piece: GameCharacter, moment: TriggerMoment): TriggerFiring[] {
+    const table = this.tableSelecter.viewTable;
+    if (!table || table.gridSize <= 0 || table.width <= 0 || table.height <= 0) return [];
+    const grid = cellGridOf(table.width, table.height, table.gridSize, table.gridType);
+    const cell = pieceCellOf(grid, piece, table.gridSize);
+    if (cell < 0) return [];
+    return this.fire(piece, grid, cell, true, (trigger) => trigger.firesOn === moment);
+  }
+
+  /** Every piece of ground over one cell that answers to `wants`, sprung in the order it is laid. */
+  private fire(
+    piece: GameCharacter,
+    grid: CellGrid,
+    cell: number,
+    ending: boolean,
+    wants: (trigger: TableTrigger) => boolean
+  ): TriggerFiring[] {
     const table = this.tableSelecter.viewTable;
     const { col, row } = cellColRow(grid, cell);
     const firings: TriggerFiring[] = [];
@@ -119,7 +154,7 @@ export class TriggerFireService {
       // Asked again each time: ground with one go in it is spent by the first cell of it.
       if (!trigger.isArmed) continue;
       if (!trigger.covers(col, row)) continue;
-      if (trigger.firesOn === 'stop' && !ending) continue;
+      if (!wants(trigger)) continue;
       if (!triggerCatches(trigger.catches, piece.isNpc)) continue;
       firings.push(this.spring(trigger, piece, ending));
     }

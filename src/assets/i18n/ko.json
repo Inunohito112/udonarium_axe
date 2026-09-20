@@ -3316,7 +3316,9 @@
         "triggerWarps": "다른 칸으로 보내기",
         "triggerWarpCol": "도착 열",
         "triggerWarpRow": "도착 행",
-        "triggerWarpHint": "그 칸에서 이동이 끝났을 때만 보냅니다. 지나가기만 하면 보내지 않습니다. 도착한 칸의 장치는 그 이동에서는 발동하지 않습니다"
+        "triggerWarpHint": "그 칸에서 이동이 끝났을 때만 보냅니다. 지나가기만 하면 보내지 않습니다. 도착한 칸의 장치는 그 이동에서는 발동하지 않습니다",
+        "triggerMoment_turnStart": "차례 시작 시(그 칸에 있으면)",
+        "triggerMoment_turnEnd": "차례 종료 시(그 칸에 있으면)"
       },
       "stampCategories": {
         "door": "문",

@@ -3316,7 +3316,9 @@
         "triggerWarps": "Carry it to another cell",
         "triggerWarpCol": "Column",
         "triggerWarpRow": "Row",
-        "triggerWarpHint": "Only a walk that ends here is carried away; one that merely passes over is not. Ground where it lands does not go off during that move"
+        "triggerWarpHint": "Only a walk that ends here is carried away; one that merely passes over is not. Ground where it lands does not go off during that move",
+        "triggerMoment_turnStart": "As its turn begins, if it stands here",
+        "triggerMoment_turnEnd": "As its turn ends, if it stands here"
       },
       "stampCategories": {
         "door": "Doors",
