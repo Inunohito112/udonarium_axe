@@ -24,11 +24,13 @@ import {
 import { isLevelWith, isWalkableStep, landingHeightsOn } from '@axe/domain/tabletop/move/landing-height';
 import { moveBlockMapOn } from '@axe/domain/tabletop/move/move-block-map';
 import { moveCellsOf } from '@axe/domain/tabletop/move/move-cells';
+import { moveCostCells } from '@axe/domain/tabletop/move/move-cost-cells';
 import { occupiedCells } from '@axe/domain/tabletop/move/occupied-cells';
 import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
 import { reachableCells, ReachOptions } from '@axe/domain/tabletop/move/reachable-cells';
 import { isHostileTo, zoneOfControl } from '@axe/domain/tabletop/move/zone-of-control';
 import { resolveRoomRules, RoomRules } from '@axe/domain/tabletop/room-rules';
+import { moveCostsOn, TableMoveCost } from '@axe/domain/tabletop/table-move-cost';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { surfaceOf } from '@axe/domain/tabletop/tabletop-object';
 import { Terrain } from '@axe/domain/tabletop/terrain';
@@ -257,7 +259,27 @@ export class MoveRangeService {
     return {};
   });
 
+  /** The stretches of ground on the table that cost more to cross than plain footing. */
+  private readonly dearGround = computed<readonly TableMoveCost[]>(
+    () => {
+      this.objectChange.collectionOf(TableMoveCost.aliasName)();
+      this.objectChange.versionOf(this.tableSelecter.identifier)();
+      const table = this.tableSelecter.viewTable;
+      if (!table) return [];
+      this.objectChange.versionOf(table.identifier)();
+      return moveCostsOn(table);
+    },
+    { equal: sameElements }
+  );
+
+  /** A fresh object whenever dear ground changes, which is what the priced board is kept against. */
+  private readonly dearToken = computed<object>(() => {
+    for (const area of this.dearGround()) this.objectChange.versionOf(area.identifier)();
+    return {};
+  });
+
   private raster: { token: object; gridKey: string; blocked: CellBits; leapt: CellBits } | null = null;
+  private prices: { token: object; gridKey: string; costs: Float64Array | null } | null = null;
   private heights: {
     token: object;
     gridKey: string;
@@ -279,6 +301,16 @@ export class MoveRangeService {
       };
     }
     return this.raster;
+  }
+
+  /** What each cell charges over a plain step, kept against the dear ground as it stands. */
+  private pricesFor(grid: CellGrid): Float64Array | null {
+    const token = this.dearToken();
+    const gridKey = gridKeyOf(grid);
+    if (this.prices?.token !== token || this.prices.gridKey !== gridKey) {
+      this.prices = { token, gridKey, costs: moveCostCells(grid, this.dearGround()) };
+    }
+    return this.prices.costs;
   }
 
   /** How high the ground stands in each cell, kept against the terrain as it stands. */
@@ -336,6 +368,7 @@ export class MoveRangeService {
     if (table) this.objectChange.versionOf(table.identifier)();
     this.standingPieces();
     this.terrainToken();
+    this.dearToken();
     // What tells a piece the reader cannot see from one they can, which shapes the ground held
     // against them.
     this.vision.scene();
@@ -415,6 +448,10 @@ export class MoveRangeService {
     // somebody stands on is in the way, and a reach has to go round it.
     if (!rules.piecesShareCells) otherwise.or(occupiedCells(grid, standing, character.identifier));
 
+    // What the ground itself charges, which is owed by whoever enters it whatever else is
+    // happening on the board.
+    const dear = reuse ? this.pricesFor(grid) : moveCostCells(grid, moveCostsOn(table));
+
     const mode = rules.zocMode;
     const ground = mode === 'none' ? null : this.heldGroundAround(grid, character, standing, rules);
     const held = ground?.held ?? null;
@@ -424,13 +461,14 @@ export class MoveRangeService {
     const extra = Math.max(0, Math.floor(rules.zocExtraCost));
     const fights = rules.breakOutMode === 'free' ? null : (ground?.fights ?? null);
     const flat = Math.max(0, Math.floor(rules.breakOutCost));
-    const charges = (held !== null && mode === 'cost') || fights !== null;
+    const charges = dear !== null || (held !== null && mode === 'cost') || fights !== null;
 
     const options: ReachOptions = {
       diagonals: rules.diagonalMove,
       costOf: charges
         ? (index, from) => {
-            const price = held && mode === 'cost' && held.get(index) ? 1 + extra : 1;
+            let price = 1 + (dear ? dear[index] : 0);
+            if (held && mode === 'cost' && held.get(index)) price += extra;
             if (!fights || !leavesFight(fights, from, index)) return price;
             return price + breakOutToll(rules.breakOutMode, fights.prices[from], flat);
           }

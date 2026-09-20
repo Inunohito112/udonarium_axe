@@ -10,6 +10,7 @@ import { Config } from '@axe/domain/peer/config';
 import { cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
 import { countCells } from '@axe/domain/tabletop/move/reachable-cells';
+import { TableMoveCost } from '@axe/domain/tabletop/table-move-cost';
 import { DoorStyle, Terrain, TerrainViewState } from '@axe/domain/tabletop/terrain';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -835,5 +836,115 @@ describe('MoveRangeService and the ground an enemy holds', () => {
       expect(ground[cellIndexOf(grid, 4, 4)]).toBe(0);
       expect(ground[cellIndexOf(grid, 8, 8)]).toBe(GRID);
     });
+  });
+});
+
+describe('MoveRangeService and ground that costs more to cross', () => {
+  let service: MoveRangeService;
+  let table: GameTable;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.initialize();
+    service = TestBed.inject(MoveRangeService);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+  });
+
+  function dearGround(col: number, row: number, width: number, height: number, extraCost: number): TableMoveCost {
+    const area = new TableMoveCost();
+    area.col = col;
+    area.row = row;
+    area.width = width;
+    area.height = height;
+    area.extraCost = extraCost;
+    area.initialize();
+    table.appendChild(area);
+    return area;
+  }
+
+  function pieceAt(col: number, row: number, walk: number): GameCharacter {
+    const character = GameCharacter.create('コマ', 1, '');
+    character.location = { name: 'table', x: col * GRID, y: row * GRID };
+    DataElement.findElementByReference(character.rootDataElement!, '移動')!.value = walk;
+    return character;
+  }
+
+  function reached(col: number, row: number): boolean {
+    const view = service.range()!;
+    return view.cells.get(cellIndexOf(view.grid, col, row));
+  }
+
+  it('walks as far as ever over a table nobody has painted', () => {
+    service.show(pieceAt(5, 5, 2));
+
+    expect(countCells(service.range()!.cells)).toBe(24);
+  });
+
+  it('stops short on the far side of a band that costs twice to cross', () => {
+    dearGround(6, 0, 1, 12, 1);
+    service.show(pieceAt(5, 5, 2));
+
+    expect(reached(6, 5)).toBe(true);
+    expect(reached(7, 5)).toBe(false);
+    expect(reached(3, 5)).toBe(true);
+  });
+
+  it('covers a quarter of the ground where every step of it costs twice', () => {
+    dearGround(0, 0, 12, 12, 1);
+    service.show(pieceAt(5, 5, 2));
+
+    expect(countCells(service.range()!.cells)).toBe(8);
+  });
+
+  it('charges the dearer of two stretches painted over one another', () => {
+    dearGround(6, 0, 1, 12, 1);
+    dearGround(6, 5, 1, 1, 2);
+    service.show(pieceAt(5, 5, 2));
+
+    expect(reached(6, 4)).toBe(true);
+    expect(reached(6, 5)).toBe(false);
+  });
+
+  it('adds what the ground costs to what an enemy holds against it', () => {
+    table.zocMode = 'cost';
+    table.zocExtraCost = 1;
+    dearGround(4, 0, 1, 12, 1);
+    const monster = pieceAt(5, 6, 1);
+    monster.isNpc = true;
+    service.show(pieceAt(2, 5, 3));
+
+    // Both cells of the band cost a step over the plain one. Only the second is held by the
+    // monster as well, and that one step over is what puts it out of reach.
+    expect(reached(4, 4)).toBe(true);
+    expect(reached(4, 5)).toBe(false);
+  });
+
+  it('reads the ground afresh once a stretch of it has been painted', () => {
+    const grid = cellGridOf(12, 12, GRID, GridType.SQUARE);
+    const beyond = cellIndexOf(grid, 7, 5);
+    const piece = pieceAt(5, 5, 2);
+    expect(service.shownReachOf(piece, false)!.cells.get(beyond)).toBe(true);
+
+    const area = dearGround(6, 0, 1, 12, 1);
+    TestBed.inject(ObjectChangeService).notifyChanged(area.identifier);
+
+    expect(service.shownReachOf(piece, false)!.cells.get(beyond)).toBe(false);
+  });
+
+  it('charges the ground of a board of hexes just as it does a board of squares', () => {
+    for (const type of [GridType.HEX_VERTICAL, GridType.HEX_HORIZONTAL]) {
+      table.gridType = type;
+      dearGround(0, 0, 12, 12, 1);
+      service.show(pieceAt(5, 5, 2));
+
+      expect(countCells(service.range()!.cells)).toBe(6);
+    }
   });
 });
