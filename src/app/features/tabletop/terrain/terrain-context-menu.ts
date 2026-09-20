@@ -48,10 +48,10 @@ export function buildTerrainContextMenu(
 /**
  * The terrain's right-click menu, both as a flat list and grouped for the radial menu.
  *
- * It covers altitude and shadow, lock, slope, walls, climbing, doors, texture tiling, shading,
- * sight and light, edit, copy, delete and creating an object. Entries for other pieces under the
- * pointer lead the list, and entries that move the terrain to another surface close it. A copy is
- * placed one cell down and to the right, unlocked.
+ * It covers altitude and shadow, lock, slope, walls, climbing, doors, turning the block to glass,
+ * texture tiling, shading, sight and light, edit, copy, delete and creating an object. Entries
+ * for other pieces under the pointer lead the list, and entries that move the terrain to another
+ * surface close it. A copy is placed one cell down and to the right, unlocked.
  */
 export function buildTerrainContextMenuModel(
   terrain: Terrain,
@@ -123,6 +123,23 @@ export function buildTerrainContextMenuModel(
         name: t('feature.tabletop.contextMenu.wallShow'),
         action: () => {
           terrain.mode = TerrainViewState.ALL;
+        },
+      };
+  // Glass is what a block with no picture on it is, so turning one to glass is taking the
+  // pictures off rather than a setting of its own. There is no way back from here without
+  // choosing pictures again, which is what the sheet is for.
+  const glassAction: ContextMenuAction = terrain.hasFaceImage
+    ? {
+        name: t('feature.tabletop.contextMenu.terrainToGlass'),
+        action: () => {
+          terrain.clearFaceImages();
+          SoundEffect.play(PresetSound.sweep);
+        },
+      }
+    : {
+        name: t('feature.tabletop.contextMenu.terrainDressGlass'),
+        action: () => {
+          onEdit(terrain);
         },
       };
   const climbAction: ContextMenuAction = {
@@ -281,7 +298,7 @@ export function buildTerrainContextMenuModel(
   };
 
   const shapeActions = [altitudeAction, slopeAction, wallAction, climbAction, ...doorToggleActions, doorStyleAction];
-  const appearanceActions = [tiledTextureAction, shadingAction, shadowAction, lightAction];
+  const appearanceActions = [glassAction, tiledTextureAction, shadingAction, shadowAction, lightAction];
   const moveCreateActions = [...surfaceEntries, createAction];
   const objectActions = [...overlapEntries, lockAction, editAction, copyAction, deleteAction];
   const actions: ContextMenuAction[] = [
@@ -295,6 +312,7 @@ export function buildTerrainContextMenuModel(
     climbAction,
     ...doorToggleActions,
     doorStyleAction,
+    glassAction,
     tiledTextureAction,
     shadingAction,
     shadowAction,

@@ -1927,6 +1927,8 @@
         "surfaceWestWall": "West wall",
         "createWithOptions": "Create a piece…",
         "tiledTextureOn": "Tile the texture",
+        "terrainToGlass": "Take the textures off and turn it to glass",
+        "terrainDressGlass": "Choose textures (stop being glass)",
         "tiledTextureOff": "Stretch the texture again",
         "doorOpen": "Open the door",
         "doorClose": "Close the door",

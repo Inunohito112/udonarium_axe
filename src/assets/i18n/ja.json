@@ -1927,6 +1927,8 @@
         "surfaceWestWall": "西壁",
         "createWithOptions": "コマを作る…",
         "tiledTextureOn": "テクスチャをタイル貼りにする",
+        "terrainToGlass": "テクスチャを外して透明にする",
+        "terrainDressGlass": "テクスチャを選ぶ（透明をやめる）",
         "tiledTextureOff": "テクスチャを引き伸ばしに戻す",
         "doorOpen": "扉を開く",
         "doorClose": "扉を閉じる",
