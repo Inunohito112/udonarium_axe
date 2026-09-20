@@ -3312,7 +3312,11 @@
         "triggerCheckHint": "채팅에 판정을 요구하는 줄이 나옵니다. 굴리는 것은 본인이며 성패로 양은 달라지지 않습니다",
         "triggerSound": "효과음",
         "triggerCutIn": "컷인",
-        "triggerMediaNone": "재생 안 함"
+        "triggerMediaNone": "재생 안 함",
+        "triggerWarps": "다른 칸으로 보내기",
+        "triggerWarpCol": "도착 열",
+        "triggerWarpRow": "도착 행",
+        "triggerWarpHint": "그 칸에서 이동이 끝났을 때만 보냅니다. 지나가기만 하면 보내지 않습니다. 도착한 칸의 장치는 그 이동에서는 발동하지 않습니다"
       },
       "stampCategories": {
         "door": "문",

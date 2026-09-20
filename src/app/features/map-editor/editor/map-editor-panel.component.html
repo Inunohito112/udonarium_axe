@@ -861,6 +861,45 @@
               </label>
             }
             <label class="flex items-center justify-between gap-2">
+              <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerWarps' | transloco }}</span>
+              <input
+                type="checkbox"
+                class="size-3.5 [accent-color:var(--ui-accent)]"
+                data-testid="trigger-warps"
+                [ngModel]="state.functionSpec().trigger.warps"
+                (ngModelChange)="setTriggerPaint({ warps: $event })"
+              />
+            </label>
+            @if (state.functionSpec().trigger.warps) {
+              <label class="flex items-center justify-between gap-2">
+                <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerWarpCol' | transloco }}</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="bg-ui-input rounded-ui-sm w-16 px-1 py-0.5"
+                  data-testid="trigger-warp-col"
+                  [ngModel]="state.functionSpec().trigger.warpCol"
+                  (ngModelChange)="setTriggerPaint({ warpCol: +$event })"
+                />
+              </label>
+              <label class="flex items-center justify-between gap-2">
+                <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerWarpRow' | transloco }}</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="bg-ui-input rounded-ui-sm w-16 px-1 py-0.5"
+                  data-testid="trigger-warp-row"
+                  [ngModel]="state.functionSpec().trigger.warpRow"
+                  (ngModelChange)="setTriggerPaint({ warpRow: +$event })"
+                />
+              </label>
+              <span class="text-ui-dim text-[10px] leading-snug">
+                {{ 'feature.mapEditor.function.triggerWarpHint' | transloco }}
+              </span>
+            }
+            <label class="flex items-center justify-between gap-2">
               <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerSilent' | transloco }}</span>
               <input
                 type="checkbox"

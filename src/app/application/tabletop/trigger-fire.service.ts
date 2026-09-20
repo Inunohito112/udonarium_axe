@@ -13,8 +13,8 @@ import { DataElement } from '@axe/domain/data/data-element';
 import { findByReference } from '@axe/domain/hotbar/hotbar-reference';
 import { CutIn } from '@axe/domain/media/cut-in';
 import { SoundEffect } from '@axe/domain/media/sound-effect';
-import { cellColRow, CellGrid, cellGridOf } from '@axe/domain/tabletop/fog/cell-grid';
-import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
+import { cellColRow, CellGrid, cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
+import { pieceCellOf, pieceCornerOn } from '@axe/domain/tabletop/move/piece-on-grid';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger, triggersOn } from '@axe/domain/tabletop/table-trigger';
 import { rollTriggerAmount, triggerCatches } from '@axe/domain/tabletop/trigger-event';
@@ -121,12 +121,12 @@ export class TriggerFireService {
       if (!trigger.covers(col, row)) continue;
       if (trigger.firesOn === 'stop' && !ending) continue;
       if (!triggerCatches(trigger.catches, piece.isNpc)) continue;
-      firings.push(this.spring(trigger, piece));
+      firings.push(this.spring(trigger, piece, ending));
     }
     return firings;
   }
 
-  private spring(trigger: TableTrigger, piece: GameCharacter): TriggerFiring {
+  private spring(trigger: TableTrigger, piece: GameCharacter, ending: boolean): TriggerFiring {
     const taken = rollTriggerAmount(trigger.amount);
     const held = this.resourceOf(piece, trigger.element);
     if (held) {
@@ -155,7 +155,34 @@ export class TriggerFireService {
     } catch {
       // Said or unsaid, the resource has already changed.
     }
+    // Last of all, so the room reads what happened before the piece is gone from the place it
+    // happened in.
+    if (ending) this.carry(trigger, piece);
     return firing;
+  }
+
+  /**
+   * Carries the piece away to the cell the ground names.
+   *
+   * Only ground a walk ends on carries anybody. A piece lifted off the board halfway along a
+   * way it was drawn would leave the rest of that way to be walked from somewhere it no longer
+   * is, and the walk would finish in a place nobody chose. It also settles what happens when
+   * one pitfall opens onto another: the walk is over, so the second is ground for another
+   * move to find.
+   */
+  private carry(trigger: TableTrigger, piece: GameCharacter): void {
+    if (!trigger.warps) return;
+    const table = this.tableSelecter.viewTable;
+    if (!table || table.gridSize <= 0 || table.width <= 0 || table.height <= 0) return;
+    const grid = cellGridOf(table.width, table.height, table.gridSize, table.gridType);
+    const to = cellIndexOf(grid, Math.round(trigger.warpCol), Math.round(trigger.warpRow));
+    // Ground pointing off the board carries nobody: a piece set down outside it would be a
+    // piece nothing on the table could reach.
+    if (to < 0) return;
+    if (pieceCellOf(grid, piece, table.gridSize) === to) return;
+    const corner = pieceCornerOn(grid, piece, table.gridSize, to);
+    piece.location = { name: piece.location.name, x: corner.x, y: corner.y };
+    piece.update();
   }
 
   /**

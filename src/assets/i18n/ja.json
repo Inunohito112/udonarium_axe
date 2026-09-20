@@ -3312,7 +3312,11 @@
         "triggerCheckHint": "チャットに判定を促す行が出ます。振るのは本人で、成否で量は変わりません",
         "triggerSound": "効果音",
         "triggerCutIn": "カットイン",
-        "triggerMediaNone": "鳴らさない"
+        "triggerMediaNone": "鳴らさない",
+        "triggerWarps": "別のマスへ飛ばす",
+        "triggerWarpCol": "飛び先の列",
+        "triggerWarpRow": "飛び先の行",
+        "triggerWarpHint": "飛ぶのは、そのマスで移動が終わったときだけです。途中で踏んでも飛びません。飛んだ先の仕掛けはその移動では発動しません"
       },
       "stampCategories": {
         "door": "扉",

@@ -3312,7 +3312,11 @@
         "triggerCheckHint": "A line asking for the roll is written in the room. Whoever walked in throws it, and the amount does not change with the answer",
         "triggerSound": "Sound",
         "triggerCutIn": "Cut-in",
-        "triggerMediaNone": "None"
+        "triggerMediaNone": "None",
+        "triggerWarps": "Carry it to another cell",
+        "triggerWarpCol": "Column",
+        "triggerWarpRow": "Row",
+        "triggerWarpHint": "Only a walk that ends here is carried away; one that merely passes over is not. Ground where it lands does not go off during that move"
       },
       "stampCategories": {
         "door": "Doors",

@@ -190,6 +190,11 @@ export interface TriggerPaintSpec {
   sound: string;
   /** The cut-in to play as it goes off, by name. Empty plays none. */
   cutIn: string;
+  /** Whether it carries whoever ends a walk on it away to another cell. */
+  warps: boolean;
+  /** The cell it carries them to, counted from the top left of the board. */
+  warpCol: number;
+  warpRow: number;
 }
 
 /**
@@ -309,6 +314,9 @@ export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
     effect: '',
     sound: '',
     cutIn: '',
+    warps: false,
+    warpCol: 0,
+    warpRow: 0,
   },
 };
 
@@ -454,6 +462,9 @@ export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
       effect: textIn(trigger, 'effect', fallback.trigger.effect),
       sound: textIn(trigger, 'sound', fallback.trigger.sound),
       cutIn: textIn(trigger, 'cutIn', fallback.trigger.cutIn),
+      warps: flagIn(trigger, 'warps', fallback.trigger.warps),
+      warpCol: countIn(trigger, 'warpCol', fallback.trigger.warpCol, 0, 999),
+      warpRow: countIn(trigger, 'warpRow', fallback.trigger.warpRow, 0, 999),
     },
   };
 }

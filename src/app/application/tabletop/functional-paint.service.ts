@@ -309,6 +309,9 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
     effect: trigger.effect,
     sound: trigger.sound,
     cutIn: trigger.cutIn,
+    warps: trigger.warps,
+    warpCol: trigger.warpCol,
+    warpRow: trigger.warpRow,
   };
 }
 
@@ -455,6 +458,9 @@ export class FunctionalPaintService {
       trigger.effect = block.spec.effect;
       trigger.sound = block.spec.sound;
       trigger.cutIn = block.spec.cutIn;
+      trigger.warps = block.spec.warps;
+      trigger.warpCol = block.spec.warpCol;
+      trigger.warpRow = block.spec.warpRow;
       trigger.initialize();
       table.appendChild(trigger);
     }

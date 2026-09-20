@@ -13,6 +13,7 @@ import { CutIn } from '@axe/domain/media/cut-in';
 import { SoundEffect } from '@axe/domain/media/sound-effect';
 import { cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
+import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger } from '@axe/domain/tabletop/table-trigger';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
@@ -672,5 +673,105 @@ describe('TriggerFireService and what is heard and seen', () => {
 
     expect(SoundEffect.play).not.toHaveBeenCalled();
     expect(cutIns.launch).toHaveBeenCalled();
+  });
+});
+
+describe('TriggerFireService and the ground that carries a piece away', () => {
+  let service: TriggerFireService;
+  let table: GameTable;
+
+  const grid = () => cellGridOf(table.width, table.height, GRID, GridType.SQUARE);
+  const at = (col: number, row: number) => cellIndexOf(grid(), col, row);
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.initialize();
+    TestBed.inject(TableSelecter).viewTableIdentifier = table.identifier;
+    service = TestBed.inject(TriggerFireService);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+  });
+
+  function pitAt(col: number, row: number, overrides: Partial<TableTrigger> = {}): TableTrigger {
+    const trigger = new TableTrigger();
+    trigger.col = col;
+    trigger.row = row;
+    trigger.warps = true;
+    trigger.warpCol = 1;
+    trigger.warpRow = 1;
+    Object.assign(trigger, overrides);
+    trigger.initialize();
+    table.appendChild(trigger);
+    return trigger;
+  }
+
+  function heroAt(col: number, row: number): GameCharacter {
+    const piece = GameCharacter.create('英雄', 1, '');
+    piece.location = { name: 'table', x: col * GRID, y: row * GRID };
+    return piece;
+  }
+
+  const cellOf = (piece: GameCharacter) => pieceCellOf(grid(), piece, GRID);
+
+  it('carries a piece whose walk ends on it', () => {
+    pitAt(5, 5);
+    const piece = heroAt(4, 5);
+
+    service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+
+    expect(cellOf(piece)).toBe(at(1, 1));
+  });
+
+  it('leaves a piece that only passes over it where the walk was going', () => {
+    pitAt(5, 5, { moment: 'enter' });
+    const piece = heroAt(4, 5);
+
+    service.walked(piece, grid(), [at(4, 5), at(5, 5), at(6, 5)]);
+
+    expect(cellOf(piece)).toBe(at(4, 5));
+  });
+
+  it('carries nobody where the ground was not told to', () => {
+    pitAt(5, 5, { warps: false });
+    const piece = heroAt(4, 5);
+
+    service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+
+    expect(cellOf(piece)).toBe(at(4, 5));
+  });
+
+  it('carries nobody off the edge of the board', () => {
+    pitAt(5, 5, { warpCol: 40, warpRow: 40 });
+    const piece = heroAt(4, 5);
+
+    service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+
+    expect(cellOf(piece)).toBe(at(4, 5));
+  });
+
+  it('does not set off the ground it lands on during that same walk', () => {
+    pitAt(5, 5, { warpCol: 8, warpRow: 8 });
+    const second = pitAt(8, 8, { warpCol: 1, warpRow: 1 });
+    const piece = heroAt(4, 5);
+
+    service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+
+    expect(cellOf(piece)).toBe(at(8, 8));
+    expect(second.warps).toBe(true);
+  });
+
+  it('carries a piece three cells across just as it carries one across the board', () => {
+    pitAt(5, 5, { warpCol: 2, warpRow: 9 });
+    const piece = heroAt(4, 5);
+
+    service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+
+    expect(cellOf(piece)).toBe(at(2, 9));
   });
 });

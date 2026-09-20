@@ -87,6 +87,17 @@ export class TableTrigger extends ObjectNode {
   @SyncVar() sound: string = '';
   /** The cut-in it plays as it goes off, by name. Empty plays none. */
   @SyncVar() cutIn: string = '';
+  /**
+   * Whether it carries whoever ends a walk on it away to another cell.
+   *
+   * Held apart from where it carries them to, since nought and nought is the top left corner
+   * of every board and would otherwise be indistinguishable from ground that carries nobody
+   * anywhere.
+   */
+  @SyncVar() warps: boolean = false;
+  /** The cell it carries them to, counted from the top left of the board. */
+  @SyncVar() warpCol: number = 0;
+  @SyncVar() warpRow: number = 0;
   /** Whether it has already gone off, which only ground that goes off once ever holds. */
   @SyncVar() spent: boolean = false;
   /**
