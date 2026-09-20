@@ -38,6 +38,21 @@ export class TableTrigger extends ObjectNode {
   /** Whether going off is what shows the ground to the room, a trap giving itself away. */
   @SyncVar() reveals: boolean = false;
   @SyncVar() color: string = DEFAULT_TRIGGER_COLOR;
+  /**
+   * A line to write in the room as it goes off, in place of saying only that it did.
+   *
+   * Ground that describes itself saves the master the telling: the sinking of a flagstone, the
+   * hiss of a dart. Empty leaves the room the plain notice it has always had.
+   */
+  @SyncVar() say: string = '';
+  /**
+   * Whether what it says is kept back from the room.
+   *
+   * A trip wire the party is not meant to notice still has to reach somebody, or nobody would
+   * know it had been crossed. The line goes out held back, which is the master's to read and
+   * the master's to open.
+   */
+  @SyncVar() silent: boolean = false;
   /** The name of what it takes from, and how much. A resource of the piece that walked in. */
   @SyncVar() element: string = '';
   @SyncVar() amount: string = '';

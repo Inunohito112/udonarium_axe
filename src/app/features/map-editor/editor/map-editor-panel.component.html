@@ -788,6 +788,30 @@
                 (ngModelChange)="setTriggerPaint({ once: $event })"
               />
             </label>
+            <label class="flex flex-col gap-1">
+              <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerSay' | transloco }}</span>
+              <input
+                type="text"
+                class="bg-ui-input rounded-ui-sm w-full px-1 py-0.5"
+                data-testid="trigger-say"
+                [placeholder]="'feature.mapEditor.function.triggerSayPlaceholder' | transloco"
+                [ngModel]="state.functionSpec().trigger.say"
+                (ngModelChange)="setTriggerPaint({ say: $event })"
+              />
+              <span class="text-ui-dim text-[10px] leading-snug">
+                {{ 'feature.mapEditor.function.triggerSayHint' | transloco }}
+              </span>
+            </label>
+            <label class="flex items-center justify-between gap-2">
+              <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerSilent' | transloco }}</span>
+              <input
+                type="checkbox"
+                class="size-3.5 [accent-color:var(--ui-accent)]"
+                data-testid="trigger-silent"
+                [ngModel]="state.functionSpec().trigger.silent"
+                (ngModelChange)="setTriggerPaint({ silent: $event })"
+              />
+            </label>
             <label class="flex items-center justify-between gap-2">
               <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerOpen' | transloco }}</span>
               <input

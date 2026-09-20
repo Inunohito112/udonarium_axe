@@ -163,21 +163,46 @@ export class TriggerFireService {
    * told has no way of knowing whether anything happened at all. What is said is what was
    * taken and from whom, never where the ground was: a trap that announces its own cell is a
    * trap the party has found.
+   *
+   * Ground given a line of its own says that instead of saying merely that it went off, and
+   * still says what it took on a line after it: the description is the master's telling, and
+   * what a piece lost is the table's reckoning.
    */
   private announce(firing: TriggerFiring, piece: GameCharacter): void {
-    const name = firing.trigger.name.trim();
+    const trigger = firing.trigger;
+    const name = trigger.name.trim();
     const called = name.length > 0 ? name : this.t('feature.tabletop.trigger.unnamed');
-    const text =
-      firing.from.length > 0
-        ? this.t('feature.tabletop.trigger.tookFrom', {
-            trigger: called,
-            piece: piece.name,
-            amount: Math.abs(firing.taken),
-            element: firing.from,
-            verb: this.t(firing.taken < 0 ? 'feature.tabletop.trigger.gave' : 'feature.tabletop.trigger.took'),
-          })
-        : this.t('feature.tabletop.trigger.sprang', { trigger: called, piece: piece.name });
-    this.chat.sendSystemMessageToMainTab(text);
+    const said = trigger.say.trim();
+    if (said.length > 0) this.tell(trigger, this.t('feature.tabletop.trigger.said', { trigger: called, say: said }));
+    if (firing.from.length > 0) {
+      this.tell(
+        trigger,
+        this.t('feature.tabletop.trigger.tookFrom', {
+          trigger: called,
+          piece: piece.name,
+          amount: Math.abs(firing.taken),
+          element: firing.from,
+          verb: this.t(firing.taken < 0 ? 'feature.tabletop.trigger.gave' : 'feature.tabletop.trigger.took'),
+        })
+      );
+      return;
+    }
+    // Ground that took nothing and described nothing still says it was walked into, or a table
+    // would have no way of telling a trap that did nothing from ground that is not trapped.
+    if (said.length < 1)
+      this.tell(trigger, this.t('feature.tabletop.trigger.sprang', { trigger: called, piece: piece.name }));
+  }
+
+  /**
+   * Writes one line for a piece of ground, held back from the room where the ground is quiet.
+   *
+   * A held-back line is sent whole and kept from the room by the view, so the master reads it
+   * and nobody else does. It is sent from nobody in particular on purpose: sent from the seat
+   * that moved, the very player who was not to notice would be the one who could read it.
+   */
+  private tell(trigger: TableTrigger, text: string): void {
+    if (trigger.silent) this.chat.sendSecretSystemMessageToMainTab(text);
+    else this.chat.sendSystemMessageToMainTab(text);
   }
 
   private resourceOf(piece: GameCharacter, name: string): DataElement | null {

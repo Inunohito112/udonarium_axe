@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { EffectCastService } from '@axe/application/effect/effect-cast.service';
 import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
+import { TRANSLATE_FN, TranslateFn } from '@axe/application/i18n/translate.token';
 import { TriggerFireService } from '@axe/application/tabletop/trigger-fire.service';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
@@ -294,5 +296,115 @@ describe('TriggerFireService', () => {
 
     expect(fired[0].from).toBe('');
     expect(hpOf(hero)).toBe(20);
+  });
+});
+
+describe('TriggerFireService and what the room is told', () => {
+  let service: TriggerFireService;
+  let table: GameTable;
+  let chat: ChatMessageService;
+
+  const grid = () => cellGridOf(table.width, table.height, GRID, GridType.SQUARE);
+  const at = (col: number, row: number) => cellIndexOf(grid(), col, row);
+
+  /** Says the key and the words put into it, so a line can be read without any translation. */
+  const spell: TranslateFn = (key, params) => [key, ...Object.values(params ?? {}).map((held) => `${held}`)].join('|');
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS, { provide: TRANSLATE_FN, useValue: spell }] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.initialize();
+    TestBed.inject(TableSelecter).viewTableIdentifier = table.identifier;
+    service = TestBed.inject(TriggerFireService);
+    chat = TestBed.inject(ChatMessageService);
+    vi.spyOn(chat, 'sendSystemMessageToMainTab').mockReturnValue(null!);
+    vi.spyOn(chat, 'sendSecretSystemMessageToMainTab').mockReturnValue(null!);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+    vi.restoreAllMocks();
+  });
+
+  function trapAt(col: number, row: number, overrides: Partial<TableTrigger> = {}): TableTrigger {
+    const trigger = new TableTrigger();
+    trigger.col = col;
+    trigger.row = row;
+    trigger.name = '落とし穴';
+    Object.assign(trigger, overrides);
+    trigger.initialize();
+    table.appendChild(trigger);
+    return trigger;
+  }
+
+  function heroWith(hp: number): GameCharacter {
+    const hero = GameCharacter.create('英雄', 1, '');
+    const resource = DataElement.create('ライフ', hp, { type: DataElementType.NUMBER_RESOURCE, currentValue: hp });
+    hero.detailDataElement!.appendChild(resource);
+    return hero;
+  }
+
+  const spoken = () => vi.mocked(chat.sendSystemMessageToMainTab).mock.calls.map((call) => call[0]);
+  const kept = () => vi.mocked(chat.sendSecretSystemMessageToMainTab).mock.calls.map((call) => call[0]);
+
+  it('says only that the ground was stepped on where it was given no line', () => {
+    trapAt(5, 5);
+
+    service.walked(heroWith(20), grid(), [at(4, 5), at(5, 5)]);
+
+    expect(spoken()).toHaveLength(1);
+    expect(spoken()[0]).toContain('trigger.sprang');
+  });
+
+  it('writes the line the ground was given in place of saying merely that it went off', () => {
+    trapAt(5, 5, { say: '足元の石が沈んだ' });
+
+    service.walked(heroWith(20), grid(), [at(4, 5), at(5, 5)]);
+
+    expect(spoken()).toHaveLength(1);
+    expect(spoken()[0]).toContain('足元の石が沈んだ');
+    expect(spoken()[0]).not.toContain('trigger.sprang');
+  });
+
+  it('writes what it took on a line after the one it was given', () => {
+    trapAt(5, 5, { say: '足元の石が沈んだ', element: 'ライフ', amount: '3' });
+
+    service.walked(heroWith(20), grid(), [at(4, 5), at(5, 5)]);
+
+    expect(spoken()).toHaveLength(2);
+    expect(spoken()[0]).toContain('足元の石が沈んだ');
+    expect(spoken()[1]).toContain('trigger.tookFrom');
+  });
+
+  it('keeps every line of a quiet trap back from the room', () => {
+    trapAt(5, 5, { say: '糸が張ってある', silent: true, element: 'ライフ', amount: '3' });
+
+    service.walked(heroWith(20), grid(), [at(4, 5), at(5, 5)]);
+
+    expect(spoken()).toHaveLength(0);
+    expect(kept()).toHaveLength(2);
+  });
+
+  it('sends a quiet line from nobody, so the seat that sprang it cannot read it either', () => {
+    trapAt(5, 5, { silent: true });
+
+    service.walked(heroWith(20), grid(), [at(4, 5), at(5, 5)]);
+
+    expect(vi.mocked(chat.sendSecretSystemMessageToMainTab).mock.calls[0][1]).toBeUndefined();
+  });
+
+  it('takes what it takes whether or not anybody is told', () => {
+    vi.mocked(chat.sendSystemMessageToMainTab).mockImplementation(() => {
+      throw new Error('no chat tab yet');
+    });
+    trapAt(5, 5, { element: 'ライフ', amount: '3' });
+    const hero = heroWith(20);
+
+    service.walked(hero, grid(), [at(4, 5), at(5, 5)]);
+
+    expect(Number(DataElement.findElementByReference(hero.rootDataElement!, 'ライフ')!.currentValue)).toBe(17);
   });
 });

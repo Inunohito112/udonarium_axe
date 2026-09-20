@@ -2325,7 +2325,8 @@
         "took": "받았다",
         "gave": "회복했다",
         "tookFrom": "[{{trigger}}] {{piece}}은(는) {{element}}을(를) {{amount}} {{verb}}",
-        "sprang": "[{{trigger}}] {{piece}}이(가) 밟았다"
+        "sprang": "[{{trigger}}] {{piece}}이(가) 밟았다",
+        "said": "【{{trigger}}】{{say}}"
       }
     },
     "roomSettings": {
@@ -3295,7 +3296,11 @@
         "triggerReveals": "발동하면 보이기",
         "moveCostCharge": "지나기 어려움",
         "moveCostBlocks": "지나갈 수 없음",
-        "moveCostStep": "+{{count}}칸"
+        "moveCostStep": "+{{count}}칸",
+        "triggerSay": "표시할 문장",
+        "triggerSayPlaceholder": "발밑의 돌이 가라앉았다",
+        "triggerSayHint": "발동할 때 채팅에 나오는 한 줄. 비워 두면 밟았다고만 나옵니다",
+        "triggerSilent": "채팅을 숨김(GM만 읽을 수 있음)"
       },
       "stampCategories": {
         "door": "문",

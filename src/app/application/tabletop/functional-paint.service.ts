@@ -297,6 +297,8 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
     once: trigger.once,
     open: trigger.open,
     reveals: trigger.reveals,
+    say: trigger.say,
+    silent: trigger.silent,
     color: trigger.color,
     element: trigger.element,
     amount: trigger.amount,
@@ -435,6 +437,8 @@ export class FunctionalPaintService {
       trigger.once = block.spec.once;
       trigger.open = block.spec.open;
       trigger.reveals = block.spec.reveals;
+      trigger.say = block.spec.say;
+      trigger.silent = block.spec.silent;
       trigger.color = block.spec.color;
       trigger.element = block.spec.element;
       trigger.amount = block.spec.amount;

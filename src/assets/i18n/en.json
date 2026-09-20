@@ -2325,7 +2325,8 @@
         "took": "lost",
         "gave": "gained",
         "tookFrom": "[{{trigger}}] {{piece}} {{verb}} {{amount}} {{element}}",
-        "sprang": "[{{trigger}}] {{piece}} stepped on it"
+        "sprang": "[{{trigger}}] {{piece}} stepped on it",
+        "said": "[{{trigger}}] {{say}}"
       }
     },
     "roomSettings": {
@@ -3295,7 +3296,11 @@
         "triggerReveals": "Show once sprung",
         "moveCostCharge": "How hard to cross",
         "moveCostBlocks": "Cannot enter",
-        "moveCostStep": "+{{count}} cells"
+        "moveCostStep": "+{{count}} cells",
+        "triggerSay": "Line to write",
+        "triggerSayPlaceholder": "The flagstone sinks underfoot",
+        "triggerSayHint": "One line written in the room as it goes off. Left empty, it says only that the ground was stepped on",
+        "triggerSilent": "Keep the line back (only the master reads it)"
       },
       "stampCategories": {
         "door": "Doors",

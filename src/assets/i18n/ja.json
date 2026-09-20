@@ -2325,7 +2325,8 @@
         "took": "受けた",
         "gave": "回復した",
         "tookFrom": "【{{trigger}}】{{piece}} は {{element}} を {{amount}} {{verb}}",
-        "sprang": "【{{trigger}}】{{piece}} が踏んだ"
+        "sprang": "【{{trigger}}】{{piece}} が踏んだ",
+        "said": "【{{trigger}}】{{say}}"
       }
     },
     "roomSettings": {
@@ -3295,7 +3296,11 @@
         "triggerReveals": "発動したら見せる",
         "moveCostCharge": "通りにくさ",
         "moveCostBlocks": "通れない",
-        "moveCostStep": "+{{count}} マス"
+        "moveCostStep": "+{{count}} マス",
+        "triggerSay": "出す文章",
+        "triggerSayPlaceholder": "足元の石が沈んだ",
+        "triggerSayHint": "発動したときにチャットへ出る 1 行。空欄なら「踏んだ」とだけ出ます",
+        "triggerSilent": "チャットを伏せる（GM だけが読める）"
       },
       "stampCategories": {
         "door": "扉",
