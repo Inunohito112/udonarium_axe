@@ -103,6 +103,7 @@ import { TableAltitudeGuideOverlayComponent } from '@axe/features/tabletop/table
 import { TableAmbienceComponent } from '@axe/features/tabletop/table-ambience/table-ambience.component';
 import { TableBeamOverlayComponent } from '@axe/features/tabletop/table-beam-overlay/table-beam-overlay.component';
 import { TableMoveBlockOverlayComponent } from '@axe/features/tabletop/table-move-block-overlay/table-move-block-overlay.component';
+import { TableMoveCostOverlayComponent } from '@axe/features/tabletop/table-move-cost-overlay/table-move-cost-overlay.component';
 import { TableMoveRangeOverlayComponent } from '@axe/features/tabletop/table-move-range-overlay/table-move-range-overlay.component';
 import { TableTargetOverlayComponent } from '@axe/features/tabletop/table-target-overlay/table-target-overlay.component';
 import { TableTriggerOverlayComponent } from '@axe/features/tabletop/table-trigger-overlay/table-trigger-overlay.component';
@@ -209,6 +210,7 @@ const NO_BEAM_WALL_GRIDS: readonly BeamWallGrid[] = [];
     TableAltitudeGuideOverlayComponent,
     TableMoveRangeOverlayComponent,
     TableMoveBlockOverlayComponent,
+    TableMoveCostOverlayComponent,
     TableTriggerOverlayComponent,
     TableEffectOverlayComponent,
     EffectTargetOverlayComponent,
