@@ -21,6 +21,7 @@ import { DUNGEON_ROOM_ROLES, FURNISHING_IDS } from '@axe/domain/tabletop/dungeon
 import { FIELD_ATMOSPHERE_IDS, FIELD_PROP_IDS } from '@axe/domain/tabletop/field/field-atmosphere';
 import { TOWN_PIECE_IDS } from '@axe/domain/tabletop/field/field-blocks';
 import { MAP_FUNCTION_ROLES } from '@axe/domain/tabletop/function-paint';
+import { PIECE_PASSAGE_MODES } from '@axe/domain/tabletop/move/piece-passage';
 import { ZOC_MODES } from '@axe/domain/tabletop/move/zone-of-control';
 import { TABLE_FACING_MARKS } from '@axe/domain/tabletop/table-facing-mark';
 import { TRIGGER_MOMENTS, TRIGGER_TARGETS } from '@axe/domain/tabletop/trigger-event';
@@ -55,6 +56,7 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.chat.messageSetting.soundType_': CHAT_SOUND_TYPES,
   'feature.roomSettings.facingMark_': TABLE_FACING_MARKS,
   'feature.roomSettings.zocMode_': ZOC_MODES,
+  'feature.roomSettings.piecePassage_': PIECE_PASSAGE_MODES,
   'feature.mapEditor.function.role_': MAP_FUNCTION_ROLES,
   'feature.mapEditor.function.triggerMoment_': TRIGGER_MOMENTS,
   'feature.mapEditor.function.triggerTargets_': TRIGGER_TARGETS,

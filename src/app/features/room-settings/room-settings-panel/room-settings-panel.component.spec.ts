@@ -231,6 +231,36 @@ describe('RoomSettingsPanelComponent', () => {
       expect(component.showsZocExtraCost).toBe(true);
     });
 
+    it('follows the older answer about sharing cells until a side is set', () => {
+      table.piecesShareCells = false;
+
+      for (const side of component.piecePassageSides) expect(component.piecePassage(side)).toBe('block');
+    });
+
+    it('takes over one side at a time, leaving the others where they were', () => {
+      component.setPiecePassage('samePartyPassage', 'pass');
+
+      expect(Config.instance.samePartyPassage).toBe('pass');
+      expect(component.piecePassage('samePartyPassage')).toBe('pass');
+      expect(component.piecePassage('otherPartyPassage')).toBe('share');
+    });
+
+    it('asks what crossing costs only where a side is charged for it', () => {
+      expect(component.showsPiecePassageCost).toBe(false);
+
+      component.setPiecePassage('samePartyPassage', 'pass');
+      expect(component.showsPiecePassageCost).toBe(false);
+
+      component.setPiecePassage('samePartyPassage', 'cost');
+      expect(component.showsPiecePassageCost).toBe(true);
+    });
+
+    it('takes a crossing price that is not a whole count as none at all', () => {
+      component.piecePassageCost = Number.NaN;
+
+      expect(component.piecePassageCost).toBe(0);
+    });
+
     it('reads a table carrying something it does not know as holding no ground', () => {
       table.zocMode = 'engagement';
 

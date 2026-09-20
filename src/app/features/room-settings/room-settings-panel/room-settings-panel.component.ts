@@ -41,6 +41,7 @@ import {
 import { asBreakOutMode, BREAK_OUT_MODES, BreakOutMode } from '@axe/domain/tabletop/move/engagement';
 import { DEFAULT_CELL_DISTANCE, DEFAULT_CELL_DISTANCE_UNIT } from '@axe/domain/tabletop/move/move-cells';
 import { MOVE_UNITS, MoveUnit, parseMoveUnit } from '@axe/domain/tabletop/move/move-units';
+import { PIECE_PASSAGE_MODES, PiecePassageMode } from '@axe/domain/tabletop/move/piece-passage';
 import { asZocMode, ZOC_MODES, ZocMode } from '@axe/domain/tabletop/move/zone-of-control';
 import { DEFAULT_MULTI_ANGLE_PIECE_REVOLUTION_SECONDS, MultiAngleMotionMode } from '@axe/domain/tabletop/multi-angle';
 import {
@@ -86,6 +87,9 @@ function wholeCells(value: number): number {
   const cells = Math.floor(Number(value));
   return Number.isFinite(cells) && cells > 0 ? cells : 0;
 }
+
+/** One of the three sides a table answers for when a piece walks into another. */
+type PiecePassageSide = 'samePartyPassage' | 'otherPartyPassage' | 'noPartyPassage';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -748,6 +752,31 @@ export class RoomSettingsPanelComponent {
   }
   set piecesShareCells(value: boolean) {
     if (this.isEditable) this.config.piecesShareCells = value;
+  }
+
+  /** The three sides a piece meets on the board, in the order the setting offers them. */
+  readonly piecePassageSides = ['samePartyPassage', 'otherPartyPassage', 'noPartyPassage'] as const;
+  readonly piecePassageModes = PIECE_PASSAGE_MODES;
+
+  /** What the table does with the ground one of the three sides stands on. */
+  piecePassage(side: PiecePassageSide): PiecePassageMode {
+    return this.rules[side];
+  }
+
+  setPiecePassage(side: PiecePassageSide, value: PiecePassageMode): void {
+    if (this.isEditable) this.config[side] = value;
+  }
+
+  /** Whether any of the three sides is charged for, which is the only time the price is asked. */
+  get showsPiecePassageCost(): boolean {
+    return this.piecePassageSides.some((side) => this.rules[side] === 'cost');
+  }
+
+  get piecePassageCost(): number {
+    return this.rules.piecePassageCost;
+  }
+  set piecePassageCost(value: number) {
+    if (this.isEditable) this.config.piecePassageCost = wholeCells(value);
   }
 
   /**
