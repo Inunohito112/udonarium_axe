@@ -1001,13 +1001,17 @@
             </label>
             <label class="flex items-center justify-between gap-2">
               <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerOpen' | transloco }}</span>
-              <input
-                type="checkbox"
-                class="size-3.5 [accent-color:var(--ui-accent)]"
+              <select
+                class="bg-ui-input rounded-ui-sm w-32 px-1 py-0.5"
                 data-testid="trigger-open"
-                [ngModel]="state.functionSpec().trigger.open"
-                (ngModelChange)="setTriggerPaint({ open: $event })"
-              />
+                name="trigger-shown-to"
+                [ngModel]="triggerShownTo()"
+                (ngModelChange)="setTriggerShownTo($event)"
+              >
+                @for (shown of shownTo; track shown) {
+                  <option [ngValue]="shown">{{ 'feature.tabletop.shownTo_' + shown | transloco }}</option>
+                }
+              </select>
             </label>
             <label class="flex items-center justify-between gap-2">
               <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerReveals' | transloco }}</span>

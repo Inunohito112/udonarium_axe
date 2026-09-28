@@ -26,6 +26,7 @@ import { HAZARD_KINDS } from '@axe/domain/tabletop/hazard-presets';
 import { MOVE_MODES } from '@axe/domain/tabletop/move/move-mode';
 import { PIECE_PASSAGE_MODES } from '@axe/domain/tabletop/move/piece-passage';
 import { HOSTILITY_BY, ZOC_MODES } from '@axe/domain/tabletop/move/zone-of-control';
+import { SHOWN_TO } from '@axe/domain/tabletop/shown-to';
 import { TABLE_FACING_MARKS } from '@axe/domain/tabletop/table-facing-mark';
 import { TRAP_KINDS } from '@axe/domain/tabletop/trap-presets';
 import { TRIGGER_MOMENTS, TRIGGER_REPEATS, TRIGGER_TARGETS } from '@axe/domain/tabletop/trigger-event';
@@ -64,6 +65,7 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.roomSettings.hostilityBy_': HOSTILITY_BY,
   'feature.roomSettings.piecePassage_': PIECE_PASSAGE_MODES,
   'feature.ambience.brightness_': AMBIENCE_BRIGHTNESS,
+  'feature.tabletop.shownTo_': SHOWN_TO,
   'feature.character.moveMode_': MOVE_MODES,
   'feature.mapEditor.function.role_': MAP_FUNCTION_ROLES,
   'feature.mapEditor.function.triggerMoment_': TRIGGER_MOMENTS,

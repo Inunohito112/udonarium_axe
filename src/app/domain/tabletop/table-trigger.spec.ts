@@ -1,4 +1,4 @@
-import { TableTrigger } from '@axe/domain/tabletop/table-trigger';
+import { TableTrigger, triggerEffectLine } from '@axe/domain/tabletop/table-trigger';
 import { describe, expect, it } from 'vitest';
 
 function ground(overrides: Partial<TableTrigger> = {}): TableTrigger {
@@ -83,5 +83,51 @@ describe('whether a stretch of ground has a go left', () => {
     held.spend('hero', 1);
 
     expect(held.spent).toBe(true);
+  });
+});
+
+describe('who a stretch of painted ground is shown to', () => {
+  it('is the master alone where nothing was said and it was not painted open', () => {
+    expect(ground().shows).toBe('master');
+  });
+
+  it('is the room where nothing was said and it was painted open', () => {
+    expect(ground({ open: true }).shows).toBe('room');
+  });
+
+  it('is whatever was said, whatever the older answer says', () => {
+    expect(ground({ shownTo: 'sight', open: true }).shows).toBe('sight');
+    expect(ground({ shownTo: 'room', open: false }).shows).toBe('room');
+  });
+
+  it('reads an answer it does not know by the older one', () => {
+    expect(ground({ shownTo: 'whoever', open: true }).shows).toBe('room');
+  });
+
+  it('counts only the room as being shown it, sight or no sight', () => {
+    expect(ground({ shownTo: 'sight' }).isShown).toBe(false);
+    expect(ground({ shownTo: 'room' }).isShown).toBe(true);
+  });
+
+  it('counts ground that gave itself away as shown, however it was painted', () => {
+    expect(ground({ shownTo: 'master', found: true }).isShown).toBe(true);
+  });
+});
+
+describe('what a stretch of painted ground says it does', () => {
+  it('says what it takes and what it leaves behind', () => {
+    expect(triggerEffectLine(ground({ element: 'HP', amount: '2d6', ailment: '毒' }))).toBe('HP -2d6  毒');
+  });
+
+  it('says a healing spring gives rather than takes', () => {
+    expect(triggerEffectLine(ground({ element: 'HP', amount: '-5' }))).toBe('HP +5');
+  });
+
+  it('says nothing about where it carries anybody, only that it does', () => {
+    expect(triggerEffectLine(ground({ warps: true, warpCol: 9, warpRow: 9 }))).toBe('→');
+  });
+
+  it('says nothing at all for ground that does nothing', () => {
+    expect(triggerEffectLine(ground())).toBe('');
   });
 });

@@ -24,6 +24,7 @@ import { ImageService } from '@axe/application/storage/image.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { HeldPieceService } from '@axe/application/tabletop/held-piece.service';
 import { MovePlanService } from '@axe/application/tabletop/move-plan.service';
+import { TableAmbienceService } from '@axe/application/tabletop/table-ambience.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { TerrainBatchService } from '@axe/application/tabletop/terrain-batch.service';
@@ -239,6 +240,7 @@ export class GameTableComponent {
   private readonly imageService = inject(ImageService);
   private readonly motion = inject(MotionService);
   private readonly tabletopService = inject(TabletopService);
+  private readonly ambienceService = inject(TableAmbienceService);
   private readonly terrainBatch = inject(TerrainBatchService);
   private readonly tabletopActionService = inject(TabletopActionService);
   protected readonly visionService = inject(VisionService);
@@ -771,10 +773,7 @@ export class GameTableComponent {
     this.objectChangeService.collectionOf('terrain')();
     return this.tabletopService.terrains;
   });
-  readonly ambiences = computed(() => {
-    this.objectChangeService.collectionOf('table-ambience')();
-    return this.tabletopService.ambiences;
-  });
+  readonly ambiences = computed(() => this.ambienceService.shown());
   readonly textNotes = computed(() => {
     this.objectChangeService.collectionOf('text-note')();
     return this.tabletopService.textNotes;

@@ -8,6 +8,7 @@ import {
   ambienceKindOf,
   DEFAULT_AMBIENCE_DENSITY,
 } from '@axe/domain/effect/ambience/ambience-kind';
+import { asShownTo, ShownTo } from '@axe/domain/tabletop/shown-to';
 import { TabletopObject } from '@axe/domain/tabletop/tabletop-object';
 
 /**
@@ -22,6 +23,13 @@ export class TableAmbience extends TabletopObject {
   @SyncVar() ambienceColor: string = '';
   @SyncVar() ambienceDensity: number = DEFAULT_AMBIENCE_DENSITY;
   @SyncVar() isLock: boolean = false;
+  /**
+   * Who it is drawn for, as one of SHOWN_TO. Empty shows it to the room, as it always was.
+   *
+   * A bank of fog the party has not come upon yet is a bank of fog they should not be looking
+   * at, and a master laying one ahead of them has until now had to lay it as they arrived.
+   */
+  @SyncVar() shownTo: string = '';
   /**
    * Whether nobody sees through it.
    *
@@ -53,6 +61,11 @@ export class TableAmbience extends TabletopObject {
   }
   set height(height: number) {
     this.setCommonValue('height', height);
+  }
+
+  /** Who it is drawn for, with anything unknown - an empty answer included - shown to the room. */
+  get shows(): ShownTo {
+    return asShownTo(this.shownTo, 'room');
   }
 
   /** How bright the ground under it is, with anything unknown leaving the light as it was. */

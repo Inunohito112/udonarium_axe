@@ -8,6 +8,7 @@ import { buildCopyAction, buildLockToggleAction } from '@axe/application/ui/tabl
 import { AMBIENCE_BRIGHTNESS } from '@axe/domain/effect/ambience/ambience-brightness';
 import { GROUND_AMBIENCE_KINDS } from '@axe/domain/effect/ambience/ambience-kind';
 import { PresetSound, SoundEffect } from '@axe/domain/media/sound-effect';
+import { SHOWN_TO } from '@axe/domain/tabletop/shown-to';
 import { TableAmbience } from '@axe/domain/tabletop/table-ambience';
 
 /** How dense it is. Finer steps look no different, so there are three. */
@@ -107,6 +108,18 @@ export function buildTableAmbienceContextMenuModel(
     })),
   };
 
+  const shownToAction: ContextMenuAction = {
+    name: t('feature.ambience.contextMenu.shownTo'),
+    action: undefined,
+    subActions: SHOWN_TO.map((shown) => ({
+      name: (ambience.shows === shown ? '✔ ' : '') + t(`feature.tabletop.shownTo_${shown}`),
+      action: () => {
+        ambience.shownTo = shown;
+        SoundEffect.play(PresetSound.sweep);
+      },
+    })),
+  };
+
   const lockAction = buildLockToggleAction(ambience.isLock, (next) => (ambience.isLock = next), t);
   const copyAction = buildCopyAction(ambience, gridSize, t, {
     sound: PresetSound.cardPut,
@@ -120,7 +133,15 @@ export function buildTableAmbienceContextMenuModel(
     },
   };
 
-  const appearanceActions = [settingsAction, kindAction, densityAction, sizeAction, sightAction, brightnessAction];
+  const appearanceActions = [
+    settingsAction,
+    kindAction,
+    densityAction,
+    sizeAction,
+    sightAction,
+    brightnessAction,
+    shownToAction,
+  ];
   const objectActions = [lockAction, copyAction, deleteAction];
   return {
     actions: [...appearanceActions, lockAction, ContextMenuSeparator, copyAction, deleteAction],

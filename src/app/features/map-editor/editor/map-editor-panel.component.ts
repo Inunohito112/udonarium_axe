@@ -61,6 +61,7 @@ import {
 } from '@axe/domain/tabletop/function-paint';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
 import { HAZARD_KINDS } from '@axe/domain/tabletop/hazard-presets';
+import { asShownTo, SHOWN_TO, ShownTo } from '@axe/domain/tabletop/shown-to';
 import { DEFAULT_MOVE_COST_ROAD_COLOR, MOST_MOVE_COST_EXTRA } from '@axe/domain/tabletop/table-move-cost';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TerrainViewState } from '@axe/domain/tabletop/terrain';
@@ -303,6 +304,19 @@ export class MapEditorPanelComponent implements AfterViewInit {
   protected setMaskPaint(patch: Partial<MaskPaintSpec>): void {
     const spec = this.state.functionSpec();
     this.state.setFunctionSpec({ ...spec, mask: { ...spec.mask, ...patch } });
+  }
+
+  protected readonly shownTo = SHOWN_TO;
+
+  /** Who the brush shows its ground to, reading a brush painted before there was a middle answer. */
+  protected triggerShownTo(): ShownTo {
+    const spec = this.state.functionSpec().trigger;
+    return asShownTo(spec.shownTo, spec.open ? 'room' : 'master');
+  }
+
+  /** Written to both answers, so that a peer that knows only the older one still reads it right. */
+  protected setTriggerShownTo(shown: ShownTo): void {
+    this.setTriggerPaint({ shownTo: shown, open: shown === 'room' });
   }
 
   protected setTriggerPaint(patch: Partial<TriggerPaintSpec>): void {

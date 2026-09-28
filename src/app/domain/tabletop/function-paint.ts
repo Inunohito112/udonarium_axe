@@ -167,8 +167,10 @@ export interface TriggerPaintSpec {
   once: boolean;
   /** How often it has another go in it, as one of TRIGGER_REPEATS. Empty falls back to `once`. */
   repeat: string;
-  /** Whether the room sees the ground, or only the master does. */
+  /** Whether the room sees the ground, or only the master does. The coarser form of `shownTo`. */
   open: boolean;
+  /** Who it is drawn for, as one of SHOWN_TO. Empty falls back to `open`. */
+  shownTo: string;
   /** Whether going off shows it to the room, so a sprung trap gives itself away. */
   reveals: boolean;
   /** A line to write in the room as it goes off, in place of saying only that it did. */
@@ -343,6 +345,7 @@ export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
     once: false,
     repeat: '',
     open: false,
+    shownTo: '',
     reveals: false,
     say: '',
     ailment: '',
@@ -501,6 +504,7 @@ export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
       once: flagIn(trigger, 'once', fallback.trigger.once),
       repeat: textIn(trigger, 'repeat', fallback.trigger.repeat),
       open: flagIn(trigger, 'open', fallback.trigger.open),
+      shownTo: textIn(trigger, 'shownTo', fallback.trigger.shownTo),
       reveals: flagIn(trigger, 'reveals', fallback.trigger.reveals),
       say: textIn(trigger, 'say', fallback.trigger.say),
       ailment: textIn(trigger, 'ailment', fallback.trigger.ailment),

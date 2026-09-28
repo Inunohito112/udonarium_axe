@@ -303,6 +303,7 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
     // answer carries none, and reading one back would make it look like a different painting.
     repeat: trigger.repeat,
     open: trigger.open,
+    shownTo: trigger.shownTo,
     reveals: trigger.reveals,
     say: trigger.say,
     ailment: trigger.ailment,
@@ -467,6 +468,7 @@ export class FunctionalPaintService {
       trigger.once = block.spec.once;
       trigger.repeat = block.spec.repeat;
       trigger.open = block.spec.open;
+      trigger.shownTo = block.spec.shownTo;
       trigger.reveals = block.spec.reveals;
       trigger.say = block.spec.say;
       trigger.ailment = block.spec.ailment;

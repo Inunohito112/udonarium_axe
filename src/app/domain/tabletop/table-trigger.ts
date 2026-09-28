@@ -2,6 +2,7 @@ import { SyncObject, SyncVar } from '@axe/core/sync/decorator';
 import { ObjectNode } from '@axe/core/sync/object-node';
 import { CellRect } from '@axe/domain/tabletop/cell-rectangles';
 import { GameTable } from '@axe/domain/tabletop/game-table';
+import { asShownTo, ShownTo } from '@axe/domain/tabletop/shown-to';
 import {
   asTriggerMoment,
   asTriggerRepeat,
@@ -49,8 +50,16 @@ export class TableTrigger extends ObjectNode {
   @SyncVar() spentBy: string = '';
   /** The round it last went off in, where it has one go a round. */
   @SyncVar() spentRound: number = -1;
-  /** Whether the room sees the ground, or only the master does. */
+  /**
+   * Whether the room sees the ground, or only the master does.
+   *
+   * The older, coarser form of {@link shows}, kept so that a table painted before there was a
+   * middle answer goes on meaning what it meant, and so that an older peer reading this table
+   * still knows which ground it may draw.
+   */
   @SyncVar() open: boolean = false;
+  /** Who it is drawn for, as one of SHOWN_TO. Empty falls back to `open`. */
+  @SyncVar() shownTo: string = '';
   /** Whether going off is what shows the ground to the room, a trap giving itself away. */
   @SyncVar() reveals: boolean = false;
   @SyncVar() color: string = DEFAULT_TRIGGER_COLOR;
@@ -204,9 +213,14 @@ export class TableTrigger extends ObjectNode {
     if (repeats === 'oncePerRound') this.spentRound = round;
   }
 
+  /** Who it is drawn for, reading ground painted before there was a middle answer by `open`. */
+  get shows(): ShownTo {
+    return asShownTo(this.shownTo, this.open ? 'room' : 'master');
+  }
+
   /** Whether the room is being shown it: painted open, or given away by going off. */
   get isShown(): boolean {
-    return this.open || this.found;
+    return this.shows === 'room' || this.found;
   }
 
   /** Whether a cell lies within the ground it covers. */
@@ -220,4 +234,25 @@ export class TableTrigger extends ObjectNode {
 export function triggersOn(table: GameTable | null | undefined): TableTrigger[] {
   if (!table) return [];
   return table.children.filter((child): child is TableTrigger => child instanceof TableTrigger);
+}
+
+/**
+ * What the ground does, in a few words, for drawing on the ground itself.
+ *
+ * Only what a reader looking at the table needs: what it takes, what it leaves behind, and
+ * whether it carries anybody off. Where it carries them to is left out on purpose - ground
+ * somebody has spotted is not ground they have been told the far end of.
+ */
+export function triggerEffectLine(trigger: TableTrigger): string {
+  const parts: string[] = [];
+  const element = trigger.element.trim();
+  const amount = trigger.amount.trim();
+  if (element.length > 0 && amount.length > 0) {
+    const gives = amount.startsWith('-');
+    parts.push(`${element} ${gives ? '+' + amount.slice(1) : '-' + amount}`);
+  }
+  const ailment = trigger.ailment.trim();
+  if (ailment.length > 0) parts.push(ailment);
+  if (trigger.warps) parts.push('→');
+  return parts.join('  ');
 }

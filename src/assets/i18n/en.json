@@ -2349,7 +2349,10 @@
         "rolled": "[{{trigger}}] {{piece}} rolls {{rolled}} against {{target}} — {{outcome}}",
         "made": "made it",
         "missed": "missed"
-      }
+      },
+      "shownTo_master": "The master alone",
+      "shownTo_sight": "Once it is in sight",
+      "shownTo_room": "Everyone"
     },
     "roomSettings": {
       "title": "Room settings",
@@ -3313,7 +3316,7 @@
         "triggerTargets_all": "every piece",
         "triggerTargets_pc": "the players' pieces",
         "triggerTargets_npc": "the master's pieces",
-        "triggerOpen": "Show the room",
+        "triggerOpen": "Shown to",
         "triggerColor": "Colour",
         "triggerEffect": "Effect",
         "triggerElementPlaceholder": "HP",
@@ -3879,7 +3882,8 @@
         "radialAppearance": "Appearance",
         "radialObject": "Object actions",
         "blocksSight": "Blocks sight",
-        "brightness": "Brightness"
+        "brightness": "Brightness",
+        "shownTo": "Shown to"
       },
       "kind": {
         "fog": "Dense fog",
@@ -3902,7 +3906,8 @@
       "brightness_none": "Leave it alone",
       "brightness_dark": "Darkness",
       "brightness_dim": "Dim",
-      "brightness_bright": "Bright"
+      "brightness_bright": "Bright",
+      "shownToLabel": "Shown to"
     },
     "buffManager": {
       "title": "Buff manager",

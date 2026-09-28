@@ -2349,7 +2349,10 @@
         "rolled": "【{{trigger}}】{{piece}} 판정 {{rolled}} / {{target}} — {{outcome}}",
         "made": "성공",
         "missed": "실패"
-      }
+      },
+      "shownTo_master": "GM만",
+      "shownTo_sight": "시야에 들어오면",
+      "shownTo_room": "전원"
     },
     "roomSettings": {
       "title": "방 설정",
@@ -3313,7 +3316,7 @@
         "triggerTargets_all": "모든 말",
         "triggerTargets_pc": "PC의 말",
         "triggerTargets_npc": "NPC의 말",
-        "triggerOpen": "모두에게 보이기",
+        "triggerOpen": "보여줄 대상",
         "triggerColor": "색",
         "triggerEffect": "이펙트",
         "triggerElementPlaceholder": "HP",
@@ -3881,7 +3884,8 @@
         "radialAppearance": "외형",
         "radialObject": "오브젝트 조작",
         "blocksSight": "시선을 가린다",
-        "brightness": "밝기"
+        "brightness": "밝기",
+        "shownTo": "보여줄 대상"
       },
       "kind": {
         "fog": "짙은 안개",
@@ -3904,7 +3908,8 @@
       "brightness_none": "그대로",
       "brightness_dark": "어둠",
       "brightness_dim": "어슴푸레",
-      "brightness_bright": "밝음"
+      "brightness_bright": "밝음",
+      "shownToLabel": "보여줄 대상"
     },
     "buffManager": {
       "title": "버프 매니저",
