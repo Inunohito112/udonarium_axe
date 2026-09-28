@@ -111,6 +111,7 @@ describe('Config', () => {
         cellDistance: null,
         cellDistanceUnit: null,
         zocMode: null,
+        hostilityBy: null,
         zocRange: null,
         zocExtraCost: null,
         zocEngages: null,

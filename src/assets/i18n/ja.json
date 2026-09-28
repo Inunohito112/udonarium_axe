@@ -2487,7 +2487,10 @@
       "tickerEnabled": "外周ティッカーを表示",
       "tickerSpeed": "速度",
       "tickerSpeedUnit": "px/秒",
-      "replayHint": "記録したセッションを読み返したり、盤面ごと再生したりします。記録はこの端末の中だけに残ります。"
+      "replayHint": "記録したセッションを読み返したり、盤面ごと再生したりします。記録はこの端末の中だけに残ります。",
+      "hostilityBy": "敵味方の分け方",
+      "hostilityBy_npc": "NPC かどうかで分ける",
+      "hostilityBy_party": "パーティで分ける"
     },
     "skin": {
       "title": "スキン",

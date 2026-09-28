@@ -14,7 +14,12 @@ import {
   DEFAULT_MOVE_RANGE_ELEMENT_NAMES,
 } from '@axe/domain/tabletop/move/move-cells';
 import { DEFAULT_PIECE_PASSAGE_COST } from '@axe/domain/tabletop/move/piece-passage';
-import { DEFAULT_ZOC_EXTRA_COST, DEFAULT_ZOC_MODE, DEFAULT_ZOC_RANGE } from '@axe/domain/tabletop/move/zone-of-control';
+import {
+  DEFAULT_HOSTILITY_BY,
+  DEFAULT_ZOC_EXTRA_COST,
+  DEFAULT_ZOC_MODE,
+  DEFAULT_ZOC_RANGE,
+} from '@axe/domain/tabletop/move/zone-of-control';
 import { MultiAngleMotionMode } from '@axe/domain/tabletop/multi-angle';
 import { MultiAngleFontScale } from '@axe/domain/tabletop/multi-angle-font-scale';
 import { DEFAULT_CELL_MM } from '@axe/domain/tabletop/physical-scale';
@@ -137,6 +142,8 @@ export class GameTable extends ObjectNode {
 
   /** What the ground around an enemy does to a piece walking into it. One of ZOC_MODES. */
   @SyncVar() zocMode: string = DEFAULT_ZOC_MODE;
+  /** How the table tells its two sides apart, as one of HOSTILITY_BY. */
+  @SyncVar() hostilityBy: string = DEFAULT_HOSTILITY_BY;
   /** How many cells out from an enemy that ground reaches. */
   @SyncVar() zocRange: number = DEFAULT_ZOC_RANGE;
   /** What entering it costs on top of the one step, where the table charges for it. */

@@ -2487,7 +2487,10 @@
       "tickerEnabled": "Show edge ticker",
       "tickerSpeed": "Speed",
       "tickerSpeedUnit": "px/s",
-      "replayHint": "Read back a recorded session, or play it back with the table. Recordings stay on this device."
+      "replayHint": "Read back a recorded session, or play it back with the table. Recordings stay on this device.",
+      "hostilityBy": "How the sides are told apart",
+      "hostilityBy_npc": "By whom the master runs",
+      "hostilityBy_party": "By party"
     },
     "skin": {
       "title": "Skin",

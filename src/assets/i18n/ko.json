@@ -2487,7 +2487,10 @@
       "tickerEnabled": "가장자리 티커 표시",
       "tickerSpeed": "속도",
       "tickerSpeedUnit": "px/초",
-      "replayHint": "기록한 세션을 다시 읽거나 탁자째로 재생합니다. 기록은 이 기기에만 남습니다."
+      "replayHint": "기록한 세션을 다시 읽거나 탁자째로 재생합니다. 기록은 이 기기에만 남습니다.",
+      "hostilityBy": "적·아군 구분 방식",
+      "hostilityBy_npc": "NPC 여부로 구분",
+      "hostilityBy_party": "파티로 구분"
     },
     "skin": {
       "title": "화면 색(스킨)",

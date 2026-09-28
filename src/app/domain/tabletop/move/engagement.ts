@@ -2,7 +2,7 @@ import { GameCharacter } from '@axe/domain/character/game-character';
 import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
 import { cellColRow, cellCount, CellGrid, cellIndexOf, forEachCellInBox } from '@axe/domain/tabletop/fog/cell-grid';
 import { forEachMoveNeighbour } from '@axe/domain/tabletop/move/move-neighbours';
-import { isHostileTo } from '@axe/domain/tabletop/move/zone-of-control';
+import { DEFAULT_HOSTILITY_BY, HostilityBy, isHostileTo } from '@axe/domain/tabletop/move/zone-of-control';
 import { surfaceOf } from '@axe/domain/tabletop/tabletop-object';
 
 /**
@@ -99,13 +99,18 @@ interface Knotted {
  * Touching is the whole of it: two pieces a step apart are in the same one, and a piece that
  * touches any member of a knot is in the knot, however far from an enemy it happens to be.
  */
-export function engagementsOn(grid: CellGrid, characters: readonly GameCharacter[], cutsCorners = true): Engagement[] {
+export function engagementsOn(
+  grid: CellGrid,
+  characters: readonly GameCharacter[],
+  cutsCorners = true,
+  hostility: HostilityBy = DEFAULT_HOSTILITY_BY
+): Engagement[] {
   const knotted = knotsOn(grid, characters, cutsCorners);
   const total = cellCount(grid);
   const engagements: Engagement[] = [];
   for (const knot of knotted.knots.values()) {
     const members = knot.map((index) => knotted.standing[index].piece);
-    if (!members.some((piece) => members.some((other) => isHostileTo(piece, other)))) continue;
+    if (!members.some((piece) => members.some((other) => isHostileTo(piece, other, hostility)))) continue;
     const cells = new CellBits(total);
     for (const index of knot) {
       for (const cell of knotted.standing[index].cells) cells.set(cell);
@@ -141,7 +146,8 @@ export function fightsByCell(
   mover: GameCharacter,
   others: readonly GameCharacter[],
   countsSize: boolean,
-  cutsCorners = true
+  cutsCorners = true,
+  hostility: HostilityBy = DEFAULT_HOSTILITY_BY
 ): Fights {
   const total = cellCount(grid);
   const prices = new Float64Array(total).fill(NO_FIGHT);
@@ -158,7 +164,7 @@ export function fightsByCell(
   const standingOn = new Map<number, number[]>();
   knotted.standing.forEach((held, index) => {
     const root = knotted.rootOf(index);
-    const side = isHostileTo(held.piece, mover) ? against : own;
+    const side = isHostileTo(held.piece, mover, hostility) ? against : own;
     side.set(root, (side.get(root) ?? 0) + weightOf(held.piece, countsSize));
     for (const cell of held.cells) {
       const already = standingOn.get(cell);

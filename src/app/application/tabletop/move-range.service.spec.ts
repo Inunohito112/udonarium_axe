@@ -1146,3 +1146,68 @@ describe('MoveRangeService and a piece a state has stopped', () => {
     expect(countCells(service.range()!.cells)).toBe(8);
   });
 });
+
+describe('MoveRangeService and which side a piece is on', () => {
+  let service: MoveRangeService;
+  let table: GameTable;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.zocMode = 'block';
+    table.initialize();
+    service = TestBed.inject(MoveRangeService);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+  });
+
+  function pieceAt(col: number, row: number, walk: number, party = '', npc = false): GameCharacter {
+    const character = GameCharacter.create('コマ', 1, '');
+    character.location = { name: 'table', x: col * GRID, y: row * GRID };
+    DataElement.findElementByReference(character.rootDataElement!, '移動')!.value = walk;
+    character.partyIdentifier = party;
+    character.isNpc = npc;
+    return character;
+  }
+
+  function reached(col: number, row: number): boolean {
+    const view = service.range()!;
+    return view.cells.get(cellIndexOf(view.grid, col, row));
+  }
+
+  it('holds ground against a monster near a hero, by whom the master runs', () => {
+    pieceAt(7, 5, 1, 'heroes', true);
+    service.show(pieceAt(5, 5, 3, 'heroes'));
+
+    expect(reached(6, 5)).toBe(false);
+  });
+
+  it('holds none against a piece of its own party where the sides are parties', () => {
+    table.hostilityBy = 'party';
+    pieceAt(7, 5, 1, 'heroes', true);
+    service.show(pieceAt(5, 5, 3, 'heroes'));
+
+    expect(reached(6, 5)).toBe(true);
+  });
+
+  it('holds ground against another party where the sides are parties', () => {
+    table.hostilityBy = 'party';
+    pieceAt(7, 5, 1, 'goblins');
+    service.show(pieceAt(5, 5, 3, 'heroes'));
+
+    expect(reached(6, 5)).toBe(false);
+  });
+
+  it('holds none for a piece nobody has placed, where the sides are parties', () => {
+    table.hostilityBy = 'party';
+    pieceAt(7, 5, 1, '', true);
+    service.show(pieceAt(5, 5, 3, 'heroes'));
+
+    expect(reached(6, 5)).toBe(true);
+  });
+});

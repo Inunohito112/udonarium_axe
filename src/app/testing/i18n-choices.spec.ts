@@ -23,7 +23,7 @@ import { TOWN_PIECE_IDS } from '@axe/domain/tabletop/field/field-blocks';
 import { MAP_FUNCTION_ROLES } from '@axe/domain/tabletop/function-paint';
 import { HAZARD_KINDS } from '@axe/domain/tabletop/hazard-presets';
 import { PIECE_PASSAGE_MODES } from '@axe/domain/tabletop/move/piece-passage';
-import { ZOC_MODES } from '@axe/domain/tabletop/move/zone-of-control';
+import { HOSTILITY_BY, ZOC_MODES } from '@axe/domain/tabletop/move/zone-of-control';
 import { TABLE_FACING_MARKS } from '@axe/domain/tabletop/table-facing-mark';
 import { TRIGGER_MOMENTS, TRIGGER_REPEATS, TRIGGER_TARGETS } from '@axe/domain/tabletop/trigger-event';
 import { FACTION_PHASE_MODES, TURN_ORDER_MODES } from '@axe/domain/tabletop/turn-order-mode';
@@ -57,6 +57,7 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.chat.messageSetting.soundType_': CHAT_SOUND_TYPES,
   'feature.roomSettings.facingMark_': TABLE_FACING_MARKS,
   'feature.roomSettings.zocMode_': ZOC_MODES,
+  'feature.roomSettings.hostilityBy_': HOSTILITY_BY,
   'feature.roomSettings.piecePassage_': PIECE_PASSAGE_MODES,
   'feature.mapEditor.function.role_': MAP_FUNCTION_ROLES,
   'feature.mapEditor.function.triggerMoment_': TRIGGER_MOMENTS,

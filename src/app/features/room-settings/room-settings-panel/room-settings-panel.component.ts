@@ -42,7 +42,7 @@ import { asBreakOutMode, BREAK_OUT_MODES, BreakOutMode } from '@axe/domain/table
 import { DEFAULT_CELL_DISTANCE, DEFAULT_CELL_DISTANCE_UNIT } from '@axe/domain/tabletop/move/move-cells';
 import { MOVE_UNITS, MoveUnit, parseMoveUnit } from '@axe/domain/tabletop/move/move-units';
 import { PIECE_PASSAGE_MODES, PiecePassageMode } from '@axe/domain/tabletop/move/piece-passage';
-import { asZocMode, ZOC_MODES, ZocMode } from '@axe/domain/tabletop/move/zone-of-control';
+import { asZocMode, HOSTILITY_BY, HostilityBy, ZOC_MODES, ZocMode } from '@axe/domain/tabletop/move/zone-of-control';
 import { DEFAULT_MULTI_ANGLE_PIECE_REVOLUTION_SECONDS, MultiAngleMotionMode } from '@axe/domain/tabletop/multi-angle';
 import {
   asMultiAngleFontScale,
@@ -157,6 +157,15 @@ export class RoomSettingsPanelComponent {
   readonly moveUnits = MOVE_UNITS;
   readonly facingMarks = TABLE_FACING_MARKS;
   readonly zocModes = ZOC_MODES;
+  readonly hostilityWays = HOSTILITY_BY;
+
+  /** How the table tells its two sides apart, which decides who holds ground against whom. */
+  get hostilityBy(): HostilityBy {
+    return this.rules.hostilityBy;
+  }
+  set hostilityBy(value: HostilityBy) {
+    if (this.isEditable) this.config.hostilityBy = value;
+  }
   readonly diagonalMoves = DIAGONAL_MOVES;
   readonly breakOutModes = BREAK_OUT_MODES;
 

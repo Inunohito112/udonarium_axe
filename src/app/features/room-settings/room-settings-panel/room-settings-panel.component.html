@@ -419,6 +419,19 @@
 
             @if (showsZocOptions) {
               <label class="text-ui-muted text-[11px] whitespace-nowrap">{{
+                'feature.roomSettings.hostilityBy' | transloco
+              }}</label>
+              <select
+                class="rounded-ui-sm border-ui-border-panel bg-ui-input text-ui-text focus:border-ui-accent col-span-2 box-border w-full cursor-pointer border border-solid px-2 py-1.25 text-[13px] transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                [(ngModel)]="hostilityBy"
+                name="hostilityBy"
+              >
+                @for (way of hostilityWays; track way) {
+                  <option [value]="way">{{ 'feature.roomSettings.hostilityBy_' + way | transloco }}</option>
+                }
+              </select>
+
+              <label class="text-ui-muted text-[11px] whitespace-nowrap">{{
                 'feature.roomSettings.zocRange' | transloco
               }}</label>
               <input

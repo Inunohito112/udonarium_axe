@@ -520,16 +520,16 @@ export class MoveRangeService {
     rules: RoomRules
   ): HeldGround | null {
     const cutsCorners = allowsDiagonal(rules.diagonalMove);
-    const foes = seen.filter((piece) => isHostileTo(piece, mover));
+    const foes = seen.filter((piece) => isHostileTo(piece, mover, rules.hostilityBy));
     if (!rules.zocEngages) {
       const held = zoneOfControl(grid, foes, rules.zocRange, cutsCorners);
       return held.isEmpty ? null : { held, fights: null };
     }
     if (foes.length < 1) return null;
 
-    const caught = engagementOf(engagementsOn(grid, seen, cutsCorners), mover);
+    const caught = engagementOf(engagementsOn(grid, seen, cutsCorners, rules.hostilityBy), mover);
     const held = zoneOfControl(grid, holdersOf(mover, foes, caught), rules.zocRange, cutsCorners);
-    const fights = fightsByCell(grid, mover, seen, rules.engagementCountsSize, cutsCorners);
+    const fights = fightsByCell(grid, mover, seen, rules.engagementCountsSize, cutsCorners, rules.hostilityBy);
     return { held: held.isEmpty ? null : held, fights };
   }
 }

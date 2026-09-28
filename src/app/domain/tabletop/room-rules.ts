@@ -16,10 +16,13 @@ import {
   PiecePassageMode,
 } from '@axe/domain/tabletop/move/piece-passage';
 import {
+  asHostilityBy,
   asZocMode,
+  DEFAULT_HOSTILITY_BY,
   DEFAULT_ZOC_EXTRA_COST,
   DEFAULT_ZOC_MODE,
   DEFAULT_ZOC_RANGE,
+  HostilityBy,
   ZocMode,
 } from '@axe/domain/tabletop/move/zone-of-control';
 import { DEFAULT_TABLE_FACING_MARK } from '@axe/domain/tabletop/table-facing-mark';
@@ -51,6 +54,8 @@ export interface RoomRules {
   cellDistance: number;
   cellDistanceUnit: string;
   zocMode: ZocMode;
+  /** How the table tells its two sides apart: see {@link HostilityBy}. */
+  hostilityBy: HostilityBy;
   zocRange: number;
   zocExtraCost: number;
   /**
@@ -80,9 +85,16 @@ export interface RoomRules {
 /** The same rules in the looser terms a table holds them and an attribute carries them. */
 export type RoomRuleValues = Omit<
   RoomRules,
-  'zocMode' | 'diagonalMove' | 'breakOutMode' | 'samePartyPassage' | 'otherPartyPassage' | 'noPartyPassage'
+  | 'zocMode'
+  | 'hostilityBy'
+  | 'diagonalMove'
+  | 'breakOutMode'
+  | 'samePartyPassage'
+  | 'otherPartyPassage'
+  | 'noPartyPassage'
 > & {
   zocMode: string;
+  hostilityBy: string;
   diagonalMove: string;
   breakOutMode: string;
   samePartyPassage: string;
@@ -108,6 +120,7 @@ export const ROOM_RULE_DEFAULTS: RoomRules = {
   cellDistance: DEFAULT_CELL_DISTANCE,
   cellDistanceUnit: DEFAULT_CELL_DISTANCE_UNIT,
   zocMode: DEFAULT_ZOC_MODE,
+  hostilityBy: DEFAULT_HOSTILITY_BY,
   zocRange: DEFAULT_ZOC_RANGE,
   zocExtraCost: DEFAULT_ZOC_EXTRA_COST,
   zocEngages: false,
@@ -136,6 +149,7 @@ export const ROOM_RULE_GROUPS = {
   ],
   zoc: [
     'zocMode',
+    'hostilityBy',
     'zocRange',
     'zocAlways',
     'zocExtraCost',
@@ -251,6 +265,7 @@ export function resolveRoomRules(
     cellDistance: settled('cellDistance'),
     cellDistanceUnit: settled('cellDistanceUnit'),
     zocMode: asZocMode(settled('zocMode')),
+    hostilityBy: asHostilityBy(settled('hostilityBy')),
     zocRange: settled('zocRange'),
     zocExtraCost: settled('zocExtraCost'),
     zocEngages: settled('zocEngages'),

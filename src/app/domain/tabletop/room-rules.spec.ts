@@ -29,6 +29,7 @@ const table: RoomRules = {
   cellDistance: 5,
   cellDistanceUnit: 'foot',
   zocMode: 'stop',
+  hostilityBy: 'party',
   zocRange: 2,
   zocExtraCost: 3,
   zocEngages: false,

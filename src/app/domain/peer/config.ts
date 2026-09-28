@@ -60,6 +60,7 @@ export class Config extends ObjectNode implements InnerXml {
   @SyncVar('_cellDistance') private _cellDistance: number = -1;
   @SyncVar('_cellDistanceUnit') private _cellDistanceUnit: string = '';
   @SyncVar('_zocMode') private _zocMode: string = '';
+  @SyncVar('_hostilityBy') private _hostilityBy: string = '';
   @SyncVar('_zocRange') private _zocRange: number = -1;
   @SyncVar('_zocExtraCost') private _zocExtraCost: number = -1;
   @SyncVar('_zocEngages') private _zocEngages: string = '';
@@ -313,6 +314,14 @@ export class Config extends ObjectNode implements InnerXml {
   }
 
   /** How many steps out from an enemy its held ground reaches, or null to leave it to the table. */
+  /** How the room tells its two sides apart, or null to leave it to the table. */
+  get hostilityBy(): string | null {
+    return readRuleText(this._hostilityBy);
+  }
+  set hostilityBy(answer: string | null) {
+    this._hostilityBy = writeRuleText(answer);
+  }
+
   get zocRange(): number | null {
     return readRuleNumber(this._zocRange);
   }
@@ -393,6 +402,7 @@ export class Config extends ObjectNode implements InnerXml {
       cellDistance: this.cellDistance,
       cellDistanceUnit: this.cellDistanceUnit,
       zocMode: this.zocMode,
+      hostilityBy: this.hostilityBy,
       zocRange: this.zocRange,
       zocExtraCost: this.zocExtraCost,
       zocEngages: this.zocEngages,
