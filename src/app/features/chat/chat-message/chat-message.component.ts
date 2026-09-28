@@ -42,6 +42,7 @@ import { PresetSound, SoundEffect } from '@axe/domain/media/sound-effect';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { TextNote } from '@axe/domain/tabletop/text-note';
 import { encodeVnEmote, vnBodyOf, vnEmoteOf } from '@axe/domain/visual-novel/vn-emote';
+import { ChatComposeService } from '@axe/features/chat/chat-compose.service';
 import { buildChatMessageContextMenu } from '@axe/features/chat/chat-message/chat-message-context-menu';
 import { formatChatTickerMessage } from '@axe/features/chat/chat-ticker/chat-ticker-layout';
 import { SystemAvatarMenuService } from '@axe/features/chat/system-avatar-menu.service';
@@ -75,6 +76,8 @@ export class ChatMessageComponent {
   private readonly t = inject(TRANSLATE_FN);
   private readonly language = inject(LanguageService);
   private readonly uiSignalService = inject(UiSignalService);
+  /** The panel this line is being read in, where it is being read in one that can answer. */
+  private readonly compose = inject(ChatComposeService, { optional: true });
   private readonly rolePermission = inject(RolePermissionService);
   private readonly tabletopService = inject(TabletopService);
   private readonly tabletopDisplay = inject(TabletopDisplayService);
@@ -565,16 +568,23 @@ export class ChatMessageComponent {
     return formatChatTickerMessage(message) != null;
   });
 
-  /** Asks the chat input to reply to this line, from the reply button or the line's menu. */
+  /**
+   * Asks the chat input to reply to this line, from the reply button or the line's menu.
+   *
+   * Asked of the panel this line is being read in. A line read somewhere with no input of its
+   * own to answer in asks the room instead, and whatever input is out there takes it.
+   */
   clickReply() {
     if (!this.canInteract) return;
-    this.uiSignalService.requestChatReply(this.chatMessage.identifier);
+    if (this.compose) this.compose.requestReply(this.chatMessage.identifier);
+    else this.uiSignalService.requestChatReply(this.chatMessage.identifier);
   }
 
-  /** Asks the chat input to quote this line, from the quote button or the line's menu. */
+  /** Asks the chat input to quote this line, the same way and for the same reason. */
   clickQuote() {
     if (!this.canInteract) return;
-    this.uiSignalService.requestChatQuote(this.chatMessage.identifier);
+    if (this.compose) this.compose.requestQuote(this.chatMessage.identifier);
+    else this.uiSignalService.requestChatQuote(this.chatMessage.identifier);
   }
 
   /** Puts this line in the ticker running round the table, where that ticker is shown at all. */
