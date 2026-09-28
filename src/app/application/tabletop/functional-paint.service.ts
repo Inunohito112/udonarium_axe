@@ -319,6 +319,7 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
     warps: trigger.warps,
     warpCol: trigger.warpCol,
     warpRow: trigger.warpRow,
+    warpTable: trigger.warpTable,
   };
 }
 
@@ -475,6 +476,7 @@ export class FunctionalPaintService {
       trigger.warps = block.spec.warps;
       trigger.warpCol = block.spec.warpCol;
       trigger.warpRow = block.spec.warpRow;
+      trigger.warpTable = block.spec.warpTable;
       trigger.initialize();
       table.appendChild(trigger);
     }

@@ -933,6 +933,25 @@
                   (ngModelChange)="setTriggerPaint({ warpRow: +$event })"
                 />
               </label>
+              @if (otherTables().length > 0) {
+                <label class="flex items-center justify-between gap-2">
+                  <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerWarpTable' | transloco }}</span>
+                  <select
+                    class="bg-ui-input rounded-ui-sm min-w-0 flex-1 px-1 py-0.5"
+                    data-testid="trigger-warp-table"
+                    name="trigger-warp-table"
+                    [ngModel]="state.functionSpec().trigger.warpTable"
+                    (ngModelChange)="setTriggerPaint({ warpTable: $event })"
+                  >
+                    <option [ngValue]="''">
+                      {{ 'feature.mapEditor.function.triggerWarpHere' | transloco }}
+                    </option>
+                    @for (table of otherTables(); track table.identifier) {
+                      <option [ngValue]="table.identifier">{{ table.name }}</option>
+                    }
+                  </select>
+                </label>
+              }
               <span class="text-ui-dim text-[10px] leading-snug">
                 {{ 'feature.mapEditor.function.triggerWarpHint' | transloco }}
               </span>

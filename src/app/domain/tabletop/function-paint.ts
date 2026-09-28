@@ -198,6 +198,13 @@ export interface TriggerPaintSpec {
   /** The cell it carries them to, counted from the top left of the board. */
   warpCol: number;
   warpRow: number;
+  /**
+   * The table it carries them onto, by identifier. Empty keeps them on the one they are on.
+   *
+   * A piece stands on every table at once, so carrying one to another floor is carrying the
+   * room to it: the table the room is looking at changes with the piece.
+   */
+  warpTable: string;
 }
 
 /**
@@ -340,6 +347,7 @@ export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
     warps: false,
     warpCol: 0,
     warpRow: 0,
+    warpTable: '',
   },
 };
 
@@ -494,6 +502,7 @@ export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
       warps: flagIn(trigger, 'warps', fallback.trigger.warps),
       warpCol: countIn(trigger, 'warpCol', fallback.trigger.warpCol, 0, 999),
       warpRow: countIn(trigger, 'warpRow', fallback.trigger.warpRow, 0, 999),
+      warpTable: textIn(trigger, 'warpTable', fallback.trigger.warpTable),
     },
   };
 }

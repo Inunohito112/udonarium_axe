@@ -3331,7 +3331,7 @@
         "triggerWarps": "Carry it to another cell",
         "triggerWarpCol": "Column",
         "triggerWarpRow": "Row",
-        "triggerWarpHint": "Only a walk that ends here is carried away; one that merely passes over is not. Ground where it lands does not go off during that move",
+        "triggerWarpHint": "Carries a piece that ends its move here to the cell named. Picking another table takes the whole room to it",
         "triggerMoment_turnStart": "As its turn begins, if it stands here",
         "triggerMoment_turnEnd": "As its turn ends, if it stands here",
         "triggerRepeat": "How often it goes off",
@@ -3348,7 +3348,9 @@
         "hazardKind_fog": "Fog (slow going)",
         "hazardKind_ice": "Ice (puts a piece off its feet)",
         "hazardKind_briar": "Briars (cut whoever steps in)",
-        "hazardKind_vent": "Vent (burns those who stay)"
+        "hazardKind_vent": "Vent (burns those who stay)",
+        "triggerWarpTable": "Table it opens onto",
+        "triggerWarpHere": "(this table)"
       },
       "stampCategories": {
         "door": "Doors",

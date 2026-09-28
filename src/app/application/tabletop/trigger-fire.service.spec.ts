@@ -866,6 +866,61 @@ describe('TriggerFireService and the ground that carries a piece away', () => {
 
     expect(cellOf(piece)).toBe(at(2, 9));
   });
+
+  describe('opening onto another table', () => {
+    function floorBelow(gridSize = GRID): GameTable {
+      const below = new GameTable();
+      below.name = '地下 1 階';
+      below.width = 12;
+      below.height = 12;
+      below.gridSize = gridSize;
+      below.initialize();
+      return below;
+    }
+
+    it('carries the room down with the piece', () => {
+      const below = floorBelow();
+      pitAt(5, 5, { warpCol: 2, warpRow: 9, warpTable: below.identifier });
+      const piece = heroAt(4, 5);
+
+      service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+
+      expect(TestBed.inject(TableSelecter).viewTableIdentifier).toBe(below.identifier);
+      expect(pieceCellOf(cellGridOf(below.width, below.height, GRID, GridType.SQUARE), piece, GRID)).toBe(
+        cellIndexOf(cellGridOf(below.width, below.height, GRID, GridType.SQUARE), 2, 9)
+      );
+    });
+
+    it('sets the piece down by the cells of the table it lands on, not the one it fell from', () => {
+      const below = floorBelow(80);
+      pitAt(5, 5, { warpCol: 2, warpRow: 9, warpTable: below.identifier });
+      const piece = heroAt(4, 5);
+
+      service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+
+      const landing = cellGridOf(below.width, below.height, 80, GridType.SQUARE);
+      expect(pieceCellOf(landing, piece, 80)).toBe(cellIndexOf(landing, 2, 9));
+    });
+
+    it('leaves the room where it is where the ground names no table', () => {
+      pitAt(5, 5, { warpCol: 2, warpRow: 9 });
+      const piece = heroAt(4, 5);
+
+      service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+
+      expect(TestBed.inject(TableSelecter).viewTableIdentifier).toBe(table.identifier);
+    });
+
+    it('opens onto the table it lies on where the one it names is not in this room', () => {
+      pitAt(5, 5, { warpCol: 2, warpRow: 9, warpTable: 'a-table-from-another-room' });
+      const piece = heroAt(4, 5);
+
+      service.walked(piece, grid(), [at(4, 5), at(5, 5)]);
+
+      expect(TestBed.inject(TableSelecter).viewTableIdentifier).toBe(table.identifier);
+      expect(cellOf(piece)).toBe(at(2, 9));
+    });
+  });
 });
 
 describe('TriggerFireService and the ground a turn brings round', () => {

@@ -3331,7 +3331,7 @@
         "triggerWarps": "別のマスへ飛ばす",
         "triggerWarpCol": "飛び先の列",
         "triggerWarpRow": "飛び先の行",
-        "triggerWarpHint": "飛ぶのは、そのマスで移動が終わったときだけです。途中で踏んでも飛びません。飛んだ先の仕掛けはその移動では発動しません",
+        "triggerWarpHint": "ここで移動が終わったコマを、指定のマスへ飛ばします。別のテーブルを選ぶと、部屋の全員の表示もそのテーブルへ移ります",
         "triggerMoment_turnStart": "手番の開始時（そのマスにいたら）",
         "triggerMoment_turnEnd": "手番の終了時（そのマスにいたら）",
         "triggerRepeat": "何回起きるか",
@@ -3348,7 +3348,9 @@
         "hazardKind_fog": "濃霧（進みにくい）",
         "hazardKind_ice": "氷（踏むと転ぶ）",
         "hazardKind_briar": "茨（踏むと傷つく）",
-        "hazardKind_vent": "噴出口（居続けると焼ける）"
+        "hazardKind_vent": "噴出口（居続けると焼ける）",
+        "triggerWarpTable": "飛ばす先のテーブル",
+        "triggerWarpHere": "（このテーブル）"
       },
       "stampCategories": {
         "door": "扉",

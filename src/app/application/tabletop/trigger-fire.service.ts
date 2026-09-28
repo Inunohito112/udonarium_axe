@@ -16,6 +16,7 @@ import { CutIn } from '@axe/domain/media/cut-in';
 import { SoundEffect } from '@axe/domain/media/sound-effect';
 import { Config } from '@axe/domain/peer/config';
 import { cellColRow, cellCount, CellGrid, cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
+import { GameTable } from '@axe/domain/tabletop/game-table';
 import { cheapestPath } from '@axe/domain/tabletop/move/cheapest-path';
 import { pieceCellOf, pieceCornerOn } from '@axe/domain/tabletop/move/piece-on-grid';
 import { resolveRoomRules } from '@axe/domain/tabletop/room-rules';
@@ -255,17 +256,36 @@ export class TriggerFireService {
    */
   private carry(trigger: TableTrigger, piece: GameCharacter): void {
     if (!trigger.warps) return;
-    const table = this.tableSelecter.viewTable;
+    const table = this.landing(trigger);
     if (!table || table.gridSize <= 0 || table.width <= 0 || table.height <= 0) return;
     const grid = cellGridOf(table.width, table.height, table.gridSize, table.gridType);
     const to = cellIndexOf(grid, Math.round(trigger.warpCol), Math.round(trigger.warpRow));
     // Ground pointing off the board carries nobody: a piece set down outside it would be a
     // piece nothing on the table could reach.
     if (to < 0) return;
-    if (pieceCellOf(grid, piece, table.gridSize) === to) return;
+    const floors = table.identifier !== this.tableSelecter.viewTableIdentifier;
+    if (!floors && pieceCellOf(grid, piece, table.gridSize) === to) return;
     const corner = pieceCornerOn(grid, piece, table.gridSize, to);
     piece.location = { name: piece.location.name, x: corner.x, y: corner.y };
     piece.update();
+    // Turned to last, so that the room arrives to find the piece already standing where it fell.
+    if (floors) this.tableSelecter.viewTableIdentifier = table.identifier;
+  }
+
+  /**
+   * The table a pitfall opens onto: the one it names, or the one it is painted on.
+   *
+   * Ground naming a table this room has never had - a scene painted in one room and opened in
+   * another - opens onto the table it lies on instead, which is a hole in the floor rather
+   * than a hole in nothing.
+   */
+  private landing(trigger: TableTrigger): GameTable | null {
+    const named = trigger.warpTable.trim();
+    if (named.length > 0) {
+      const found = this.objectStore.get<GameTable>(named);
+      if (found instanceof GameTable) return found;
+    }
+    return this.tableSelecter.viewTable;
   }
 
   /**

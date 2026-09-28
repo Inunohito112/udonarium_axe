@@ -59,9 +59,10 @@ import {
   TerrainPaintSpec,
   TriggerPaintSpec,
 } from '@axe/domain/tabletop/function-paint';
-import { GridType } from '@axe/domain/tabletop/game-table';
+import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
 import { HAZARD_KINDS } from '@axe/domain/tabletop/hazard-presets';
 import { MOST_MOVE_COST_EXTRA } from '@axe/domain/tabletop/table-move-cost';
+import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TerrainViewState } from '@axe/domain/tabletop/terrain';
 import { asTriggerRepeat, TRIGGER_REPEATS, TriggerRepeat } from '@axe/domain/tabletop/trigger-event';
 import { TRIGGER_MOMENTS, TRIGGER_TARGETS } from '@axe/domain/tabletop/trigger-event';
@@ -207,6 +208,7 @@ export class MapEditorPanelComponent implements AfterViewInit {
   private readonly rolePermission = inject(RolePermissionService);
   private readonly tabletopService = inject(TabletopService);
   private readonly objectChange = inject(ObjectChangeService);
+  private readonly tableSelecter = inject(TableSelecter);
   private readonly objectStore = inject(ObjectStore);
   private readonly effectLibrary = inject(EffectLibraryService);
   private readonly modalService = inject(ModalService);
@@ -337,6 +339,18 @@ export class MapEditorPanelComponent implements AfterViewInit {
   protected readonly cutInNames = computed<string[]>(() => {
     this.objectChange.collectionOf(CutIn.aliasName)();
     return onlyOnce(this.objectStore.getObjects<CutIn>(CutIn).map((held) => held.name.trim()));
+  });
+
+  /**
+   * The other tables of the room, offered to the pitfall that opens onto one.
+   *
+   * The table being edited is left off the list: ground that carried the room to the table it
+   * is already looking at would be a hole into the room it is already in.
+   */
+  protected readonly otherTables = computed<GameTable[]>(() => {
+    this.objectChange.collectionOf(GameTable.aliasName)();
+    const here = this.tableSelecter.viewTableIdentifier;
+    return this.objectStore.getObjects<GameTable>(GameTable).filter((table) => table.identifier !== here);
   });
 
   protected readonly terrainFaces = TERRAIN_FACE_KEYS;

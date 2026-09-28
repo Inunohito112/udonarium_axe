@@ -114,6 +114,13 @@ export class TableTrigger extends ObjectNode {
   /** The cell it carries them to, counted from the top left of the board. */
   @SyncVar() warpCol: number = 0;
   @SyncVar() warpRow: number = 0;
+  /**
+   * The table it carries them onto, by identifier. Empty leaves them on the one they fell on.
+   *
+   * A piece stands on every table at once - the tables are what is looked at, not what a piece
+   * belongs to - so a pitfall that opens onto the floor below carries the room down with it.
+   */
+  @SyncVar() warpTable: string = '';
   /** Whether it has already gone off, which only ground that goes off once ever holds. */
   @SyncVar() spent: boolean = false;
   /**

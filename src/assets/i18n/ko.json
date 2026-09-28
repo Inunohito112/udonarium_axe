@@ -3331,7 +3331,7 @@
         "triggerWarps": "다른 칸으로 보내기",
         "triggerWarpCol": "도착 열",
         "triggerWarpRow": "도착 행",
-        "triggerWarpHint": "그 칸에서 이동이 끝났을 때만 보냅니다. 지나가기만 하면 보내지 않습니다. 도착한 칸의 장치는 그 이동에서는 발동하지 않습니다",
+        "triggerWarpHint": "여기서 이동이 끝난 말을 지정한 칸으로 보냅니다. 다른 테이블을 고르면 방 전체의 화면도 그 테이블로 옮겨집니다",
         "triggerMoment_turnStart": "차례 시작 시(그 칸에 있으면)",
         "triggerMoment_turnEnd": "차례 종료 시(그 칸에 있으면)",
         "triggerRepeat": "발동 횟수",
@@ -3348,7 +3348,9 @@
         "hazardKind_fog": "짙은 안개(나아가기 어려움)",
         "hazardKind_ice": "얼음(밟으면 넘어짐)",
         "hazardKind_briar": "가시덤불(밟으면 다침)",
-        "hazardKind_vent": "분출구(머물면 탐)"
+        "hazardKind_vent": "분출구(머물면 탐)",
+        "triggerWarpTable": "보낼 테이블",
+        "triggerWarpHere": "(이 테이블)"
       },
       "stampCategories": {
         "door": "문",
