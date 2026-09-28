@@ -71,7 +71,7 @@ export class TableTriggerOverlayComponent {
         cells,
         color: trigger.color,
         hidden: !trigger.isShown,
-        spent: trigger.once && trigger.spent,
+        spent: trigger.repeats === 'once' && trigger.spent,
         name: trigger.name.trim() || this.t('feature.tabletop.trigger.unnamed'),
         effect: triggerEffectLine(trigger),
         at: middle >= 0 ? cellCenterOf(grid, middle) : { x: 0, y: 0 },
