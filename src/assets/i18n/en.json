@@ -3926,6 +3926,8 @@
       "operator": "Operator",
       "modifierNote": "Holding {{target}}",
       "builderTitle": "Build a calculated buff command",
+      "builderStacks": "Stack",
+      "builderStacksHint": "Add to a buff of the same name",
       "copy": "Copy",
       "copied": "Copied",
       "buffCount": "{{n}} buffs",
