@@ -1,4 +1,13 @@
 /**
+ * What a second helping of a buff asks for.
+ *
+ * `stack` adds the notes' numbers and leaves whichever count of rounds is longer; `extend` adds
+ * the rounds as well, so casting the same strengthening again both doubles it and carries it
+ * further. `none` writes over the buff standing, which is what a command with no mark on it does.
+ */
+export type BuffPileOn = 'none' | 'stack' | 'extend';
+
+/**
  * The number written in an effect note, with the words standing either side of it.
  *
  * `攻撃+2` is `攻撃`, `+2` and nothing; `2d6` is nothing, `2` and `d6`. Keeping the words apart

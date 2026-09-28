@@ -335,6 +335,28 @@ export class BuffManager {
    * a buff held until cleared is left held. A name no buff goes by yet is simply granted.
    */
   stackRound(name: string, info: string = '', round?: number, appearance: BuffAppearance = {}): void {
+    this.pileOn(name, info, round, appearance, (standing, asked) => Math.max(standing, asked));
+  }
+
+  /**
+   * The same second helping, but carrying the buff further as well: the rounds asked for are added
+   * to the ones standing rather than measured against them.
+   *
+   * Three rounds laid on a buff with two left leaves five. A buff held until cleared has no count
+   * to lengthen and is left alone, and an empty note lengthens a buff without touching what it
+   * says, which is how a spell is cast again to hold rather than to strengthen.
+   */
+  extendRound(name: string, info: string = '', round?: number, appearance: BuffAppearance = {}): void {
+    this.pileOn(name, info, round, appearance, (standing, asked) => standing + asked);
+  }
+
+  private pileOn(
+    name: string,
+    info: string,
+    round: number | undefined,
+    appearance: BuffAppearance,
+    settle: (standing: number, asked: number) => number
+  ): void {
     const data = this.buffDataElement?.getFirstElementByName(name);
     if (!data) {
       this.addRound(name, info, round, appearance);
@@ -348,7 +370,7 @@ export class BuffManager {
 
     if (round === undefined || !buffExpires(data)) return;
     const standing = parseInt(String(data.value), 10);
-    data.value = Number.isFinite(standing) ? Math.max(standing, round) : round;
+    data.value = Number.isFinite(standing) ? settle(standing, round) : round;
   }
 }
 

@@ -208,6 +208,46 @@ describe('BuffManager', () => {
     });
   });
 
+  describe('extendRound', () => {
+    it('adds the rounds asked for to the ones left', () => {
+      manager.addRound('猛攻撃', '攻撃+2', 2);
+      manager.extendRound('猛攻撃', '攻撃+2', 3);
+
+      const data = container.getFirstElementByName('猛攻撃')!;
+      expect(data.value).toBe(5);
+      expect(data.currentValue).toBe('攻撃+4');
+    });
+
+    it('lengthens a buff without touching what it says when the note is empty', () => {
+      manager.addRound('加護', '守り+1', 2);
+      manager.extendRound('加護', '', 3);
+
+      const data = container.getFirstElementByName('加護')!;
+      expect(data.value).toBe(5);
+      expect(data.currentValue).toBe('守り+1');
+    });
+
+    it('grants a buff nobody carries yet for the rounds asked for', () => {
+      manager.extendRound('猛攻撃', '攻撃+2', 3);
+
+      expect(container.getFirstElementByName('猛攻撃')!.value).toBe(3);
+    });
+
+    it('lengthens nothing on a buff held until it is cleared', () => {
+      manager.addRound('毒', '継続2', 4, { timing: 'none' });
+      manager.extendRound('毒', '継続2', 3);
+
+      expect(container.getFirstElementByName('毒')!.value).toBe(4);
+    });
+
+    it('leaves the rounds where they stand when none are given', () => {
+      manager.addRound('猛攻撃', '攻撃+2', 2);
+      manager.extendRound('猛攻撃', '攻撃+2');
+
+      expect(container.getFirstElementByName('猛攻撃')!.value).toBe(2);
+    });
+  });
+
   describe('delete', () => {
     it('removes a buff by name', () => {
       manager.addRound('削除対象', '', 3);
