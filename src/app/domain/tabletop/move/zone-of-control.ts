@@ -61,7 +61,13 @@ export function isHostileTo(
   allied: PartyAlliance = NO_ALLIANCE
 ): boolean {
   if (piece.identifier === mover.identifier) return false;
-  if (by === 'party') return relationBetween(piece, mover, allied) === 'other';
+  if (by === 'party') {
+    // Held both ways or neither. A piece in no party holds no ground, and a table that held
+    // ground against it all the same would answer a stray monster with every party's reach
+    // while it held none of its own.
+    if (mover.partyIdentifier.length < 1) return false;
+    return relationBetween(piece, mover, allied) === 'other';
+  }
   return piece.isNpc !== mover.isNpc;
 }
 

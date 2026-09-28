@@ -168,9 +168,11 @@ describe('how a table tells its two sides apart', () => {
     expect(isHostileTo(piece(true, 'heroes'), piece(false, 'heroes'), 'party')).toBe(false);
   });
 
-  it('holds no ground for a piece nobody has placed, where the sides are parties', () => {
+  it('leaves a piece nobody has placed out of it both ways, where the sides are parties', () => {
+    // It holds no ground, and none is held against it. Held only one way, a stray would be
+    // walled in by every party on the board while stopping none of them.
     expect(isHostileTo(piece(true), piece(false, 'heroes'), 'party')).toBe(false);
-    expect(isHostileTo(piece(true, 'goblins'), piece(false), 'party')).toBe(true);
+    expect(isHostileTo(piece(true, 'goblins'), piece(false), 'party')).toBe(false);
   });
 
   it('never makes a piece its own enemy, whichever way the sides are told apart', () => {
