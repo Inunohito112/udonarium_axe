@@ -13,7 +13,7 @@ import { ViewportService } from '@axe/application/ui/viewport.service';
 import { Network } from '@axe/core/index';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { StatusAilmentCatalog } from '@axe/domain/character/status-ailment-catalog';
-import { DataElement } from '@axe/domain/data/data-element';
+import { DataElement, DataElementType } from '@axe/domain/data/data-element';
 import { DataSummarySetting } from '@axe/domain/data/data-summary-setting';
 import { Party } from '@axe/domain/party/party';
 import { Config } from '@axe/domain/peer/config';
@@ -884,6 +884,32 @@ describe('GameObjectInventoryComponent', () => {
 
         expect(component.inventoryTable().columns.map((column) => column.name)).toEqual(['HP', 'MP']);
         expect(tableRows()).toHaveLength(2);
+      });
+
+      it('writes a resource in the colour the theme chose, not one of its own', () => {
+        putOnTable('ゴブリン');
+        TestBed.inject(GameObjectInventoryService).tableDataTag = 'HP';
+        component.setViewMode('table');
+        fixture.detectChanges();
+
+        const value = tableRows()[0].querySelector('input[name="table-current-value"]') as HTMLElement;
+        expect(value).toBeTruthy();
+        // Nothing written on the element itself: a colour written here would be written over the
+        // theme's, and a dark theme would be handed a grey meant for a pale one.
+        expect(value.style.color).toBe('');
+      });
+
+      it('still writes a sanity that has fallen in its warning colour', () => {
+        const haunted = putOnTable('探索者');
+        haunted.detailDataElement!.appendChild(
+          DataElement.create('SAN', 100, { type: DataElementType.NUMBER_RESOURCE, currentValue: 40 })
+        );
+        TestBed.inject(GameObjectInventoryService).tableDataTag = 'SAN';
+        component.setViewMode('table');
+        fixture.detectChanges();
+
+        const value = tableRows()[0].querySelector('input[name="table-current-value"]') as HTMLElement;
+        expect(value.style.color).not.toBe('');
       });
 
       it('gives the heading and every row the same columns', () => {
