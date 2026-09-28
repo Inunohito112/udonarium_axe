@@ -905,6 +905,59 @@ describe('MoveRangeService and ground that costs more to cross', () => {
     expect(countCells(service.range()!.cells)).toBe(8);
   });
 
+  describe('a piece getting about some other way than on its feet', () => {
+    it('covers a quarter of the ground where every step costs it twice', () => {
+      const swimmer = pieceAt(5, 5, 2);
+      swimmer.moveMode = 'swim';
+
+      service.show(swimmer);
+
+      expect(countCells(service.range()!.cells)).toBe(8);
+    });
+
+    it('pays a bog nothing where it is over the bog rather than in it', () => {
+      dearGround(0, 0, 12, 12, 1);
+      const flier = pieceAt(5, 5, 2);
+      flier.moveMode = 'fly';
+
+      service.show(flier);
+
+      expect(countCells(service.range()!.cells)).toBe(24);
+    });
+
+    function wallDown(col: number): void {
+      const wall = Terrain.create('壁', 1, 12, 2, '', '');
+      wall.location = { name: 'table', x: col * GRID, y: 0 };
+      table.appendChild(wall);
+    }
+
+    it('goes over a wall a walk has to go round', () => {
+      wallDown(6);
+      const flier = pieceAt(5, 5, 2);
+      flier.moveMode = 'fly';
+
+      service.show(flier);
+
+      expect(reached(7, 5)).toBe(true);
+    });
+
+    it('leaves a walking piece stopped by that same wall', () => {
+      wallDown(6);
+
+      service.show(pieceAt(5, 5, 2));
+
+      expect(reached(7, 5)).toBe(false);
+    });
+
+    it('walks the board as it always has where nobody has said otherwise', () => {
+      dearGround(0, 0, 12, 12, 1);
+
+      service.show(pieceAt(5, 5, 2));
+
+      expect(countCells(service.range()!.cells)).toBe(8);
+    });
+  });
+
   it('charges the dearer of two stretches painted over one another', () => {
     dearGround(6, 0, 1, 12, 1);
     dearGround(6, 5, 1, 1, 2);

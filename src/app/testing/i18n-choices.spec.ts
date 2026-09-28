@@ -23,6 +23,7 @@ import { FIELD_ATMOSPHERE_IDS, FIELD_PROP_IDS } from '@axe/domain/tabletop/field
 import { TOWN_PIECE_IDS } from '@axe/domain/tabletop/field/field-blocks';
 import { MAP_FUNCTION_ROLES } from '@axe/domain/tabletop/function-paint';
 import { HAZARD_KINDS } from '@axe/domain/tabletop/hazard-presets';
+import { MOVE_MODES } from '@axe/domain/tabletop/move/move-mode';
 import { PIECE_PASSAGE_MODES } from '@axe/domain/tabletop/move/piece-passage';
 import { HOSTILITY_BY, ZOC_MODES } from '@axe/domain/tabletop/move/zone-of-control';
 import { TABLE_FACING_MARKS } from '@axe/domain/tabletop/table-facing-mark';
@@ -63,6 +64,7 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.roomSettings.hostilityBy_': HOSTILITY_BY,
   'feature.roomSettings.piecePassage_': PIECE_PASSAGE_MODES,
   'feature.ambience.brightness_': AMBIENCE_BRIGHTNESS,
+  'feature.character.moveMode_': MOVE_MODES,
   'feature.mapEditor.function.role_': MAP_FUNCTION_ROLES,
   'feature.mapEditor.function.triggerMoment_': TRIGGER_MOMENTS,
   'feature.mapEditor.function.triggerRepeat_': TRIGGER_REPEATS,

@@ -25,6 +25,7 @@ import { isLevelWith, isWalkableStep, landingHeightsOn } from '@axe/domain/table
 import { moveBlockMapOn } from '@axe/domain/tabletop/move/move-block-map';
 import { moveCellsOf } from '@axe/domain/tabletop/move/move-cells';
 import { moveCostCells } from '@axe/domain/tabletop/move/move-cost-cells';
+import { moveModeTermsOf } from '@axe/domain/tabletop/move/move-mode';
 import { pieceFitsOn } from '@axe/domain/tabletop/move/piece-footprint';
 import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
 import { passageCells, PiecePassageMode } from '@axe/domain/tabletop/move/piece-passage';
@@ -430,8 +431,9 @@ export class MoveRangeService {
     const start = pieceCellOf(grid, character, table.gridSize);
     if (start < 0) return null;
 
+    const going = moveModeTermsOf(character.moveMode);
     const paved = reuse ? this.rasterFor(grid) : null;
-    const blocked = paved ? paved.blocked.copy() : blockedByTerrain(grid, table.terrains);
+    let blocked = paved ? paved.blocked.copy() : blockedByTerrain(grid, table.terrains);
     // Only the terrain differs between walking and jumping; everything else stands in the way
     // of both, so it is gathered once and laid over each of them.
     const leapt = paved ? paved.leapt.copy() : blockedByTerrain(grid, table.terrains, terrainBlocksJump);
@@ -471,7 +473,9 @@ export class MoveRangeService {
 
     // What the ground itself charges, which is owed by whoever enters it whatever else is
     // happening on the board.
-    const dear = reuse ? this.pricesFor(grid) : moveCostCells(grid, moveCostsOn(table));
+    // A piece over the ground owes the ground nothing: a bog is no harder to cross than a
+    // floor when the feet are not in it.
+    const dear = going.paysGround ? (reuse ? this.pricesFor(grid) : moveCostCells(grid, moveCostsOn(table))) : null;
 
     const mode = rules.zocMode;
     const ground = mode === 'none' ? null : this.heldGroundAround(grid, character, standing, rules);
@@ -479,11 +483,14 @@ export class MoveRangeService {
     if (held && mode === 'block') otherwise.or(held);
     blocked.or(otherwise);
     leapt.or(otherwise);
+    // What stops a jump is what stops a piece that goes over things rather than round them.
+    if (going.clears) blocked = leapt;
     const extra = Math.max(0, Math.floor(rules.zocExtraCost));
     const fights = rules.breakOutMode === 'free' ? null : (ground?.fights ?? null);
     const flat = Math.max(0, Math.floor(rules.breakOutCost));
     const crossing = passage.costly.isEmpty ? 0 : Math.max(0, Math.floor(rules.piecePassageCost));
-    const charges = dear !== null || crossing > 0 || (held !== null && mode === 'cost') || fights !== null;
+    const charges =
+      dear !== null || going.toll > 0 || crossing > 0 || (held !== null && mode === 'cost') || fights !== null;
     const noStop = passage.noStop.isEmpty ? null : passage.noStop;
     // A wide piece is answered for the cell its middle would be over, so where every cell it
     // covers has to be clear is asked here rather than by the search, which knows of one cell
@@ -494,7 +501,7 @@ export class MoveRangeService {
       diagonals: rules.diagonalMove,
       costOf: charges
         ? (index, from) => {
-            let price = 1 + (dear ? dear[index] : 0);
+            let price = 1 + going.toll + (dear ? dear[index] : 0);
             if (crossing > 0 && passage.costly.get(index)) price += crossing;
             if (held && mode === 'cost' && held.get(index)) price += extra;
             if (!fights || !leavesFight(fights, from, index)) return price;

@@ -1496,7 +1496,8 @@
         "radialDisplay": "表示",
         "radialMove": "移動",
         "radialDisclosure": "公開・所有",
-        "radialObject": "コマ操作"
+        "radialObject": "コマ操作",
+        "moveMode": "移動の仕方"
       },
       "panel": {
         "sheet": "キャラクターシート",
@@ -1607,7 +1608,12 @@
             "charaxiv": "ココフォリア用コピー経由で取り込み"
           }
         }
-      }
+      },
+      "moveMode_walk": "歩く",
+      "moveMode_climb": "登る",
+      "moveMode_swim": "泳ぐ",
+      "moveMode_crawl": "這う",
+      "moveMode_fly": "飛ぶ"
     },
     "light": {
       "contextMenu": {

@@ -1496,7 +1496,8 @@
         "radialDisplay": "표시",
         "radialMove": "이동",
         "radialDisclosure": "공개·소유자",
-        "radialObject": "말 조작"
+        "radialObject": "말 조작",
+        "moveMode": "이동 방법"
       },
       "panel": {
         "sheet": "캐릭터 시트",
@@ -1607,7 +1608,12 @@
             "charaxiv": "코코포리아용 복사를 거쳐 가져오기"
           }
         }
-      }
+      },
+      "moveMode_walk": "걷기",
+      "moveMode_climb": "오르기",
+      "moveMode_swim": "헤엄치기",
+      "moveMode_crawl": "기어가기",
+      "moveMode_fly": "날기"
     },
     "light": {
       "contextMenu": {

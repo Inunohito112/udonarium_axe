@@ -1496,7 +1496,8 @@
         "radialDisplay": "Display",
         "radialMove": "Move",
         "radialDisclosure": "Access & owner",
-        "radialObject": "Piece actions"
+        "radialObject": "Piece actions",
+        "moveMode": "Getting about"
       },
       "panel": {
         "sheet": "Character sheet",
@@ -1607,7 +1608,12 @@
             "charaxiv": "Imported via \"Copy for CCFOLIA\""
           }
         }
-      }
+      },
+      "moveMode_walk": "Walking",
+      "moveMode_climb": "Climbing",
+      "moveMode_swim": "Swimming",
+      "moveMode_crawl": "Crawling",
+      "moveMode_fly": "Flying"
     },
     "light": {
       "contextMenu": {
