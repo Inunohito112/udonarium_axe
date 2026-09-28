@@ -4009,6 +4009,7 @@
         "noChangeTarget": "변경 항목이 선택되지 않았습니다",
         "noTargetCharacter": "대상 캐릭터가 선택되지 않았습니다",
         "addBuffMessage": "버프 부여 {{buff}} > {{targets}}",
+        "stackBuffMessage": "버프 가산 {{buff}} > {{targets}}",
         "decBuffRoundMessage": "버프의 R 감소 {{targets}}",
         "deleteZeroBuffMessage": "0R 이하 버프 삭제 {{targets}}",
         "changeValueMessage": "[{{name}}]변경[{{sign}}{{value}}]＞{{detail}}",

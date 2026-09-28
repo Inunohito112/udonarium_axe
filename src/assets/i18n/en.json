@@ -4256,6 +4256,7 @@
       "noChangeTarget": "No target attribute selected",
       "noTargetCharacter": "No target character selected",
       "addBuffMessage": "Applied buff {{buff}} > {{targets}}",
+      "stackBuffMessage": "Stacked buff {{buff}} > {{targets}}",
       "decBuffRoundMessage": "Decreased buff R {{targets}}",
       "deleteZeroBuffMessage": "Cleared 0R buffs {{targets}}",
       "changeValueMessage": "[{{name}}] changed [{{sign}}{{value}}] > {{detail}}",
