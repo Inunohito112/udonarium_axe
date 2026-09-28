@@ -149,10 +149,12 @@ function hazardBlocksOf(
           blocksSight: preset.blocksSight,
         },
       });
-      if (preset.blocks || preset.extraCost > 0) {
+      // Dangerous ground is dear to cross rather than shut: what nobody gets through at all is
+      // the movement brush's own far end, painted over the same cells where a table wants both.
+      if (preset.extraCost > 0) {
         moveCost.push({
           ...rect,
-          spec: { blocks: preset.blocks, halves: false, extraCost: Math.max(1, preset.extraCost), color: preset.color },
+          spec: { blocks: false, halves: false, extraCost: preset.extraCost, color: preset.color },
         });
       }
       // Ground that takes nothing and leaves no mark needs nothing to happen on it: laying a

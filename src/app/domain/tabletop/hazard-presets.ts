@@ -23,8 +23,6 @@ export interface HazardPreset {
   ambience: AmbienceKind;
   /** What crossing it costs over plain footing. Nought leaves the going as it was. */
   extraCost: number;
-  /** Whether nothing gets through it at all, whatever it would otherwise charge. */
-  blocks: boolean;
   /** Whether nobody sees through it, the far side of it being hidden rather than only dimmed. */
   blocksSight: boolean;
   /** What it takes from whoever it catches, as a number or a handful of dice. Empty takes nothing. */
@@ -50,7 +48,6 @@ export const HAZARD_PRESETS: Record<HazardKind, HazardPreset> = {
   bog: {
     ambience: 'swamp',
     extraCost: 1,
-    blocks: false,
     blocksSight: false,
     amount: '',
     moment: 'stop',
@@ -62,7 +59,6 @@ export const HAZARD_PRESETS: Record<HazardKind, HazardPreset> = {
   lava: {
     ambience: 'lava',
     extraCost: 2,
-    blocks: false,
     blocksSight: false,
     amount: '2d6',
     moment: 'turnStart',
@@ -72,7 +68,6 @@ export const HAZARD_PRESETS: Record<HazardKind, HazardPreset> = {
   fog: {
     ambience: 'fog',
     extraCost: 1,
-    blocks: false,
     blocksSight: true,
     amount: '',
     moment: 'stop',
@@ -83,7 +78,6 @@ export const HAZARD_PRESETS: Record<HazardKind, HazardPreset> = {
   ice: {
     ambience: 'frost',
     extraCost: 0,
-    blocks: false,
     blocksSight: false,
     amount: '',
     moment: 'enter',
@@ -93,7 +87,6 @@ export const HAZARD_PRESETS: Record<HazardKind, HazardPreset> = {
   briar: {
     ambience: 'swamp',
     extraCost: 1,
-    blocks: false,
     blocksSight: false,
     amount: '1d6',
     moment: 'enter',
@@ -103,7 +96,6 @@ export const HAZARD_PRESETS: Record<HazardKind, HazardPreset> = {
   vent: {
     ambience: 'vent',
     extraCost: 0,
-    blocks: false,
     blocksSight: false,
     amount: '1d6',
     moment: 'turnStart',

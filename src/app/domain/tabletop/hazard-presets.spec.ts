@@ -22,7 +22,7 @@ describe('the dangerous ground a master can lay in one stroke', () => {
   it('gives every one of them something to do: a going, a taking or a mark', () => {
     for (const kind of HAZARD_KINDS) {
       const held = HAZARD_PRESETS[kind];
-      const does = held.blocks || held.extraCost > 0 || held.amount.length > 0 || held.ailment.length > 0;
+      const does = held.extraCost > 0 || held.blocksSight || held.amount.length > 0 || held.ailment.length > 0;
       expect(does).toBe(true);
     }
   });
