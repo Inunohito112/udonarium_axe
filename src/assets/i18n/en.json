@@ -3928,6 +3928,8 @@
       "builderTitle": "Build a calculated buff command",
       "builderStacks": "Stack",
       "builderStacksHint": "Add to a buff of the same name",
+      "builderExtends": "Lengthen too",
+      "builderExtendsHint": "Add the rounds to the ones left",
       "copy": "Copy",
       "copied": "Copied",
       "buffCount": "{{n}} buffs",

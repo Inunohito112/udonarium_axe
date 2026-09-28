@@ -282,6 +282,18 @@ describe('BuffManagerPanelComponent', () => {
       expect(component.builderCommand()).toBe('&+!猛攻撃/命中/+/2/3');
     });
 
+    it('writes two marks when the helping lengthens the buff as well', () => {
+      component.builderName.set('猛攻撃');
+      component.builderStatus.set('命中');
+      component.builderOperator.set('+');
+      component.builderAmount.set('2');
+      component.builderRounds.set('3');
+      component.builderStacks.set(true);
+      component.builderExtends.set(true);
+
+      expect(component.builderCommand()).toBe('&++!猛攻撃/命中/+/2/3');
+    });
+
     it('offers no second helping for a buff that only holds a status at a value', () => {
       component.builderOperator.set('=');
       component.builderStacks.set(true);

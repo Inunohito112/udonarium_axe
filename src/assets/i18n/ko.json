@@ -3930,6 +3930,8 @@
       "builderTitle": "자동 계산 버프 표기 만들기",
       "builderStacks": "겹쳐 걸기",
       "builderStacksHint": "같은 이름의 버프에 더하기",
+      "builderExtends": "라운드도 더하기",
+      "builderExtendsHint": "남은 라운드에 더하기",
       "copy": "복사",
       "copied": "복사했습니다",
       "buffCount": "{{n}}건",
