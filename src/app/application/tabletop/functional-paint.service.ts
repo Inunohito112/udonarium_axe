@@ -326,6 +326,17 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
   };
 }
 
+/**
+ * Whether a look over the ground is the editor's to take away again.
+ *
+ * The editor lays its looks nameless, and everything else that lays one - the table's own menu,
+ * the map generator - names it after what it is. So a named look is somebody else's: it is left
+ * where it was put, and is not counted against what the dangerous-ground brush has painted.
+ */
+function isEditorsOwnLook(area: TableAmbience): boolean {
+  return area.name.trim().length < 1;
+}
+
 /** What one look laid over the ground is, which is everything the editor put into it. */
 function ambienceSpecOf(area: TableAmbience): AmbiencePaintSpec {
   return {
@@ -522,7 +533,7 @@ export class FunctionalPaintService {
    */
   private layAmbiences(table: GameTable, grid: CellGrid, plan: FunctionPaintPlan): void {
     this.takeAway(
-      table.ambiences.map((held) => {
+      table.ambiences.filter(isEditorsOwnLook).map((held) => {
         const stood = blockFootprintOf(held, held.width, held.height, grid);
         return { object: held, key: stood ? blockKey(stood.rect, ambienceSpecOf(held)) : null };
       }),
@@ -534,7 +545,7 @@ export class FunctionalPaintService {
       area.ambienceColor = block.spec.color;
       area.ambienceDensity = block.spec.density;
       area.blocksSight = block.spec.blocksSight;
-      area.location = { name: 'table', x: block.col * grid.sizePx, y: block.row * grid.sizePx };
+      area.location = blockOrigin(null, block, grid);
       table.appendChild(area);
     }
   }
@@ -568,6 +579,7 @@ export class FunctionalPaintService {
       triggerBlocks: triggersOn(table).map((held) => ({ ...held.rect, spec: triggerSpecOf(held) })),
       moveCostBlocks: moveCostsOn(table).map((held) => ({ ...held.rect, spec: moveCostSpecOf(held) })),
       ambienceBlocks: table.ambiences
+        .filter(isEditorsOwnLook)
         .map((held) => {
           const stood = blockFootprintOf(held, held.width, held.height, grid);
           return stood ? { ...stood.rect, spec: ambienceSpecOf(held) } : null;
