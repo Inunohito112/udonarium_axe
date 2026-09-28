@@ -13,6 +13,8 @@ import { CutIn } from '@axe/domain/media/cut-in';
 import { Party, PARTY_COLORS } from '@axe/domain/party/party';
 import { ReloadCheck } from '@axe/domain/peer/reload-check';
 import { Room } from '@axe/domain/peer/room';
+import { GameTable } from '@axe/domain/tabletop/game-table';
+import { LightSource } from '@axe/domain/tabletop/light-source';
 
 describe('Room', () => {
   let store: ObjectStore;
@@ -69,6 +71,35 @@ describe('Room', () => {
       const room = new Room();
       room.initialize();
       expect(room.innerXml()).toBe('');
+    });
+  });
+
+  describe('saving what stands on a table', () => {
+    it('writes a light once, where the table it stands on has already written it', () => {
+      const table = new GameTable();
+      table.initialize();
+      const light = LightSource.create('燭台');
+      table.appendChild(light);
+
+      const xml = new Room().innerXml();
+
+      // The table writes everything standing on it, so a light written again beside the table
+      // is a second light on the way back in.
+      expect(xml.split('<light-source').length - 1).toBe(1);
+    });
+
+    it('writes a light nobody put on a table, which would otherwise be lost', () => {
+      LightSource.create('浮いた光');
+
+      const xml = new Room().innerXml();
+
+      expect(xml.split('<light-source').length - 1).toBe(1);
+    });
+
+    it('reads a saved table back with the one light it was saved with', () => {
+      loadRoom('<game-table><light-source name="燭台"></light-source></game-table>');
+
+      expect(store.getObjects(LightSource)).toHaveLength(1);
     });
   });
 
