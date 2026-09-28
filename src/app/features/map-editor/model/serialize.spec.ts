@@ -611,6 +611,27 @@ describe('the cells painted for what they do', () => {
     expect(layer.spec.moveCost.blocks).toBe(true);
   });
 
+  it('carries the roles a deleted layer left behind through a round trip', () => {
+    const scene: MapScene = { ...makeScene(), layers: [], paintedRoles: ['mask', 'trigger'] };
+
+    const restored = deserializeScene(serializeScene(scene));
+
+    expect(restored?.paintedRoles?.sort()).toEqual(['mask', 'trigger']);
+  });
+
+  it('leaves out a role it does not know, and answers nothing where none are left', () => {
+    const scene: MapScene = { ...makeScene(), layers: [], paintedRoles: ['mask'] };
+    const json = serializeScene(scene).replace('"mask"', '"damage"');
+
+    expect(deserializeScene(json)?.paintedRoles).toBeUndefined();
+  });
+
+  it('answers nothing for a scene saved before any of this', () => {
+    const json = serializeScene({ ...makeScene(), layers: [] });
+
+    expect(deserializeScene(json)?.paintedRoles).toBeUndefined();
+  });
+
   it('keeps only the cells that were written down as painted', () => {
     const json = serializeScene(sceneWithFunction()).replace('"2,3":true', '"2,3":false');
 

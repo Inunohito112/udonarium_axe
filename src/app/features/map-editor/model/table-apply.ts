@@ -205,6 +205,20 @@ export function sceneCarriesFunctions(scene: MapScene, role?: MapFunctionRole): 
   );
 }
 
+/**
+ * Whether the scene has anything to say about a role, layer or no layer.
+ *
+ * A layer that has been deleted still speaks: the scene wrote the role down while the layer was
+ * there, so a table asked to take the painting again hears "none of that" rather than silence.
+ * Without it, rubbing a layer out would leave every wall and trap it had laid standing, and the
+ * only way to clear them would be to keep an empty layer about for ever.
+ */
+export function sceneSpeaksFor(scene: MapScene, role?: MapFunctionRole): boolean {
+  if (sceneCarriesFunctions(scene, role)) return true;
+  const spoken = scene.paintedRoles ?? [];
+  return role === undefined ? spoken.length > 0 : spoken.includes(role);
+}
+
 function functionLayersOf(scene: MapScene, role: MapFunctionRole): FunctionLayer[] {
   return scene.layers.filter(
     (layer): layer is FunctionLayer => layer.kind === 'function' && (layer as FunctionLayer).role === role
@@ -227,26 +241,27 @@ export function planFunctionPaint(scene: MapScene, table: TableSnapshot): Functi
   // Dangerous ground is laid as three ordinary things, so it is taken apart before anything
   // downstream is asked to work out what changed.
   const hazard = hazardBlocksOf(scene, hex);
-  const laysHazards = sceneCarriesFunctions(scene, 'hazard');
+  const laysHazards = sceneSpeaksFor(scene, 'hazard');
 
-  // A role the scene has no layer for is a role it has said nothing about, and saying nothing
-  // is not the same as saying none. Emptying a layer still speaks — the layer is there — but a
-  // scene that only ever had walls painted on it must not take the table's masks away with them.
+  // A role the scene has never had a layer for is a role it has said nothing about, and saying
+  // nothing is not the same as saying none: a scene that only ever had walls painted on it must
+  // not take the table's masks away with them. Emptying a layer speaks, and so does deleting
+  // one, since the scene wrote the role down while the layer was still there.
   return {
-    blocked: sceneCarriesFunctions(scene, 'moveCost') ? blockedCellsOf(scene) : [...table.blockedCells],
+    blocked: sceneSpeaksFor(scene, 'moveCost') ? blockedCellsOf(scene) : [...table.blockedCells],
     moveCost:
-      sceneCarriesFunctions(scene, 'moveCost') || laysHazards
+      sceneSpeaksFor(scene, 'moveCost') || laysHazards
         ? blockChange([...moveCostBlocksOf(scene, hex), ...hazard.moveCost], table.moveCostBlocks)
         : { add: [], remove: [] },
     ambience: laysHazards ? blockChange(hazard.ambience, table.ambienceBlocks) : { add: [], remove: [] },
-    terrain: sceneCarriesFunctions(scene, 'terrain')
+    terrain: sceneSpeaksFor(scene, 'terrain')
       ? blockChange(terrainBlocksOf(scene, table.cellPx, hex), table.terrainBlocks)
       : { add: [], remove: [] },
-    mask: sceneCarriesFunctions(scene, 'mask')
+    mask: sceneSpeaksFor(scene, 'mask')
       ? blockChange(maskBlocksOf(scene, hex), table.maskBlocks)
       : { add: [], remove: [] },
     trigger:
-      sceneCarriesFunctions(scene, 'trigger') || laysHazards
+      sceneSpeaksFor(scene, 'trigger') || laysHazards
         ? blockChange([...triggerBlocksOf(scene, hex), ...hazard.trigger], table.triggerBlocks)
         : { add: [], remove: [] },
   };

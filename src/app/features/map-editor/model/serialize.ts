@@ -1,5 +1,9 @@
 import { GridType } from '@axe/domain/tabletop/game-table';
-import { sanitizeFunctionLayerLook } from '@axe/features/map-editor/model/function-layer';
+import {
+  MAP_FUNCTION_ROLES,
+  MapFunctionRole,
+  sanitizeFunctionLayerLook,
+} from '@axe/features/map-editor/model/function-layer';
 import {
   DEFAULT_SCENE_BACKGROUND,
   DEFAULT_SCENE_GRID_COLOR,
@@ -267,7 +271,21 @@ export function deserializeScene(json: string): MapScene | null {
     gridVisible: raw['gridVisible'] !== false,
     layers: rawLayers.map((l) => sanitizeLayer(l as Record<string, unknown>)),
     guides: sanitizeGuides(raw['guides']),
+    paintedRoles: sanitizePaintedRoles(raw['paintedRoles']),
   };
+}
+
+/**
+ * The roles a saved scene had painted, keeping only the ones this version knows.
+ *
+ * Read back rather than worked out afresh from the layers: a scene is saved with its layers
+ * deleted precisely when somebody meant to delete them, and the whole point of the list is to
+ * outlive the layer.
+ */
+function sanitizePaintedRoles(raw: unknown): MapFunctionRole[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const kept = [...new Set(raw.filter((role): role is MapFunctionRole => MAP_FUNCTION_ROLES.includes(role)))];
+  return kept.length > 0 ? kept : undefined;
 }
 
 function sanitizeGuides(raw: unknown): SceneGuideLine[] | undefined {

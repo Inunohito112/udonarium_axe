@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { DEFAULT_FUNCTION_SPEC } from '@axe/domain/tabletop/function-paint';
 import { MapEditorState } from '@axe/features/map-editor/editor/map-editor-state';
 import { FunctionLayer } from '@axe/features/map-editor/model/scene';
+import { removeLayer } from '@axe/features/map-editor/model/scene-ops';
+import { sceneSpeaksFor } from '@axe/features/map-editor/model/table-apply';
 
 describe('painting what a cell does', () => {
   let state: MapEditorState;
@@ -33,6 +35,26 @@ describe('painting what a cell does', () => {
     const layers = layersOfRole('moveCost');
     expect(layers).toHaveLength(1);
     expect(Object.keys(layers[0].cells)).toEqual(['1,2']);
+  });
+
+  describe('deleting a layer', () => {
+    it('leaves the scene still speaking for what it painted', () => {
+      state.functionRole.set('trigger');
+      state.paintFunctionCell(1, 2);
+      const laid = layersOfRole('trigger')[0];
+
+      state.applyCommitted((scene) => removeLayer(scene, laid.id));
+
+      expect(layersOfRole('trigger')).toEqual([]);
+      expect(sceneSpeaksFor(state.current, 'trigger')).toBe(true);
+    });
+
+    it('says nothing for a role the scene never painted', () => {
+      state.functionRole.set('trigger');
+      state.paintFunctionCell(1, 2);
+
+      expect(sceneSpeaksFor(state.current, 'mask')).toBe(false);
+    });
   });
 
   it('keeps each role on a layer of its own', () => {

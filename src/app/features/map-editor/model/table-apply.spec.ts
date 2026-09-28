@@ -8,6 +8,7 @@ import {
   FunctionPaintPlan,
   planFunctionPaint,
   sceneCarriesFunctions,
+  sceneSpeaksFor,
 } from '@axe/features/map-editor/model/table-apply';
 import { sceneFromTable } from '@axe/features/map-editor/model/table-import';
 
@@ -114,7 +115,58 @@ describe('sceneCarriesFunctions()', () => {
   });
 });
 
+describe('sceneSpeaksFor()', () => {
+  it('speaks for a role it holds a layer of', () => {
+    expect(sceneSpeaksFor(sceneWith(layerOf('terrain', ['1,1'])), 'terrain')).toBe(true);
+  });
+
+  it('says nothing about a role it has never held a layer of', () => {
+    expect(sceneSpeaksFor(sceneWith(layerOf('terrain', ['1,1'])), 'mask')).toBe(false);
+  });
+
+  it('goes on speaking for a role whose layer was deleted', () => {
+    const scene = { ...createScene(10, 8, 50), paintedRoles: ['mask' as MapFunctionRole] };
+
+    expect(sceneSpeaksFor(scene, 'mask')).toBe(true);
+  });
+
+  it('answers for the scene as a whole the same way', () => {
+    expect(sceneSpeaksFor(createScene(10, 8, 50))).toBe(false);
+    expect(sceneSpeaksFor({ ...createScene(10, 8, 50), paintedRoles: ['mask' as MapFunctionRole] })).toBe(true);
+  });
+});
+
 describe('planFunctionPaint()', () => {
+  it('takes away what a deleted layer had laid', () => {
+    const scene = { ...createScene(10, 8, 50), paintedRoles: ['mask' as MapFunctionRole] };
+
+    const plan = planFunctionPaint(
+      scene,
+      snapshot({ maskBlocks: [maskBlock({ col: 4, row: 4, width: 1, height: 1 })] })
+    )!;
+
+    expect(plan.mask.remove.map(rectKey)).toEqual(['4,4,1,1']);
+  });
+
+  it('leaves a table alone where the scene never held that layer at all', () => {
+    const scene = { ...createScene(10, 8, 50), paintedRoles: ['terrain' as MapFunctionRole] };
+
+    const plan = planFunctionPaint(
+      scene,
+      snapshot({ maskBlocks: [maskBlock({ col: 4, row: 4, width: 1, height: 1 })] })
+    )!;
+
+    expect(plan.mask.remove).toEqual([]);
+  });
+
+  it('clears the shut cells a deleted movement layer had painted', () => {
+    const scene = { ...createScene(10, 8, 50), paintedRoles: ['moveCost' as MapFunctionRole] };
+
+    const plan = planFunctionPaint(scene, snapshot({ blockedCells: ['5,5'] }))!;
+
+    expect(plan.blocked).toEqual([]);
+  });
+
   it('closes the table on whatever the scene holds, replacing what was there', () => {
     const plan = planFunctionPaint(sceneWith(shutLayer(['1,1'])), snapshot({ blockedCells: ['5,5'] }))!;
 
