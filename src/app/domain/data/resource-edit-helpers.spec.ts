@@ -196,6 +196,43 @@ describe('resource-edit-helpers', () => {
       expect(character.buffs.find('猛攻撃')!.currentValue).toBe('攻撃+4');
     });
 
+    it('leaves the longer count of rounds standing for one plus', () => {
+      applyBuffEdit({ command: '&猛攻撃/攻撃+2/5', object: character, targeted: false }, character);
+      applyBuffEdit({ command: '&+猛攻撃/攻撃+2/2', object: character, targeted: false }, character);
+
+      expect(character.buffs.find('猛攻撃')!.value).toBe(5);
+    });
+
+    it('lengthens the buff by the rounds asked for on two pluses', () => {
+      applyBuffEdit({ command: '&猛攻撃/攻撃+2/2', object: character, targeted: false }, character);
+      const text = applyBuffEdit({ command: '&++猛攻撃/攻撃+2/3', object: character, targeted: false }, character);
+
+      const data = character.buffs.find('猛攻撃')!;
+      expect(data.value).toBe(5);
+      expect(data.currentValue).toBe('攻撃+4');
+      expect(text).toContain('5R');
+    });
+
+    it('lengthens a buff without changing what it says when no note is given', () => {
+      applyBuffEdit({ command: '&加護/守り+1/2', object: character, targeted: false }, character);
+      applyBuffEdit({ command: '&++加護//3', object: character, targeted: false }, character);
+
+      const data = character.buffs.find('加護')!;
+      expect(data.value).toBe(5);
+      expect(data.currentValue).toBe('守り+1');
+    });
+
+    it('lengthens a calculated buff and moves the status again', () => {
+      character.status.changeValue('HP', 'now', -100);
+      const before = character.status.getValue('HP', 'now')!;
+
+      applyBuffEdit({ command: '&!猛攻撃/HP/+/2/2', object: character, targeted: false }, character);
+      applyBuffEdit({ command: '&++!猛攻撃/HP/+/2/3', object: character, targeted: false }, character);
+
+      expect(character.status.getValue('HP', 'now')).toBe(before + 4);
+      expect(character.buffs.find('猛攻撃')!.value).toBe(5);
+    });
+
     it('grants a marked buff nobody carries yet', () => {
       const text = applyBuffEdit({ command: '&+猛攻撃/攻撃+2/3', object: character, targeted: false }, character);
 

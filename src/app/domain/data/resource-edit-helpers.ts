@@ -1,6 +1,7 @@
 import { toHalfWidth } from '@axe/core/util/string-util';
 import { parseBuffAppearance } from '@axe/domain/character/buff-appearance';
 import { describeBuffModifier, parseBuffModifierRequest } from '@axe/domain/character/buff-modifier';
+import { BuffPileOn } from '@axe/domain/character/buff-stack';
 import { resolveBuffTiming } from '@axe/domain/character/buff-timing';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { DataElement } from '@axe/domain/data/data-element';
@@ -242,10 +243,11 @@ export function applyResourceEdit(edit: ResourceEdit, character: GameCharacter):
  * moves it back as it runs out, so the table stops doing the arithmetic by hand.
  *
  * `&+!` stacks: a second helping moves the status again and the buff remembers both, rather than
- * putting the first one back. Holding a status at a value (`=`) is the one thing that cannot
- * stack, since holding it there twice is still holding it there, so that starts over as always.
+ * putting the first one back, and `&++!` lengthens the buff by the rounds asked for as well.
+ * Holding a status at a value (`=`) is the one thing that cannot stack, since holding it there
+ * twice is still holding it there, so that starts over as always.
  */
-function applyCalculatedBuff(command: string, character: GameCharacter, stacks: boolean): string {
+function applyCalculatedBuff(command: string, character: GameCharacter, piles: BuffPileOn): string {
   const parts = command.replace(/^[tTｔＴ]?&[!！]/i, '').split('/');
   const name = (parts[0] ?? '').trim();
   if (name.length < 1) return '';
@@ -258,11 +260,12 @@ function applyCalculatedBuff(command: string, character: GameCharacter, stacks: 
   const timing = resolveBuffTiming(parts[5] ?? '') ?? undefined;
   const trigger = (parts[6] ?? '').trim();
 
-  const stacking = stacks && request.operator === 'add' && character.buffs.find(name) != null;
+  const stacking = piles !== 'none' && request.operator === 'add' && character.buffs.find(name) != null;
   const effect = describeBuffModifier(request);
   const appearance = { timing, trigger: trigger.length > 0 ? trigger : undefined };
-  if (stacking) character.buffs.stackRound(name, effect, round, appearance);
-  else character.buffs.addRound(name, effect, round, appearance);
+  if (!stacking) character.buffs.addRound(name, effect, round, appearance);
+  else if (piles === 'extend') character.buffs.extendRound(name, effect, round, appearance);
+  else character.buffs.stackRound(name, effect, round, appearance);
 
   const data = character.buffs.find(name);
   if (!data) return '';
@@ -277,17 +280,17 @@ function applyCalculatedBuff(command: string, character: GameCharacter, stacks: 
 }
 
 /**
- * Whether the command asks for a second helping of a buff already standing, and the command with
- * that mark taken off.
+ * What second helping the command asks for, and the command with that mark taken off.
  *
  * `&+猛攻撃/攻撃+2/3` adds its `+2` to whatever the standing 猛攻撃 already carries instead of
- * writing over it. The mark sits right after the ampersand so that everything downstream reads
- * the command it always read, `&+!` included.
+ * writing over it, and `&++猛攻撃/攻撃+2/3` adds the three rounds to the ones left as well. The
+ * mark sits right after the ampersand so that everything downstream reads the command it always
+ * read, `&+!` included.
  */
-function readBuffStacking(command: string): { stacks: boolean; command: string } {
-  const marked = command.match(/^([tTｔＴ]?&)[+＋](?=.)/);
-  if (!marked) return { stacks: false, command };
-  return { stacks: true, command: marked[1] + command.slice(marked[0].length) };
+function readBuffStacking(command: string): { piles: BuffPileOn; command: string } {
+  const marked = command.match(/^([tTｔＴ]?&)([+＋]{1,2})(?=[^+＋])/);
+  if (!marked) return { piles: 'none', command };
+  return { piles: marked[2].length > 1 ? 'extend' : 'stack', command: marked[1] + command.slice(marked[0].length) };
 }
 
 /**
@@ -296,10 +299,11 @@ function readBuffStacking(command: string): { stacks: boolean; command: string }
  * `&R-` and `&R+` move every buff's remaining rounds, `&D` clears buffs at zero rounds or fewer, `&name-`
  * removes one buff, `&!` adds a buff that changes a status, and anything else adds a plain
  * `name/effect/rounds/appearance` buff. A `+` right after the ampersand stacks onto a buff of the
- * same name rather than starting it over. A targeted command's text starts with the character's name.
+ * same name rather than starting it over, and `++` lengthens it by the rounds asked for as well.
+ * A targeted command's text starts with the character's name.
  */
 export function applyBuffEdit(buff: BuffEdit, character: GameCharacter): string {
-  const { stacks, command } = readBuffStacking(buff.command);
+  const { piles, command } = readBuffStacking(buff.command);
   let text = '';
   if (buff.targeted) {
     text += `[${character.name}] `;
@@ -321,7 +325,7 @@ export function applyBuffEdit(buff: BuffEdit, character: GameCharacter): string 
       text += `${reg1}を消去    `;
     }
   } else if (command.match(/^[tTｔＴ]?&[!！]/i)) {
-    text += applyCalculatedBuff(command, character, stacks);
+    text += applyCalculatedBuff(command, character, piles);
   } else {
     const splittext = command.replace(/^[tTｔＴ]?&/i, '').split('/');
     let round: number | undefined = undefined;
@@ -350,8 +354,9 @@ export function applyBuffEdit(buff: BuffEdit, character: GameCharacter): string 
       if (token) bufftext = `${bufftext}/${token}`;
     }
 
-    if (stacks && character.buffs.find(buffname)) {
-      character.buffs.stackRound(buffname, sub, round, appearance);
+    if (piles !== 'none' && character.buffs.find(buffname)) {
+      if (piles === 'extend') character.buffs.extendRound(buffname, sub, round, appearance);
+      else character.buffs.stackRound(buffname, sub, round, appearance);
       text += `バフを加算 ${describeStandingBuff(character, buffname, bufftext)}    `;
     } else {
       character.buffs.addRound(buffname, sub, round, appearance);
