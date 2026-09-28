@@ -55,6 +55,7 @@ export class Config extends ObjectNode implements InnerXml {
   @SyncVar('_otherPartyPassage') private _otherPartyPassage: string = '';
   @SyncVar('_noPartyPassage') private _noPartyPassage: string = '';
   @SyncVar('_piecePassageCost') private _piecePassageCost: number = -1;
+  @SyncVar('_sizeSlipsPast') private _sizeSlipsPast: string = '';
   @SyncVar('_moveRangeAlways') private _moveRangeAlways: string = '';
   @SyncVar('_zocAlways') private _zocAlways: string = '';
   @SyncVar('_cellDistance') private _cellDistance: number = -1;
@@ -273,6 +274,14 @@ export class Config extends ObjectNode implements InnerXml {
     this._piecePassageCost = writeRuleNumber(answer);
   }
 
+  /** Whether a piece squeezes past somebody far enough from it in size, or null to leave it to the table. */
+  get sizeSlipsPast(): boolean | null {
+    return readRuleFlag(this._sizeSlipsPast);
+  }
+  set sizeSlipsPast(answer: boolean | null) {
+    this._sizeSlipsPast = writeRuleFlag(answer);
+  }
+
   /** Whether the selected piece's reach stays shown without picking it up, or null to leave it to the table. */
   get moveRangeAlways(): boolean | null {
     return readRuleFlag(this._moveRangeAlways);
@@ -397,6 +406,7 @@ export class Config extends ObjectNode implements InnerXml {
       otherPartyPassage: this.otherPartyPassage,
       noPartyPassage: this.noPartyPassage,
       piecePassageCost: this.piecePassageCost,
+      sizeSlipsPast: this.sizeSlipsPast,
       moveRangeAlways: this.moveRangeAlways,
       zocAlways: this.zocAlways,
       cellDistance: this.cellDistance,

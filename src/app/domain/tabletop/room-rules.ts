@@ -49,6 +49,14 @@ export interface RoomRules {
   noPartyPassage: PiecePassageMode;
   /** What crossing somebody costs on top of the one step, where the table charges for it. */
   piecePassageCost: number;
+  /**
+   * Whether a piece squeezes past somebody far enough from it in size.
+   *
+   * Ground shut to a piece of one's own size is ground one slips past where the two are two
+   * cells or more apart: a rat goes under a giant and a giant steps over a rat. Left off, size
+   * says nothing and a body in the way is a body in the way.
+   */
+  sizeSlipsPast: boolean;
   moveRangeAlways: boolean;
   zocAlways: boolean;
   cellDistance: number;
@@ -115,6 +123,7 @@ export const ROOM_RULE_DEFAULTS: RoomRules = {
   otherPartyPassage: 'share',
   noPartyPassage: 'share',
   piecePassageCost: DEFAULT_PIECE_PASSAGE_COST,
+  sizeSlipsPast: false,
   moveRangeAlways: false,
   zocAlways: false,
   cellDistance: DEFAULT_CELL_DISTANCE,
@@ -143,6 +152,7 @@ export const ROOM_RULE_GROUPS = {
     'otherPartyPassage',
     'noPartyPassage',
     'piecePassageCost',
+    'sizeSlipsPast',
     'moveRangeElementNames',
     'cellDistance',
     'cellDistanceUnit',
@@ -260,6 +270,7 @@ export function resolveRoomRules(
     otherPartyPassage: crossing('otherPartyPassage'),
     noPartyPassage: crossing('noPartyPassage'),
     piecePassageCost: settled('piecePassageCost'),
+    sizeSlipsPast: settled('sizeSlipsPast'),
     moveRangeAlways: settled('moveRangeAlways'),
     zocAlways: settled('zocAlways'),
     cellDistance: settled('cellDistance'),

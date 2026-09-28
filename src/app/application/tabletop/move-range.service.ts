@@ -460,7 +460,13 @@ export class MoveRangeService {
       .filter((piece) => piece.identifier === character.identifier || this.vision.isTokenVisible(piece));
     // The ground somebody else stands on is in the way of a reach as the table has it: shut to
     // the piece, dear to cross, or ground it walks over without being able to stop on.
-    const passage = passageCells(grid, standing, character, (relation) => passageModeOf(rules, relation));
+    const passage = passageCells(
+      grid,
+      standing,
+      character,
+      (relation) => passageModeOf(rules, relation),
+      rules.sizeSlipsPast
+    );
     otherwise.or(passage.blocked);
 
     // What the ground itself charges, which is owed by whoever enters it whatever else is

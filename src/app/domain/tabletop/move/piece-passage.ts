@@ -24,6 +24,22 @@ export function asPiecePassageMode(value: unknown): PiecePassageMode | null {
     : null;
 }
 
+/**
+ * How far apart in size two pieces must be for one to squeeze past the other.
+ *
+ * Counted in cells, which is what a table knows of size: a piece of one cell and a piece of
+ * three are two steps apart on the ladder most games keep, and a piece of two and a piece of
+ * four likewise. Anything closer than that is a body in the way.
+ */
+export const SLIPS_PAST_CELLS = 2;
+
+/** Whether one of the two is far enough from the other in size to squeeze past it. */
+function slipsPast(piece: GameCharacter, mover: GameCharacter): boolean {
+  const theirs = Math.max(1, Math.round(piece.size));
+  const ours = Math.max(1, Math.round(mover.size));
+  return Math.abs(theirs - ours) >= SLIPS_PAST_CELLS;
+}
+
 /** The ground the pieces on the table hold against one walking among them. */
 export interface PassageCells {
   /** Ground it may not enter at all. */
@@ -45,7 +61,8 @@ export function passageCells(
   grid: CellGrid,
   pieces: readonly GameCharacter[],
   mover: GameCharacter,
-  modeFor: (relation: PieceRelation) => PiecePassageMode
+  modeFor: (relation: PieceRelation) => PiecePassageMode,
+  slipsPastBySize = false
 ): PassageCells {
   const total = cellCount(grid);
   const held: PassageCells = {
@@ -57,7 +74,11 @@ export function passageCells(
   const grouped = new Map<PiecePassageMode, GameCharacter[]>();
   for (const piece of pieces) {
     if (piece.identifier === mover.identifier) continue;
-    const mode = modeFor(relationBetween(piece, mover));
+    let mode = modeFor(relationBetween(piece, mover));
+    // Ground shut to a piece of one's own size is ground one squeezes past where the two are
+    // far enough apart in size, which is how a table lets a rat under a giant and a giant over
+    // a rat. It is still no place to stop: half a giant standing on a rat is nobody's rule.
+    if (mode === 'block' && slipsPastBySize && slipsPast(piece, mover)) mode = 'pass';
     if (mode === 'share') continue;
     const group = grouped.get(mode);
     if (group) group.push(piece);

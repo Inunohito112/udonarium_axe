@@ -2490,7 +2490,8 @@
       "replayHint": "Read back a recorded session, or play it back with the table. Recordings stay on this device.",
       "hostilityBy": "How the sides are told apart",
       "hostilityBy_npc": "By whom the master runs",
-      "hostilityBy_party": "By party"
+      "hostilityBy_party": "By party",
+      "sizeSlipsPast": "Squeeze past a piece two cells or more apart in size (but not stop on it)"
     },
     "skin": {
       "title": "Skin",

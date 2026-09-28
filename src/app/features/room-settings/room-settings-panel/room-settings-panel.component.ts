@@ -781,6 +781,14 @@ export class RoomSettingsPanelComponent {
     return this.piecePassageSides.some((side) => this.rules[side] === 'cost');
   }
 
+  /** Whether a piece squeezes past somebody far enough from it in size. */
+  get sizeSlipsPast(): boolean {
+    return this.rules.sizeSlipsPast;
+  }
+  set sizeSlipsPast(value: boolean) {
+    if (this.isEditable) this.config.sizeSlipsPast = value;
+  }
+
   get piecePassageCost(): number {
     return this.rules.piecePassageCost;
   }

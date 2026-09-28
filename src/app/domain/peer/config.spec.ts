@@ -106,6 +106,7 @@ describe('Config', () => {
         otherPartyPassage: null,
         noPartyPassage: null,
         piecePassageCost: null,
+        sizeSlipsPast: null,
         moveRangeAlways: null,
         zocAlways: null,
         cellDistance: null,

@@ -2490,7 +2490,8 @@
       "replayHint": "記録したセッションを読み返したり、盤面ごと再生したりします。記録はこの端末の中だけに残ります。",
       "hostilityBy": "敵味方の分け方",
       "hostilityBy_npc": "NPC かどうかで分ける",
-      "hostilityBy_party": "パーティで分ける"
+      "hostilityBy_party": "パーティで分ける",
+      "sizeSlipsPast": "サイズが 2 マス以上違う相手のマスは通り抜けられる（止まれない）"
     },
     "skin": {
       "title": "スキン",

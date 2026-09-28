@@ -133,6 +133,8 @@ export class GameTable extends ObjectNode {
   @SyncVar() noPartyPassage: string = '';
   /** What crossing somebody costs on top of the one step, where the table charges for it. */
   @SyncVar() piecePassageCost: number = DEFAULT_PIECE_PASSAGE_COST;
+  /** Whether a piece squeezes past somebody two cells or more apart from it in size. */
+  @SyncVar() sizeSlipsPast: boolean = false;
   /** Whether the piece a reader has picked keeps showing its reach, not only while carried. */
   @SyncVar() moveRangeAlways: boolean = false;
   /** Whether the ground held against the piece a reader has picked keeps showing. */

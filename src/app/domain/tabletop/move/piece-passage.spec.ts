@@ -121,3 +121,68 @@ describe('the ground the pieces on a table hold against one walking among them',
     }
   });
 });
+
+describe('squeezing past a piece far enough apart in size', () => {
+  const grid = cellGridOf(9, 9, GRID, GridType.SQUARE);
+  const made: GameCharacter[] = [];
+
+  afterEach(() => {
+    for (const piece of made.splice(0)) piece.destroy();
+  });
+
+  function pieceAt(col: number, row: number, size: number): GameCharacter {
+    const piece = GameCharacter.create('コマ', size, '');
+    piece.location = { name: 'table', x: col * GRID, y: row * GRID };
+    made.push(piece);
+    return piece;
+  }
+
+  function shutAgainst(mover: GameCharacter, blocker: GameCharacter, slips: boolean) {
+    return passageCells(grid, [mover, blocker], mover, () => 'block', slips);
+  }
+
+  it('is a body in the way while the table says nothing of size', () => {
+    const mover = pieceAt(1, 1, 1);
+    const ground = shutAgainst(mover, pieceAt(4, 4, 3), false);
+
+    expect(ground.blocked.get(cellIndexOf(grid, 4, 4))).toBe(true);
+    expect(ground.noStop.get(cellIndexOf(grid, 4, 4))).toBe(false);
+  });
+
+  it('is crossed but not stood on where the two are far enough apart', () => {
+    const mover = pieceAt(1, 1, 1);
+    const ground = shutAgainst(mover, pieceAt(4, 4, 3), true);
+
+    expect(ground.blocked.get(cellIndexOf(grid, 4, 4))).toBe(false);
+    expect(ground.noStop.get(cellIndexOf(grid, 4, 4))).toBe(true);
+  });
+
+  it('is crossed the other way round as well, a giant over a rat', () => {
+    const mover = pieceAt(1, 1, 3);
+    const ground = shutAgainst(mover, pieceAt(6, 6, 1), true);
+
+    expect(ground.noStop.get(cellIndexOf(grid, 6, 6))).toBe(true);
+  });
+
+  it('stays a body in the way for two pieces only one cell apart', () => {
+    const mover = pieceAt(1, 1, 1);
+    const ground = shutAgainst(mover, pieceAt(4, 4, 2), true);
+
+    expect(ground.blocked.get(cellIndexOf(grid, 4, 4))).toBe(true);
+  });
+
+  it('stays a body in the way for two pieces of a size', () => {
+    const mover = pieceAt(1, 1, 2);
+    const ground = shutAgainst(mover, pieceAt(4, 4, 2), true);
+
+    expect(ground.blocked.get(cellIndexOf(grid, 4, 4))).toBe(true);
+  });
+
+  it('says nothing of size where the ground was never shut in the first place', () => {
+    const mover = pieceAt(1, 1, 1);
+    const ground = passageCells(grid, [mover, pieceAt(4, 4, 3)], mover, () => 'share', true);
+
+    expect(countCells(ground.blocked)).toBe(0);
+    expect(countCells(ground.noStop)).toBe(0);
+  });
+});

@@ -23,6 +23,7 @@ const table: RoomRules = {
   otherPartyPassage: 'block',
   noPartyPassage: 'cost',
   piecePassageCost: 2,
+  sizeSlipsPast: true,
   pieceImageInCell: false,
   moveRangeAlways: true,
   zocAlways: true,
