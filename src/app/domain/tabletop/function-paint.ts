@@ -181,6 +181,10 @@ export interface TriggerPaintSpec {
   check: string;
   /** What that roll has to reach. Empty asks for the roll without naming a number. */
   checkTarget: string;
+  /** The dice the ground throws itself, instead of asking. Empty asks. */
+  checkRoll: string;
+  /** What it takes from somebody who made that roll. Empty takes nothing, `half` takes half. */
+  passAmount: string;
   /** Whether what it says is kept back from the room, for the master to read alone. */
   silent: boolean;
   color: string;
@@ -337,6 +341,8 @@ export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
     ailmentRounds: 0,
     check: '',
     checkTarget: '',
+    checkRoll: '',
+    passAmount: '',
     silent: false,
     color: DEFAULT_TRIGGER_COLOR,
     element: '',
@@ -492,6 +498,8 @@ export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
       ailmentRounds: countIn(trigger, 'ailmentRounds', fallback.trigger.ailmentRounds, 0, 999),
       check: textIn(trigger, 'check', fallback.trigger.check),
       checkTarget: textIn(trigger, 'checkTarget', fallback.trigger.checkTarget),
+      checkRoll: textIn(trigger, 'checkRoll', fallback.trigger.checkRoll),
+      passAmount: textIn(trigger, 'passAmount', fallback.trigger.passAmount),
       silent: flagIn(trigger, 'silent', fallback.trigger.silent),
       color: textIn(trigger, 'color', fallback.trigger.color),
       element: textIn(trigger, 'element', fallback.trigger.element),

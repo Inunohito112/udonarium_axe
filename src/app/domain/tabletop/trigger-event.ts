@@ -94,6 +94,24 @@ const WHOLE = /^\s*[-+]?\d+\s*$/;
  * `2d6`, `1d6+2`, `-3` and `4` are all answers. Anything else is nothing at all: a trap that
  * cannot say how much it takes takes nothing, rather than guessing at a number nobody wrote.
  */
+/**
+ * What a piece of ground takes from somebody who made the roll it asked for.
+ *
+ * Nothing said takes nothing, which is the usual shape of getting out of the way of a trap.
+ * `half` takes half of what was rolled, rounded down, which is the other usual shape. Anything
+ * else is an amount of its own, rolled like any other.
+ */
+export function triggerPassTake(pass: string, taken: number, roll: () => number = Math.random): number {
+  const asked = pass.trim();
+  if (asked.length < 1) return 0;
+  if (asked.toLowerCase() === HALF) return taken < 0 ? Math.ceil(taken / 2) : Math.floor(taken / 2);
+  return rollTriggerAmount(asked, roll);
+}
+
+/** The word that halves what was rolled rather than naming an amount of its own. */
+export const TRIGGER_PASS_HALF = 'half';
+const HALF = TRIGGER_PASS_HALF;
+
 export function rollTriggerAmount(amount: string, roll: () => number = Math.random): number {
   let total = 0;
   let read = false;

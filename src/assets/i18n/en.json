@@ -2345,7 +2345,10 @@
         "sprang": "[{{trigger}}] {{piece}} stepped on it",
         "said": "[{{trigger}}] {{say}}",
         "asks": "[{{trigger}}] {{piece}} rolls {{check}}",
-        "asksFor": "[{{trigger}}] {{piece}} rolls {{check}} against {{target}}"
+        "asksFor": "[{{trigger}}] {{piece}} rolls {{check}} against {{target}}",
+        "rolled": "[{{trigger}}] {{piece}} rolls {{rolled}} against {{target}} — {{outcome}}",
+        "made": "made it",
+        "missed": "missed"
       }
     },
     "roomSettings": {
@@ -3358,7 +3361,10 @@
         "hazardKind_briar": "Briars (cut whoever steps in)",
         "hazardKind_vent": "Vent (burns those who stay)",
         "triggerWarpTable": "Table it opens onto",
-        "triggerWarpHere": "(this table)"
+        "triggerWarpHere": "(this table)",
+        "triggerCheckRoll": "Dice it throws itself",
+        "triggerPassAmount": "Taken on a success",
+        "triggerCheckRollHint": "Write something like 1d20+3 and the table throws it against the target. Empty leaves the roll to whoever walked in"
       },
       "stampCategories": {
         "door": "Doors",

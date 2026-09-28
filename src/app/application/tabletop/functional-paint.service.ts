@@ -309,6 +309,8 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
     ailmentRounds: trigger.ailmentRounds,
     check: trigger.check,
     checkTarget: trigger.checkTarget,
+    checkRoll: trigger.checkRoll,
+    passAmount: trigger.passAmount,
     silent: trigger.silent,
     color: trigger.color,
     element: trigger.element,
@@ -478,6 +480,8 @@ export class FunctionalPaintService {
       trigger.effect = block.spec.effect;
       trigger.sound = block.spec.sound;
       trigger.cutIn = block.spec.cutIn;
+      trigger.checkRoll = block.spec.checkRoll;
+      trigger.passAmount = block.spec.passAmount;
       trigger.warps = block.spec.warps;
       trigger.warpCol = block.spec.warpCol;
       trigger.warpRow = block.spec.warpRow;

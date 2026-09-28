@@ -22,7 +22,13 @@ import { pieceCellOf, pieceCornerOn } from '@axe/domain/tabletop/move/piece-on-g
 import { resolveRoomRules } from '@axe/domain/tabletop/room-rules';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger, triggersOn } from '@axe/domain/tabletop/table-trigger';
-import { isTurnMoment, rollTriggerAmount, triggerCatches, TriggerMoment } from '@axe/domain/tabletop/trigger-event';
+import {
+  isTurnMoment,
+  rollTriggerAmount,
+  triggerCatches,
+  TriggerMoment,
+  triggerPassTake,
+} from '@axe/domain/tabletop/trigger-event';
 import { TurnState } from '@axe/domain/tabletop/turn-state';
 
 /** One piece of ground going off, and what it came to. */
@@ -32,6 +38,10 @@ export interface TriggerFiring {
   taken: number;
   /** The name of what it was taken from, or nothing where the piece carried no such thing. */
   from: string;
+  /** What the ground threw for the piece, or nothing where it asked rather than threw. */
+  rolled: number | null;
+  /** Whether that throw reached what it had to reach. False wherever nothing was thrown. */
+  made: boolean;
 }
 
 /**
@@ -211,7 +221,9 @@ export class TriggerFireService {
   }
 
   private spring(trigger: TableTrigger, piece: GameCharacter, ending: boolean, round: number): TriggerFiring {
-    const taken = rollTriggerAmount(trigger.amount);
+    const thrown = this.throwFor(trigger);
+    const full = rollTriggerAmount(trigger.amount);
+    const taken = thrown?.made ? triggerPassTake(trigger.passAmount, full) : full;
     const held = this.resourceOf(piece, trigger.element);
     if (held) {
       const current = Number(held.currentValue);
@@ -225,7 +237,13 @@ export class TriggerFireService {
     // Ground that was to give itself away does so by being seen, which is the one change to it
     // the room is allowed to notice.
     if (trigger.reveals && !trigger.found) trigger.found = true;
-    const firing = { trigger, taken, from: held ? held.name : '' };
+    const firing = {
+      trigger,
+      taken,
+      from: held ? held.name : '',
+      rolled: thrown ? thrown.rolled : null,
+      made: thrown ? thrown.made : false,
+    };
     // Neither the show nor the telling is what the ground is for, so neither is allowed to
     // stop it: a room with no chat tab yet, or an effect that will not play, still takes the
     // damage it was walked into.
@@ -243,6 +261,22 @@ export class TriggerFireService {
     // happened in.
     if (ending) this.carry(trigger, piece);
     return firing;
+  }
+
+  /**
+   * The roll the ground makes for itself, or nothing where it asks for one instead.
+   *
+   * Thrown only where the ground has both dice to throw and a number to reach: a throw with
+   * nothing to clear settles nothing, and the ground is better off asking for it.
+   */
+  private throwFor(trigger: TableTrigger): { rolled: number; made: boolean } | null {
+    const dice = trigger.checkRoll.trim();
+    const target = trigger.checkTarget.trim();
+    if (dice.length < 1 || target.length < 1) return null;
+    const bar = Number(target);
+    if (!Number.isFinite(bar)) return null;
+    const rolled = rollTriggerAmount(dice);
+    return { rolled, made: rolled >= bar };
   }
 
   /**
@@ -351,6 +385,18 @@ export class TriggerFireService {
     const called = name.length > 0 ? name : this.t('feature.tabletop.trigger.unnamed');
     const said = trigger.say.trim();
     if (said.length > 0) this.tell(trigger, this.t('feature.tabletop.trigger.said', { trigger: called, say: said }));
+    if (firing.rolled !== null) {
+      this.tell(
+        trigger,
+        this.t('feature.tabletop.trigger.rolled', {
+          trigger: called,
+          piece: piece.name,
+          rolled: firing.rolled,
+          target: trigger.checkTarget.trim(),
+          outcome: this.t(firing.made ? 'feature.tabletop.trigger.made' : 'feature.tabletop.trigger.missed'),
+        })
+      );
+    }
     this.ask(trigger, piece, called);
     if (firing.from.length > 0) {
       this.tell(
@@ -381,6 +427,9 @@ export class TriggerFireService {
   private ask(trigger: TableTrigger, piece: GameCharacter, called: string): void {
     const asked = trigger.check.trim();
     if (asked.length < 1) return;
+    // Ground that threw for itself has already said what it rolled; asking as well would have
+    // the room roll for something already settled.
+    if (trigger.checkRoll.trim().length > 0 && trigger.checkTarget.trim().length > 0) return;
     const target = trigger.checkTarget.trim();
     const key = target.length > 0 ? 'feature.tabletop.trigger.asksFor' : 'feature.tabletop.trigger.asks';
     this.tell(trigger, this.t(key, { trigger: called, piece: piece.name, check: asked, target }));

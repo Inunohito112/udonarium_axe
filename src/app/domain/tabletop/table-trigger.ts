@@ -81,6 +81,20 @@ export class TableTrigger extends ObjectNode {
   /** What that roll has to reach. Empty asks for the roll without naming a number. */
   @SyncVar() checkTarget: string = '';
   /**
+   * The dice the ground throws itself, in place of asking whoever walked in to throw them.
+   *
+   * Set alongside a number to reach, the ground rolls, says what it rolled, and takes one
+   * amount or the other. Empty leaves it asking, which is what it has always done.
+   */
+  @SyncVar() checkRoll: string = '';
+  /**
+   * What it takes from somebody who made that roll. Empty takes nothing, `half` takes half.
+   *
+   * Held apart from what it takes from somebody who did not, since getting out of the way of
+   * a trap is worth something and what it is worth is the table's business.
+   */
+  @SyncVar() passAmount: string = '';
+  /**
    * Whether what it says is kept back from the room.
    *
    * A trip wire the party is not meant to notice still has to reach somebody, or nobody would

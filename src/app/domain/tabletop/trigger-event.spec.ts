@@ -7,6 +7,7 @@ import {
   rollTriggerAmount,
   TRIGGER_REPEATS,
   triggerCatches,
+  triggerPassTake,
   writeSpentBy,
 } from '@axe/domain/tabletop/trigger-event';
 
@@ -53,6 +54,27 @@ describe('what painted ground takes', () => {
     expect(rollTriggerAmount(' -3')).toBe(-3);
     expect(rollTriggerAmount('  +4 ')).toBe(4);
     expect(rollTriggerAmount(' - 2d6', highest)).toBe(-12);
+  });
+
+  describe('from somebody who made the roll it asked for', () => {
+    it('takes nothing where nothing was written', () => {
+      expect(triggerPassTake('', 12)).toBe(0);
+      expect(triggerPassTake('   ', 12)).toBe(0);
+    });
+
+    it('takes half of what was rolled, rounded down', () => {
+      expect(triggerPassTake('half', 12)).toBe(6);
+      expect(triggerPassTake('HALF', 7)).toBe(3);
+    });
+
+    it('rounds half of something given back towards nothing as well', () => {
+      expect(triggerPassTake('half', -7)).toBe(-3);
+    });
+
+    it('rolls an amount of its own where one is written', () => {
+      expect(triggerPassTake('1d6', 12, highest)).toBe(6);
+      expect(triggerPassTake('2', 12)).toBe(2);
+    });
   });
 
   it('takes nothing at all where nothing readable was written', () => {

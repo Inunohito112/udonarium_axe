@@ -862,8 +862,35 @@
                   (ngModelChange)="setTriggerPaint({ checkTarget: $event })"
                 />
               </label>
+              <label class="flex items-center justify-between gap-2">
+                <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerCheckRoll' | transloco }}</span>
+                <input
+                  type="text"
+                  class="bg-ui-input rounded-ui-sm w-28 px-1 py-0.5"
+                  data-testid="trigger-check-roll"
+                  placeholder="1d20+3"
+                  [ngModel]="state.functionSpec().trigger.checkRoll"
+                  (ngModelChange)="setTriggerPaint({ checkRoll: $event })"
+                />
+              </label>
+              @if (state.functionSpec().trigger.checkRoll.length > 0) {
+                <label class="flex items-center justify-between gap-2">
+                  <span class="text-ui-muted">{{ 'feature.mapEditor.function.triggerPassAmount' | transloco }}</span>
+                  <input
+                    type="text"
+                    class="bg-ui-input rounded-ui-sm w-16 px-1 py-0.5"
+                    data-testid="trigger-pass-amount"
+                    placeholder="half"
+                    [ngModel]="state.functionSpec().trigger.passAmount"
+                    (ngModelChange)="setTriggerPaint({ passAmount: $event })"
+                  />
+                </label>
+              }
               <span class="text-ui-dim text-[10px] leading-snug">
                 {{ 'feature.mapEditor.function.triggerCheckHint' | transloco }}
+              </span>
+              <span class="text-ui-dim text-[10px] leading-snug">
+                {{ 'feature.mapEditor.function.triggerCheckRollHint' | transloco }}
               </span>
             }
             <label class="flex items-center justify-between gap-2">

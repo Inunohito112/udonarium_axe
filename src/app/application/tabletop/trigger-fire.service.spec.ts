@@ -207,6 +207,71 @@ describe('TriggerFireService', () => {
     });
   });
 
+  describe('ground that throws its own dice', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    /** A roll of a d20 that lands on whatever face is asked for. */
+    function lands(face: number): void {
+      vi.spyOn(Math, 'random').mockReturnValue((face - 1) / 20 + 0.001);
+    }
+
+    it('takes less from whoever makes the roll', () => {
+      trapAt(5, 5, { amount: '10', checkRoll: '1d20', checkTarget: '10', passAmount: 'half' });
+      const hero = heroWith(20);
+      lands(19);
+
+      const fired = service.walked(hero, grid(), [at(4, 5), at(5, 5)]);
+
+      expect(fired[0].made).toBe(true);
+      expect(fired[0].rolled).toBe(19);
+      expect(hpOf(hero)).toBe(15);
+    });
+
+    it('takes the whole of it from whoever misses', () => {
+      trapAt(5, 5, { amount: '10', checkRoll: '1d20', checkTarget: '10', passAmount: 'half' });
+      const hero = heroWith(20);
+      lands(2);
+
+      const fired = service.walked(hero, grid(), [at(4, 5), at(5, 5)]);
+
+      expect(fired[0].made).toBe(false);
+      expect(hpOf(hero)).toBe(10);
+    });
+
+    it('takes nothing from whoever makes it where nothing was written to take', () => {
+      trapAt(5, 5, { amount: '10', checkRoll: '1d20', checkTarget: '10' });
+      const hero = heroWith(20);
+      lands(19);
+
+      service.walked(hero, grid(), [at(4, 5), at(5, 5)]);
+
+      expect(hpOf(hero)).toBe(20);
+    });
+
+    it('throws nothing where it has dice but nothing to clear', () => {
+      trapAt(5, 5, { amount: '10', checkRoll: '1d20', passAmount: 'half' });
+      const hero = heroWith(20);
+      lands(19);
+
+      const fired = service.walked(hero, grid(), [at(4, 5), at(5, 5)]);
+
+      expect(fired[0].rolled).toBeNull();
+      expect(hpOf(hero)).toBe(10);
+    });
+
+    it('throws nothing for ground that only asks for a roll', () => {
+      trapAt(5, 5, { amount: '10', check: '敏捷', checkTarget: '15' });
+      const hero = heroWith(20);
+
+      const fired = service.walked(hero, grid(), [at(4, 5), at(5, 5)]);
+
+      expect(fired[0].rolled).toBeNull();
+      expect(hpOf(hero)).toBe(10);
+    });
+  });
+
   it('takes what the ground takes from the piece that walks onto it', () => {
     trapAt(5, 5);
     const hero = heroWith(20);

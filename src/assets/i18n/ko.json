@@ -2345,7 +2345,10 @@
         "sprang": "[{{trigger}}] {{piece}}이(가) 밟았다",
         "said": "【{{trigger}}】{{say}}",
         "asks": "【{{trigger}}】{{piece}} 은(는) {{check}} 판정",
-        "asksFor": "【{{trigger}}】{{piece}} 은(는) {{check}}(으)로 {{target}} 이상"
+        "asksFor": "【{{trigger}}】{{piece}} 은(는) {{check}}(으)로 {{target}} 이상",
+        "rolled": "【{{trigger}}】{{piece}} 판정 {{rolled}} / {{target}} — {{outcome}}",
+        "made": "성공",
+        "missed": "실패"
       }
     },
     "roomSettings": {
@@ -3358,7 +3361,10 @@
         "hazardKind_briar": "가시덤불(밟으면 다침)",
         "hazardKind_vent": "분출구(머물면 탐)",
         "triggerWarpTable": "보낼 테이블",
-        "triggerWarpHere": "(이 테이블)"
+        "triggerWarpHere": "(이 테이블)",
+        "triggerCheckRoll": "스스로 굴리는 주사위",
+        "triggerPassAmount": "성공했을 때의 증감",
+        "triggerCheckRollHint": "「1d20+3」처럼 적으면 테이블이 대신 굴려 목표값과 비교합니다. 비워 두면 본인이 굴립니다"
       },
       "stampCategories": {
         "door": "문",

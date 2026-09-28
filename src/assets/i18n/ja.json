@@ -2345,7 +2345,10 @@
         "sprang": "【{{trigger}}】{{piece}} が踏んだ",
         "said": "【{{trigger}}】{{say}}",
         "asks": "【{{trigger}}】{{piece}} は {{check}} で判定",
-        "asksFor": "【{{trigger}}】{{piece}} は {{check}} で {{target}} 以上"
+        "asksFor": "【{{trigger}}】{{piece}} は {{check}} で {{target}} 以上",
+        "rolled": "【{{trigger}}】{{piece}} の判定 {{rolled}} / {{target}} — {{outcome}}",
+        "made": "成功",
+        "missed": "失敗"
       }
     },
     "roomSettings": {
@@ -3358,7 +3361,10 @@
         "hazardKind_briar": "茨（踏むと傷つく）",
         "hazardKind_vent": "噴出口（居続けると焼ける）",
         "triggerWarpTable": "飛ばす先のテーブル",
-        "triggerWarpHere": "（このテーブル）"
+        "triggerWarpHere": "（このテーブル）",
+        "triggerCheckRoll": "自分で振るダイス",
+        "triggerPassAmount": "成功したときの増減",
+        "triggerCheckRollHint": "「1d20+3」のように書くと、卓が代わりに振って目標値と比べます。空欄なら振るのは本人"
       },
       "stampCategories": {
         "door": "扉",
