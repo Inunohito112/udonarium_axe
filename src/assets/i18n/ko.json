@@ -2509,7 +2509,8 @@
       "hostilityBy_npc": "NPC 여부로 구분",
       "hostilityBy_party": "파티로 구분",
       "sizeSlipsPast": "크기가 2칸 이상 다른 상대의 칸은 지나갈 수 있음(멈출 수는 없음)",
-      "handTracesWay": "손으로 옮겼을 때도 지나간 길의 장치를 발동"
+      "handTracesWay": "손으로 옮겼을 때도 지나간 길의 장치를 발동",
+      "squeezes": "큰 말을 지나갈 수 없는 틈에 밀어 넣을 수 있게 한다 (한 칸분 더 소모)"
     },
     "skin": {
       "title": "화면 색(스킨)",

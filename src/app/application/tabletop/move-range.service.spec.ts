@@ -1328,4 +1328,45 @@ describe('MoveRangeService and a piece wider than one cell', () => {
 
     expect(reached(11, 5)).toBe(true);
   });
+
+  describe('folding itself through a gap too small for it', () => {
+    afterEach(() => {
+      Config.instance.squeezes = null;
+    });
+
+    /** A wall with one cell missing in it, which a piece three across cannot walk through. */
+    function wallWithAGap(col: number, gapRow: number): void {
+      const above = Terrain.create('壁', 1, gapRow, 2, '', '');
+      above.location = { name: 'table', x: col * GRID, y: 0 };
+      table.appendChild(above);
+      const below = Terrain.create('壁', 1, 12 - gapRow - 1, 2, '', '');
+      below.location = { name: 'table', x: col * GRID, y: (gapRow + 1) * GRID };
+      table.appendChild(below);
+    }
+
+    it('stays on its own side of the gap where the room has not said it may', () => {
+      wallWithAGap(6, 5);
+      service.show(golemAt(4, 5, 4, 3));
+
+      expect(reached(7, 5)).toBe(false);
+    });
+
+    it('gets through where the room says it may', () => {
+      Config.instance.squeezes = true;
+      wallWithAGap(6, 5);
+      service.show(golemAt(4, 5, 3, 3));
+
+      expect(reached(7, 5)).toBe(true);
+    });
+
+    it('pays a step again for the cell it spends folded up', () => {
+      Config.instance.squeezes = true;
+      wallWithAGap(6, 5);
+      service.show(golemAt(4, 5, 2, 3));
+
+      // Two cells of ground away, and three steps of walking: the cell it folds itself into
+      // costs two rather than one, so two steps leave it a step short of the far side.
+      expect(reached(7, 5)).toBe(false);
+    });
+  });
 });

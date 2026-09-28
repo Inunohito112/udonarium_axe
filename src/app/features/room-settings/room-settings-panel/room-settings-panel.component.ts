@@ -781,6 +781,14 @@ export class RoomSettingsPanelComponent {
     return this.piecePassageSides.some((side) => this.rules[side] === 'cost');
   }
 
+  /** Whether a piece too big for a gap folds itself through it at a price. */
+  get squeezes(): boolean {
+    return this.rules.squeezes;
+  }
+  set squeezes(value: boolean) {
+    if (this.isEditable) this.config.squeezes = value;
+  }
+
   /** Whether the ground between a piece's two ends goes off when a hand moves it. */
   get handTracesWay(): boolean {
     return this.rules.handTracesWay;

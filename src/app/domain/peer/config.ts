@@ -56,6 +56,7 @@ export class Config extends ObjectNode implements InnerXml {
   @SyncVar('_noPartyPassage') private _noPartyPassage: string = '';
   @SyncVar('_piecePassageCost') private _piecePassageCost: number = -1;
   @SyncVar('_sizeSlipsPast') private _sizeSlipsPast: string = '';
+  @SyncVar('_squeezes') private _squeezes: string = '';
   @SyncVar('_handTracesWay') private _handTracesWay: string = '';
   @SyncVar('_moveRangeAlways') private _moveRangeAlways: string = '';
   @SyncVar('_zocAlways') private _zocAlways: string = '';
@@ -283,6 +284,14 @@ export class Config extends ObjectNode implements InnerXml {
     this._sizeSlipsPast = writeRuleFlag(answer);
   }
 
+  /** Whether a piece folds itself through a gap too small for it, or null for the table. */
+  get squeezes(): boolean | null {
+    return readRuleFlag(this._squeezes);
+  }
+  set squeezes(answer: boolean | null) {
+    this._squeezes = writeRuleFlag(answer);
+  }
+
   /** Whether ground between a piece's two ends goes off when a hand moves it, or null for the table. */
   get handTracesWay(): boolean | null {
     return readRuleFlag(this._handTracesWay);
@@ -416,6 +425,7 @@ export class Config extends ObjectNode implements InnerXml {
       noPartyPassage: this.noPartyPassage,
       piecePassageCost: this.piecePassageCost,
       sizeSlipsPast: this.sizeSlipsPast,
+      squeezes: this.squeezes,
       handTracesWay: this.handTracesWay,
       moveRangeAlways: this.moveRangeAlways,
       zocAlways: this.zocAlways,

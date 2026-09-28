@@ -489,19 +489,33 @@ export class MoveRangeService {
     const fights = rules.breakOutMode === 'free' ? null : (ground?.fights ?? null);
     const flat = Math.max(0, Math.floor(rules.breakOutCost));
     const crossing = passage.costly.isEmpty ? 0 : Math.max(0, Math.floor(rules.piecePassageCost));
-    const charges =
-      dear !== null || going.toll > 0 || crossing > 0 || (held !== null && mode === 'cost') || fights !== null;
     const noStop = passage.noStop.isEmpty ? null : passage.noStop;
     // A wide piece is answered for the cell its middle would be over, so where every cell it
     // covers has to be clear is asked here rather than by the search, which knows of one cell
     // at a time.
     const fits = pieceFitsOn(grid, character, table.gridSize, blocked);
+    // Folding through a gap too small: the piece stands there as though it were a size
+    // smaller. A piece two cells across folds down to one, which any clear cell holds, so
+    // there is nothing left to ask and the answer is yes.
+    const tight =
+      fits && rules.squeezes
+        ? (pieceFitsOn(grid, character, table.gridSize, blocked, Math.round(character.size) - 1) ?? (() => true))
+        : null;
+    const charges =
+      dear !== null ||
+      going.toll > 0 ||
+      crossing > 0 ||
+      tight !== null ||
+      (held !== null && mode === 'cost') ||
+      fights !== null;
 
     const options: ReachOptions = {
       diagonals: rules.diagonalMove,
       costOf: charges
         ? (index, from) => {
             let price = 1 + going.toll + (dear ? dear[index] : 0);
+            // Squeezing costs the step again, which is what makes a gap worth going round.
+            if (tight && fits && !fits(index) && tight(index)) price += 1;
             if (crossing > 0 && passage.costly.get(index)) price += crossing;
             if (held && mode === 'cost' && held.get(index)) price += extra;
             if (!fights || !leavesFight(fights, from, index)) return price;
@@ -509,7 +523,10 @@ export class MoveRangeService {
           }
         : undefined,
       stopsAt: held && mode === 'stop' ? (index) => held.get(index) : undefined,
-      restsAt: noStop || fits ? (index) => !noStop?.get(index) && (!fits || fits(index)) : undefined,
+      restsAt:
+        noStop || fits
+          ? (index) => !noStop?.get(index) && (!fits || fits(index) || (tight?.(index) ?? false))
+          : undefined,
     };
     const cells = reachableCells(grid, start, walk, (index) => blocked.get(index), options);
     return {

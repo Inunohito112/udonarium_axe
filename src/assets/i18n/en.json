@@ -2509,7 +2509,8 @@
       "hostilityBy_npc": "By whom the master runs",
       "hostilityBy_party": "By party",
       "sizeSlipsPast": "Squeeze past a piece two cells or more apart in size (but not stop on it)",
-      "handTracesWay": "Spring the ground between the two ends when a hand moves a piece"
+      "handTracesWay": "Spring the ground between the two ends when a hand moves a piece",
+      "squeezes": "Let an oversized piece squeeze through a gap too small for it, at a step apiece"
     },
     "skin": {
       "title": "Skin",

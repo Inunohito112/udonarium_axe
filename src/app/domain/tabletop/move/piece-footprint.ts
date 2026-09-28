@@ -1,7 +1,7 @@
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
-import { CellGrid, cellIndexAt, forEachCellInBox } from '@axe/domain/tabletop/fog/cell-grid';
-import { pieceCornerOn } from '@axe/domain/tabletop/move/piece-on-grid';
+import { cellCenterOf, CellGrid, cellIndexAt, forEachCellInBox } from '@axe/domain/tabletop/fog/cell-grid';
+import { sizeShiftOf } from '@axe/domain/tabletop/move/piece-on-grid';
 
 /**
  * Whether a piece standing on a cell would fit there, with every cell it covers clear.
@@ -13,18 +13,25 @@ import { pieceCornerOn } from '@axe/domain/tabletop/move/piece-on-grid';
  *
  * Nothing comes back for a piece that covers a single cell, since there is nothing to ask of it,
  * and the reach is then left exactly as fast as it was.
+ *
+ * `across` asks about a footprint other than the piece's own, which is what a piece folding
+ * itself through a gap too small for it is answered by.
  */
 export function pieceFitsOn(
   grid: CellGrid,
   piece: GameCharacter,
   gridSize: number,
-  blocked: CellBits
+  blocked: CellBits,
+  across?: number
 ): ((cell: number) => boolean) | null {
-  const span = Math.max(1, Math.round(piece.size));
+  const span = Math.max(1, Math.round(across ?? piece.size));
   if (span < 2 || gridSize <= 0) return null;
+  const shift = sizeShiftOf(span, gridSize);
 
   return (cell: number): boolean => {
-    const { x, y } = pieceCornerOn(grid, piece, gridSize, cell);
+    const centre = cellCenterOf(grid, cell);
+    const x = centre.x - shift;
+    const y = centre.y - shift;
     const far = { x: x + span * gridSize - 1, y: y + span * gridSize - 1 };
     // Ground that runs off the edge is ground a piece cannot stand on either, and the cells
     // beyond the border are not blocked so much as absent. The corners of the footprint are

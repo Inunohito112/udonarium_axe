@@ -2509,7 +2509,8 @@
       "hostilityBy_npc": "NPC かどうかで分ける",
       "hostilityBy_party": "パーティで分ける",
       "sizeSlipsPast": "サイズが 2 マス以上違う相手のマスは通り抜けられる（止まれない）",
-      "handTracesWay": "掴んで運んだときも、通り道の仕掛けを発動させる"
+      "handTracesWay": "掴んで運んだときも、通り道の仕掛けを発動させる",
+      "squeezes": "大きなコマを、通れない隙間に押し込めるようにする（1 マスぶん余計に消費）"
     },
     "skin": {
       "title": "スキン",

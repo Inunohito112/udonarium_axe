@@ -58,6 +58,15 @@ export interface RoomRules {
    */
   sizeSlipsPast: boolean;
   /**
+   * Whether a piece too big for a gap may fold itself through it at a price.
+   *
+   * A piece three cells across needs three clear cells to stand on, so a two-cell passage is
+   * shut to it however much of it would fit. Left on, it may squeeze: it stands there as
+   * though it were a size smaller, and every cell it does that in costs a step again. Left
+   * off, a gap too small is simply shut, which is what the table has always done.
+   */
+  squeezes: boolean;
+  /**
    * Whether the ground between where a piece was lifted and where it was set down goes off.
    *
    * A hand leaves no way behind it, so the way is guessed: the shortest walk between the two
@@ -132,6 +141,7 @@ export const ROOM_RULE_DEFAULTS: RoomRules = {
   noPartyPassage: 'share',
   piecePassageCost: DEFAULT_PIECE_PASSAGE_COST,
   sizeSlipsPast: false,
+  squeezes: false,
   handTracesWay: false,
   moveRangeAlways: false,
   zocAlways: false,
@@ -162,6 +172,7 @@ export const ROOM_RULE_GROUPS = {
     'noPartyPassage',
     'piecePassageCost',
     'sizeSlipsPast',
+    'squeezes',
     'handTracesWay',
     'moveRangeElementNames',
     'cellDistance',
@@ -281,6 +292,7 @@ export function resolveRoomRules(
     noPartyPassage: crossing('noPartyPassage'),
     piecePassageCost: settled('piecePassageCost'),
     sizeSlipsPast: settled('sizeSlipsPast'),
+    squeezes: settled('squeezes'),
     handTracesWay: settled('handTracesWay'),
     moveRangeAlways: settled('moveRangeAlways'),
     zocAlways: settled('zocAlways'),
