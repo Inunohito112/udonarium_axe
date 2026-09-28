@@ -1439,7 +1439,9 @@
         "showRoundLine": "Round controls",
         "showPartsHint": "What is put away closes up. This setting is for this device only",
         "displayItemsRich": "Display items (full)",
-        "displayItemsTable": "Display items (table)"
+        "displayItemsTable": "Display items (table)",
+        "foldsOnOpen": "Open with the folders folded up",
+        "foldsOnOpenHint": "Takes effect on the next inventory opened. Pieces in no folder are shown as before"
       }
     },
     "file": {

@@ -1439,7 +1439,9 @@
         "showRoundLine": "라운드 조작",
         "showPartsHint": "끈 행은 자리를 비우지 않습니다. 이 설정은 이 단말에만 적용됩니다",
         "displayItemsRich": "표시 항목(리치)",
-        "displayItemsTable": "표시 항목(간략)"
+        "displayItemsTable": "표시 항목(간략)",
+        "foldsOnOpen": "열었을 때 폴더를 접어 둔다",
+        "foldsOnOpenHint": "다음에 여는 인벤토리부터 적용됩니다. 폴더에 넣지 않은 말은 그대로 표시됩니다"
       }
     },
     "file": {

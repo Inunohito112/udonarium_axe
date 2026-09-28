@@ -351,6 +351,65 @@ describe('GameObjectInventoryComponent', () => {
       expect(component.isFolderCollapsed('第1話')).toBe(false);
     });
 
+    describe('opening with the folders folded up, where this reader asked for that', () => {
+      /** A second inventory, opened after the reader has said how they want one opened. */
+      function opened(): GameObjectInventoryComponent {
+        const second = TestBed.createComponent(GameObjectInventoryComponent);
+        second.detectChanges();
+        return second.componentInstance;
+      }
+
+      it('opens a room of folders folded up', () => {
+        const goblin = putInShared('ゴブリン');
+        goblin.folderName = '第1話';
+        TestBed.inject(InventoryViewPreferenceService).setFoldsOnOpen(true);
+
+        const panel = opened();
+        panel.selectTab.set('common');
+        TestBed.tick();
+
+        expect(panel.isFolderCollapsed('第1話')).toBe(true);
+      });
+
+      it('leaves the pieces in no folder where they were', () => {
+        const goblin = putInShared('ゴブリン');
+        goblin.folderName = '第1話';
+        putInShared('村長');
+        TestBed.inject(InventoryViewPreferenceService).setFoldsOnOpen(true);
+
+        const panel = opened();
+        panel.selectTab.set('common');
+        TestBed.tick();
+
+        expect(panel.isFolderCollapsed('')).toBe(false);
+      });
+
+      it('opens them as it always has where nobody asked', () => {
+        const goblin = putInShared('ゴブリン');
+        goblin.folderName = '第1話';
+
+        const panel = opened();
+        panel.selectTab.set('common');
+        TestBed.tick();
+
+        expect(panel.isFolderCollapsed('第1話')).toBe(false);
+      });
+
+      it('leaves a folder the reader opens afterwards open', () => {
+        const goblin = putInShared('ゴブリン');
+        goblin.folderName = '第1話';
+        TestBed.inject(InventoryViewPreferenceService).setFoldsOnOpen(true);
+        const panel = opened();
+        panel.selectTab.set('common');
+        TestBed.tick();
+
+        panel.toggleFolder('第1話');
+        TestBed.tick();
+
+        expect(panel.isFolderCollapsed('第1話')).toBe(false);
+      });
+    });
+
     it('opens every folder while a search is on, without forgetting what was folded', () => {
       const goblin = putOnTable('ゴブリン');
       goblin.folderName = '第1話';
