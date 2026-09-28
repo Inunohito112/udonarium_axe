@@ -67,6 +67,15 @@ export interface RoomRules {
    */
   squeezes: boolean;
   /**
+   * How far one leap carries, in cells. Nought carries as far as the move has left.
+   *
+   * A jump goes over what a walk goes round, and with nothing said it goes on doing that for
+   * the whole of a move: a piece with six cells of movement clears six cells of chasm in one
+   * bound. Most games have a jump of its own length, and this is where a table says what it
+   * is.
+   */
+  jumpCells: number;
+  /**
    * Whether the ground between where a piece was lifted and where it was set down goes off.
    *
    * A hand leaves no way behind it, so the way is guessed: the shortest walk between the two
@@ -142,6 +151,7 @@ export const ROOM_RULE_DEFAULTS: RoomRules = {
   piecePassageCost: DEFAULT_PIECE_PASSAGE_COST,
   sizeSlipsPast: false,
   squeezes: false,
+  jumpCells: 0,
   handTracesWay: false,
   moveRangeAlways: false,
   zocAlways: false,
@@ -173,6 +183,7 @@ export const ROOM_RULE_GROUPS = {
     'piecePassageCost',
     'sizeSlipsPast',
     'squeezes',
+    'jumpCells',
     'handTracesWay',
     'moveRangeElementNames',
     'cellDistance',
@@ -293,6 +304,7 @@ export function resolveRoomRules(
     piecePassageCost: settled('piecePassageCost'),
     sizeSlipsPast: settled('sizeSlipsPast'),
     squeezes: settled('squeezes'),
+    jumpCells: settled('jumpCells'),
     handTracesWay: settled('handTracesWay'),
     moveRangeAlways: settled('moveRangeAlways'),
     zocAlways: settled('zocAlways'),

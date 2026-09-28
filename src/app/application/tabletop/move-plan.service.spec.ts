@@ -245,6 +245,40 @@ describe('MovePlanService', () => {
       expect(service.plan()!.reach.get(cell(6, 5))).toBe(false);
     });
 
+    describe('with a room that says how far a leap goes', () => {
+      afterEach(() => {
+        Config.instance.jumpCells = null;
+      });
+
+      it('leaps only as far as the room allows, though the move has more left', () => {
+        service.begin(pieceAt(5, 5, 4));
+        Config.instance.jumpCells = 2;
+
+        service.toggleJump();
+
+        expect(service.plan()!.reach.get(cell(7, 5))).toBe(true);
+        expect(service.plan()!.reach.get(cell(9, 5))).toBe(false);
+      });
+
+      it('leaps as far as the move carries where the room says nothing', () => {
+        service.begin(pieceAt(5, 5, 4));
+
+        service.toggleJump();
+
+        expect(service.plan()!.reach.get(cell(9, 5))).toBe(true);
+      });
+
+      it('draws no way past the end of one leap', () => {
+        service.begin(pieceAt(5, 5, 4));
+        Config.instance.jumpCells = 2;
+        service.toggleJump();
+
+        service.lookAt(9 * GRID + 10, 5 * GRID + 10);
+
+        expect(service.plan()!.ahead).toEqual([]);
+      });
+    });
+
     it('takes the jumping back off again, and the block with it', () => {
       blockOver(6, 5, 2);
       service.begin(pieceAt(5, 5, 3));

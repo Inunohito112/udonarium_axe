@@ -781,6 +781,14 @@ export class RoomSettingsPanelComponent {
     return this.piecePassageSides.some((side) => this.rules[side] === 'cost');
   }
 
+  /** How far one leap carries, in cells. Nought carries as far as the move has left. */
+  get jumpCells(): number {
+    return this.rules.jumpCells;
+  }
+  set jumpCells(value: number) {
+    if (this.isEditable) this.config.jumpCells = wholeCells(value);
+  }
+
   /** Whether a piece too big for a gap folds itself through it at a price. */
   get squeezes(): boolean {
     return this.rules.squeezes;

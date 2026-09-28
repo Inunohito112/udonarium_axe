@@ -25,6 +25,7 @@ const table: RoomRules = {
   piecePassageCost: 2,
   sizeSlipsPast: true,
   squeezes: true,
+  jumpCells: 3,
   handTracesWay: true,
   pieceImageInCell: false,
   moveRangeAlways: true,

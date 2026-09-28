@@ -137,6 +137,8 @@ export class GameTable extends ObjectNode {
   @SyncVar() sizeSlipsPast: boolean = false;
   /** Whether a piece too big for a gap folds itself through it at a price. */
   @SyncVar() squeezes: boolean = false;
+  /** How far one leap carries, in cells. Nought carries as far as the move has left. */
+  @SyncVar() jumpCells: number = 0;
   /** Whether the ground between a piece's two ends goes off when a hand moves it. */
   @SyncVar() handTracesWay: boolean = false;
   /** Whether the piece a reader has picked keeps showing its reach, not only while carried. */

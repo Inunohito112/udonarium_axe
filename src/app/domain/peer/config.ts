@@ -57,6 +57,7 @@ export class Config extends ObjectNode implements InnerXml {
   @SyncVar('_piecePassageCost') private _piecePassageCost: number = -1;
   @SyncVar('_sizeSlipsPast') private _sizeSlipsPast: string = '';
   @SyncVar('_squeezes') private _squeezes: string = '';
+  @SyncVar('_jumpCells') private _jumpCells: number = -1;
   @SyncVar('_handTracesWay') private _handTracesWay: string = '';
   @SyncVar('_moveRangeAlways') private _moveRangeAlways: string = '';
   @SyncVar('_zocAlways') private _zocAlways: string = '';
@@ -292,6 +293,14 @@ export class Config extends ObjectNode implements InnerXml {
     this._squeezes = writeRuleFlag(answer);
   }
 
+  /** How far one leap carries in cells, or null for the table. */
+  get jumpCells(): number | null {
+    return readRuleNumber(this._jumpCells);
+  }
+  set jumpCells(answer: number | null) {
+    this._jumpCells = writeRuleNumber(answer);
+  }
+
   /** Whether ground between a piece's two ends goes off when a hand moves it, or null for the table. */
   get handTracesWay(): boolean | null {
     return readRuleFlag(this._handTracesWay);
@@ -426,6 +435,7 @@ export class Config extends ObjectNode implements InnerXml {
       piecePassageCost: this.piecePassageCost,
       sizeSlipsPast: this.sizeSlipsPast,
       squeezes: this.squeezes,
+      jumpCells: this.jumpCells,
       handTracesWay: this.handTracesWay,
       moveRangeAlways: this.moveRangeAlways,
       zocAlways: this.zocAlways,

@@ -108,6 +108,7 @@ describe('Config', () => {
         piecePassageCost: null,
         sizeSlipsPast: null,
         squeezes: null,
+        jumpCells: null,
         handTracesWay: null,
         moveRangeAlways: null,
         zocAlways: null,
