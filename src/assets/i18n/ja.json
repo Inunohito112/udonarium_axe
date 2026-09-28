@@ -3862,7 +3862,8 @@
         "size": "広さを変える",
         "radialAppearance": "見た目",
         "radialObject": "オブジェクト操作",
-        "blocksSight": "視線を遮る"
+        "blocksSight": "視線を遮る",
+        "brightness": "明るさ"
       },
       "kind": {
         "fog": "濃霧",
@@ -3880,7 +3881,12 @@
         "blaze": "地面の炎上",
         "frost": "氷結"
       },
-      "blocksSightLabel": "視線を遮る"
+      "blocksSightLabel": "視線を遮る",
+      "brightnessLabel": "明るさ",
+      "brightness_none": "そのまま",
+      "brightness_dark": "暗闇",
+      "brightness_dim": "薄暗い",
+      "brightness_bright": "明るい"
     },
     "buffManager": {
       "title": "バフマネージャー",

@@ -5,6 +5,7 @@ import {
   ContextMenuSeparator,
 } from '@axe/application/ui/context-menu.service';
 import { buildCopyAction, buildLockToggleAction } from '@axe/application/ui/tabletop-context-menu-actions';
+import { AMBIENCE_BRIGHTNESS } from '@axe/domain/effect/ambience/ambience-brightness';
 import { GROUND_AMBIENCE_KINDS } from '@axe/domain/effect/ambience/ambience-kind';
 import { PresetSound, SoundEffect } from '@axe/domain/media/sound-effect';
 import { TableAmbience } from '@axe/domain/tabletop/table-ambience';
@@ -94,6 +95,18 @@ export function buildTableAmbienceContextMenuModel(
     },
   };
 
+  const brightnessAction: ContextMenuAction = {
+    name: t('feature.ambience.contextMenu.brightness'),
+    action: undefined,
+    subActions: AMBIENCE_BRIGHTNESS.map((shade) => ({
+      name: (ambience.shade === shade ? '✔ ' : '') + t(`feature.ambience.brightness_${shade}`),
+      action: () => {
+        ambience.brightness = shade;
+        SoundEffect.play(PresetSound.sweep);
+      },
+    })),
+  };
+
   const lockAction = buildLockToggleAction(ambience.isLock, (next) => (ambience.isLock = next), t);
   const copyAction = buildCopyAction(ambience, gridSize, t, {
     sound: PresetSound.cardPut,
@@ -107,7 +120,7 @@ export function buildTableAmbienceContextMenuModel(
     },
   };
 
-  const appearanceActions = [settingsAction, kindAction, densityAction, sizeAction, sightAction];
+  const appearanceActions = [settingsAction, kindAction, densityAction, sizeAction, sightAction, brightnessAction];
   const objectActions = [lockAction, copyAction, deleteAction];
   return {
     actions: [...appearanceActions, lockAction, ContextMenuSeparator, copyAction, deleteAction],

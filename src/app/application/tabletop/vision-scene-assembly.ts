@@ -1,4 +1,5 @@
 import { GameCharacter } from '@axe/domain/character/game-character';
+import { ambienceLightLevelOf, ambienceSnuffsLight } from '@axe/domain/effect/ambience/ambience-brightness';
 import { GameTable } from '@axe/domain/tabletop/game-table';
 import { perimeterSegments, rectangleSegments, TallSegment } from '@axe/domain/tabletop/los/segments';
 import { type SurfaceDims, surfaceInwardDirection, surfacePointTo3D } from '@axe/domain/tabletop/surface-space';
@@ -8,6 +9,7 @@ import { terrainBasePx, terrainTopPx } from '@axe/domain/tabletop/terrain-height
 import {
   eyeHeightPx,
   type LightSegment,
+  type SceneBrightness,
   type SceneLight,
   type SceneVisionSource,
   type ShadowCaster,
@@ -271,6 +273,30 @@ export function characterSceneKey(character: GameCharacter): string {
 }
 
 /**
+ * The patches of a table held at a brightness of their own, as the solver reads them.
+ *
+ * Only the ones that say something are collected: an ambience that leaves the light alone is
+ * a look and nothing else, and the solver is given none of them to walk over.
+ */
+export function collectBrightAreas(table: GameTable, gridSize: number): SceneBrightness[] {
+  const areas: SceneBrightness[] = [];
+  for (const patch of table.ambiences) {
+    if (surfaceOf(patch) !== 'floor') continue;
+    const level = ambienceLightLevelOf(patch.shade);
+    if (level === null) continue;
+    areas.push({
+      x: patch.location.x,
+      y: patch.location.y,
+      widthPx: patch.width * gridSize,
+      heightPx: patch.height * gridSize,
+      level,
+      snuffs: ambienceSnuffsLight(patch.shade),
+    });
+  }
+  return areas;
+}
+
+/**
  * Puts together everything the vision solver needs for a table: its darkness and fog, the lights,
  * the eyes, and the edges that stop them.
  */
@@ -297,5 +323,6 @@ export function assembleScene(
     sightSegments: standing.sight,
     lightSegments: standing.light,
     shadowCasters: collectShadowCasters(characters, gridSize),
+    brightAreas: collectBrightAreas(table, gridSize),
   };
 }

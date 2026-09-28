@@ -3862,7 +3862,8 @@
         "size": "Change size",
         "radialAppearance": "Appearance",
         "radialObject": "Object actions",
-        "blocksSight": "Blocks sight"
+        "blocksSight": "Blocks sight",
+        "brightness": "Brightness"
       },
       "kind": {
         "fog": "Dense fog",
@@ -3880,7 +3881,12 @@
         "blaze": "Burning ground",
         "frost": "Frost"
       },
-      "blocksSightLabel": "Blocks sight"
+      "blocksSightLabel": "Blocks sight",
+      "brightnessLabel": "Brightness",
+      "brightness_none": "Leave it alone",
+      "brightness_dark": "Darkness",
+      "brightness_dim": "Dim",
+      "brightness_bright": "Bright"
     },
     "buffManager": {
       "title": "Buff manager",

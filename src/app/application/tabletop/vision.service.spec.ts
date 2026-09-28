@@ -576,6 +576,42 @@ describe('VisionService', () => {
     });
   });
 
+  describe('a pool of darkness dropped on a lit floor', () => {
+    function enemyInThe(brightness: string): GameCharacter {
+      makeMyCursor('p1', PeerRole.Player);
+      const table = makeDarkTable();
+
+      // A lamp bright enough to light the whole room, so what hides the enemy is the pool and
+      // nothing else.
+      const hero = GameCharacter.create('Hero', 1, '');
+      hero.owner = 'p1';
+      hero.visionType = VisionType.NORMAL;
+      hero.visionRange = 20;
+      hero.lightEnabled = true;
+      hero.lightBrightRadius = 20;
+      hero.lightDimRadius = 20;
+      hero.location = { name: 'table', x: 100, y: 500 };
+
+      const enemy = GameCharacter.create('Enemy', 1, '');
+      enemy.owner = 'enemy';
+      enemy.location = { name: 'table', x: 500, y: 500 };
+
+      const pool = TableAmbience.create('闇', 'fog', 4, 4);
+      pool.location = { name: 'table', x: 450, y: 450 };
+      pool.brightness = brightness;
+      table.appendChild(pool);
+      return enemy;
+    }
+
+    it('hides whoever stands in it, though a lamp is shining straight at them', () => {
+      expect(service.isSeenByParty(enemyInThe('dark'))).toBe(false);
+    });
+
+    it('hides nobody where the patch only dims the light rather than putting it out', () => {
+      expect(service.isSeenByParty(enemyInThe('dim'))).toBe(true);
+    });
+  });
+
   it('counts glowing terrain as a light and never lets it shadow itself', () => {
     makeMyCursor('p1', PeerRole.Player);
     const table = makeDarkTable();

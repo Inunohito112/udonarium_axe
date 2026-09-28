@@ -1,5 +1,6 @@
 import {
   characterSceneKey,
+  collectBrightAreas,
   collectLights,
   collectSegments,
   collectShadowCasters,
@@ -108,6 +109,32 @@ describe('vision scene assembly', () => {
       const segments = collectSegments(bank(false), 50, 500, 400);
 
       expect(segments.sight).toHaveLength(4);
+    });
+
+    it('is no patch of brightness until it is told to be one', () => {
+      expect(collectBrightAreas(bank(false), 50)).toEqual([]);
+    });
+
+    it('holds the ground under it at the brightness it was given', () => {
+      const table = makeTable();
+      const shaft = TableAmbience.create('光', 'fog', 3, 2);
+      shaft.location = { name: 'table', x: 100, y: 100 };
+      shaft.brightness = 'bright';
+      table.appendChild(shaft);
+
+      expect(collectBrightAreas(table, 50)).toEqual([
+        { x: 100, y: 100, widthPx: 150, heightPx: 100, level: 1, snuffs: false },
+      ]);
+    });
+
+    it('puts the light out under it where it is a pool of darkness', () => {
+      const table = makeTable();
+      const pool = TableAmbience.create('闇', 'fog', 2, 2);
+      pool.location = { name: 'table', x: 0, y: 0 };
+      pool.brightness = 'dark';
+      table.appendChild(pool);
+
+      expect(collectBrightAreas(table, 50)[0]).toMatchObject({ level: 0, snuffs: true });
     });
 
     it('stops no light, being thick air rather than stone', () => {

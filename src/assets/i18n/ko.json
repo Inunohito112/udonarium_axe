@@ -3864,7 +3864,8 @@
         "size": "넓이 바꾸기",
         "radialAppearance": "외형",
         "radialObject": "오브젝트 조작",
-        "blocksSight": "시선을 가린다"
+        "blocksSight": "시선을 가린다",
+        "brightness": "밝기"
       },
       "kind": {
         "fog": "짙은 안개",
@@ -3882,7 +3883,12 @@
         "blaze": "지면 화재",
         "frost": "빙결"
       },
-      "blocksSightLabel": "시선을 가린다"
+      "blocksSightLabel": "시선을 가린다",
+      "brightnessLabel": "밝기",
+      "brightness_none": "그대로",
+      "brightness_dark": "어둠",
+      "brightness_dim": "어슴푸레",
+      "brightness_bright": "밝음"
     },
     "buffManager": {
       "title": "버프 매니저",

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 import { CHAT_SOUND_TYPES } from '@axe/domain/chat/chat-sound';
+import { AMBIENCE_BRIGHTNESS } from '@axe/domain/effect/ambience/ambience-brightness';
 import { HOTBAR_SLOT_KINDS } from '@axe/domain/hotbar/hotbar-slot-kind';
 import { CUT_IN_EASING_NAMES } from '@axe/domain/media/cubic-bezier';
 import { CUT_IN_ENTRANCES, CUT_IN_EXITS } from '@axe/domain/media/cut-in-animation-presets';
@@ -61,6 +62,7 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.roomSettings.zocMode_': ZOC_MODES,
   'feature.roomSettings.hostilityBy_': HOSTILITY_BY,
   'feature.roomSettings.piecePassage_': PIECE_PASSAGE_MODES,
+  'feature.ambience.brightness_': AMBIENCE_BRIGHTNESS,
   'feature.mapEditor.function.role_': MAP_FUNCTION_ROLES,
   'feature.mapEditor.function.triggerMoment_': TRIGGER_MOMENTS,
   'feature.mapEditor.function.triggerRepeat_': TRIGGER_REPEATS,

@@ -1,5 +1,6 @@
 import { SyncObject, SyncVar } from '@axe/core/sync/decorator';
 import { DataElement } from '@axe/domain/data/data-element';
+import { AmbienceBrightness, ambienceBrightnessOf } from '@axe/domain/effect/ambience/ambience-brightness';
 import {
   ambienceColorOf,
   ambienceDensityOf,
@@ -30,6 +31,13 @@ export class TableAmbience extends TabletopObject {
    * other, and a piece inside it is not seen from outside at all.
    */
   @SyncVar() blocksSight: boolean = false;
+  /**
+   * How bright the ground under it is, as one of AMBIENCE_BRIGHTNESS. Empty leaves it alone.
+   *
+   * A patch of the board lit, dimmed or put out whatever the rest of the table is lit by: the
+   * pool of magical darkness over a doorway, the shaft of daylight down a stairwell.
+   */
+  @SyncVar() brightness: string = '';
 
   /** How many grid cells wide the area is, kept in its common data. */
   get width(): number {
@@ -45,6 +53,11 @@ export class TableAmbience extends TabletopObject {
   }
   set height(height: number) {
     this.setCommonValue('height', height);
+  }
+
+  /** How bright the ground under it is, with anything unknown leaving the light as it was. */
+  get shade(): AmbienceBrightness {
+    return ambienceBrightnessOf(this.brightness);
   }
 
   /** The kind of effect, with an unknown stored kind read as swamp. */
