@@ -172,5 +172,84 @@ describe('resource-edit-helpers', () => {
       expect(data.getAttribute(DataElementAttribute.BUFF_COLOR)).toBe(resolveBuffColor('red'));
       expect(data.getAttribute(DataElementAttribute.BUFF_ICON)).toBe('☠️');
     });
+
+    it('writes a plain buff over one of the same name', () => {
+      applyBuffEdit({ command: '&猛攻撃/攻撃+2/3', object: character, targeted: false }, character);
+      applyBuffEdit({ command: '&猛攻撃/攻撃+2/3', object: character, targeted: false }, character);
+
+      expect(character.buffs.find('猛攻撃')!.currentValue).toBe('攻撃+2');
+    });
+
+    it('adds a second helping to a plain buff when the command is marked with a plus', () => {
+      applyBuffEdit({ command: '&猛攻撃/攻撃+2/3', object: character, targeted: false }, character);
+      const text = applyBuffEdit({ command: '&+猛攻撃/攻撃+2/3', object: character, targeted: false }, character);
+
+      expect(character.buffs.find('猛攻撃')!.currentValue).toBe('攻撃+4');
+      expect(text).toContain('バフを加算');
+      expect(text).toContain('攻撃+4');
+    });
+
+    it('reads the plus written full width', () => {
+      applyBuffEdit({ command: '&猛攻撃/攻撃+2/3', object: character, targeted: false }, character);
+      applyBuffEdit({ command: '&＋猛攻撃/攻撃+2/3', object: character, targeted: false }, character);
+
+      expect(character.buffs.find('猛攻撃')!.currentValue).toBe('攻撃+4');
+    });
+
+    it('grants a marked buff nobody carries yet', () => {
+      const text = applyBuffEdit({ command: '&+猛攻撃/攻撃+2/3', object: character, targeted: false }, character);
+
+      expect(character.buffs.find('猛攻撃')!.currentValue).toBe('攻撃+2');
+      expect(text).toContain('バフを付与');
+    });
+
+    it('still removes a buff written with the mark and a dash', () => {
+      applyBuffEdit({ command: '&猛攻撃/攻撃+2/3', object: character, targeted: false }, character);
+      applyBuffEdit({ command: '&+猛攻撃-', object: character, targeted: false }, character);
+
+      expect(character.buffs.find('猛攻撃')).toBeNull();
+    });
+
+    it('moves a status twice over for a marked calculated buff', () => {
+      character.status.changeValue('HP', 'now', -100);
+      const before = character.status.getValue('HP', 'now')!;
+
+      applyBuffEdit({ command: '&!猛攻撃/HP/+/2/3', object: character, targeted: false }, character);
+      const text = applyBuffEdit({ command: '&+!猛攻撃/HP/+/2/3', object: character, targeted: false }, character);
+
+      expect(character.status.getValue('HP', 'now')).toBe(before + 4);
+      expect(text).toContain('加算');
+      expect(text).toContain('HP+4');
+    });
+
+    it('puts back both helpings when a marked calculated buff is taken off', () => {
+      character.status.changeValue('HP', 'now', -100);
+      const before = character.status.getValue('HP', 'now')!;
+
+      applyBuffEdit({ command: '&!猛攻撃/HP/+/2/3', object: character, targeted: false }, character);
+      applyBuffEdit({ command: '&+!猛攻撃/HP/+/2/3', object: character, targeted: false }, character);
+      expect(character.status.getValue('HP', 'now')).toBe(before + 4);
+
+      applyBuffEdit({ command: '&猛攻撃-', object: character, targeted: false }, character);
+
+      expect(character.status.getValue('HP', 'now')).toBe(before);
+    });
+
+    it('starts a calculated buff over where it only holds a status at a value', () => {
+      applyBuffEdit({ command: '&!石化/HP/=/3/3', object: character, targeted: false }, character);
+      applyBuffEdit({ command: '&+!石化/HP/=/3/3', object: character, targeted: false }, character);
+
+      expect(character.status.getValue('HP', 'now')).toBe(3);
+    });
+
+    it('writes an unmarked calculated buff over the one standing', () => {
+      character.status.changeValue('HP', 'now', -100);
+      const before = character.status.getValue('HP', 'now')!;
+
+      applyBuffEdit({ command: '&!猛攻撃/HP/+/2/3', object: character, targeted: false }, character);
+      applyBuffEdit({ command: '&!猛攻撃/HP/+/2/3', object: character, targeted: false }, character);
+
+      expect(character.status.getValue('HP', 'now')).toBe(before + 2);
+    });
   });
 });
