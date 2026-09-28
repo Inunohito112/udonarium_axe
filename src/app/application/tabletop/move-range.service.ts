@@ -540,6 +540,19 @@ export class MoveRangeService {
       fits && rules.squeezes
         ? (pieceFitsOn(grid, character, table.gridSize, blocked, Math.round(character.size) - 1) ?? (() => true))
         : null;
+    // A piece wider than one cell cannot pass through a gap it could not stand in. The search
+    // asks about the cell its middle would be over, so a golem three across would otherwise
+    // thread a one-cell doorway and come out the far side of it. Worked out in full before any
+    // of it is written down, since each answer is read off the ground as it stands.
+    if (fits) {
+      const total = cellCount(grid);
+      const tooNarrow = new CellBits(total);
+      for (let cell = 0; cell < total; cell++) {
+        if (blocked.get(cell) || fits(cell) || (tight?.(cell) ?? false)) continue;
+        tooNarrow.set(cell);
+      }
+      blocked.or(tooNarrow);
+    }
     const charges =
       dear !== null ||
       going.toll > 0 ||
@@ -567,10 +580,9 @@ export class MoveRangeService {
           }
         : PLAIN_GOING,
       stopsAt: held && mode === 'stop' ? (index) => held.get(index) : undefined,
-      restsAt:
-        noStop || fits
-          ? (index) => !noStop?.get(index) && (!fits || fits(index) || (tight?.(index) ?? false))
-          : undefined,
+      // Where a wide piece may stand is settled by what it may enter at all, above; what is
+      // left here is ground somebody else is holding, which is crossed but not stopped on.
+      restsAt: noStop ? (index) => !noStop.get(index) : undefined,
     };
     const steps = stepsFor(walk);
     const cells = reachableCells(grid, start, steps, (index) => blocked.get(index), options);

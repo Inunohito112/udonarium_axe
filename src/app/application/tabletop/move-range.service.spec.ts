@@ -1304,6 +1304,17 @@ describe('MoveRangeService and which side a piece is on', () => {
     expect(reached(6, 5)).toBe(true);
   });
 
+  it('holds none against a piece nobody has placed either, where the sides are parties', () => {
+    table.hostilityBy = 'party';
+    pieceAt(7, 5, 1, 'goblins');
+
+    // Held both ways or neither: a stray that holds no ground of its own is not walled in by
+    // everybody else's.
+    service.show(pieceAt(5, 5, 3, ''));
+
+    expect(reached(6, 5)).toBe(true);
+  });
+
   describe('and the parties it stands with', () => {
     function party(identifier: string, allies = ''): Party {
       const held = new Party(identifier);
@@ -1418,6 +1429,22 @@ describe('MoveRangeService and a piece wider than one cell', () => {
     expect(reached(5, 6)).toBe(true);
   });
 
+  it('will not thread a gap it could not stand in', () => {
+    // Two walls with a single cell between them: a piece three across cannot stand in that
+    // cell, and so cannot pass through it to the ground beyond either.
+    const above = Terrain.create('壁', 1, 5, 2, '', '');
+    above.location = { name: 'table', x: 6 * GRID, y: 0 };
+    table.appendChild(above);
+    const below = Terrain.create('壁', 1, 6, 2, '', '');
+    below.location = { name: 'table', x: 6 * GRID, y: 6 * GRID };
+    table.appendChild(below);
+
+    service.show(golemAt(4, 5, 8, 3));
+
+    expect(reached(9, 5)).toBe(false);
+    expect(reached(10, 5)).toBe(false);
+  });
+
   it('will not hang off the edge of the board', () => {
     service.show(golemAt(10, 5, 2));
 
@@ -1436,13 +1463,18 @@ describe('MoveRangeService and a piece wider than one cell', () => {
       Config.instance.squeezes = null;
     });
 
-    /** A wall with one cell missing in it, which a piece three across cannot walk through. */
+    /**
+     * A wall with a two-cell gap in it, which a piece three across cannot walk through.
+     *
+     * Two cells rather than one: a piece that folds itself down to two is still two across,
+     * and a one-cell gap is shut to it however it holds itself.
+     */
     function wallWithAGap(col: number, gapRow: number): void {
       const above = Terrain.create('壁', 1, gapRow, 2, '', '');
       above.location = { name: 'table', x: col * GRID, y: 0 };
       table.appendChild(above);
-      const below = Terrain.create('壁', 1, 12 - gapRow - 1, 2, '', '');
-      below.location = { name: 'table', x: col * GRID, y: (gapRow + 1) * GRID };
+      const below = Terrain.create('壁', 1, 12 - gapRow - 2, 2, '', '');
+      below.location = { name: 'table', x: col * GRID, y: (gapRow + 2) * GRID };
       table.appendChild(below);
     }
 
