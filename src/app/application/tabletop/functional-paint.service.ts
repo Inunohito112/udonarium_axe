@@ -325,7 +325,12 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
 
 /** What one look laid over the ground is, which is everything the editor put into it. */
 function ambienceSpecOf(area: TableAmbience): AmbiencePaintSpec {
-  return { kind: area.ambienceKind, color: area.ambienceColor, density: area.ambienceDensity };
+  return {
+    kind: area.ambienceKind,
+    color: area.ambienceColor,
+    density: area.ambienceDensity,
+    blocksSight: area.blocksSight,
+  };
 }
 
 /** What one stretch of dear ground looks like to the editor, which is all of what it is. */
@@ -521,6 +526,7 @@ export class FunctionalPaintService {
       const area = TableAmbience.create('', ambienceKindOf(block.spec.kind, 'swamp'), block.width, block.height);
       area.ambienceColor = block.spec.color;
       area.ambienceDensity = block.spec.density;
+      area.blocksSight = block.spec.blocksSight;
       area.location = { name: 'table', x: block.col * grid.sizePx, y: block.row * grid.sizePx };
       table.appendChild(area);
     }

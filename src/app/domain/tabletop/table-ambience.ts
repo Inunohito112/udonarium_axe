@@ -21,6 +21,15 @@ export class TableAmbience extends TabletopObject {
   @SyncVar() ambienceColor: string = '';
   @SyncVar() ambienceDensity: number = DEFAULT_AMBIENCE_DENSITY;
   @SyncVar() isLock: boolean = false;
+  /**
+   * Whether nobody sees through it.
+   *
+   * A bank of fog that only looks like fog hides nothing: an eye reads straight through it and
+   * the party sees the far side of it as clearly as the near. Set, its outline stands in the
+   * way of sight the way a wall does, so a piece on one side of it cannot see one on the
+   * other, and a piece inside it is not seen from outside at all.
+   */
+  @SyncVar() blocksSight: boolean = false;
 
   /** How many grid cells wide the area is, kept in its common data. */
   get width(): number {

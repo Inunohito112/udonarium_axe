@@ -25,6 +25,8 @@ export interface HazardPreset {
   extraCost: number;
   /** Whether nothing gets through it at all, whatever it would otherwise charge. */
   blocks: boolean;
+  /** Whether nobody sees through it, the far side of it being hidden rather than only dimmed. */
+  blocksSight: boolean;
   /** What it takes from whoever it catches, as a number or a handful of dice. Empty takes nothing. */
   amount: string;
   /** When it takes it: as a walk ends on it, or as a turn spent in it opens. */
@@ -45,24 +47,44 @@ export interface HazardPreset {
  */
 export const HAZARD_PRESETS: Record<HazardKind, HazardPreset> = {
   // Wading, not burning: it is slow rather than deadly, and holds a piece where it stands.
-  bog: { ambience: 'swamp', extraCost: 1, blocks: false, amount: '', moment: 'stop', ailment: '', color: '#6d9b5a' },
+  bog: {
+    ambience: 'swamp',
+    extraCost: 1,
+    blocks: false,
+    blocksSight: false,
+    amount: '',
+    moment: 'stop',
+    ailment: '',
+    color: '#6d9b5a',
+  },
   // Standing in it is what hurts, so it takes its due as a turn in it opens rather than as a
   // piece crosses: running through a fire is not the same as being caught in one.
   lava: {
     ambience: 'lava',
     extraCost: 2,
     blocks: false,
+    blocksSight: false,
     amount: '2d6',
     moment: 'turnStart',
     ailment: '',
     color: '#c0392b',
   },
-  fog: { ambience: 'fog', extraCost: 1, blocks: false, amount: '', moment: 'stop', ailment: '', color: '#8fa3ad' },
+  fog: {
+    ambience: 'fog',
+    extraCost: 1,
+    blocks: false,
+    blocksSight: true,
+    amount: '',
+    moment: 'stop',
+    ailment: '',
+    color: '#8fa3ad',
+  },
   // Ice is no harder to cross than a floor; what it does is put a piece off its feet.
   ice: {
     ambience: 'frost',
     extraCost: 0,
     blocks: false,
+    blocksSight: false,
     amount: '',
     moment: 'enter',
     ailment: '転倒',
@@ -72,6 +94,7 @@ export const HAZARD_PRESETS: Record<HazardKind, HazardPreset> = {
     ambience: 'swamp',
     extraCost: 1,
     blocks: false,
+    blocksSight: false,
     amount: '1d6',
     moment: 'enter',
     ailment: '',
@@ -81,6 +104,7 @@ export const HAZARD_PRESETS: Record<HazardKind, HazardPreset> = {
     ambience: 'vent',
     extraCost: 0,
     blocks: false,
+    blocksSight: false,
     amount: '1d6',
     moment: 'turnStart',
     ailment: '',

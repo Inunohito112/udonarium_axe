@@ -429,7 +429,13 @@ describe('FunctionalPaintService', () => {
     });
 
     it('lays a look over the ground, and reads it back where it stood', () => {
-      const look = { col: 2, row: 3, width: 4, height: 2, spec: { kind: 'lava', color: '', density: 0.6 } };
+      const look = {
+        col: 2,
+        row: 3,
+        width: 4,
+        height: 2,
+        spec: { kind: 'lava', color: '', density: 0.6, blocksSight: false },
+      };
 
       service.apply(plan({ ambience: { add: [look], remove: [] } }));
 
@@ -437,7 +443,13 @@ describe('FunctionalPaintService', () => {
     });
 
     it('leaves a look that was laid again exactly where it stood', () => {
-      const look = { col: 2, row: 3, width: 4, height: 2, spec: { kind: 'lava', color: '', density: 0.6 } };
+      const look = {
+        col: 2,
+        row: 3,
+        width: 4,
+        height: 2,
+        spec: { kind: 'lava', color: '', density: 0.6, blocksSight: false },
+      };
       service.apply(plan({ ambience: { add: [look], remove: [] } }));
       const laid = table.ambiences[0];
 
@@ -447,7 +459,13 @@ describe('FunctionalPaintService', () => {
     });
 
     it('takes a look away when the painting stops holding it', () => {
-      const look = { col: 2, row: 3, width: 4, height: 2, spec: { kind: 'lava', color: '', density: 0.6 } };
+      const look = {
+        col: 2,
+        row: 3,
+        width: 4,
+        height: 2,
+        spec: { kind: 'lava', color: '', density: 0.6, blocksSight: false },
+      };
       service.apply(plan({ ambience: { add: [look], remove: [] } }));
 
       service.apply(plan({ ambience: { add: [], remove: [look] } }));

@@ -3861,7 +3861,8 @@
         "density": "濃さを変える",
         "size": "広さを変える",
         "radialAppearance": "見た目",
-        "radialObject": "オブジェクト操作"
+        "radialObject": "オブジェクト操作",
+        "blocksSight": "視線を遮る"
       },
       "kind": {
         "fog": "濃霧",
@@ -3878,7 +3879,8 @@
         "lava": "溶岩",
         "blaze": "地面の炎上",
         "frost": "氷結"
-      }
+      },
+      "blocksSightLabel": "視線を遮る"
     },
     "buffManager": {
       "title": "バフマネージャー",

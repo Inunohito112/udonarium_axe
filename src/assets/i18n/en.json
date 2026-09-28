@@ -3861,7 +3861,8 @@
         "density": "Change density",
         "size": "Change size",
         "radialAppearance": "Appearance",
-        "radialObject": "Object actions"
+        "radialObject": "Object actions",
+        "blocksSight": "Blocks sight"
       },
       "kind": {
         "fog": "Dense fog",
@@ -3878,7 +3879,8 @@
         "lava": "Lava",
         "blaze": "Burning ground",
         "frost": "Frost"
-      }
+      },
+      "blocksSightLabel": "Blocks sight"
     },
     "buffManager": {
       "title": "Buff manager",

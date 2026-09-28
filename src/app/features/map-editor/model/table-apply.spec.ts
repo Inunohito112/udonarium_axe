@@ -439,6 +439,14 @@ describe('painting dangerous ground', () => {
     expect(plan.ambience.add[0].spec.kind).toBe('lava');
   });
 
+  it('lays a fog bank nobody sees through, and leaves the rest see-through', () => {
+    const fog = planFunctionPaint(sceneWith(hazardLayer(['1,1'], 'fog')), snapshot())!;
+    const bog = planFunctionPaint(sceneWith(hazardLayer(['1,1'], 'bog')), snapshot())!;
+
+    expect(fog.ambience.add[0].spec.blocksSight).toBe(true);
+    expect(bog.ambience.add[0].spec.blocksSight).toBe(false);
+  });
+
   it('takes from the resource the brush was pointed at', () => {
     const plan = planFunctionPaint(sceneWith(hazardLayer(['1,1'], 'briar', 'ライフ')), snapshot())!;
 
@@ -463,7 +471,9 @@ describe('painting dangerous ground', () => {
 
   it('leaves the looks a table already holds alone where the scene never picks the brush up', () => {
     const table = snapshot({
-      ambienceBlocks: [{ col: 0, row: 0, width: 1, height: 1, spec: { kind: 'swamp', color: '', density: 0.6 } }],
+      ambienceBlocks: [
+        { col: 0, row: 0, width: 1, height: 1, spec: { kind: 'swamp', color: '', density: 0.6, blocksSight: false } },
+      ],
     });
 
     const plan = planFunctionPaint(sceneWith(layerOf('mask', ['1,1'])), table)!;

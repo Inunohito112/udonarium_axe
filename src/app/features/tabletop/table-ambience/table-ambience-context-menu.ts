@@ -86,6 +86,14 @@ export function buildTableAmbienceContextMenuModel(
     })),
   };
 
+  const sightAction: ContextMenuAction = {
+    name: (ambience.blocksSight ? '✔ ' : '') + t('feature.ambience.contextMenu.blocksSight'),
+    action: () => {
+      ambience.blocksSight = !ambience.blocksSight;
+      SoundEffect.play(PresetSound.sweep);
+    },
+  };
+
   const lockAction = buildLockToggleAction(ambience.isLock, (next) => (ambience.isLock = next), t);
   const copyAction = buildCopyAction(ambience, gridSize, t, {
     sound: PresetSound.cardPut,
@@ -99,7 +107,7 @@ export function buildTableAmbienceContextMenuModel(
     },
   };
 
-  const appearanceActions = [settingsAction, kindAction, densityAction, sizeAction];
+  const appearanceActions = [settingsAction, kindAction, densityAction, sizeAction, sightAction];
   const objectActions = [lockAction, copyAction, deleteAction];
   return {
     actions: [...appearanceActions, lockAction, ContextMenuSeparator, copyAction, deleteAction],

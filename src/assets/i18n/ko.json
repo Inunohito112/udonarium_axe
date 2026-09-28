@@ -3863,7 +3863,8 @@
         "density": "짙기 바꾸기",
         "size": "넓이 바꾸기",
         "radialAppearance": "외형",
-        "radialObject": "오브젝트 조작"
+        "radialObject": "오브젝트 조작",
+        "blocksSight": "시선을 가린다"
       },
       "kind": {
         "fog": "짙은 안개",
@@ -3880,7 +3881,8 @@
         "lava": "용암",
         "blaze": "지면 화재",
         "frost": "빙결"
-      }
+      },
+      "blocksSightLabel": "시선을 가린다"
     },
     "buffManager": {
       "title": "버프 매니저",

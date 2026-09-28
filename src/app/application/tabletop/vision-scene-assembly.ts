@@ -17,6 +17,13 @@ import { visionLobesOf } from '@axe/domain/tabletop/vision-shape';
 import { LightSpec, VisionType } from '@axe/domain/tabletop/vision-types';
 
 const WALL_LIGHT_INSET_CELLS = 0.4;
+/**
+ * How high a bank of something in the air stands, in cells.
+ *
+ * Well over the head of anything standing on the floor and under the feet of anything looking
+ * down from a wall, which is what a fog bank rolling across a room comes to.
+ */
+const AMBIENCE_SIGHT_HEIGHT_CELLS = 2;
 
 export interface StandingSegments {
   sight: TallSegment[];
@@ -62,6 +69,17 @@ export function collectSegments(
     if (terrain.blocksSightNow) for (const edge of edges) sight.push({ ...edge, heightPx: top, basePx: base });
     if (terrain.blocksLightNow && !terrain.lightEnabled) {
       for (const edge of edges) light.push({ ...edge, heightPx: top, basePx: base });
+    }
+  }
+
+  // A bank of fog stops sight and not light: it is thick air rather than stone, and a lamp
+  // inside one still glows through it.
+  for (const bank of table.ambiences) {
+    if (!bank.blocksSight || surfaceOf(bank) !== 'floor') continue;
+    const edges = rectangleSegments(bank.location.x, bank.location.y, bank.width * gridSize, bank.height * gridSize, 0);
+    const base = bank.altitude * gridSize;
+    for (const edge of edges) {
+      sight.push({ ...edge, heightPx: base + AMBIENCE_SIGHT_HEIGHT_CELLS * gridSize, basePx: base });
     }
   }
   return { sight, light };

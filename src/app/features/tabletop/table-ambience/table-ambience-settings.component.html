@@ -76,6 +76,16 @@
       <input
         type="checkbox"
         class="size-3.5 cursor-pointer [accent-color:var(--ui-accent)]"
+        [(ngModel)]="blocksSight"
+        name="ambienceBlocksSight"
+      />
+      {{ 'feature.ambience.blocksSightLabel' | transloco }}
+    </label>
+
+    <label class="flex cursor-pointer items-center gap-1.5 select-none">
+      <input
+        type="checkbox"
+        class="size-3.5 cursor-pointer [accent-color:var(--ui-accent)]"
         [(ngModel)]="isLock"
         name="ambienceLock"
       />

@@ -535,6 +535,8 @@ export interface AmbiencePaintSpec {
   kind: string;
   color: string;
   density: number;
+  /** Whether nobody sees through it, which is what makes a bank of fog worth walking round. */
+  blocksSight: boolean;
 }
 
 /** A block as far as stacking cares: the cells it covers, the altitude it is laid by and its height in cells. */

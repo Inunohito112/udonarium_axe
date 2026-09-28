@@ -12,6 +12,7 @@ import { ensureFogMemoryOn, fogMemoryOn } from '@axe/domain/tabletop/fog/fog-mem
 import { FogMode } from '@axe/domain/tabletop/fog/fog-mode';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
 import { LightSource } from '@axe/domain/tabletop/light-source';
+import { TableAmbience } from '@axe/domain/tabletop/table-ambience';
 import { Terrain, TerrainViewState } from '@axe/domain/tabletop/terrain';
 import type { WallFace } from '@axe/domain/tabletop/vision-scene';
 import { VisionType } from '@axe/domain/tabletop/vision-types';
@@ -536,6 +537,43 @@ describe('VisionService', () => {
 
     lurker.location.name = 'graveyard';
     expect(service.isSeenByParty(lurker)).toBe(true);
+  });
+
+  describe('a bank of fog rolled across the board', () => {
+    function partyAndEnemy(fogBlocksSight: boolean | null): GameCharacter {
+      makeMyCursor('p1', PeerRole.Player);
+      const table = makeDarkTable();
+
+      const hero = GameCharacter.create('Hero', 1, '');
+      hero.owner = 'p1';
+      hero.visionType = VisionType.DARKVISION;
+      hero.visionRange = 20;
+      hero.location = { name: 'table', x: 100, y: 500 };
+
+      const enemy = GameCharacter.create('Enemy', 1, '');
+      enemy.owner = 'enemy';
+      enemy.location = { name: 'table', x: 700, y: 500 };
+
+      if (fogBlocksSight !== null) {
+        const fog = TableAmbience.create('霧', 'fog', 2, 20);
+        fog.location = { name: 'table', x: 400, y: 0 };
+        fog.blocksSight = fogBlocksSight;
+        table.appendChild(fog);
+      }
+      return enemy;
+    }
+
+    it('leaves the far side of the board in sight where there is no fog at all', () => {
+      expect(service.isSeenByParty(partyAndEnemy(null))).toBe(true);
+    });
+
+    it('leaves it in sight where the fog is only a look', () => {
+      expect(service.isSeenByParty(partyAndEnemy(false))).toBe(true);
+    });
+
+    it('hides whoever stands on the far side of it', () => {
+      expect(service.isSeenByParty(partyAndEnemy(true))).toBe(false);
+    });
   });
 
   it('counts glowing terrain as a light and never lets it shadow itself', () => {

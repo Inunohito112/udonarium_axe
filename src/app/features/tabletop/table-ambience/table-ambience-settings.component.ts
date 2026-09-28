@@ -92,6 +92,14 @@ export class TableAmbienceSettingsComponent {
     if (this.target) this.target.height = clampCells(value);
   }
 
+  /** Whether nobody sees through it, which is what tells a bank of fog from a picture of one. */
+  get blocksSight(): boolean {
+    return this.target?.blocksSight ?? false;
+  }
+  set blocksSight(value: boolean) {
+    if (this.target) this.target.blocksSight = value;
+  }
+
   /** Whether the ambience is locked in place on the table. */
   get isLock(): boolean {
     return this.target?.isLock ?? false;

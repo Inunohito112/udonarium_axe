@@ -142,7 +142,12 @@ function hazardBlocksOf(
     for (const rect of blockRectsOf(Object.keys(layer.cells), hex)) {
       ambience.push({
         ...rect,
-        spec: { kind: preset.ambience, color: '', density: DEFAULT_AMBIENCE_DENSITY },
+        spec: {
+          kind: preset.ambience,
+          color: '',
+          density: DEFAULT_AMBIENCE_DENSITY,
+          blocksSight: preset.blocksSight,
+        },
       });
       if (preset.blocks || preset.extraCost > 0) {
         moveCost.push({
