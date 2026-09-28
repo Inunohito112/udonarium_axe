@@ -1,4 +1,5 @@
 import { GameCharacter } from '@axe/domain/character/game-character';
+import { NO_ALLIANCE, PartyAlliance } from '@axe/domain/party/party-alliance';
 import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
 import { cellCount, CellGrid } from '@axe/domain/tabletop/fog/cell-grid';
 import { occupiedCells } from '@axe/domain/tabletop/move/occupied-cells';
@@ -62,7 +63,8 @@ export function passageCells(
   pieces: readonly GameCharacter[],
   mover: GameCharacter,
   modeFor: (relation: PieceRelation) => PiecePassageMode,
-  slipsPastBySize = false
+  slipsPastBySize = false,
+  allied: PartyAlliance = NO_ALLIANCE
 ): PassageCells {
   const total = cellCount(grid);
   const held: PassageCells = {
@@ -74,7 +76,7 @@ export function passageCells(
   const grouped = new Map<PiecePassageMode, GameCharacter[]>();
   for (const piece of pieces) {
     if (piece.identifier === mover.identifier) continue;
-    let mode = modeFor(relationBetween(piece, mover));
+    let mode = modeFor(relationBetween(piece, mover, allied));
     // Ground shut to a piece of one's own size is ground one squeezes past where the two are
     // far enough apart in size, which is how a table lets a rat under a giant and a giant over
     // a rat. It is still no place to stop: half a giant standing on a rat is nobody's rule.

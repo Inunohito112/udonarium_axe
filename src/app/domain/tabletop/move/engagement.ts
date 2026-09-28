@@ -1,4 +1,5 @@
 import { GameCharacter } from '@axe/domain/character/game-character';
+import { NO_ALLIANCE, PartyAlliance } from '@axe/domain/party/party-alliance';
 import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
 import { cellColRow, cellCount, CellGrid, cellIndexOf, forEachCellInBox } from '@axe/domain/tabletop/fog/cell-grid';
 import { forEachMoveNeighbour } from '@axe/domain/tabletop/move/move-neighbours';
@@ -103,14 +104,15 @@ export function engagementsOn(
   grid: CellGrid,
   characters: readonly GameCharacter[],
   cutsCorners = true,
-  hostility: HostilityBy = DEFAULT_HOSTILITY_BY
+  hostility: HostilityBy = DEFAULT_HOSTILITY_BY,
+  allied: PartyAlliance = NO_ALLIANCE
 ): Engagement[] {
   const knotted = knotsOn(grid, characters, cutsCorners);
   const total = cellCount(grid);
   const engagements: Engagement[] = [];
   for (const knot of knotted.knots.values()) {
     const members = knot.map((index) => knotted.standing[index].piece);
-    if (!members.some((piece) => members.some((other) => isHostileTo(piece, other, hostility)))) continue;
+    if (!members.some((piece) => members.some((other) => isHostileTo(piece, other, hostility, allied)))) continue;
     const cells = new CellBits(total);
     for (const index of knot) {
       for (const cell of knotted.standing[index].cells) cells.set(cell);
@@ -147,7 +149,8 @@ export function fightsByCell(
   others: readonly GameCharacter[],
   countsSize: boolean,
   cutsCorners = true,
-  hostility: HostilityBy = DEFAULT_HOSTILITY_BY
+  hostility: HostilityBy = DEFAULT_HOSTILITY_BY,
+  allied: PartyAlliance = NO_ALLIANCE
 ): Fights {
   const total = cellCount(grid);
   const prices = new Float64Array(total).fill(NO_FIGHT);
@@ -164,7 +167,7 @@ export function fightsByCell(
   const standingOn = new Map<number, number[]>();
   knotted.standing.forEach((held, index) => {
     const root = knotted.rootOf(index);
-    const side = isHostileTo(held.piece, mover, hostility) ? against : own;
+    const side = isHostileTo(held.piece, mover, hostility, allied) ? against : own;
     side.set(root, (side.get(root) ?? 0) + weightOf(held.piece, countsSize));
     for (const cell of held.cells) {
       const already = standingOn.get(cell);

@@ -1,3 +1,4 @@
+import { NO_ALLIANCE, PartyAlliance } from '@axe/domain/party/party-alliance';
 import { SidedPiece } from '@axe/domain/tabletop/turn-side';
 
 /**
@@ -17,9 +18,19 @@ export type PieceRelation = (typeof PIECE_RELATIONS)[number];
  * A piece in no party is a stranger to everybody, itself included: two pieces nobody has placed
  * are not thereby companions, and a table that has never opened the party panel is answered the
  * same way for every piece on it.
+ *
+ * Two parties that stand together answer as one. A band of allied villagers is not a way
+ * through to be barred, and the whole point of saying who your friends are is being told apart
+ * from the people you are fighting.
  */
-export function relationBetween(piece: SidedPiece, mover: SidedPiece): PieceRelation {
+export function relationBetween(
+  piece: SidedPiece,
+  mover: SidedPiece,
+  allied: PartyAlliance = NO_ALLIANCE
+): PieceRelation {
   const standing = piece.partyIdentifier;
   if (standing.length < 1) return 'none';
-  return standing === mover.partyIdentifier ? 'same' : 'other';
+  const ours = mover.partyIdentifier;
+  if (standing === ours) return 'same';
+  return ours.length > 0 && allied(standing, ours) ? 'same' : 'other';
 }

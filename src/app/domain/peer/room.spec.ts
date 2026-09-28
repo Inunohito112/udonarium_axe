@@ -88,7 +88,7 @@ describe('Room', () => {
 
       const xml = new Room().innerXml();
 
-      expect(xml).toContain(`<party name="本隊" color="#fcd34d" identifier="${party.identifier}">`);
+      expect(xml).toContain(`<party name="本隊" color="#fcd34d" allies="" identifier="${party.identifier}">`);
       expect(xml).toContain(`partyIdentifier="${party.identifier}"`);
     });
 
@@ -106,6 +106,17 @@ describe('Room', () => {
       expect(parties[0].name).toBe('本隊');
       expect(parties[0].color).toBe('#fcd34d');
       expect(store.getObjects(GameCharacter)[0].partyIdentifier).toBe('party-1');
+    });
+
+    it('reads back who each party stands with', () => {
+      loadRoom(
+        '<party name="本隊" color="#fcd34d" allies="party-2" identifier="party-1"></party>' +
+          '<party name="義勇軍" color="#bef264" identifier="party-2"></party>'
+      );
+
+      const parties = store.getObjects(Party);
+      expect(parties.find((party) => party.identifier === 'party-1')!.alliedWith).toEqual(['party-2']);
+      expect(parties.find((party) => party.identifier === 'party-2')!.alliedWith).toEqual([]);
     });
 
     it('brings a party back over the one it replaces in the room it was saved from', () => {

@@ -6,6 +6,8 @@ import { SelectionSignalService } from '@axe/application/ui/selection-signal.ser
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { PERF_MOVE_REACH_BUILD, perfCounters } from '@axe/core/util/perf-counters';
 import { GameCharacter } from '@axe/domain/character/game-character';
+import { Party } from '@axe/domain/party/party';
+import { allianceOf, PartyAlliance } from '@axe/domain/party/party-alliance';
 import { Config } from '@axe/domain/peer/config';
 import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
 import { cellCount, CellGrid, cellGridOf } from '@axe/domain/tabletop/fog/cell-grid';
@@ -208,6 +210,16 @@ export class MoveRangeService {
     };
   }
 
+  /**
+   * Which of the room's parties stand together, as the move layer asks it.
+   *
+   * Read from the store rather than from a signal so that a reach asked for outright is
+   * answered by the parties as they stand; what watches them is the reach token.
+   */
+  private alliance(): PartyAlliance {
+    return allianceOf(this.objectStore.getObjects<Party>(Party));
+  }
+
   /** What the table is played by, which the room answers for wherever it has been asked. */
   private rulesOf(table: GameTable | null): RoomRules {
     return resolveRoomRules(this.objectStore.get<Config>('Config')?.roomRuleAnswers ?? null, table);
@@ -390,6 +402,7 @@ export class MoveRangeService {
     const table = this.tableSelecter.viewTable;
     if (table) this.objectChange.versionOf(table.identifier)();
     this.standingPieces();
+    this.partyToken();
     this.terrainToken();
     this.dearToken();
     // What tells a piece the reader cannot see from one they can, which shapes the ground held
@@ -398,6 +411,15 @@ export class MoveRangeService {
     this.vision.viewer();
     this.vision.overlayVision();
     this.vision.foundPieces();
+    return {};
+  });
+
+  /** What the parties of the room come to, so that changing an alliance redraws every reach. */
+  private readonly partyToken = computed<object>(() => {
+    this.objectChange.collectionOf(Party.aliasName)();
+    for (const party of this.objectStore.getObjects<Party>(Party)) {
+      this.objectChange.versionOf(party.identifier)();
+    }
     return {};
   });
 
@@ -476,12 +498,15 @@ export class MoveRangeService {
       .filter((piece) => piece.identifier === character.identifier || this.vision.isTokenVisible(piece));
     // The ground somebody else stands on is in the way of a reach as the table has it: shut to
     // the piece, dear to cross, or ground it walks over without being able to stop on.
+    // Which parties stand together, which is what tells an allied band from an enemy one.
+    const allied = this.alliance();
     const passage = passageCells(
       grid,
       standing,
       character,
       (relation) => passageModeOf(rules, relation),
-      rules.sizeSlipsPast
+      rules.sizeSlipsPast,
+      allied
     );
     otherwise.or(passage.blocked);
 
@@ -492,7 +517,7 @@ export class MoveRangeService {
     const dear = going.paysGround ? (reuse ? this.pricesFor(grid) : moveCostCells(grid, moveCostsOn(table))) : null;
 
     const mode = rules.zocMode;
-    const ground = mode === 'none' ? null : this.heldGroundAround(grid, character, standing, rules);
+    const ground = mode === 'none' ? null : this.heldGroundAround(grid, character, standing, rules, allied);
     const held = ground?.held ?? null;
     if (held && mode === 'block') otherwise.or(held);
     blocked.or(otherwise);
@@ -572,19 +597,20 @@ export class MoveRangeService {
     grid: CellGrid,
     mover: GameCharacter,
     seen: readonly GameCharacter[],
-    rules: RoomRules
+    rules: RoomRules,
+    allied: PartyAlliance
   ): HeldGround | null {
     const cutsCorners = allowsDiagonal(rules.diagonalMove);
-    const foes = seen.filter((piece) => isHostileTo(piece, mover, rules.hostilityBy));
+    const foes = seen.filter((piece) => isHostileTo(piece, mover, rules.hostilityBy, allied));
     if (!rules.zocEngages) {
       const held = zoneOfControl(grid, foes, rules.zocRange, cutsCorners);
       return held.isEmpty ? null : { held, fights: null };
     }
     if (foes.length < 1) return null;
 
-    const caught = engagementOf(engagementsOn(grid, seen, cutsCorners, rules.hostilityBy), mover);
+    const caught = engagementOf(engagementsOn(grid, seen, cutsCorners, rules.hostilityBy, allied), mover);
     const held = zoneOfControl(grid, holdersOf(mover, foes, caught), rules.zocRange, cutsCorners);
-    const fights = fightsByCell(grid, mover, seen, rules.engagementCountsSize, cutsCorners, rules.hostilityBy);
+    const fights = fightsByCell(grid, mover, seen, rules.engagementCountsSize, cutsCorners, rules.hostilityBy, allied);
     return { held: held.isEmpty ? null : held, fights };
   }
 }

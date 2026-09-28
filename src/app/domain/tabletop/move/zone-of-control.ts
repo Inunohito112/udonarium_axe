@@ -1,4 +1,5 @@
 import { GameCharacter } from '@axe/domain/character/game-character';
+import { NO_ALLIANCE, PartyAlliance } from '@axe/domain/party/party-alliance';
 import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
 import { cellCount, CellGrid } from '@axe/domain/tabletop/fog/cell-grid';
 import { forEachMoveNeighbour } from '@axe/domain/tabletop/move/move-neighbours';
@@ -56,10 +57,11 @@ export function asHostilityBy(value: unknown): HostilityBy {
 export function isHostileTo(
   piece: GameCharacter,
   mover: GameCharacter,
-  by: HostilityBy = DEFAULT_HOSTILITY_BY
+  by: HostilityBy = DEFAULT_HOSTILITY_BY,
+  allied: PartyAlliance = NO_ALLIANCE
 ): boolean {
   if (piece.identifier === mover.identifier) return false;
-  if (by === 'party') return relationBetween(piece, mover) === 'other';
+  if (by === 'party') return relationBetween(piece, mover, allied) === 'other';
   return piece.isNpc !== mover.isNpc;
 }
 

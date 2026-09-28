@@ -8,6 +8,7 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { newStatusAilment, StatusAilment } from '@axe/domain/character/status-ailment';
 import { DataElement, DataElementAttribute } from '@axe/domain/data/data-element';
+import { Party } from '@axe/domain/party/party';
 import { Config } from '@axe/domain/peer/config';
 import { cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
@@ -1301,6 +1302,68 @@ describe('MoveRangeService and which side a piece is on', () => {
     service.show(pieceAt(5, 5, 3, 'heroes'));
 
     expect(reached(6, 5)).toBe(true);
+  });
+
+  describe('and the parties it stands with', () => {
+    function party(identifier: string, allies = ''): Party {
+      const held = new Party(identifier);
+      held.allies = allies;
+      held.initialize();
+      return held;
+    }
+
+    it('holds ground against an allied band until somebody says they are allied', () => {
+      table.hostilityBy = 'party';
+      party('heroes');
+      party('villagers');
+      pieceAt(7, 5, 1, 'villagers');
+      service.show(pieceAt(5, 5, 3, 'heroes'));
+
+      expect(reached(6, 5)).toBe(false);
+    });
+
+    it('holds none against a band it stands with', () => {
+      table.hostilityBy = 'party';
+      party('heroes', 'villagers');
+      party('villagers');
+      pieceAt(7, 5, 1, 'villagers');
+      service.show(pieceAt(5, 5, 3, 'heroes'));
+
+      expect(reached(6, 5)).toBe(true);
+    });
+
+    it('goes on holding ground against everybody else', () => {
+      table.hostilityBy = 'party';
+      party('heroes', 'villagers');
+      party('villagers');
+      party('goblins');
+      pieceAt(7, 5, 1, 'goblins');
+      service.show(pieceAt(5, 5, 3, 'heroes'));
+
+      expect(reached(6, 5)).toBe(false);
+    });
+
+    it('shuts the ground an unallied band stands on, where the room shuts it', () => {
+      table.otherPartyPassage = 'block';
+      table.zocMode = 'none';
+      party('heroes');
+      party('villagers');
+      pieceAt(6, 5, 1, 'villagers');
+      service.show(pieceAt(5, 5, 3, 'heroes'));
+
+      expect(reached(6, 5)).toBe(false);
+    });
+
+    it('opens that same ground once the two stand together', () => {
+      table.otherPartyPassage = 'block';
+      table.zocMode = 'none';
+      party('heroes', 'villagers');
+      party('villagers');
+      pieceAt(6, 5, 1, 'villagers');
+      service.show(pieceAt(5, 5, 3, 'heroes'));
+
+      expect(reached(6, 5)).toBe(true);
+    });
   });
 });
 
