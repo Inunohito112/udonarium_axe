@@ -2197,7 +2197,8 @@
           "ground": "Ground",
           "standing": "Standing",
           "fires": "Fires",
-          "hidden": "hidden doors"
+          "hidden": "hidden doors",
+          "traps": "Traps"
         },
         "title": "Map generator",
         "gmOnly": "This tool is for the game master",
@@ -2229,7 +2230,8 @@
           "doubleDoors": "Double doors (%)",
           "muster": "Party at the way in",
           "musterNobody": "Nobody",
-          "fog": "Start with the fog of war drawn"
+          "fog": "Start with the fog of war drawn",
+          "traps": "Traps"
         },
         "actions": {
           "generate": "Generate",
@@ -2251,7 +2253,8 @@
           "corridorWidth": "Wider passages take a wider lattice, so fewer rooms fit on the board",
           "doorWidth": "A door wider than the way it bars has the stone beside the opening cut away. An opening wider than the door takes a row of them",
           "doubleDoors": "A pair is two leaves of half the width, parting in the middle. A door of four cells is two of two",
-          "muster": "Stands that party by the way in. No other piece is moved"
+          "muster": "Stands that party by the way in. No other piece is moved",
+          "traps": "Set about the rooms and passages, never in the first room nor under the stairs"
         },
         "entrance": {
           "stair": "Stairway down",
@@ -2288,6 +2291,14 @@
           "0": "Square",
           "1": "Hex (flat top)",
           "2": "Hex (pointy top)"
+        },
+        "trap": {
+          "pit": "Pit",
+          "dart": "Poison dart",
+          "blade": "Blade trap",
+          "alarm": "Trip wire",
+          "rune": "Rune of blasting",
+          "roll": "Dodge"
         }
       },
       "movePlan": {
