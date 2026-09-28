@@ -349,7 +349,6 @@ export class Config extends ObjectNode implements InnerXml {
     this._zocMode = writeRuleText(answer);
   }
 
-  /** How many steps out from an enemy its held ground reaches, or null to leave it to the table. */
   /** How the room tells its two sides apart, or null to leave it to the table. */
   get hostilityBy(): string | null {
     return readRuleText(this._hostilityBy);
@@ -358,6 +357,7 @@ export class Config extends ObjectNode implements InnerXml {
     this._hostilityBy = writeRuleText(answer);
   }
 
+  /** How many steps out from an enemy its held ground reaches, or null to leave it to the table. */
   get zocRange(): number | null {
     return readRuleNumber(this._zocRange);
   }
