@@ -2777,7 +2777,8 @@
         "alarmMenuTitle": "アラームタイマ",
         "tabSettingTitle": "チャットタブ設定",
         "noTarget": "対象が未選択です",
-        "writingOthers": "他 {{count}} 人 入力中"
+        "writingOthers": "他 {{count}} 人 入力中",
+        "titleWithCount": "{{title}}（{{count}}）"
       },
       "input": {
         "you": "（あなた）",
@@ -2891,7 +2892,9 @@
         "soundType_bubble": "バブル",
         "soundType_cyber": "サイバー",
         "soundType_notify1": "通知1",
-        "soundType_notify2": "通知2"
+        "soundType_notify2": "通知2",
+        "messageCount": "タイトルに発言数を出す",
+        "messageCountTooltip": "チャット窓のタイトルの横に、そのタブの発言数を出します。自分に見えている行だけを数えます"
       },
       "systemAvatar": {
         "title": "システムちゃん",

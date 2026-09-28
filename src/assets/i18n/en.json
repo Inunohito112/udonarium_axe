@@ -2777,7 +2777,8 @@
         "alarmMenuTitle": "Alarm timer",
         "tabSettingTitle": "Chat tab settings",
         "noTarget": "No target selected",
-        "writingOthers": "{{count}} more typing"
+        "writingOthers": "{{count}} more typing",
+        "titleWithCount": "{{title}} ({{count}})"
       },
       "input": {
         "you": " (you)",
@@ -2891,7 +2892,9 @@
         "soundType_bubble": "Bubble",
         "soundType_cyber": "Cyber",
         "soundType_notify1": "Notification 1",
-        "soundType_notify2": "Notification 2"
+        "soundType_notify2": "Notification 2",
+        "messageCount": "Show the line count in the title",
+        "messageCountTooltip": "Puts the number of lines in the tab beside the chat window title. Only the lines you can see are counted"
       },
       "systemAvatar": {
         "title": "System-chan",

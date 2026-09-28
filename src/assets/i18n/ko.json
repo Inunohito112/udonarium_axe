@@ -2777,7 +2777,8 @@
         "alarmMenuTitle": "알람 타이머",
         "tabSettingTitle": "채팅 탭 설정",
         "noTarget": "대상이 선택되지 않았습니다",
-        "writingOthers": "외 {{count}}명 입력 중"
+        "writingOthers": "외 {{count}}명 입력 중",
+        "titleWithCount": "{{title}} ({{count}})"
       },
       "input": {
         "you": "(당신)",
@@ -2891,7 +2892,9 @@
         "soundType_bubble": "버블",
         "soundType_cyber": "사이버",
         "soundType_notify1": "알림1",
-        "soundType_notify2": "알림2"
+        "soundType_notify2": "알림2",
+        "messageCount": "제목에 발언 수를 표시",
+        "messageCountTooltip": "채팅창 제목 옆에 그 탭의 발언 수를 표시합니다. 자신에게 보이는 줄만 셉니다"
       },
       "systemAvatar": {
         "title": "시스템쨩",

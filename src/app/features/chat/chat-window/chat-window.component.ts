@@ -10,6 +10,7 @@ import {
   inject,
   Injector,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -264,6 +265,18 @@ export class ChatWindowComponent {
       }
     }, this.destroyRef);
     queueMicrotask(() => this.updatePanelTitle());
+    // The title carries a count where the reader asked for one, so it is retitled as lines come
+    // and go rather than only as the tab is switched. Nothing is watched while none is asked
+    // for: a room saying a hundred lines an hour would be retitling a title that never changes.
+    effect(() => {
+      const counts = this.chatPrefs.showMessageCount();
+      const tab = this.chatTab();
+      if (counts && tab) {
+        this.objectChange.collectionOf(ChatMessage.aliasName)();
+        this.objectChange.versionOf(tab.identifier)();
+      }
+      untracked(() => this.updatePanelTitle());
+    });
     effect(() => {
       const tab = this.chatTab();
       if (!tab) {
@@ -397,13 +410,16 @@ export class ChatWindowComponent {
    */
   updatePanelTitle() {
     const tab = this.chatTab();
-    if (tab) {
-      this.panelService.title = this.t('feature.chat.window.titleWithTab', { tab: tab.name });
-      this.panelService.chatTab = tab;
-    } else {
+    if (!tab) {
       this.panelService.title = this.t('common.panel.chatWindow');
       this.panelService.chatTab = null;
+      return;
     }
+    const title = this.t('feature.chat.window.titleWithTab', { tab: tab.name });
+    this.panelService.title = this.chatPrefs.showMessageCount()
+      ? this.t('feature.chat.window.titleWithCount', { title, count: tab.countDisplayableMessages() })
+      : title;
+    this.panelService.chatTab = tab;
   }
 
   /**
