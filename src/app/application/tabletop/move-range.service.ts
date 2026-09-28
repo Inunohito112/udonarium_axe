@@ -25,6 +25,7 @@ import { isLevelWith, isWalkableStep, landingHeightsOn } from '@axe/domain/table
 import { moveBlockMapOn } from '@axe/domain/tabletop/move/move-block-map';
 import { moveCellsOf } from '@axe/domain/tabletop/move/move-cells';
 import { moveCostCells } from '@axe/domain/tabletop/move/move-cost-cells';
+import { pieceFitsOn } from '@axe/domain/tabletop/move/piece-footprint';
 import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
 import { passageCells, PiecePassageMode } from '@axe/domain/tabletop/move/piece-passage';
 import { PieceRelation } from '@axe/domain/tabletop/move/piece-relation';
@@ -478,6 +479,10 @@ export class MoveRangeService {
     const crossing = passage.costly.isEmpty ? 0 : Math.max(0, Math.floor(rules.piecePassageCost));
     const charges = dear !== null || crossing > 0 || (held !== null && mode === 'cost') || fights !== null;
     const noStop = passage.noStop.isEmpty ? null : passage.noStop;
+    // A wide piece is answered for the cell its middle would be over, so where every cell it
+    // covers has to be clear is asked here rather than by the search, which knows of one cell
+    // at a time.
+    const fits = pieceFitsOn(grid, character, table.gridSize, blocked);
 
     const options: ReachOptions = {
       diagonals: rules.diagonalMove,
@@ -491,7 +496,7 @@ export class MoveRangeService {
           }
         : undefined,
       stopsAt: held && mode === 'stop' ? (index) => held.get(index) : undefined,
-      restsAt: noStop ? (index) => !noStop.get(index) : undefined,
+      restsAt: noStop || fits ? (index) => !noStop?.get(index) && (!fits || fits(index)) : undefined,
     };
     const cells = reachableCells(grid, start, walk, (index) => blocked.get(index), options);
     return {

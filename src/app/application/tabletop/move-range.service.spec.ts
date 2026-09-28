@@ -1211,3 +1211,68 @@ describe('MoveRangeService and which side a piece is on', () => {
     expect(reached(6, 5)).toBe(true);
   });
 });
+
+describe('MoveRangeService and a piece wider than one cell', () => {
+  let service: MoveRangeService;
+  let table: GameTable;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.initialize();
+    service = TestBed.inject(MoveRangeService);
+  });
+
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+  });
+
+  function golemAt(col: number, row: number, walk: number, size = 2): GameCharacter {
+    const character = GameCharacter.create('ゴーレム', size, '');
+    character.location = { name: 'table', x: col * GRID, y: row * GRID };
+    DataElement.findElementByReference(character.rootDataElement!, '移動')!.value = walk;
+    return character;
+  }
+
+  /** A wall two cells high, which is more than a piece steps over. */
+  function wallOver(col: number, fromRow: number, depthCells: number): void {
+    const terrain = Terrain.create('壁', 1, depthCells, 2, '', '');
+    terrain.location = { name: 'table', x: col * GRID, y: fromRow * GRID };
+    table.appendChild(terrain);
+  }
+
+  function reached(col: number, row: number): boolean {
+    const view = service.range()!;
+    return view.cells.get(cellIndexOf(view.grid, col, row));
+  }
+
+  it('stands on ground a piece of one cell would stand on', () => {
+    service.show(golemAt(5, 5, 2));
+
+    expect(reached(6, 5)).toBe(true);
+  });
+
+  it('will not stand where only part of it would fit', () => {
+    wallOver(7, 0, 12);
+    service.show(golemAt(5, 5, 3));
+
+    expect(reached(6, 5)).toBe(false);
+    expect(reached(5, 6)).toBe(true);
+  });
+
+  it('will not hang off the edge of the board', () => {
+    service.show(golemAt(10, 5, 2));
+
+    expect(reached(11, 5)).toBe(false);
+    expect(reached(10, 6)).toBe(true);
+  });
+
+  it('leaves a piece of a single cell every cell it could reach before', () => {
+    service.show(golemAt(10, 5, 2, 1));
+
+    expect(reached(11, 5)).toBe(true);
+  });
+});
