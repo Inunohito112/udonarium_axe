@@ -396,14 +396,17 @@ describe('painting ground that goes off', () => {
 
 describe('painting ground that costs more to cross', () => {
   it('answers with the blocks the layer holds, and what each of them charges', () => {
-    const spec = { ...DEFAULT_FUNCTION_SPEC, moveCost: { blocks: false, extraCost: 2, color: '#445566' } };
+    const spec = {
+      ...DEFAULT_FUNCTION_SPEC,
+      moveCost: { blocks: false, halves: false, extraCost: 2, color: '#445566' },
+    };
     const scene = sceneWith(layerOf('moveCost', ['1,1', '2,1'], { spec }));
 
     const plan = planFunctionPaint(scene, snapshot())!;
 
     expect(plan.moveCost.add.length).toBe(1);
     expect(plan.moveCost.add[0]).toMatchObject({ col: 1, row: 1, width: 2, height: 1 });
-    expect(plan.moveCost.add[0].spec).toEqual({ blocks: false, extraCost: 2, color: '#445566' });
+    expect(plan.moveCost.add[0].spec).toEqual({ blocks: false, halves: false, extraCost: 2, color: '#445566' });
   });
 
   it('leaves the ground a table already holds alone where the scene never mentions it', () => {

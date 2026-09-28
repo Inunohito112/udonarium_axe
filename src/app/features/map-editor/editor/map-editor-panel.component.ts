@@ -61,7 +61,7 @@ import {
 } from '@axe/domain/tabletop/function-paint';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
 import { HAZARD_KINDS } from '@axe/domain/tabletop/hazard-presets';
-import { MOST_MOVE_COST_EXTRA } from '@axe/domain/tabletop/table-move-cost';
+import { DEFAULT_MOVE_COST_ROAD_COLOR, MOST_MOVE_COST_EXTRA } from '@axe/domain/tabletop/table-move-cost';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TerrainViewState } from '@axe/domain/tabletop/terrain';
 import { asTriggerRepeat, TRIGGER_REPEATS, TriggerRepeat } from '@axe/domain/tabletop/trigger-event';
@@ -143,6 +143,14 @@ export function buildShapeKindPoints(kind: ShapeGeneratorKind): string {
   }
   return pairs.join(' ');
 }
+
+/**
+ * What the one movement picker holds for a road.
+ *
+ * The picker runs from ground nobody may enter, through nought and up to nine steps over; a
+ * road is easier than plain ground, so it sits at the other end, below the lot.
+ */
+const MOVE_COST_ROAD = -1;
 
 const ERASER_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -267,18 +275,29 @@ export class MapEditorPanelComponent implements AfterViewInit {
   /** The steps a brush may charge, which the reader picks between along with shutting the cell. */
   protected readonly moveCostSteps = Array.from({ length: MOST_MOVE_COST_EXTRA }, (_, step) => step + 1);
 
-  /** What the brush costs as one number, where nought is ground nobody may enter. */
+  /** What the picker holds for a road, which is the one value below the one that shuts a cell. */
+  protected readonly roadCharge = MOVE_COST_ROAD;
+
+  /**
+   * What the brush costs as one number: nought is ground nobody may enter, and below nought is
+   * a road, which is the one painting that makes the going easier rather than harder.
+   */
   protected moveCostCharge(): number {
     const spec = this.state.functionSpec().moveCost;
-    return spec.blocks ? 0 : spec.extraCost;
+    if (spec.blocks) return 0;
+    return spec.halves ? MOVE_COST_ROAD : spec.extraCost;
   }
 
   protected setMoveCostCharge(charge: number): void {
-    if (charge <= 0) {
-      this.setMoveCostPaint({ blocks: true });
+    if (charge === 0) {
+      this.setMoveCostPaint({ blocks: true, halves: false });
       return;
     }
-    this.setMoveCostPaint({ blocks: false, extraCost: charge });
+    if (charge < 0) {
+      this.setMoveCostPaint({ blocks: false, halves: true, color: DEFAULT_MOVE_COST_ROAD_COLOR });
+      return;
+    }
+    this.setMoveCostPaint({ blocks: false, halves: false, extraCost: charge });
   }
 
   protected setMaskPaint(patch: Partial<MaskPaintSpec>): void {

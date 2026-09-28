@@ -152,7 +152,7 @@ function hazardBlocksOf(
       if (preset.blocks || preset.extraCost > 0) {
         moveCost.push({
           ...rect,
-          spec: { blocks: preset.blocks, extraCost: Math.max(1, preset.extraCost), color: preset.color },
+          spec: { blocks: preset.blocks, halves: false, extraCost: Math.max(1, preset.extraCost), color: preset.color },
         });
       }
       // Ground that takes nothing and leaves no mark needs nothing to happen on it: laying a

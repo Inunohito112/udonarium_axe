@@ -10,6 +10,7 @@ import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
 import { cellCenterOf, CellGrid, cellIndexAt } from '@axe/domain/tabletop/fog/cell-grid';
 import { cheapestPath } from '@axe/domain/tabletop/move/cheapest-path';
 import { hopHeightAt, hopLiftFor, landingHeightAt } from '@axe/domain/tabletop/move/landing-height';
+import { stepsFor } from '@axe/domain/tabletop/move/move-steps';
 import { cornerShiftOf } from '@axe/domain/tabletop/move/piece-on-grid';
 import { reachableCells } from '@axe/domain/tabletop/move/reachable-cells';
 import { walkedPath } from '@axe/domain/tabletop/move/walked-path';
@@ -34,7 +35,12 @@ export interface MovePlan {
   settled: number[];
   /** The way from the last settled cell to wherever the pointer is, if it can be walked. */
   ahead: number[];
-  /** What the settled way has cost, and what the piece had to spend altogether. */
+  /**
+   * What the settled way has cost, and what the piece had to spend altogether.
+   *
+   * Counted in steps rather than in cells, since a road is crossed in half a cell. What the
+   * sheet said is two of these per cell; nothing shown to a reader is in these units.
+   */
   spent: number;
   budget: number;
   /** How many corners the settled way has cut, which a table counting them by turns goes on from. */
@@ -193,7 +199,7 @@ export class MovePlanService {
       this.tableSelecter.viewTable
     );
     const leap = Math.max(0, Math.floor(rules.jumpCells));
-    return leap > 0 ? Math.min(left, leap) : left;
+    return leap > 0 ? Math.min(left, stepsFor(leap)) : left;
   }
 
   /** What stands in the way of the move as it is being worked out now. */

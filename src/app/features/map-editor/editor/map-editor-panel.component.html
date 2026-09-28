@@ -691,6 +691,7 @@
                 (ngModelChange)="setMoveCostCharge($event)"
                 name="moveCostCharge"
               >
+                <option [ngValue]="roadCharge">{{ 'feature.mapEditor.function.moveCostHalves' | transloco }}</option>
                 <option [ngValue]="0">{{ 'feature.mapEditor.function.moveCostBlocks' | transloco }}</option>
                 @for (step of moveCostSteps; track step) {
                   <option [ngValue]="step">
@@ -699,6 +700,11 @@
                 }
               </select>
             </label>
+            @if (state.functionSpec().moveCost.halves) {
+              <span class="text-ui-dim text-[10px] leading-snug">
+                {{ 'feature.mapEditor.function.moveCostHalvesHint' | transloco }}
+              </span>
+            }
             @if (!state.functionSpec().moveCost.blocks) {
               <label class="flex items-center justify-between gap-2">
                 <span class="text-ui-muted">{{ 'feature.mapEditor.function.moveCostColor' | transloco }}</span>

@@ -26,6 +26,7 @@ import { moveBlockMapOn } from '@axe/domain/tabletop/move/move-block-map';
 import { moveCellsOf } from '@axe/domain/tabletop/move/move-cells';
 import { moveCostCells } from '@axe/domain/tabletop/move/move-cost-cells';
 import { moveModeTermsOf } from '@axe/domain/tabletop/move/move-mode';
+import { STEPS_PER_CELL, stepsFor } from '@axe/domain/tabletop/move/move-steps';
 import { pieceFitsOn } from '@axe/domain/tabletop/move/piece-footprint';
 import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
 import { passageCells, PiecePassageMode } from '@axe/domain/tabletop/move/piece-passage';
@@ -46,6 +47,14 @@ function passageModeOf(rules: RoomRules, relation: PieceRelation): PiecePassageM
 
 /** How many pieces' reaches are kept at once, well above what a table draws. */
 const REACH_CACHE_LIMIT = 64;
+
+/**
+ * What a cell costs where nothing is painted on it and nobody is holding it.
+ *
+ * Handed over even when there is nothing to charge for, since the search counts in steps and
+ * would otherwise take its own default of one step - half a cell - for plain ground.
+ */
+const PLAIN_GOING = () => STEPS_PER_CELL;
 
 /** A reach as it was worked out: what is drawn, what it was walked under, and where it set out from. */
 interface BuiltReach {
@@ -88,6 +97,7 @@ export interface MoveRangeView {
 
 /** What it takes to price a way somebody actually walked, kept from when the piece was lifted. */
 export interface WalkTerms {
+  /** How far it walks, in steps rather than in cells: a road is crossed in half a cell. */
   walk: number;
   blocked: CellBits;
   /** The same, for a piece that means to jump: height stops it no longer, sheer faces still do. */
@@ -95,7 +105,11 @@ export interface WalkTerms {
   options: ReachOptions;
 }
 
-/** Everything a walk is worked out from, for anyone who wants to work out a different one. */
+/**
+ * Everything a walk is worked out from, for anyone who wants to work out a different one.
+ *
+ * What it holds is counted in steps, two to the cell, and so is everything `costOf` answers.
+ */
 export interface ReachTerms extends WalkTerms {
   grid: CellGrid;
   start: number;
@@ -509,6 +523,9 @@ export class MoveRangeService {
       (held !== null && mode === 'cost') ||
       fights !== null;
 
+    // Everything the search is handed is in steps rather than in cells, since a road is
+    // crossed in half of one. Prices are worked out in cells, the way a table talks about
+    // them, and turned at the last moment.
     const options: ReachOptions = {
       diagonals: rules.diagonalMove,
       costOf: charges
@@ -518,20 +535,23 @@ export class MoveRangeService {
             if (tight && fits && !fits(index) && tight(index)) price += 1;
             if (crossing > 0 && passage.costly.get(index)) price += crossing;
             if (held && mode === 'cost' && held.get(index)) price += extra;
-            if (!fights || !leavesFight(fights, from, index)) return price;
-            return price + breakOutToll(rules.breakOutMode, fights.prices[from], flat);
+            if (fights && leavesFight(fights, from, index)) {
+              price += breakOutToll(rules.breakOutMode, fights.prices[from], flat);
+            }
+            return stepsFor(price);
           }
-        : undefined,
+        : PLAIN_GOING,
       stopsAt: held && mode === 'stop' ? (index) => held.get(index) : undefined,
       restsAt:
         noStop || fits
           ? (index) => !noStop?.get(index) && (!fits || fits(index) || (tight?.(index) ?? false))
           : undefined,
     };
-    const cells = reachableCells(grid, start, walk, (index) => blocked.get(index), options);
+    const steps = stepsFor(walk);
+    const cells = reachableCells(grid, start, steps, (index) => blocked.get(index), options);
     return {
       view: { characterIdentifier: character.identifier, grid, cells, held, showsReach: true },
-      terms: { walk, blocked, leapt, options },
+      terms: { walk: steps, blocked, leapt, options },
       start,
     };
   }

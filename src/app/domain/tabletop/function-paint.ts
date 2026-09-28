@@ -220,6 +220,13 @@ export interface TriggerPaintSpec {
 export interface MoveCostPaintSpec {
   /** Whether nothing gets through it at all, whatever it would otherwise charge. */
   blocks: boolean;
+  /**
+   * Whether it is a road: crossed in half a step rather than in one.
+   *
+   * The far end of the same brush. Shut ground costs more than anybody has, plain ground costs
+   * one, and a road costs half, so the one picker runs the whole way from one to the other.
+   */
+  halves: boolean;
   /** What entering it costs on top of the one step the ground is worth. */
   extraCost: number;
   color: string;
@@ -273,6 +280,7 @@ export const TERRAIN_FACE_KEYS: readonly (keyof TerrainFaceImages)[] = [
 export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
   moveCost: {
     blocks: false,
+    halves: false,
     extraCost: DEFAULT_MOVE_COST_EXTRA,
     color: DEFAULT_MOVE_COST_COLOR,
   },
@@ -444,6 +452,7 @@ export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
     },
     moveCost: {
       blocks: flagIn(moveCost, 'blocks', fallback.moveCost.blocks),
+      halves: flagIn(moveCost, 'halves', fallback.moveCost.halves),
       extraCost: asMoveCostExtra(moveCost['extraCost']),
       color: textIn(moveCost, 'color', fallback.moveCost.color),
     },

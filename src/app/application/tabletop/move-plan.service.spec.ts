@@ -8,6 +8,7 @@ import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { GameTable } from '@axe/domain/tabletop/game-table';
+import { stepsFor } from '@axe/domain/tabletop/move/move-steps';
 import { Terrain } from '@axe/domain/tabletop/terrain';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 import { vi } from 'vitest';
@@ -117,7 +118,7 @@ describe('MovePlanService', () => {
     expect(plan.from).toBe(cell(5, 5));
     expect(plan.settled).toEqual([cell(5, 5)]);
     expect(plan.spent).toBe(0);
-    expect(plan.budget).toBe(3);
+    expect(plan.budget).toBe(stepsFor(3));
   });
 
   it('opens on nothing for a piece with no reach to draw', () => {
@@ -185,7 +186,7 @@ describe('MovePlanService', () => {
 
     const plan = service.plan()!;
     expect(plan.from).toBe(cell(7, 5));
-    expect(plan.spent).toBe(2);
+    expect(plan.spent).toBe(stepsFor(2));
     expect(plan.waypoints).toEqual([cell(7, 5)]);
     expect(plan.ahead).toEqual([]);
     expect(plan.settled).toEqual([cell(5, 5), cell(6, 5), cell(7, 5)]);
@@ -376,14 +377,14 @@ describe('MovePlanService', () => {
       service.lookAt(6 * GRID + 10, 6 * GRID + 10);
       service.settle();
 
-      expect(service.plan()!.spent).toBe(1);
+      expect(service.plan()!.spent).toBe(stepsFor(1));
       expect(service.plan()!.cornersCut).toBe(1);
 
       service.lookAt(7 * GRID + 10, 7 * GRID + 10);
       service.settle();
 
       // The second corner of the move costs two, wherever the reader chose to break the way.
-      expect(service.plan()!.spent).toBe(3);
+      expect(service.plan()!.spent).toBe(stepsFor(3));
     });
 
     it('gives the count back with the corner when a leg is taken up again', () => {

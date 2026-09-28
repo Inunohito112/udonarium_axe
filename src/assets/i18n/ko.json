@@ -3364,7 +3364,9 @@
         "triggerWarpHere": "(이 테이블)",
         "triggerCheckRoll": "스스로 굴리는 주사위",
         "triggerPassAmount": "성공했을 때의 증감",
-        "triggerCheckRollHint": "「1d20+3」처럼 적으면 테이블이 대신 굴려 목표값과 비교합니다. 비워 두면 본인이 굴립니다"
+        "triggerCheckRollHint": "「1d20+3」처럼 적으면 테이블이 대신 굴려 목표값과 비교합니다. 비워 두면 본인이 굴립니다",
+        "moveCostHalves": "길 (절반으로 이동)",
+        "moveCostHalvesHint": "1칸을 0.5 소비로 지나갑니다. 아래에 무엇이 칠해져 있어도 길이 우선되므로 늪을 관통하는 가도를 만들 수 있습니다"
       },
       "stampCategories": {
         "door": "문",

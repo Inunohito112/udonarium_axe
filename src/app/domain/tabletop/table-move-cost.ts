@@ -10,6 +10,17 @@ export const DEFAULT_MOVE_COST_EXTRA = 1;
 export const DEFAULT_MOVE_COST_COLOR = '#6d9b5a';
 
 /**
+ * What a road takes off the one step a cell is worth, which is half of it.
+ *
+ * Held as what it changes rather than as what it costs, so that it sits in the same reckoning
+ * as ground that charges more: every cell is one step, plus whatever is painted on it.
+ */
+export const MOVE_COST_HALF_EXTRA = -0.5;
+
+/** What a road is drawn in where nobody has said otherwise. */
+export const DEFAULT_MOVE_COST_ROAD_COLOR = '#c9b58a';
+
+/**
  * Ground that takes more out of a piece than plain footing does.
  *
  * Undergrowth, rubble, a ford, ice. It stands on the table beside the walls and the traps
@@ -28,6 +39,15 @@ export class TableMoveCost extends ObjectNode {
   @SyncVar() height: number = 1;
   /** What entering it costs on top of the one step the ground is worth. */
   @SyncVar() extraCost: number = DEFAULT_MOVE_COST_EXTRA;
+  /**
+   * Whether it is a road: ground crossed in half a step rather than in one.
+   *
+   * The one thing on a table that makes going easier rather than harder, so it is held as a
+   * flag of its own rather than as a charge below one. A road pays no heed to what else is
+   * painted under it - a made road through a swamp is a road - which is the whole reason for
+   * making one.
+   */
+  @SyncVar() halves: boolean = false;
   @SyncVar() color: string = DEFAULT_MOVE_COST_COLOR;
 
   /** The ground it covers in cells, rounded to whole cells and at least one cell each way. */
@@ -43,6 +63,11 @@ export class TableMoveCost extends ObjectNode {
   /** What it charges, held to a whole number of steps that is worth charging at all. */
   get charge(): number {
     return asMoveCostExtra(this.extraCost);
+  }
+
+  /** What it comes to over plain footing: half a step off for a road, its charge otherwise. */
+  get toll(): number {
+    return this.halves ? MOVE_COST_HALF_EXTRA : this.charge;
   }
 }
 

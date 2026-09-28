@@ -8,15 +8,19 @@ import { moveRangePolygons } from '@axe/features/tabletop/table-move-range-overl
 import { overlayScale } from '@axe/features/tabletop/table-vision-overlay/vision-overlay-render';
 import { translateZCss, Z_OFFSET_MASK_PX } from '@axe/ui/tabletop/z-offset';
 
-/** One stretch of dear ground to draw, and how dear it is. */
+/** One stretch of ground priced apart from the rest, and what it is priced at. */
 interface CostPatch {
   cells: CellBits;
   color: string;
   charge: number;
+  /** Whether it is a road, which is drawn evenly rather than by how dear it is. */
+  eases: boolean;
 }
 
 const LEAST_ALPHA = 0.18;
 const MOST_ALPHA = 0.5;
+/** A road is one thing rather than a scale of things, so it is drawn at the one weight. */
+const ROAD_ALPHA = 0.32;
 
 /** How solidly a stretch is drawn, so that the dearer ground of two reads as the dearer one. */
 function alphaFor(charge: number): number {
@@ -57,7 +61,7 @@ export class TableMoveCostOverlayComponent {
         }
       }
       if (cells.isEmpty) continue;
-      patches.push({ cells, color: area.color, charge: area.charge });
+      patches.push({ cells, color: area.color, charge: area.charge, eases: area.halves });
     }
     return patches;
   });
@@ -98,7 +102,7 @@ export class TableMoveCostOverlayComponent {
         for (let corner = 1; corner < polygon.length; corner++) area.lineTo(polygon[corner].x, polygon[corner].y);
         area.closePath();
       }
-      context.globalAlpha = alphaFor(patch.charge);
+      context.globalAlpha = patch.eases ? ROAD_ALPHA : alphaFor(patch.charge);
       context.fillStyle = patch.color;
       context.fill(area);
       context.globalAlpha = 0.7;

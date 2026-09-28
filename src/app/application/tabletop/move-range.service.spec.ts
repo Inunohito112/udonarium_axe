@@ -11,6 +11,7 @@ import { DataElement, DataElementAttribute } from '@axe/domain/data/data-element
 import { Config } from '@axe/domain/peer/config';
 import { cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
+import { stepsFor } from '@axe/domain/tabletop/move/move-steps';
 import { countCells } from '@axe/domain/tabletop/move/reachable-cells';
 import { TableMoveCost } from '@axe/domain/tabletop/table-move-cost';
 import { DoorStyle, Terrain, TerrainViewState } from '@axe/domain/tabletop/terrain';
@@ -643,8 +644,8 @@ describe('MoveRangeService and the ground an enemy holds', () => {
       const at = (col: number, row: number) => cellIndexOf(terms.grid, col, row);
 
       // (5,7) is a fight with the wide one alone: three against one, so leaving it costs three.
-      expect(terms.options.costOf!(at(5, 6), at(5, 7))).toBe(4);
-      expect(terms.options.costOf!(at(5, 7), at(5, 6))).toBe(2);
+      expect(terms.options.costOf!(at(5, 6), at(5, 7))).toBe(stepsFor(4));
+      expect(terms.options.costOf!(at(5, 7), at(5, 6))).toBe(stepsFor(2));
     });
 
     it('charges for the step that leaves the fight, and only for that one', () => {
@@ -903,6 +904,44 @@ describe('MoveRangeService and ground that costs more to cross', () => {
     service.show(pieceAt(5, 5, 2));
 
     expect(countCells(service.range()!.cells)).toBe(8);
+  });
+
+  describe('a road painted across the board', () => {
+    function road(col: number, row: number, width: number, height: number): TableMoveCost {
+      const area = dearGround(col, row, width, height, 1);
+      area.halves = true;
+      return area;
+    }
+
+    it('carries a piece twice as far along it', () => {
+      road(0, 5, 12, 1);
+
+      service.show(pieceAt(5, 5, 2));
+
+      expect(reached(9, 5)).toBe(true);
+      expect(reached(10, 5)).toBe(false);
+    });
+
+    it('leaves the ground beside it as far off as it ever was', () => {
+      road(0, 5, 12, 1);
+
+      service.show(pieceAt(5, 5, 2));
+
+      expect(reached(5, 7)).toBe(true);
+      expect(reached(5, 8)).toBe(false);
+    });
+
+    it('runs through a swamp as a road rather than as swamp', () => {
+      dearGround(0, 0, 12, 12, 1);
+      road(0, 5, 12, 1);
+
+      service.show(pieceAt(5, 5, 2));
+
+      // Four cells along the road, and one into the swamp beside it.
+      expect(reached(9, 5)).toBe(true);
+      expect(reached(5, 6)).toBe(true);
+      expect(reached(5, 7)).toBe(false);
+    });
   });
 
   describe('a piece getting about some other way than on its feet', () => {
