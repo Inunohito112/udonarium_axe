@@ -12,8 +12,10 @@ import { newStatusAilment } from '@axe/domain/character/status-ailment';
 import { DataElement, DataElementType } from '@axe/domain/data/data-element';
 import { CutIn } from '@axe/domain/media/cut-in';
 import { SoundEffect } from '@axe/domain/media/sound-effect';
+import { Config } from '@axe/domain/peer/config';
 import { cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
+import { pieceCornerOn } from '@axe/domain/tabletop/move/piece-on-grid';
 import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger } from '@axe/domain/tabletop/table-trigger';
@@ -117,6 +119,91 @@ describe('TriggerFireService', () => {
       standAt(hero, 5, 5);
 
       expect(service.putDown(hero)).toEqual([]);
+    });
+
+    describe('and the ground it was carried over', () => {
+      afterEach(() => {
+        Config.instance.handTracesWay = null;
+      });
+
+      it('is left alone, a hand having walked no way at all', () => {
+        trapAt(5, 5, { moment: 'enter' });
+        const hero = heroWith(20);
+        standAt(hero, 4, 5);
+
+        service.pickedUp(hero);
+        standAt(hero, 6, 5);
+        const fired = service.putDown(hero);
+
+        expect(fired).toEqual([]);
+        expect(hpOf(hero)).toBe(20);
+      });
+
+      it('goes off where the room asks for the way to be worked out', () => {
+        Config.instance.handTracesWay = true;
+        trapAt(5, 5, { moment: 'enter' });
+        const hero = heroWith(20);
+        standAt(hero, 4, 5);
+
+        service.pickedUp(hero);
+        standAt(hero, 6, 5);
+        const fired = service.putDown(hero);
+
+        expect(fired.length).toBe(1);
+        expect(hpOf(hero)).toBe(17);
+      });
+
+      it('is left alone for a piece with no walk of its own to work out', () => {
+        Config.instance.handTracesWay = true;
+        trapAt(5, 5, { moment: 'enter' });
+        trapAt(6, 5);
+        const hero = heroWith(20);
+        DataElement.findElementByReference(hero.rootDataElement!, '移動')!.value = '';
+        standAt(hero, 4, 5);
+
+        service.pickedUp(hero);
+        standAt(hero, 6, 5);
+        service.putDown(hero);
+
+        // The ground it was set down on still takes what it takes: only what lies between is
+        // left out, there being no way to work out.
+        expect(hpOf(hero)).toBe(17);
+      });
+
+      it('goes off on a hex table as readily', () => {
+        Config.instance.handTracesWay = true;
+        const hex = new GameTable();
+        hex.width = 12;
+        hex.height = 12;
+        hex.gridSize = GRID;
+        hex.gridType = GridType.HEX_VERTICAL;
+        hex.initialize();
+        TestBed.inject(TableSelecter).viewTableIdentifier = hex.identifier;
+
+        const board = cellGridOf(hex.width, hex.height, GRID, GridType.HEX_VERTICAL);
+        const between = new TableTrigger();
+        between.col = 4;
+        between.row = 2;
+        between.width = 5;
+        between.height = 7;
+        between.element = 'ライフ';
+        between.amount = '3';
+        between.moment = 'enter';
+        between.initialize();
+        hex.appendChild(between);
+
+        const hero = heroWith(20);
+        const standOn = (col: number, row: number) => {
+          const corner = pieceCornerOn(board, hero, GRID, cellIndexOf(board, col, row));
+          hero.location = { name: 'table', x: corner.x, y: corner.y };
+        };
+        standOn(3, 5);
+        service.pickedUp(hero);
+        standOn(9, 5);
+
+        // Whichever cells the way runs through, it crosses the band between the two ends.
+        expect(service.putDown(hero).length).toBeGreaterThan(0);
+      });
     });
   });
 

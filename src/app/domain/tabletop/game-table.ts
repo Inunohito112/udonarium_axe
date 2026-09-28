@@ -135,6 +135,8 @@ export class GameTable extends ObjectNode {
   @SyncVar() piecePassageCost: number = DEFAULT_PIECE_PASSAGE_COST;
   /** Whether a piece squeezes past somebody two cells or more apart from it in size. */
   @SyncVar() sizeSlipsPast: boolean = false;
+  /** Whether the ground between a piece's two ends goes off when a hand moves it. */
+  @SyncVar() handTracesWay: boolean = false;
   /** Whether the piece a reader has picked keeps showing its reach, not only while carried. */
   @SyncVar() moveRangeAlways: boolean = false;
   /** Whether the ground held against the piece a reader has picked keeps showing. */

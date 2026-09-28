@@ -781,6 +781,14 @@ export class RoomSettingsPanelComponent {
     return this.piecePassageSides.some((side) => this.rules[side] === 'cost');
   }
 
+  /** Whether the ground between a piece's two ends goes off when a hand moves it. */
+  get handTracesWay(): boolean {
+    return this.rules.handTracesWay;
+  }
+  set handTracesWay(value: boolean) {
+    if (this.isEditable) this.config.handTracesWay = value;
+  }
+
   /** Whether a piece squeezes past somebody far enough from it in size. */
   get sizeSlipsPast(): boolean {
     return this.rules.sizeSlipsPast;

@@ -2491,7 +2491,8 @@
       "hostilityBy": "敵味方の分け方",
       "hostilityBy_npc": "NPC かどうかで分ける",
       "hostilityBy_party": "パーティで分ける",
-      "sizeSlipsPast": "サイズが 2 マス以上違う相手のマスは通り抜けられる（止まれない）"
+      "sizeSlipsPast": "サイズが 2 マス以上違う相手のマスは通り抜けられる（止まれない）",
+      "handTracesWay": "掴んで運んだときも、通り道の仕掛けを発動させる"
     },
     "skin": {
       "title": "スキン",

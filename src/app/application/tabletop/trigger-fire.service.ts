@@ -5,6 +5,7 @@ import { EffectCastService } from '@axe/application/effect/effect-cast.service';
 import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { CutInService } from '@axe/application/media/cut-in.service';
+import { MoveRangeService } from '@axe/application/tabletop/move-range.service';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
@@ -13,8 +14,11 @@ import { DataElement } from '@axe/domain/data/data-element';
 import { findByReference } from '@axe/domain/hotbar/hotbar-reference';
 import { CutIn } from '@axe/domain/media/cut-in';
 import { SoundEffect } from '@axe/domain/media/sound-effect';
-import { cellColRow, CellGrid, cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
+import { Config } from '@axe/domain/peer/config';
+import { cellColRow, cellCount, CellGrid, cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
+import { cheapestPath } from '@axe/domain/tabletop/move/cheapest-path';
 import { pieceCellOf, pieceCornerOn } from '@axe/domain/tabletop/move/piece-on-grid';
+import { resolveRoomRules } from '@axe/domain/tabletop/room-rules';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger, triggersOn } from '@axe/domain/tabletop/table-trigger';
 import { isTurnMoment, rollTriggerAmount, triggerCatches, TriggerMoment } from '@axe/domain/tabletop/trigger-event';
@@ -43,6 +47,7 @@ export class TriggerFireService {
   private readonly effectCast = inject(EffectCastService);
   private readonly chat = inject(ChatMessageService);
   private readonly ailments = inject(StatusAilmentService);
+  private readonly moveRange = inject(MoveRangeService);
   private readonly cutIns = inject(CutInService);
   private readonly audioStorage = inject(AudioStorage);
   private readonly objectStore = inject(ObjectStore);
@@ -59,11 +64,17 @@ export class TriggerFireService {
   }
 
   /**
-   * Springs whatever the piece was put down on, which is the one cell a hand ever crosses.
+   * Springs whatever the piece was put down on, and whatever it was carried over to get there.
    *
-   * A piece carried by hand takes no way: it leaves one cell and arrives at another, and
-   * whatever lies between was never walked. Ground that waits for a walk to end and ground
-   * that goes off in passing therefore come to the same thing here.
+   * A piece carried by hand takes no way of its own: it leaves one cell and arrives at another,
+   * and whatever lies between was never walked so far as the table is concerned. Left at that,
+   * ground that waits for a walk to end and ground that goes off in passing come to the same
+   * thing, and a hand crossing four cells of a swamp wades none of it.
+   *
+   * A room may ask for the way to be worked out instead: the shortest walk from where the piece
+   * was lifted to where it was set down, going round whatever it could not have walked through.
+   * Guessed rather than watched, which is why it is asked for rather than assumed — a master
+   * shifting a dozen monsters into place would otherwise spring every trap between.
    */
   putDown(piece: GameCharacter): TriggerFiring[] {
     const from = this.lifted.get(piece.identifier);
@@ -73,7 +84,30 @@ export class TriggerFireService {
     const grid = cellGridOf(table.width, table.height, table.gridSize, table.gridType);
     const to = this.cellOf(piece);
     if (to < 0 || to === from) return [];
-    return this.walked(piece, grid, [from, to]);
+    return this.walked(piece, grid, this.carriedWay(piece, grid, from, to));
+  }
+
+  /**
+   * The way a hand is taken to have carried a piece along, which is the shortest walk it could
+   * have made. The two ends alone where the room has not asked, or where no such walk exists.
+   */
+  private carriedWay(piece: GameCharacter, grid: CellGrid, from: number, to: number): number[] {
+    const rules = resolveRoomRules(
+      this.objectStore.get<Config>('Config')?.roomRuleAnswers ?? null,
+      this.tableSelecter.viewTable
+    );
+    if (!rules.handTracesWay) return [from, to];
+    const terms = this.moveRange.termsOf(piece);
+    if (!terms) return [from, to];
+    // A hand is not spending movement, so nothing is priced: the only bound is the board, and
+    // a way that ran out halfway would leave the far end of it unaccounted for.
+    const budget = cellCount(grid);
+    // Only the walls are kept. What an enemy holds and what a piece may stop on are answers
+    // about walking, and a hand did not walk.
+    const way = cheapestPath(grid, from, to, budget, (index) => terms.blocked.get(index), {
+      diagonals: terms.options.diagonals,
+    });
+    return way && way.length > 1 ? way : [from, to];
   }
 
   /**

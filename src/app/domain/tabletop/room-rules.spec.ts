@@ -24,6 +24,7 @@ const table: RoomRules = {
   noPartyPassage: 'cost',
   piecePassageCost: 2,
   sizeSlipsPast: true,
+  handTracesWay: true,
   pieceImageInCell: false,
   moveRangeAlways: true,
   zocAlways: true,

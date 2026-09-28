@@ -2491,7 +2491,8 @@
       "hostilityBy": "적·아군 구분 방식",
       "hostilityBy_npc": "NPC 여부로 구분",
       "hostilityBy_party": "파티로 구분",
-      "sizeSlipsPast": "크기가 2칸 이상 다른 상대의 칸은 지나갈 수 있음(멈출 수는 없음)"
+      "sizeSlipsPast": "크기가 2칸 이상 다른 상대의 칸은 지나갈 수 있음(멈출 수는 없음)",
+      "handTracesWay": "손으로 옮겼을 때도 지나간 길의 장치를 발동"
     },
     "skin": {
       "title": "화면 색(스킨)",

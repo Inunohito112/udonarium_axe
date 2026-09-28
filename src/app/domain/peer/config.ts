@@ -56,6 +56,7 @@ export class Config extends ObjectNode implements InnerXml {
   @SyncVar('_noPartyPassage') private _noPartyPassage: string = '';
   @SyncVar('_piecePassageCost') private _piecePassageCost: number = -1;
   @SyncVar('_sizeSlipsPast') private _sizeSlipsPast: string = '';
+  @SyncVar('_handTracesWay') private _handTracesWay: string = '';
   @SyncVar('_moveRangeAlways') private _moveRangeAlways: string = '';
   @SyncVar('_zocAlways') private _zocAlways: string = '';
   @SyncVar('_cellDistance') private _cellDistance: number = -1;
@@ -282,6 +283,14 @@ export class Config extends ObjectNode implements InnerXml {
     this._sizeSlipsPast = writeRuleFlag(answer);
   }
 
+  /** Whether ground between a piece's two ends goes off when a hand moves it, or null for the table. */
+  get handTracesWay(): boolean | null {
+    return readRuleFlag(this._handTracesWay);
+  }
+  set handTracesWay(answer: boolean | null) {
+    this._handTracesWay = writeRuleFlag(answer);
+  }
+
   /** Whether the selected piece's reach stays shown without picking it up, or null to leave it to the table. */
   get moveRangeAlways(): boolean | null {
     return readRuleFlag(this._moveRangeAlways);
@@ -407,6 +416,7 @@ export class Config extends ObjectNode implements InnerXml {
       noPartyPassage: this.noPartyPassage,
       piecePassageCost: this.piecePassageCost,
       sizeSlipsPast: this.sizeSlipsPast,
+      handTracesWay: this.handTracesWay,
       moveRangeAlways: this.moveRangeAlways,
       zocAlways: this.zocAlways,
       cellDistance: this.cellDistance,

@@ -107,6 +107,7 @@ describe('Config', () => {
         noPartyPassage: null,
         piecePassageCost: null,
         sizeSlipsPast: null,
+        handTracesWay: null,
         moveRangeAlways: null,
         zocAlways: null,
         cellDistance: null,

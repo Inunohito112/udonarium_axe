@@ -57,6 +57,14 @@ export interface RoomRules {
    * says nothing and a body in the way is a body in the way.
    */
   sizeSlipsPast: boolean;
+  /**
+   * Whether the ground between where a piece was lifted and where it was set down goes off.
+   *
+   * A hand leaves no way behind it, so the way is guessed: the shortest walk between the two
+   * ends. Left off, only the ground it was set down on answers, which is what a table does
+   * while somebody is shifting a dozen monsters into place.
+   */
+  handTracesWay: boolean;
   moveRangeAlways: boolean;
   zocAlways: boolean;
   cellDistance: number;
@@ -124,6 +132,7 @@ export const ROOM_RULE_DEFAULTS: RoomRules = {
   noPartyPassage: 'share',
   piecePassageCost: DEFAULT_PIECE_PASSAGE_COST,
   sizeSlipsPast: false,
+  handTracesWay: false,
   moveRangeAlways: false,
   zocAlways: false,
   cellDistance: DEFAULT_CELL_DISTANCE,
@@ -153,6 +162,7 @@ export const ROOM_RULE_GROUPS = {
     'noPartyPassage',
     'piecePassageCost',
     'sizeSlipsPast',
+    'handTracesWay',
     'moveRangeElementNames',
     'cellDistance',
     'cellDistanceUnit',
@@ -271,6 +281,7 @@ export function resolveRoomRules(
     noPartyPassage: crossing('noPartyPassage'),
     piecePassageCost: settled('piecePassageCost'),
     sizeSlipsPast: settled('sizeSlipsPast'),
+    handTracesWay: settled('handTracesWay'),
     moveRangeAlways: settled('moveRangeAlways'),
     zocAlways: settled('zocAlways'),
     cellDistance: settled('cellDistance'),
