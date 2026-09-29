@@ -14,6 +14,7 @@ import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { GUEST_PERSONA, VisionService } from '@axe/application/tabletop/vision.service';
 import { TurnOrderService } from '@axe/application/turn/turn-order.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
+import { MenuLayoutService } from '@axe/application/ui/menu-layout.service';
 import { NpcBarService } from '@axe/application/ui/npc-bar.service';
 import { PanelService } from '@axe/application/ui/panel.service';
 import { PieceOverlayPreferenceService } from '@axe/application/ui/piece-overlay-preference.service';
@@ -22,7 +23,6 @@ import { ViewportService } from '@axe/application/ui/viewport.service';
 import { WidgetVisibilityService } from '@axe/application/ui/widget-visibility.service';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
-import { DEFAULT_MENU_LAYOUTS } from '@axe/domain/ui/builtin-menu-layouts';
 import { NpcBarComponent } from '@axe/features/gm-tools/npc-bar/npc-bar.component';
 import { NpcDragService } from '@axe/features/gm-tools/npc-bar/npc-drag.service';
 import { MenuCommandService, MenuEntryView } from '@axe/features/menu/menu-command.service';
@@ -147,10 +147,11 @@ export class GmToolbarComponent {
   }
 
   private readonly menuCommands = inject(MenuCommandService);
+  private readonly barLayout = inject(MenuLayoutService).layoutOf('gmToolbar');
 
-  /** The bar as this master has it arranged, with what they are not offered left out. */
+  /** The bar as this seat has it arranged, with what it is not offered left out. */
   protected readonly entries = computed<MenuEntryView[]>(
-    () => this.menuCommands.viewOf(DEFAULT_MENU_LAYOUTS.gmToolbar) as MenuEntryView[]
+    () => this.menuCommands.viewOf(this.barLayout()) as MenuEntryView[]
   );
 
   /** What is written on an entry, with a word in front where the name alone would not say. */

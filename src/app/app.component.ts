@@ -24,6 +24,7 @@ import { TabletopActionService } from '@axe/application/tabletop/tabletop-action
 import { TurnOrderService } from '@axe/application/turn/turn-order.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
+import { MenuLayoutService } from '@axe/application/ui/menu-layout.service';
 import { MobileLayoutService } from '@axe/application/ui/mobile-layout.service';
 import { ModalService } from '@axe/application/ui/modal.service';
 import { MotionService } from '@axe/application/ui/motion.service';
@@ -41,7 +42,6 @@ import { FileArchiver } from '@axe/core/storage/file-archiver';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { ReloadCheck } from '@axe/domain/peer/reload-check';
-import { DEFAULT_MENU_LAYOUTS } from '@axe/domain/ui/builtin-menu-layouts';
 import { RoomPanelName } from '@axe/domain/ui/room-panel';
 import { AlarmEventHandlerService } from '@axe/features/alarm/alarm-event-handler.service';
 import { CardStackListImageComponent } from '@axe/features/card/card-stack-list-img/card-stack-list-img.component';
@@ -210,9 +210,10 @@ export class AppComponent {
   protected readonly fabColumns = FAB_COLUMN_CLASSES;
 
   private readonly menuCommands = inject(MenuCommandService);
+  private readonly fabLayout = inject(MenuLayoutService).layoutOf('fab');
 
   /** The drawer as this seat is offered it, in the order this screen has it arranged. */
-  protected readonly fabNodes = computed<MenuNodeView[]>(() => this.menuCommands.viewOf(DEFAULT_MENU_LAYOUTS.fab));
+  protected readonly fabNodes = computed<MenuNodeView[]>(() => this.menuCommands.viewOf(this.fabLayout()));
 
   /** The small menu open beside the drawer, once the drawer still holds one by that name. */
   protected readonly openGroup = computed<MenuGroupView | null>(() => {

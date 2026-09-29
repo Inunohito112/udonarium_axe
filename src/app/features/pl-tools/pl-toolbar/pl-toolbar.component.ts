@@ -13,6 +13,7 @@ import { ObjectChangeService } from '@axe/application/sync/object-change.service
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { getRangeMenuItems } from '@axe/application/tabletop/tabletop-action-helpers';
 import { TurnOrderService } from '@axe/application/turn/turn-order.service';
+import { MenuLayoutService } from '@axe/application/ui/menu-layout.service';
 import { PanelService } from '@axe/application/ui/panel.service';
 import { PieceOverlayPreferenceService } from '@axe/application/ui/piece-overlay-preference.service';
 import { ToolbarFoldService } from '@axe/application/ui/toolbar-fold.service';
@@ -23,7 +24,6 @@ import { GameCharacter } from '@axe/domain/character/game-character';
 import { PresetSound, SoundEffect } from '@axe/domain/media/sound-effect';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
-import { DEFAULT_MENU_LAYOUTS } from '@axe/domain/ui/builtin-menu-layouts';
 import { MenuCommandService, MenuEntryView } from '@axe/features/menu/menu-command.service';
 import { ObjectPanelService } from '@axe/features/panels/object-panel.service';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
@@ -54,10 +54,11 @@ export class PlToolbarComponent {
   private readonly t = inject(TRANSLATE_FN);
 
   private readonly menuCommands = inject(MenuCommandService);
+  private readonly barLayout = inject(MenuLayoutService).layoutOf('plToolbar');
 
-  /** The bar as this player has it arranged, with what they are not offered left out. */
+  /** The bar as this seat has it arranged, with what it is not offered left out. */
   protected readonly entries = computed<MenuEntryView[]>(
-    () => this.menuCommands.viewOf(DEFAULT_MENU_LAYOUTS.plToolbar) as MenuEntryView[]
+    () => this.menuCommands.viewOf(this.barLayout()) as MenuEntryView[]
   );
 
   /** What is written on an entry, with a word in front where the name alone would not say. */
