@@ -28,6 +28,18 @@ export function northNeedleAngle(tableRotationZ: number): number {
 }
 
 /**
+ * The same bearing written so as to lie nearest the one drawn before it.
+ *
+ * An angle kept within one turn jumps the width of a turn whenever the table crosses north: five
+ * degrees to three hundred and fifty-five is ten degrees of turning and three hundred and fifty
+ * of drawing, and anything easing between the two whips the long way round. Counting on past a
+ * turn, and back past nothing, keeps the short way short.
+ */
+export function nearestTurnTo(bearing: number, drawn: number): number {
+  return drawn + (wrapped(bearing - drawn + 180) - 180);
+}
+
+/**
  * The point of the compass a bearing falls nearest to.
  *
  * Each point owns the 45 degrees around it, so north answers for anything within 22.5 degrees

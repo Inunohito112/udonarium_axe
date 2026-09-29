@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { WIDGET_COMPASS } from '@axe/application/ui/widget-place';
 import { WidgetVisibilityService } from '@axe/application/ui/widget-visibility.service';
-import { compassPointOf, northNeedleAngle, screenBearingOf } from '@axe/domain/ui/compass';
+import { compassPointOf, nearestTurnTo, northNeedleAngle, screenBearingOf } from '@axe/domain/ui/compass';
 import { DraggableDirective } from '@axe/ui/directives/draggable.directive';
 import { WidgetPlaceDirective } from '@axe/ui/directives/widget-place.directive';
 import { TranslocoModule } from '@jsverse/transloco';
@@ -30,14 +30,29 @@ export class CompassComponent {
     top: 96,
   });
 
-  /** How far round the rose is drawn, which is how far the table has been turned. */
-  protected readonly roseAngle = computed(() => northNeedleAngle(this.uiSignal.tableViewRotationZ()));
+  private drawnAngle = northNeedleAngle(this.uiSignal.tableViewRotationZ());
+
+  /**
+   * How far round the rose is drawn, which is how far the table has been turned.
+   *
+   * Written so as to lie nearest whatever was drawn before it, rather than kept within one turn:
+   * a rose that jumped from five degrees to three hundred and fifty-five would be eased the long
+   * way round, and the table crossing north would whip it most of a turn.
+   */
+  protected readonly roseAngle = signal(this.drawnAngle);
 
   /** Which way the top of the screen looks, in whole degrees. */
   protected readonly bearing = computed(() => Math.round(screenBearingOf(this.uiSignal.tableViewRotationZ())) % 360);
 
   /** What that bearing is called. */
   protected readonly pointKey = computed(() => `feature.compass.point.${compassPointOf(this.bearing())}`);
+
+  constructor() {
+    effect(() => {
+      this.drawnAngle = nearestTurnTo(northNeedleAngle(this.uiSignal.tableViewRotationZ()), this.drawnAngle);
+      this.roseAngle.set(this.drawnAngle);
+    });
+  }
 
   protected close(): void {
     this.widgets.compass.set(false);

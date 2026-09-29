@@ -13,6 +13,15 @@ describe('CompassComponent', () => {
     return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
   }
 
+  function roseAngle(): number {
+    return Number(query('compass-rose')!.dataset['angle']);
+  }
+
+  /** Where the rose points, whatever it has been wound round to. */
+  function rosePointsAt(): number {
+    return ((roseAngle() % 360) + 360) % 360;
+  }
+
   function turnTableTo(degrees: number): void {
     uiSignal.notifyTableViewRotation(50, 0, degrees);
     fixture.detectChanges();
@@ -45,16 +54,27 @@ describe('CompassComponent', () => {
 
   it('turns its rose with the table, so north on the table is north on the compass', () => {
     turnTableTo(0);
-    expect(query('compass-rose')!.dataset['angle']).toBe('0');
+    expect(roseAngle()).toBe(0);
 
     turnTableTo(90);
-    expect(query('compass-rose')!.dataset['angle']).toBe('90');
+    expect(roseAngle()).toBe(90);
   });
 
-  it('brings the rose back round rather than counting on past a turn', () => {
-    turnTableTo(-90);
+  it('crosses north the short way rather than winding most of a turn the other way', () => {
+    turnTableTo(5);
+    const before = roseAngle();
 
-    expect(query('compass-rose')!.dataset['angle']).toBe('270');
+    turnTableTo(-5);
+
+    expect(roseAngle()).toBe(before - 10);
+  });
+
+  it('points where the table points however far round it has been wound', () => {
+    turnTableTo(-5);
+    expect(rosePointsAt()).toBe(355);
+
+    turnTableTo(725);
+    expect(rosePointsAt()).toBe(5);
   });
 
   it('says which way the top of the screen looks, and what it is called', () => {

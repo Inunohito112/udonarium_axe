@@ -1,4 +1,10 @@
-import { COMPASS_POINTS, compassPointOf, northNeedleAngle, screenBearingOf } from '@axe/domain/ui/compass';
+import {
+  COMPASS_POINTS,
+  compassPointOf,
+  nearestTurnTo,
+  northNeedleAngle,
+  screenBearingOf,
+} from '@axe/domain/ui/compass';
 
 describe('reading the table as a compass', () => {
   describe('which way the screen looks', () => {
@@ -31,6 +37,34 @@ describe('reading the table as a compass', () => {
     it('stands opposite the way the screen looks, bar the one they share', () => {
       for (const turn of [0, 10, 45, 123, 270, -37]) {
         expect((northNeedleAngle(turn) + screenBearingOf(turn)) % 360).toBe(0);
+      }
+    });
+  });
+
+  describe('writing an angle so as to lie nearest the last one', () => {
+    it('crosses north the short way rather than round the other side', () => {
+      expect(nearestTurnTo(355, 5)).toBe(-5);
+      expect(nearestTurnTo(5, 355)).toBe(365);
+    });
+
+    it('leaves an angle that is already the nearest one alone', () => {
+      expect(nearestTurnTo(90, 80)).toBe(90);
+      expect(nearestTurnTo(10, 10)).toBe(10);
+    });
+
+    it('never asks for more than half a turn', () => {
+      for (const bearing of [0, 37, 179, 181, 270, 359]) {
+        for (const drawn of [-730, -5, 0, 12, 355, 1080]) {
+          expect(Math.abs(nearestTurnTo(bearing, drawn) - drawn)).toBeLessThanOrEqual(180);
+        }
+      }
+    });
+
+    it('still points where it was asked to point', () => {
+      for (const bearing of [0, 37, 179, 270, 359]) {
+        for (const drawn of [-730, -5, 12, 1080]) {
+          expect((((nearestTurnTo(bearing, drawn) % 360) + 360) % 360).toFixed(6)).toBe(bearing.toFixed(6));
+        }
       }
     });
   });
