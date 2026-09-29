@@ -1,11 +1,20 @@
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from '@axe/app.component';
+import { ObjectStore } from '@axe/core/sync/object-store';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { menuCommandOf } from '@axe/domain/ui/menu-command';
 import { MenuCommandService } from '@axe/features/menu/menu-command.service';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 import { version } from '@pkg';
 
 describe('AppComponent', () => {
+  // Booting the screen brings the room's own objects into being — the chat tabs, the config,
+  // the table selecter — which the next spec file in this worker would otherwise inherit.
+  afterEach(() => {
+    for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
+    PeerCursor.myCursor = null!;
+  });
+
   it('should be defined', () => {
     expect(AppComponent).toBeTruthy();
   });
