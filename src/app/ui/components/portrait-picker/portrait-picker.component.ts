@@ -10,6 +10,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { placePopover } from '@axe/ui/anchored-popover';
 import { SafePipe } from '@axe/ui/pipes/safe.pipe';
 import { TranslocoModule } from '@jsverse/transloco';
 
@@ -21,8 +22,6 @@ export interface PortraitChoice {
 
 const LIST_WIDTH = 296;
 const LIST_MIN_HEIGHT = 176;
-const VIEWPORT_MARGIN = 8;
-const ANCHOR_GAP = 6;
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -123,32 +122,9 @@ export class PortraitPickerComponent {
   }
 
   private place(): void {
-    const popover = this.popoverRef().nativeElement;
-    const anchor = this.host.nativeElement.getBoundingClientRect();
-    const viewWidth = window.innerWidth;
-    const viewHeight = window.innerHeight;
-    const width = Math.min(LIST_WIDTH, viewWidth - VIEWPORT_MARGIN * 2);
-    const roomAbove = anchor.top - VIEWPORT_MARGIN - ANCHOR_GAP;
-    const roomBelow = viewHeight - anchor.bottom - VIEWPORT_MARGIN - ANCHOR_GAP;
-    const opensUpward = roomBelow < roomAbove;
-
-    popover.style.width = `${width}px`;
-    popover.style.maxHeight = `${Math.max(LIST_MIN_HEIGHT, opensUpward ? roomAbove : roomBelow)}px`;
-    popover.style.left = '0px';
-    popover.style.top = '0px';
-
-    const origin = popover.getBoundingClientRect();
-    const left = clamp(
-      anchor.left + anchor.width / 2 - width / 2,
-      VIEWPORT_MARGIN,
-      viewWidth - width - VIEWPORT_MARGIN
-    );
-    const top = opensUpward ? anchor.top - ANCHOR_GAP - origin.height : anchor.bottom + ANCHOR_GAP;
-    popover.style.left = `${left - origin.left}px`;
-    popover.style.top = `${clamp(top, VIEWPORT_MARGIN, viewHeight - origin.height - VIEWPORT_MARGIN) - origin.top}px`;
+    placePopover(this.popoverRef().nativeElement, this.host.nativeElement.getBoundingClientRect(), {
+      width: LIST_WIDTH,
+      minHeight: LIST_MIN_HEIGHT,
+    });
   }
-}
-
-function clamp(value: number, lowest: number, highest: number): number {
-  return Math.max(lowest, Math.min(value, highest));
 }
