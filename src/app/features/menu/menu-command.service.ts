@@ -352,6 +352,8 @@ export class MenuCommandService {
         return this.widgets.gmToolbar();
       case 'widgetClock':
         return this.widgets.clock();
+      case 'widgetCompass':
+        return this.widgets.compass();
       case 'widgetRecording':
         return this.widgets.recording();
       case 'widgetConnectionQuality':
@@ -431,6 +433,9 @@ export class MenuCommandService {
         return;
       case 'widgetClock':
         this.widgets.toggleClock();
+        return;
+      case 'widgetCompass':
+        this.widgets.toggleCompass();
         return;
       case 'widgetRecording':
         this.widgets.toggleRecording();

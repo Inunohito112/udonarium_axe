@@ -1,0 +1,67 @@
+@if (widgets.compass()) {
+  <div
+    #compass
+    class="group rounded-ui-lg text-ui-text hover:bg-ui-panel/65 hover:border-ui-border-panel fixed top-0 left-0 z-100 box-border flex cursor-grab items-start gap-1 border border-solid border-transparent p-2 transition-[background-color,border-color] select-none hover:[backdrop-filter:blur(20px)_saturate(1.4)] hover:[-webkit-backdrop-filter:blur(20px)_saturate(1.4)] active:cursor-grabbing"
+    appDraggable
+    [appWidgetPlace]="widgetName"
+    [widgetFallback]="fallback"
+    [draggable.unhandle]="'button'"
+    data-testid="compass-widget"
+  >
+    <div class="flex flex-col items-center gap-1">
+      <div class="relative size-16 filter-[drop-shadow(0_1px_2px_rgba(0,0,0,0.55))] group-hover:filter-none">
+        <!-- The housing, which stays where it is: its mark at the top is where the screen looks. -->
+        <svg viewBox="0 0 100 100" class="text-ui-muted absolute inset-0 size-full" aria-hidden="true">
+          <circle cx="50" cy="50" r="47" fill="rgba(0,0,0,0.35)" stroke="currentColor" stroke-width="2" />
+          <path d="M50 2 L55 12 L45 12 Z" class="text-ui-accent" fill="currentColor" />
+        </svg>
+
+        <!-- The rose, carried round by the table exactly as the table's own north is. -->
+        <svg
+          viewBox="0 0 100 100"
+          class="absolute inset-0 size-full transition-transform duration-150 ease-out"
+          [style.transform]="'rotate(' + roseAngle() + 'deg)'"
+          data-testid="compass-rose"
+          [attr.data-angle]="roseAngle()"
+          aria-hidden="true"
+        >
+          <g class="text-ui-dim" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <line x1="50" y1="16" x2="50" y2="24" />
+            <line x1="84" y1="50" x2="76" y2="50" />
+            <line x1="50" y1="84" x2="50" y2="76" />
+            <line x1="16" y1="50" x2="24" y2="50" />
+            <line x1="74" y1="26" x2="70" y2="30" />
+            <line x1="74" y1="74" x2="70" y2="70" />
+            <line x1="26" y1="74" x2="30" y2="70" />
+            <line x1="26" y1="26" x2="30" y2="30" />
+          </g>
+
+          <path d="M50 20 L58 54 L50 50 Z" class="text-ui-accent" fill="currentColor" />
+          <path d="M50 20 L42 54 L50 50 Z" class="text-ui-accent" fill="currentColor" opacity="0.55" />
+          <path d="M50 80 L42 46 L50 50 Z" class="text-ui-dim" fill="currentColor" />
+          <path d="M50 80 L58 46 L50 50 Z" class="text-ui-dim" fill="currentColor" opacity="0.55" />
+          <circle cx="50" cy="50" r="3.5" class="text-ui-text" fill="currentColor" />
+
+          <text x="50" y="14" text-anchor="middle" class="fill-current text-[13px] font-bold">N</text>
+        </svg>
+      </div>
+
+      <span
+        class="text-ui-muted font-mono text-[10px] leading-none tracking-wider [font-variant-numeric:tabular-nums]"
+        data-testid="compass-bearing"
+      >
+        {{ bearing() }}° {{ pointKey() | transloco }}
+      </span>
+    </div>
+
+    <button
+      type="button"
+      class="rounded-ui-sm text-ui-dim hover:bg-ui-hover hover:text-ui-text m-0 inline-flex h-5.5 cursor-pointer items-center justify-center border-none bg-transparent px-1 leading-none opacity-0 shadow-none transition-[color,background,opacity] outline-none group-hover:opacity-100 hover:border-transparent hover:shadow-none"
+      [title]="'app.fab.compass' | transloco"
+      data-testid="compass-close"
+      (click)="close()"
+    >
+      <i class="material-icons text-[14px]!">close</i>
+    </button>
+  </div>
+}

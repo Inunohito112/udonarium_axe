@@ -54,6 +54,7 @@ const FAB: MenuLayout = {
         'widgetPlToolbar',
         'widgetGmToolbar',
         'widgetClock',
+        'widgetCompass',
         'widgetRecording',
         'widgetConnectionQuality',
         'widgetMiniPlayer',

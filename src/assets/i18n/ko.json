@@ -4396,6 +4396,18 @@
         "label": "위젯"
       }
     },
+    "compass": {
+      "point": {
+        "n": "북",
+        "ne": "북동",
+        "e": "동",
+        "se": "남동",
+        "s": "남",
+        "sw": "남서",
+        "w": "서",
+        "nw": "북서"
+      }
+    },
     "menuEditor": {
       "title": "메뉴 편집",
       "hint": "이 단말에만 저장되는 배열입니다. 왼쪽 손잡이를 잡고 움직이면 순서가 바뀌고, 작은 메뉴에도 넣고 뺄 수 있습니다.",
@@ -4441,6 +4453,7 @@
       "gameResources": "게임 리소스",
       "media": "미디어",
       "clock": "시계",
+      "compass": "나침반",
       "connectionQuality": "통신 품질",
       "miniPlayer": "미니 플레이어",
       "visualNovel": "노벨 모드",

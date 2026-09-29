@@ -6,6 +6,7 @@ describe('parseWidgetVisibility', () => {
   it('shows only the mini player with nothing saved', () => {
     expect(parseWidgetVisibility(null)).toEqual({
       clock: false,
+      compass: false,
       miniPlayer: true,
       connectionQuality: false,
       recording: true,
@@ -21,6 +22,7 @@ describe('parseWidgetVisibility', () => {
       parseWidgetVisibility('{"clock":true,"miniPlayer":false,"connectionQuality":true,"recording":false}')
     ).toEqual({
       clock: true,
+      compass: false,
       miniPlayer: false,
       connectionQuality: true,
       recording: false,
@@ -34,6 +36,7 @@ describe('parseWidgetVisibility', () => {
   it('falls back to the defaults for a broken value', () => {
     expect(parseWidgetVisibility('{')).toEqual({
       clock: false,
+      compass: false,
       miniPlayer: true,
       connectionQuality: false,
       recording: true,
@@ -44,6 +47,7 @@ describe('parseWidgetVisibility', () => {
     });
     expect(parseWidgetVisibility('null')).toEqual({
       clock: false,
+      compass: false,
       miniPlayer: true,
       connectionQuality: false,
       recording: true,
@@ -66,6 +70,7 @@ describe('parseWidgetVisibility', () => {
   it('fills in only the missing entries', () => {
     expect(parseWidgetVisibility('{"clock":true}')).toEqual({
       clock: true,
+      compass: false,
       miniPlayer: true,
       connectionQuality: false,
       recording: true,
@@ -88,6 +93,7 @@ describe('WidgetVisibilityService', () => {
 
   it('shows only the mini player by default', () => {
     expect(service.clock()).toBe(false);
+    expect(service.compass()).toBe(false);
     expect(service.miniPlayer()).toBe(true);
     expect(service.connectionQuality()).toBe(false);
     expect(service.recording()).toBe(true);
@@ -122,5 +128,9 @@ describe('WidgetVisibilityService', () => {
     service.toggleGmToolbar();
     expect(service.gmToolbar()).toBe(false);
     expect(service.plToolbar()).toBe(false);
+
+    service.toggleCompass();
+    expect(service.compass()).toBe(true);
+    expect(service.clock()).toBe(true);
   });
 });

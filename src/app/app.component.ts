@@ -89,6 +89,7 @@ import { VisualNovelModeService } from '@axe/features/visual-novel/visual-novel-
 import { VisualNovelOverlayComponent } from '@axe/features/visual-novel/visual-novel-overlay/visual-novel-overlay.component';
 import { VoteEventHandlerService } from '@axe/features/vote/vote-event-handler.service';
 import { VoteWidgetComponent } from '@axe/features/vote/vote-widget/vote-widget.component';
+import { CompassComponent } from '@axe/features/widgets/compass/compass.component';
 import { ConnectionQualityComponent } from '@axe/features/widgets/connection-quality/connection-quality.component';
 import { DigitalClockComponent } from '@axe/features/widgets/digital-clock/digital-clock.component';
 import { RenderStatsComponent } from '@axe/features/widgets/render-stats/render-stats.component';
@@ -134,6 +135,7 @@ const FAB_MARGIN_PX = 12;
     ConnectionQualityComponent,
     RenderStatsComponent,
     DigitalClockComponent,
+    CompassComponent,
     VoteWidgetComponent,
     HotbarBarComponent,
     MobileShellComponent,

@@ -4148,6 +4148,18 @@
         "label": "Widgets"
       }
     },
+    "compass": {
+      "point": {
+        "n": "N",
+        "ne": "NE",
+        "e": "E",
+        "se": "SE",
+        "s": "S",
+        "sw": "SW",
+        "w": "W",
+        "nw": "NW"
+      }
+    },
     "menuEditor": {
       "title": "Arrange the menus",
       "hint": "This arrangement is kept on this screen alone. Take hold of the grip on the left to put an entry in order, or to carry it in and out of a small menu.",
@@ -4193,6 +4205,7 @@
       "gameResources": "Game resources",
       "media": "Media",
       "clock": "Clock",
+      "compass": "Compass",
       "connectionQuality": "Connection quality",
       "miniPlayer": "Mini player",
       "visualNovel": "Novel mode",

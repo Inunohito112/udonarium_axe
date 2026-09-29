@@ -36,6 +36,7 @@ export const MENU_TOGGLES = [
   'widgetPlToolbar',
   'widgetGmToolbar',
   'widgetClock',
+  'widgetCompass',
   'widgetRecording',
   'widgetConnectionQuality',
   'widgetMiniPlayer',
@@ -206,6 +207,7 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
     testId: 'seat-widget-gmToolbar',
   }),
   toggle('widgetClock', 'schedule', 'app.fab.clock', { testId: 'seat-widget-clock' }),
+  toggle('widgetCompass', 'explore', 'app.fab.compass', { testId: 'seat-widget-compass' }),
   toggle('widgetRecording', 'radio_button_checked', 'app.fab.recording', {
     testId: 'seat-widget-recording',
   }),
