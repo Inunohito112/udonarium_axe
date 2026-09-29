@@ -274,12 +274,6 @@ export class AppComponent {
     return this.rolePermission.canEditTabletop;
   });
 
-  /** Opens character import from the save and load menu, a shortcut to the one in the room settings. */
-  protected importCharacterFromMenu(): void {
-    this.closeFabSubmenu();
-    this.open('characterImport');
-  }
-
   /** Asks for the files to load from the save and load menu, which closes as the picker opens. */
   protected chooseFilesToLoad(): void {
     this.closeFabSubmenu();
@@ -334,6 +328,15 @@ export class AppComponent {
   progressPercent = signal(0);
   constructor() {
     inject(Title).setTitle(`Udonarium Axe ${APP_VERSION}`);
+
+    // Saving the room and asking for files to load are the screen's own to do, and the menus
+    // dispatch everything else by themselves; this is the one thing they cannot reach without
+    // being handed it.
+    this.menuCommands.registerHost({
+      save: () => this.saveFromMenu(),
+      chooseFilesToLoad: () => this.chooseFilesToLoad(),
+      isSaving: () => this.isSaving(),
+    });
 
     if (new URLSearchParams(window.location.search).get('stats') === '1') this.widgets.renderStats.set(true);
 
