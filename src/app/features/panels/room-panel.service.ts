@@ -130,7 +130,7 @@ export class RoomPanelService {
             import('@axe/features/gm-object-list/game-object-list-panel.component').then(
               (m) => m.GameObjectListPanelComponent
             ),
-          option: { width: 460, height: 620 },
+          option: { width: 460, height: 620, left: 100, top: 40 },
         };
       case 'fileStorage':
         return {
@@ -170,7 +170,7 @@ export class RoomPanelService {
             import('@axe/features/pl-tools/owned-character-list/owned-character-list-panel.component').then(
               (m) => m.OwnedCharacterListPanelComponent
             ),
-          option: { width: 420, height: 560 },
+          option: { width: 420, height: 560, left: 100, top: 40 },
         };
       case 'partyList':
         return {
@@ -178,7 +178,7 @@ export class RoomPanelService {
             import('@axe/features/gm-tools/party-list/party-list-panel.component').then(
               (m) => m.PartyListPanelComponent
             ),
-          option: { width: 460, height: 620 },
+          option: { width: 460, height: 620, left: 120, top: 60 },
         };
       case 'buffManager':
         return {

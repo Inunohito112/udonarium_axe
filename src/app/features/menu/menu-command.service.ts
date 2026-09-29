@@ -9,6 +9,7 @@ import { BuffViewPreferenceService } from '@axe/application/ui/buff-view-prefere
 import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { MobileLayoutService } from '@axe/application/ui/mobile-layout.service';
 import { MotionService, MotionSetting } from '@axe/application/ui/motion.service';
+import { NpcBarService } from '@axe/application/ui/npc-bar.service';
 import { PieceOverlayPreferenceService } from '@axe/application/ui/piece-overlay-preference.service';
 import { RenderLiteService, RenderLiteSetting } from '@axe/application/ui/render-lite.service';
 import { Theme, ThemeService } from '@axe/application/ui/theme.service';
@@ -25,13 +26,13 @@ import {
   MenuActName,
   MenuCommand,
   menuCommandOf,
+  MenuCustomName,
   MenuCycleName,
   MenuToggleName,
 } from '@axe/domain/ui/menu-command';
 import { isMenuGroup, MenuLayout, MenuNode } from '@axe/domain/ui/menu-layout';
 import { nextViewMode, viewModeIcon, viewModeLabelKey } from '@axe/domain/ui/view-mode';
 import { HandRailService } from '@axe/features/card/hand-rail/hand-rail.service';
-import { NpcBarService } from '@axe/features/gm-tools/npc-bar/npc-bar.service';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { VisualNovelModeService } from '@axe/features/visual-novel/visual-novel-mode.service';
 
@@ -84,7 +85,11 @@ export interface MenuEntryView {
   /** Written in place of the mark, for the language. */
   text: string | null;
   lit: boolean | null;
+  /** Whether it is drawn faintly, which a switch over the table is while it stands off. */
+  dim: boolean;
   disabled: boolean;
+  /** What it draws instead of a button, where it draws its own thing. */
+  custom: MenuCustomName | null;
 }
 
 /** One small menu of a menu, with whatever of it this seat is offered. */
@@ -188,7 +193,9 @@ export class MenuCommandService {
       prefixKey: node.label ? null : this.prefixKeyOf(command),
       text: this.textOf(command),
       lit: this.litOf(command),
+      dim: command.dims === true && this.litOf(command) === false,
       disabled: this.disabledOf(command),
+      custom: command.action.kind === 'custom' ? command.action.custom : null,
     };
   }
 

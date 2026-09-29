@@ -82,6 +82,8 @@ export interface MenuCommand {
   surfaces: readonly MenuSurface[];
   /** What the tests reach for it by, where it is older than the table and already had a name there. */
   testId?: string;
+  /** Whether it is drawn faintly while it stands off, which only the switches over the table do. */
+  dims?: boolean;
 }
 
 const EVERYWHERE: readonly MenuSurface[] = MENU_SURFACES;
@@ -91,6 +93,7 @@ type CommandOptions = {
   audience?: MenuAudience;
   surfaces?: readonly MenuSurface[];
   testId?: string;
+  dims?: boolean;
 };
 
 function make(
@@ -98,9 +101,18 @@ function make(
   icon: string,
   labelKey: string,
   action: MenuAction,
-  { audience = 'anyone', surfaces = EVERYWHERE, testId }: CommandOptions = {}
+  { audience = 'anyone', surfaces = EVERYWHERE, testId, dims }: CommandOptions = {}
 ): MenuCommand {
-  return { key, icon, labelKey, action, audience, surfaces, ...(testId ? { testId } : {}) };
+  return {
+    key,
+    icon,
+    labelKey,
+    action,
+    audience,
+    surfaces,
+    ...(testId ? { testId } : {}),
+    ...(dims ? { dims } : {}),
+  };
 }
 
 function panel(
@@ -169,12 +181,13 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
 
   toggle('visualNovel', 'auto_stories', 'app.fab.visualNovel'),
   toggle('handRail', 'style', 'app.fab.hand', { audience: 'playing' }),
-  toggle('darkness', 'bedtime', 'app.fab.darknessOn', { audience: 'gameMaster' }),
-  toggle('fog', 'foggy', 'app.fab.fogOn', { audience: 'gameMaster' }),
+  toggle('darkness', 'bedtime', 'app.fab.darknessOn', { audience: 'gameMaster', dims: true }),
+  toggle('fog', 'foggy', 'app.fab.fogOn', { audience: 'gameMaster', dims: true }),
   toggle('resourceBars', 'align_horizontal_left', 'app.fab.resourceBarsShown', {
     testId: 'toolbar-resource-bars',
+    dims: true,
   }),
-  toggle('buffs', 'auto_fix_high', 'app.fab.buffsShown', { testId: 'toolbar-buffs' }),
+  toggle('buffs', 'auto_fix_high', 'app.fab.buffsShown', { testId: 'toolbar-buffs', dims: true }),
   toggle('npcBar', 'groups', 'app.fab.npcBar', { audience: 'gameMaster' }),
   toggle('widgetPlToolbar', 'person', 'app.fab.plTools', { audience: 'player', testId: 'seat-widget-plToolbar' }),
   toggle('widgetGmToolbar', 'shield', 'app.fab.gmTools', {

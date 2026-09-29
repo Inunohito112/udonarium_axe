@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { GUEST_PERSONA, VisionService } from '@axe/application/tabletop/vision.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
+import { NpcBarService } from '@axe/application/ui/npc-bar.service';
 import { PanelService } from '@axe/application/ui/panel.service';
 import { PieceOverlayPreferenceService } from '@axe/application/ui/piece-overlay-preference.service';
 import { ToolbarFoldService } from '@axe/application/ui/toolbar-fold.service';
@@ -12,7 +13,6 @@ import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { GameObjectListPanelComponent } from '@axe/features/gm-object-list/game-object-list-panel.component';
 import { GmToolbarComponent } from '@axe/features/gm-tools/gm-toolbar/gm-toolbar.component';
-import { NpcBarService } from '@axe/features/gm-tools/npc-bar/npc-bar.service';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 describe('GmToolbarComponent', () => {
@@ -33,6 +33,18 @@ describe('GmToolbarComponent', () => {
     fixture = TestBed.createComponent(GmToolbarComponent);
     component = fixture.componentInstance;
   });
+
+  /** Presses the entry wearing that mark, which is how somebody at the table reaches it. */
+  function press(icon: string): void {
+    PeerCursor.myCursor ??= Object.assign(new PeerCursor('me'), { role: PeerRole.GameMaster });
+    fixture.detectChanges();
+    const button = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('ui-icon-button button')).find(
+      (held) => held.querySelector('i')?.textContent?.trim() === icon
+    );
+    expect(button, icon).toBeTruthy();
+    button!.click();
+    fixture.detectChanges();
+  }
 
   it('switches the resource bars and the buffs over the pieces off and on again', async () => {
     PeerCursor.myCursor = Object.assign(new PeerCursor('me'), { role: PeerRole.GameMaster });
@@ -88,7 +100,8 @@ describe('GmToolbarComponent', () => {
   });
 
   it('opens the object list', async () => {
-    (component as unknown as { openObjectList: () => void }).openObjectList();
+    press('category');
+
     expect(panelStub.openLazy).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({ width: 460, height: 620 })
@@ -98,10 +111,11 @@ describe('GmToolbarComponent', () => {
 
   it('opens and closes the non-player bar', () => {
     const bar = TestBed.inject(NpcBarService);
+
     expect(bar.isOpen()).toBe(false);
-    (component as unknown as { toggleNpcBar: () => void }).toggleNpcBar();
+    press('groups');
     expect(bar.isOpen()).toBe(true);
-    (component as unknown as { toggleNpcBar: () => void }).toggleNpcBar();
+    press('groups');
     expect(bar.isOpen()).toBe(false);
   });
 
@@ -190,7 +204,8 @@ describe('GmToolbarComponent', () => {
       card.owner = 'ghost-user';
       vi.spyOn(TestBed.inject(ConfirmService), 'ask').mockResolvedValue(true);
 
-      await (component as unknown as { releaseOrphanedOwnership: () => Promise<void> }).releaseOrphanedOwnership();
+      press('key_off');
+      await fixture.whenStable();
 
       expect(card.owner).toBe('');
     });
@@ -200,7 +215,8 @@ describe('GmToolbarComponent', () => {
       card.owner = 'ghost-user';
       vi.spyOn(TestBed.inject(ConfirmService), 'ask').mockResolvedValue(false);
 
-      await (component as unknown as { releaseOrphanedOwnership: () => Promise<void> }).releaseOrphanedOwnership();
+      press('key_off');
+      await fixture.whenStable();
 
       expect(card.owner).toBe('ghost-user');
     });
