@@ -65,7 +65,7 @@ const FAB: MenuLayout = {
       'display',
       'display_settings',
       'app.fab.display',
-      ['viewMode', 'theme', 'skin', 'motion', 'renderLite', 'language', 'useMobileLayout'],
+      ['viewMode', 'theme', 'skin', 'motion', 'renderLite', 'language', 'menuEditor', 'useMobileLayout'],
       { testId: 'fab-display', menuTestId: 'seat-display' }
     ),
   ],

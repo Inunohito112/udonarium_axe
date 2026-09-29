@@ -178,6 +178,7 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
   }),
   panel('roomSnapshot', 'history', 'roomSnapshot', 'app.fab.roomSnapshot'),
   panel('replay', 'movie_filter', 'replay', 'app.fab.replay'),
+  panel('menuEditor', 'tune', 'menuEditor', 'feature.menuEditor.title'),
 
   toggle('visualNovel', 'auto_stories', 'app.fab.visualNovel'),
   toggle('handRail', 'style', 'app.fab.hand', { audience: 'playing' }),

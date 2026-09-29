@@ -4395,6 +4395,27 @@
       "widgets": {
         "label": "위젯"
       }
+    },
+    "menuEditor": {
+      "title": "메뉴 편집",
+      "hint": "이 단말에만 저장되는 배열입니다. 항목을 추가하고, 이름과 아이콘을 바꾸고, 작은 메뉴에 넣고, 순서를 바꿀 수 있습니다.",
+      "group": "작은 메뉴",
+      "topLevel": "메뉴 바로 아래",
+      "unnamedGroup": "이름 없는 작은 메뉴",
+      "lost": "이 버전에 없는 항목",
+      "pick": "추가할 항목 선택",
+      "add": "추가",
+      "addGroup": "작은 메뉴 만들기",
+      "groupPlaceholder": "작은 메뉴 이름",
+      "remove": "제거",
+      "empty": "항목이 없습니다",
+      "reset": "초기 배치로 되돌리기",
+      "resetConfirm": "이 메뉴를 초기 배치로 되돌립니다. 계속할까요?",
+      "surface": {
+        "fab": "Fav 메뉴",
+        "gmToolbar": "GM 도구",
+        "plToolbar": "PL 도구"
+      }
     }
   },
   "app": {

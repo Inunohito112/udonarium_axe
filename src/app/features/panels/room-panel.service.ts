@@ -124,6 +124,14 @@ export class RoomPanelService {
             ),
           option: { width: 450, height: 600 },
         };
+      case 'menuEditor':
+        return {
+          load: () =>
+            import('@axe/features/menu/menu-editor-panel/menu-editor-panel.component').then(
+              (m) => m.MenuEditorPanelComponent
+            ),
+          option: { width: 620, height: 560 },
+        };
       case 'objectList':
         return {
           load: () =>

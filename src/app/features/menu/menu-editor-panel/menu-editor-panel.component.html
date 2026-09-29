@@ -1,0 +1,151 @@
+<div class="bg-ui-panel text-ui-text flex h-full flex-col gap-2 overflow-hidden p-2 text-[12px]">
+  <div class="flex shrink-0 flex-wrap items-center gap-1">
+    @for (held of surfaces(); track held) {
+      <button
+        type="button"
+        class="rounded-ui-sm border-ui-border-panel hover:bg-ui-menu-hover cursor-pointer border border-solid bg-transparent px-2 py-1 text-[11px] transition-colors"
+        [class.bg-ui-accent-bg]="surface() === held"
+        [class.text-ui-accent]="surface() === held"
+        [attr.data-testid]="'menu-editor-surface-' + held"
+        (click)="choose(held)"
+      >
+        {{ surfaceLabelKey(held) | transloco }}
+      </button>
+    }
+    <span class="grow"></span>
+    <button
+      type="button"
+      class="rounded-ui-sm border-ui-border-panel text-ui-muted hover:bg-ui-menu-hover cursor-pointer border border-solid bg-transparent px-2 py-1 text-[11px] transition-colors disabled:cursor-default disabled:opacity-45"
+      [disabled]="!arranged()"
+      data-testid="menu-editor-reset"
+      (click)="reset()"
+    >
+      {{ 'feature.menuEditor.reset' | transloco }}
+    </button>
+  </div>
+
+  <p class="text-ui-dim m-0 shrink-0 text-[11px]">{{ 'feature.menuEditor.hint' | transloco }}</p>
+
+  <ul class="m-0 min-h-0 grow list-none overflow-y-auto p-0" data-testid="menu-editor-rows">
+    @for (row of rows(); track row.node.id) {
+      <li
+        class="border-ui-border-panel flex items-center gap-1.5 border-b border-solid p-1"
+        [class.pl-6]="row.nested"
+        [class.opacity-60]="row.lost"
+        [attr.data-testid]="'menu-editor-row-' + row.node.id"
+      >
+        <i class="material-icons text-ui-dim text-[18px]!" aria-hidden="true">{{ row.icon }}</i>
+
+        @if (isGroupRow(row)) {
+          <span class="text-ui-muted shrink-0 text-[10px]">{{ 'feature.menuEditor.group' | transloco }}</span>
+        }
+
+        <input
+          class="rounded-ui-sm border-ui-border-panel bg-ui-input text-ui-text min-w-0 grow border border-solid px-1 py-0.5 text-[11px] outline-none"
+          [ngModel]="row.name"
+          [name]="'menu-editor-name-' + row.node.id"
+          [attr.data-testid]="'menu-editor-name-' + row.node.id"
+          (ngModelChange)="rename(row, $event)"
+        />
+
+        <input
+          class="rounded-ui-sm border-ui-border-panel bg-ui-input text-ui-text w-24 border border-solid px-1 py-0.5 text-[11px] outline-none"
+          [ngModel]="row.icon"
+          [name]="'menu-editor-icon-' + row.node.id"
+          [attr.data-testid]="'menu-editor-icon-' + row.node.id"
+          (ngModelChange)="setIcon(row, $event)"
+        />
+
+        @if (!isGroupRow(row)) {
+          <select
+            class="rounded-ui-sm border-ui-border-panel bg-ui-input text-ui-text w-28 cursor-pointer border border-solid px-1 py-0.5 text-[11px]"
+            [ngModel]="parentValue(row)"
+            [name]="'menu-editor-into-' + row.node.id"
+            [attr.data-testid]="'menu-editor-into-' + row.node.id"
+            (ngModelChange)="moveInto(row, $event)"
+          >
+            @for (target of targets(); track target.value) {
+              <option [ngValue]="target.value">{{ target.name }}</option>
+            }
+          </select>
+        }
+
+        <button
+          type="button"
+          class="rounded-ui-sm text-ui-dim hover:bg-ui-hover hover:text-ui-text flex size-6 shrink-0 cursor-pointer items-center justify-center border-none bg-transparent transition-colors disabled:cursor-default disabled:opacity-30 [&_i]:text-[16px]!"
+          [disabled]="placeOf(row).index < 1"
+          [title]="'common.reorder.up' | transloco"
+          [attr.data-testid]="'menu-editor-up-' + row.node.id"
+          (click)="move(row, -1)"
+        >
+          <i class="material-icons">arrow_upward</i>
+        </button>
+        <button
+          type="button"
+          class="rounded-ui-sm text-ui-dim hover:bg-ui-hover hover:text-ui-text flex size-6 shrink-0 cursor-pointer items-center justify-center border-none bg-transparent transition-colors disabled:cursor-default disabled:opacity-30 [&_i]:text-[16px]!"
+          [disabled]="placeOf(row).index >= placeOf(row).count - 1"
+          [title]="'common.reorder.down' | transloco"
+          [attr.data-testid]="'menu-editor-down-' + row.node.id"
+          (click)="move(row, 1)"
+        >
+          <i class="material-icons">arrow_downward</i>
+        </button>
+        <button
+          type="button"
+          class="rounded-ui-sm text-ui-dim flex size-6 shrink-0 cursor-pointer items-center justify-center border-none bg-transparent transition-colors hover:bg-red-500/20 hover:text-red-500 [&_i]:text-[16px]!"
+          [title]="'feature.menuEditor.remove' | transloco"
+          [attr.data-testid]="'menu-editor-remove-' + row.node.id"
+          (click)="remove(row)"
+        >
+          <i class="material-icons">delete</i>
+        </button>
+      </li>
+    } @empty {
+      <li class="text-ui-dim p-3 text-center text-[11px]">{{ 'feature.menuEditor.empty' | transloco }}</li>
+    }
+  </ul>
+
+  <div class="border-ui-border-panel flex shrink-0 flex-wrap items-center gap-1.5 border-t border-solid pt-2">
+    <select
+      class="rounded-ui-sm border-ui-border-panel bg-ui-input text-ui-text min-w-0 grow cursor-pointer border border-solid px-1 py-0.5 text-[11px]"
+      [ngModel]="chosenCommand()"
+      name="menu-editor-command"
+      data-testid="menu-editor-command"
+      (ngModelChange)="chosenCommand.set($event)"
+    >
+      <option [ngValue]="''">{{ 'feature.menuEditor.pick' | transloco }}</option>
+      @for (command of offered(); track command.key) {
+        <option [ngValue]="command.key">{{ command.labelKey | transloco }}</option>
+      }
+    </select>
+    <button
+      type="button"
+      class="rounded-ui-sm bg-ui-accent-bg border-ui-accent text-ui-accent hover:bg-ui-accent-glow shrink-0 cursor-pointer border border-solid px-2 py-1 text-[11px] disabled:cursor-default disabled:opacity-45"
+      [disabled]="!chosenCommand()"
+      data-testid="menu-editor-add"
+      (click)="add()"
+    >
+      {{ 'feature.menuEditor.add' | transloco }}
+    </button>
+  </div>
+
+  <div class="flex shrink-0 flex-wrap items-center gap-1.5">
+    <input
+      class="rounded-ui-sm border-ui-border-panel bg-ui-input text-ui-text min-w-0 grow border border-solid px-1 py-0.5 text-[11px] outline-none"
+      [ngModel]="newGroupName()"
+      name="menu-editor-group-name"
+      [placeholder]="'feature.menuEditor.groupPlaceholder' | transloco"
+      data-testid="menu-editor-group-name"
+      (ngModelChange)="newGroupName.set($event)"
+    />
+    <button
+      type="button"
+      class="rounded-ui-sm border-ui-border-panel text-ui-text hover:bg-ui-menu-hover shrink-0 cursor-pointer border border-solid bg-transparent px-2 py-1 text-[11px] disabled:cursor-default disabled:opacity-45"
+      [disabled]="!newGroupName().trim()"
+      data-testid="menu-editor-add-group"
+      (click)="addGroup()"
+    >
+      {{ 'feature.menuEditor.addGroup' | transloco }}
+    </button>
+  </div>
+</div>

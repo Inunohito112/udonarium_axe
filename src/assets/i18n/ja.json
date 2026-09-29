@@ -4147,6 +4147,27 @@
       "widgets": {
         "label": "ウィジェット"
       }
+    },
+    "menuEditor": {
+      "title": "メニューの編集",
+      "hint": "この端末だけの並びです。項目を足す・名前とアイコンを変える・小窓にしまう・順番を入れ替える。",
+      "group": "小窓",
+      "topLevel": "メニュー直下",
+      "unnamedGroup": "名前のない小窓",
+      "lost": "この版にない項目",
+      "pick": "足す項目を選ぶ",
+      "add": "足す",
+      "addGroup": "小窓を作る",
+      "groupPlaceholder": "小窓の名前",
+      "remove": "外す",
+      "empty": "項目がありません",
+      "reset": "初期配置に戻す",
+      "resetConfirm": "このメニューを初期配置に戻します。よろしいですか？",
+      "surface": {
+        "fab": "Fav メニュー",
+        "gmToolbar": "GM ツール",
+        "plToolbar": "PL ツール"
+      }
     }
   },
   "app": {
