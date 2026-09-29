@@ -2023,6 +2023,8 @@
         "sectionDarkness": "暗闇（視界・照明）",
         "darknessEnabled": "暗闇を有効化",
         "lightSnapToGrid": "照明をマス目に沿わせる",
+        "magneticAnomaly": "磁場異常（方位磁石が狂う）",
+        "magneticAnomalyHint": "方位磁石ウィジェットの針が定まらなくなります。このテーブルにいるあいだだけです。",
         "darknessLevel": "暗さ",
         "globalIllumination": "環境光",
         "ambientColor": "暗闇の色",
@@ -4149,6 +4151,7 @@
       }
     },
     "compass": {
+      "anomaly": "磁場異常",
       "point": {
         "n": "北",
         "ne": "北東",

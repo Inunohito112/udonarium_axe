@@ -2023,6 +2023,8 @@
         "sectionDarkness": "어둠(시야·조명)",
         "darknessEnabled": "어둠 사용",
         "lightSnapToGrid": "조명을 칸에 맞추기",
+        "magneticAnomaly": "자기장 이상 (나침반이 흔들림)",
+        "magneticAnomalyHint": "나침반 위젯의 바늘이 북쪽을 찾지 못하게 됩니다. 이 테이블에 있는 동안만입니다.",
         "darknessLevel": "어두움",
         "globalIllumination": "환경광",
         "ambientColor": "어둠의 색",
@@ -4397,6 +4399,7 @@
       }
     },
     "compass": {
+      "anomaly": "자기장 이상",
       "point": {
         "n": "북",
         "ne": "북동",

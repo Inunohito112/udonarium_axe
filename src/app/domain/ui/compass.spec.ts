@@ -4,6 +4,7 @@ import {
   nearestTurnTo,
   northNeedleAngle,
   screenBearingOf,
+  swingNeedle,
 } from '@axe/domain/ui/compass';
 
 describe('reading the table as a compass', () => {
@@ -86,5 +87,37 @@ describe('reading the table as a compass', () => {
       expect(compassPointOf(360)).toBe('n');
       expect(compassPointOf(-1)).toBe('n');
     });
+  });
+});
+
+describe('a needle under a magnetic anomaly', () => {
+  it('turns by however fast it is going', () => {
+    expect(swingNeedle({ angle: 100, rate: 0 }, 0.1, 0).angle).toBe(100);
+    expect(swingNeedle({ angle: 100, rate: 200 }, 0.1, 0).angle).toBeCloseTo(117.8, 1);
+  });
+
+  it('is shoved into turning by a pull, either way round', () => {
+    expect(swingNeedle({ angle: 0, rate: 0 }, 0.1, 1).rate).toBeGreaterThan(0);
+    expect(swingNeedle({ angle: 0, rate: 0 }, 0.1, -1).rate).toBeLessThan(0);
+  });
+
+  it('loses what it was given once the pull lets up, rather than sweeping on forever', () => {
+    let swing = { angle: 0, rate: 600 };
+    for (let tick = 0; tick < 40; tick++) swing = swingNeedle(swing, 0.1, 0);
+
+    expect(Math.abs(swing.rate)).toBeLessThan(6);
+  });
+
+  it('never turns faster than two turns a second, however hard it is pulled', () => {
+    let swing = { angle: 0, rate: 0 };
+    for (let tick = 0; tick < 200; tick++) swing = swingNeedle(swing, 0.1, 1);
+
+    expect(swing.rate).toBeLessThanOrEqual(720);
+  });
+
+  it('does the same thing twice, the pull being handed to it rather than found', () => {
+    const from = { angle: 37, rate: -120 };
+
+    expect(swingNeedle(from, 0.06, 0.4)).toEqual(swingNeedle(from, 0.06, 0.4));
   });
 });

@@ -2023,6 +2023,8 @@
         "sectionDarkness": "Darkness (vision & lighting)",
         "darknessEnabled": "Enable darkness",
         "lightSnapToGrid": "Snap light to the grid",
+        "magneticAnomaly": "Magnetic anomaly (the compass wanders)",
+        "magneticAnomalyHint": "The compass widget's needle stops finding north. It holds for this table alone.",
         "darknessLevel": "Darkness",
         "globalIllumination": "Ambient light",
         "ambientColor": "Darkness color",
@@ -4149,6 +4151,7 @@
       }
     },
     "compass": {
+      "anomaly": "Anomaly",
       "point": {
         "n": "N",
         "ne": "NE",

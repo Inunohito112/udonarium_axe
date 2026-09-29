@@ -46,12 +46,18 @@
         </svg>
       </div>
 
-      <span
-        class="text-ui-muted font-mono text-[10px] leading-none tracking-wider [font-variant-numeric:tabular-nums]"
-        data-testid="compass-bearing"
-      >
-        {{ bearing() }}° {{ pointKey() | transloco }}
-      </span>
+      @if (anomalous()) {
+        <span class="text-ui-danger font-mono text-[10px] leading-none tracking-wider" data-testid="compass-anomaly">
+          {{ 'feature.compass.anomaly' | transloco }}
+        </span>
+      } @else {
+        <span
+          class="text-ui-muted font-mono text-[10px] leading-none tracking-wider [font-variant-numeric:tabular-nums]"
+          data-testid="compass-bearing"
+        >
+          {{ bearing() }}° {{ pointKey() | transloco }}
+        </span>
+      }
     </div>
 
     <button
