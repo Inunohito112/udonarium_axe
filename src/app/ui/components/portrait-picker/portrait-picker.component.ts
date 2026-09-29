@@ -7,10 +7,9 @@ import {
   inject,
   input,
   output,
-  signal,
   viewChild,
 } from '@angular/core';
-import { placePopover } from '@axe/ui/anchored-popover';
+import { AnchoredPopover } from '@axe/ui/anchored-popover';
 import { SafePipe } from '@axe/ui/pipes/safe.pipe';
 import { TranslocoModule } from '@jsverse/transloco';
 
@@ -43,7 +42,13 @@ export class PortraitPickerComponent {
   readonly selectedIndex = input(0);
   readonly picked = output<number>();
 
-  readonly isOpen = signal(false);
+  private readonly list = new AnchoredPopover(
+    () => this.host.nativeElement,
+    () => this.popoverRef().nativeElement,
+    { width: LIST_WIDTH, minHeight: LIST_MIN_HEIGHT }
+  );
+
+  readonly isOpen = this.list.isOpen;
 
   readonly label = computed(() => {
     const choices = this.choices();
@@ -53,7 +58,7 @@ export class PortraitPickerComponent {
   });
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.stopWatching());
+    this.destroyRef.onDestroy(() => this.list.destroy());
   }
 
   /** Picks the previous or next portrait from the arrow buttons; nothing past either end. */
@@ -69,62 +74,16 @@ export class PortraitPickerComponent {
     if (index !== this.selectedIndex()) this.picked.emit(index);
   }
 
-  /**
-   * Opens the list of portraits above or below the picker, or closes it if it is open.
-   *
-   * While open, the current portrait is scrolled into view, and a press outside, Escape or a
-   * window resize is listened for. Does nothing in a browser without the popover API.
-   */
+  /** Opens the list of portraits, or closes it if it is open, and shows which one is in use. */
   toggle(): void {
-    if (this.isOpen()) {
-      this.close();
-      return;
-    }
-    const popover = this.popoverRef().nativeElement;
-    if (typeof popover.showPopover !== 'function') return;
-    popover.showPopover();
-    popover.style.display = 'flex';
-    this.isOpen.set(true);
-    this.place();
-    popover.querySelector<HTMLElement>('[data-current]')?.scrollIntoView?.({ block: 'nearest' });
-    document.addEventListener('pointerdown', this.onPointerDown, true);
-    document.addEventListener('keydown', this.onKeyDown, true);
-    window.addEventListener('resize', this.onResize);
+    if (!this.list.toggle()) return;
+    this.popoverRef()
+      .nativeElement.querySelector<HTMLElement>('[data-current]')
+      ?.scrollIntoView?.({ block: 'nearest' });
   }
 
-  /** Hides the list and stops listening for presses outside it; nothing when it is already closed. */
+  /** Hides the list; nothing when it is already closed. */
   close(): void {
-    if (!this.isOpen()) return;
-    this.isOpen.set(false);
-    this.stopWatching();
-    const popover = this.popoverRef().nativeElement;
-    popover.style.display = '';
-    popover.hidePopover();
-  }
-
-  private readonly onPointerDown = (event: Event): void => {
-    if (this.host.nativeElement.contains(event.target as Node)) return;
-    this.close();
-  };
-
-  private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key !== 'Escape') return;
-    event.stopPropagation();
-    this.close();
-  };
-
-  private readonly onResize = (): void => this.place();
-
-  private stopWatching(): void {
-    document.removeEventListener('pointerdown', this.onPointerDown, true);
-    document.removeEventListener('keydown', this.onKeyDown, true);
-    window.removeEventListener('resize', this.onResize);
-  }
-
-  private place(): void {
-    placePopover(this.popoverRef().nativeElement, this.host.nativeElement.getBoundingClientRect(), {
-      width: LIST_WIDTH,
-      minHeight: LIST_MIN_HEIGHT,
-    });
+    this.list.close();
   }
 }

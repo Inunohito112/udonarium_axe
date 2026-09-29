@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { searchIconNames } from '@axe/domain/ui/icon-font';
-import { placePopover } from '@axe/ui/anchored-popover';
+import { AnchoredPopover } from '@axe/ui/anchored-popover';
 import { TranslocoModule } from '@jsverse/transloco';
 
 const LIST_WIDTH = 296;
@@ -51,7 +51,13 @@ export class IconPickerComponent {
   /** The mark that was chosen, or the empty name where it was taken away. */
   readonly picked = output<string>();
 
-  protected readonly isOpen = signal(false);
+  private readonly list = new AnchoredPopover(
+    () => this.host.nativeElement,
+    () => this.popoverRef().nativeElement,
+    { width: LIST_WIDTH, minHeight: LIST_MIN_HEIGHT, align: 'start' }
+  );
+
+  protected readonly isOpen = this.list.isOpen;
   protected readonly query = signal('');
 
   /** What the list shows: the search where something is typed, the caller's own marks before that. */
@@ -64,7 +70,7 @@ export class IconPickerComponent {
   protected readonly foundNothing = computed(() => this.query().trim().length > 0 && this.matches().length < 1);
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.stopWatching());
+    this.destroyRef.onDestroy(() => this.list.destroy());
   }
 
   /** Chooses a mark and closes the list. */
@@ -77,60 +83,15 @@ export class IconPickerComponent {
    * Opens the list of marks, or closes it if it is open.
    *
    * The search starts empty each time, so the list opens on the marks close to hand rather than on
-   * whatever was last hunted for. Does nothing in a browser without the popover API.
+   * whatever was last hunted for.
    */
   protected toggle(): void {
-    if (this.isOpen()) {
-      this.close();
-      return;
-    }
-    const popover = this.popoverRef().nativeElement;
-    if (typeof popover.showPopover !== 'function') return;
     this.query.set('');
-    popover.showPopover();
-    popover.style.display = 'flex';
-    this.isOpen.set(true);
-    this.place();
-    this.searchRef()?.nativeElement.focus();
-    document.addEventListener('pointerdown', this.onPointerDown, true);
-    document.addEventListener('keydown', this.onKeyDown, true);
-    window.addEventListener('resize', this.onResize);
+    if (this.list.toggle()) this.searchRef()?.nativeElement.focus();
   }
 
-  /** Hides the list and stops listening for presses outside it; nothing when it is already closed. */
+  /** Hides the list; nothing when it is already closed. */
   protected close(): void {
-    if (!this.isOpen()) return;
-    this.isOpen.set(false);
-    this.stopWatching();
-    const popover = this.popoverRef().nativeElement;
-    popover.style.display = '';
-    popover.hidePopover();
-  }
-
-  private readonly onPointerDown = (event: Event): void => {
-    if (this.host.nativeElement.contains(event.target as Node)) return;
-    this.close();
-  };
-
-  private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key !== 'Escape') return;
-    event.stopPropagation();
-    this.close();
-  };
-
-  private readonly onResize = (): void => this.place();
-
-  private stopWatching(): void {
-    document.removeEventListener('pointerdown', this.onPointerDown, true);
-    document.removeEventListener('keydown', this.onKeyDown, true);
-    window.removeEventListener('resize', this.onResize);
-  }
-
-  private place(): void {
-    placePopover(this.popoverRef().nativeElement, this.host.nativeElement.getBoundingClientRect(), {
-      width: LIST_WIDTH,
-      minHeight: LIST_MIN_HEIGHT,
-      align: 'start',
-    });
+    this.list.close();
   }
 }
