@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  Injector,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
@@ -34,6 +44,7 @@ import {
 } from '@axe/domain/ui/menu-layout-edit';
 import { encodeMenuLayoutFile, MENU_LAYOUT_FILE_NAME, parseMenuLayoutFile } from '@axe/domain/ui/menu-layout-file';
 import { MenuCommandService } from '@axe/features/menu/menu-command.service';
+import { MenuCommandPickerComponent } from '@axe/features/menu/menu-editor-panel/menu-command-picker.component';
 import { IconPickerComponent } from '@axe/ui/components/icon-picker/icon-picker.component';
 import { RowReorder } from '@axe/ui/dragging/row-reorder';
 import { TranslocoModule } from '@jsverse/transloco';
@@ -75,7 +86,7 @@ function marksInUse(): string[] {
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-menu-editor-panel',
   templateUrl: './menu-editor-panel.component.html',
-  imports: [FormsModule, IconPickerComponent, TranslocoModule],
+  imports: [FormsModule, IconPickerComponent, MenuCommandPickerComponent, TranslocoModule],
 })
 export class MenuEditorPanelComponent {
   private readonly layouts = inject(MenuLayoutService);
@@ -83,6 +94,7 @@ export class MenuEditorPanelComponent {
   private readonly confirm = inject(ConfirmService);
   private readonly contextMenu = inject(ContextMenuService);
   private readonly pointers = inject(PointerDeviceService);
+  private readonly injector = inject(Injector);
   private readonly t = inject(TRANSLATE_FN);
 
   /** The marks offered before anything is typed into the search. */
@@ -129,9 +141,6 @@ export class MenuEditorPanelComponent {
     return menuCommandsFor(this.surface(), this.commands.role()).filter((command) => !used.has(command.key));
   });
 
-  protected readonly chosenCommand = signal('');
-  protected readonly newGroupName = signal('');
-
   protected choose(surface: MenuSurface): void {
     this.surface.set(surface);
   }
@@ -144,18 +153,33 @@ export class MenuEditorPanelComponent {
     return isMenuGroup(row.node);
   }
 
-  protected add(): void {
-    const key = this.chosenCommand();
-    if (!key) return;
+  private readonly rowsRef = viewChild<ElementRef<HTMLElement>>('rowsEl');
+
+  /** Puts a command on the end of the menu, and brings the end of the menu into view. */
+  protected addCommand(key: string): void {
     this.write(addMenuItem(this.layout(), key, null));
-    this.chosenCommand.set('');
+    this.showTheEnd();
   }
 
+  /**
+   * Makes an empty small menu on the end, named for now.
+   *
+   * It is named here rather than asked for beforehand, since the row it makes already has a name
+   * to write in and asking twice for the same thing is a form to fill in, not a menu to arrange.
+   */
   protected addGroup(): void {
-    const name = this.newGroupName().trim();
-    if (name.length < 1) return;
-    this.write(addMenuGroup(this.layout(), name));
-    this.newGroupName.set('');
+    this.write(addMenuGroup(this.layout(), this.t('feature.menuEditor.newGroup')));
+    this.showTheEnd();
+  }
+
+  private showTheEnd(): void {
+    afterNextRender(
+      () => {
+        const rows = this.rowsRef()?.nativeElement;
+        if (rows) rows.scrollTop = rows.scrollHeight;
+      },
+      { injector: this.injector }
+    );
   }
 
   protected remove(row: EditorRow): void {

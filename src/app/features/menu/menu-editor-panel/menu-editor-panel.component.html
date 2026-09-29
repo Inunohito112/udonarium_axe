@@ -58,6 +58,7 @@
   <p class="text-ui-dim m-0 shrink-0 text-[11px]">{{ 'feature.menuEditor.hint' | transloco }}</p>
 
   <ul
+    #rowsEl
     class="m-0 min-h-0 grow list-none overflow-y-auto p-0"
     data-testid="menu-editor-rows"
     (dragover)="$event.preventDefault()"
@@ -126,45 +127,14 @@
   </ul>
 
   <div class="border-ui-border-panel flex shrink-0 flex-wrap items-center gap-1.5 border-t border-solid pt-2">
-    <select
-      class="rounded-ui-sm border-ui-border-panel bg-ui-input text-ui-text min-w-0 grow cursor-pointer border border-solid px-1 py-0.5 text-[11px]"
-      [ngModel]="chosenCommand()"
-      name="menu-editor-command"
-      data-testid="menu-editor-command"
-      (ngModelChange)="chosenCommand.set($event)"
-    >
-      <option [ngValue]="''">{{ 'feature.menuEditor.pick' | transloco }}</option>
-      @for (command of offered(); track command.key) {
-        <option [ngValue]="command.key">{{ command.labelKey | transloco }}</option>
-      }
-    </select>
+    <menu-command-picker [commands]="offered()" (picked)="addCommand($event)" />
     <button
       type="button"
-      class="rounded-ui-sm bg-ui-accent-bg border-ui-accent text-ui-accent hover:bg-ui-accent-glow shrink-0 cursor-pointer border border-solid px-2 py-1 text-[11px] disabled:cursor-default disabled:opacity-45"
-      [disabled]="!chosenCommand()"
-      data-testid="menu-editor-add"
-      (click)="add()"
-    >
-      {{ 'feature.menuEditor.add' | transloco }}
-    </button>
-  </div>
-
-  <div class="flex shrink-0 flex-wrap items-center gap-1.5">
-    <input
-      class="rounded-ui-sm border-ui-border-panel bg-ui-input text-ui-text min-w-0 grow border border-solid px-1 py-0.5 text-[11px] outline-none"
-      [ngModel]="newGroupName()"
-      name="menu-editor-group-name"
-      [placeholder]="'feature.menuEditor.groupPlaceholder' | transloco"
-      data-testid="menu-editor-group-name"
-      (ngModelChange)="newGroupName.set($event)"
-    />
-    <button
-      type="button"
-      class="rounded-ui-sm border-ui-border-panel text-ui-text hover:bg-ui-menu-hover shrink-0 cursor-pointer border border-solid bg-transparent px-2 py-1 text-[11px] disabled:cursor-default disabled:opacity-45"
-      [disabled]="!newGroupName().trim()"
+      class="rounded-ui-sm border-ui-border-panel text-ui-text hover:bg-ui-menu-hover flex cursor-pointer items-center gap-1 border border-solid bg-transparent px-2 py-1 text-[11px] transition-colors [&_i]:text-[15px]!"
       data-testid="menu-editor-add-group"
       (click)="addGroup()"
     >
+      <i class="material-icons">create_new_folder</i>
       {{ 'feature.menuEditor.addGroup' | transloco }}
     </button>
   </div>

@@ -96,12 +96,8 @@ describe('MenuEditorPanelComponent', () => {
   });
 
   it('puts a command on the menu, and keeps it', async () => {
-    const pick = query<HTMLSelectElement>('menu-editor-command')!;
-    pick.value = pick.options[1].value;
-    pick.dispatchEvent(new Event('change'));
-    await settle();
-
-    query<HTMLButtonElement>('menu-editor-add')!.click();
+    const choice: HTMLElement = fixture.nativeElement.querySelector('[data-testid^="menu-command-choice-"]');
+    choice.click();
     await settle();
 
     expect(layouts.isArranged('fab')).toBe(true);
@@ -199,17 +195,22 @@ describe('MenuEditorPanelComponent', () => {
     ).not.toHaveProperty('icon');
   });
 
-  it('makes a small menu of somebody’s own', async () => {
-    const name = query<HTMLInputElement>('menu-editor-group-name')!;
-    name.value = 'よく使う';
-    name.dispatchEvent(new Event('input'));
-    await settle();
-
+  it('makes an empty small menu, named for now and renamed in its own row', async () => {
     query<HTMLButtonElement>('menu-editor-add-group')!.click();
     await settle();
 
     const made = layouts.layoutOf('fab')().nodes.filter(isMenuGroup) as MenuGroup[];
-    expect(made.some((group) => group.label === 'よく使う')).toBe(true);
+    const fresh = made.find((group) => group.label === '新しい小窓');
+    expect(fresh?.items).toEqual([]);
+
+    const name = query<HTMLInputElement>(`menu-editor-name-${fresh!.id}`)!;
+    name.value = 'よく使う';
+    name.dispatchEvent(new Event('input'));
+    await settle();
+
+    expect(
+      (layouts.layoutOf('fab')().nodes.filter(isMenuGroup) as MenuGroup[]).some((group) => group.label === 'よく使う')
+    ).toBe(true);
   });
 
   it('puts the menu back the way it came once it is confirmed', async () => {
