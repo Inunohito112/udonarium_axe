@@ -57,14 +57,39 @@
 
   <p class="text-ui-dim m-0 shrink-0 text-[11px]">{{ 'feature.menuEditor.hint' | transloco }}</p>
 
-  <ul class="m-0 min-h-0 grow list-none overflow-y-auto p-0" data-testid="menu-editor-rows">
+  <ul
+    class="m-0 min-h-0 grow list-none overflow-y-auto p-0"
+    data-testid="menu-editor-rows"
+    (dragover)="$event.preventDefault()"
+    (dragleave)="dragging.leave()"
+  >
     @for (row of rows(); track row.node.id) {
       <li
-        class="border-ui-border-panel flex items-center gap-1.5 border-b border-solid p-1"
+        #rowEl
+        class="border-ui-border-panel flex items-center gap-1.5 border-b border-solid p-1 transition-colors"
         [class.pl-6]="row.nested"
         [class.opacity-60]="row.lost"
+        [class.opacity-40]="dragging.isHeld(row.node.id)"
+        [class.border-t-ui-accent]="dragging.isDropBefore(row.node.id)"
+        [class.border-t]="dragging.isDropBefore(row.node.id)"
+        [class.border-b-ui-accent]="dragging.isDropAfter(row.node.id) && !dropsInto(row)"
+        [class.bg-ui-accent-bg]="dropsInto(row)"
         [attr.data-testid]="'menu-editor-row-' + row.node.id"
+        (dragover)="onDragOver($event, row, rowEl)"
+        (drop)="onDrop($event)"
+        (contextmenu)="onRowContextMenu($event, row)"
       >
+        <span
+          class="text-ui-dim hover:text-ui-text flex size-5 shrink-0 cursor-grab items-center justify-center [&_i]:text-[16px]!"
+          draggable="true"
+          [title]="'feature.menuEditor.drag' | transloco"
+          [attr.data-testid]="'menu-editor-grip-' + row.node.id"
+          (dragstart)="onDragStart($event, row, rowEl)"
+          (dragend)="onDragEnd()"
+        >
+          <i class="material-icons">drag_indicator</i>
+        </span>
+
         <ui-icon-picker
           [value]="row.icon"
           [suggested]="suggestedIcons"
@@ -85,40 +110,6 @@
           (ngModelChange)="rename(row, $event)"
         />
 
-        @if (!isGroupRow(row)) {
-          <select
-            class="rounded-ui-sm border-ui-border-panel bg-ui-input text-ui-text w-28 cursor-pointer border border-solid px-1 py-0.5 text-[11px]"
-            [ngModel]="parentValue(row)"
-            [name]="'menu-editor-into-' + row.node.id"
-            [attr.data-testid]="'menu-editor-into-' + row.node.id"
-            (ngModelChange)="moveInto(row, $event)"
-          >
-            @for (target of targets(); track target.value) {
-              <option [ngValue]="target.value">{{ target.name }}</option>
-            }
-          </select>
-        }
-
-        <button
-          type="button"
-          class="rounded-ui-sm text-ui-dim hover:bg-ui-hover hover:text-ui-text flex size-6 shrink-0 cursor-pointer items-center justify-center border-none bg-transparent transition-colors disabled:cursor-default disabled:opacity-30 [&_i]:text-[16px]!"
-          [disabled]="placeOf(row).index < 1"
-          [title]="'common.reorder.up' | transloco"
-          [attr.data-testid]="'menu-editor-up-' + row.node.id"
-          (click)="move(row, -1)"
-        >
-          <i class="material-icons">arrow_upward</i>
-        </button>
-        <button
-          type="button"
-          class="rounded-ui-sm text-ui-dim hover:bg-ui-hover hover:text-ui-text flex size-6 shrink-0 cursor-pointer items-center justify-center border-none bg-transparent transition-colors disabled:cursor-default disabled:opacity-30 [&_i]:text-[16px]!"
-          [disabled]="placeOf(row).index >= placeOf(row).count - 1"
-          [title]="'common.reorder.down' | transloco"
-          [attr.data-testid]="'menu-editor-down-' + row.node.id"
-          (click)="move(row, 1)"
-        >
-          <i class="material-icons">arrow_downward</i>
-        </button>
         <button
           type="button"
           class="rounded-ui-sm text-ui-dim flex size-6 shrink-0 cursor-pointer items-center justify-center border-none bg-transparent transition-colors hover:bg-red-500/20 hover:text-red-500 [&_i]:text-[16px]!"

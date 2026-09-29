@@ -1,8 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
+import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
+import { ContextMenuAction, ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { MenuLayoutService } from '@axe/application/ui/menu-layout.service';
+import { buildReorderContextMenu } from '@axe/application/ui/reorder-context-menu';
 import { downloadBlob } from '@axe/core/util/download-blob';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { defaultMenuLayout } from '@axe/domain/ui/builtin-menu-layouts';
@@ -18,10 +21,13 @@ import { isMenuGroup, MenuGroup, MenuLayout, MenuNode } from '@axe/domain/ui/men
 import {
   addMenuGroup,
   addMenuItem,
+  dropMenuNode,
+  menuDropSpot,
   MenuParent,
   moveMenuNode,
   moveMenuNodeInto,
   parentOfMenuNode,
+  placeMenuNode,
   removeMenuNode,
   renameMenuNode,
   setMenuNodeIcon,
@@ -29,6 +35,7 @@ import {
 import { encodeMenuLayoutFile, MENU_LAYOUT_FILE_NAME, parseMenuLayoutFile } from '@axe/domain/ui/menu-layout-file';
 import { MenuCommandService } from '@axe/features/menu/menu-command.service';
 import { IconPickerComponent } from '@axe/ui/components/icon-picker/icon-picker.component';
+import { RowReorder } from '@axe/ui/dragging/row-reorder';
 import { TranslocoModule } from '@jsverse/transloco';
 
 /** One row of the arrangement being edited, at whichever level it sits. */
@@ -57,12 +64,6 @@ function marksInUse(): string[] {
   return [...marks].sort();
 }
 
-/** Somewhere an entry can be carried to. */
-interface MoveTarget {
-  value: string;
-  name: string;
-}
-
 /**
  * Arranging the drawer and the two toolbars.
  *
@@ -80,6 +81,8 @@ export class MenuEditorPanelComponent {
   private readonly layouts = inject(MenuLayoutService);
   private readonly commands = inject(MenuCommandService);
   private readonly confirm = inject(ConfirmService);
+  private readonly contextMenu = inject(ContextMenuService);
+  private readonly pointers = inject(PointerDeviceService);
   private readonly t = inject(TRANSLATE_FN);
 
   /** The marks offered before anything is typed into the search. */
@@ -126,14 +129,6 @@ export class MenuEditorPanelComponent {
     return menuCommandsFor(this.surface(), this.commands.role()).filter((command) => !used.has(command.key));
   });
 
-  /** Where an entry may be carried: onto the menu itself, or into one of its small menus. */
-  protected readonly targets = computed<MoveTarget[]>(() => [
-    { value: '', name: this.t('feature.menuEditor.topLevel') },
-    ...this.layout()
-      .nodes.filter(isMenuGroup)
-      .map((group) => ({ value: group.id, name: this.nameOfGroup(group) })),
-  ]);
-
   protected readonly chosenCommand = signal('');
   protected readonly newGroupName = signal('');
 
@@ -177,10 +172,6 @@ export class MenuEditorPanelComponent {
 
   protected move(row: EditorRow, delta: number): void {
     this.write(moveMenuNode(this.layout(), row.node.id, delta));
-  }
-
-  protected moveInto(row: EditorRow, target: string): void {
-    this.write(moveMenuNodeInto(this.layout(), row.node.id, target.length > 0 ? target : null));
   }
 
   /** Puts this menu back the way it came, once whoever asked has said they mean it. */
@@ -259,7 +250,102 @@ export class MenuEditorPanelComponent {
     return { index: siblings.indexOf(row), count: siblings.length };
   }
 
-  protected parentValue(row: EditorRow): string {
-    return parentOfMenuNode(this.layout(), row.node.id) ?? '';
+  /** The drag of a row, which puts entries in order and carries them in and out of small menus. */
+  protected readonly dragging = new RowReorder<string>();
+
+  protected onDragStart(event: DragEvent, row: EditorRow, element: HTMLElement): void {
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setDragImage(element, 0, 0);
+    }
+    this.dragging.begin(row.node.id);
+  }
+
+  /** Marks the row under the pointer, unless what is held has nowhere to land beside it. */
+  protected onDragOver(event: DragEvent, row: EditorRow, element: HTMLElement): void {
+    event.preventDefault();
+    const held = this.dragging.held();
+    if (held === null) return;
+    if (menuDropSpot(this.layout(), held, row.node.id, 'after') === null) {
+      this.dragging.leave();
+      return;
+    }
+    const bounds = element.getBoundingClientRect();
+    this.dragging.hoverHalf(row.node.id, { top: bounds.top, height: bounds.height }, event.clientY);
+  }
+
+  protected onDrop(event: DragEvent): void {
+    event.preventDefault();
+    const dropped = this.dragging.release();
+    if (dropped === null) return;
+    const held = this.layout();
+    const after = dropMenuNode(held, dropped.held, dropped.over, dropped.side ?? 'before');
+    if (after !== held) this.write(after);
+  }
+
+  protected onDragEnd(): void {
+    this.dragging.cancel();
+  }
+
+  /** Whether a drop now would put what is held inside this small menu, rather than after it. */
+  protected dropsInto(row: EditorRow): boolean {
+    const held = this.dragging.held();
+    if (held === null || !this.dragging.isDropAfter(row.node.id)) return false;
+    return menuDropSpot(this.layout(), held, row.node.id, 'after')?.parent === row.node.id;
+  }
+
+  /**
+   * Moving a row from its own menu, opened by a right click or a press held on it.
+   *
+   * The rows are otherwise arranged by dragging, which a touch screen may not start at all, so
+   * everything dragging does is offered here as well: the steps up and down, and the small menu
+   * to carry the entry into or out of.
+   */
+  protected onRowContextMenu(event: MouseEvent, row: EditorRow): void {
+    if (!this.pointers.isAllowedToOpenContextMenu) return;
+    const actions = [...this.stepActions(row), ...this.carryActions(row)];
+    if (actions.length === 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.contextMenu.open(this.pointers.pointers[0], actions, row.name);
+  }
+
+  private stepActions(row: EditorRow): ContextMenuAction[] {
+    const place = this.placeOf(row);
+    return buildReorderContextMenu(
+      place,
+      {
+        moveToTop: () => this.slide(row, 0),
+        moveUp: () => this.move(row, -1),
+        moveDown: () => this.move(row, 1),
+        moveToBottom: () => this.slide(row, place.count),
+      },
+      this.t
+    );
+  }
+
+  private carryActions(row: EditorRow): ContextMenuAction[] {
+    if (isMenuGroup(row.node)) return [];
+    const here = parentOfMenuNode(this.layout(), row.node.id);
+    const actions: ContextMenuAction[] = [];
+    if (here !== null) {
+      actions.push({ name: this.t('feature.menuEditor.topLevel'), action: () => this.carry(row, null) });
+    }
+    for (const group of this.layout().nodes.filter(isMenuGroup)) {
+      if (group.id !== here) actions.push({ name: this.nameOfGroup(group), action: () => this.carry(row, group.id) });
+    }
+    return actions.length > 0 ? [{ name: this.t('feature.menuEditor.moveInto'), subActions: actions }] : [];
+  }
+
+  private carry(row: EditorRow, into: MenuParent): void {
+    const held = this.layout();
+    const after = moveMenuNodeInto(held, row.node.id, into);
+    if (after !== held) this.write(after);
+  }
+
+  private slide(row: EditorRow, index: number): void {
+    const held = this.layout();
+    const after = placeMenuNode(held, row.node.id, { parent: row.parent, index });
+    if (after !== held) this.write(after);
   }
 }

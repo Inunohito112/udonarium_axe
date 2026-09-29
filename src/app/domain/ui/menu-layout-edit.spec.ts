@@ -2,7 +2,9 @@ import { isMenuGroup, MenuGroup, MenuLayout } from '@axe/domain/ui/menu-layout';
 import {
   addMenuGroup,
   addMenuItem,
+  dropMenuNode,
   findMenuNode,
+  menuDropSpot,
   moveMenuNode,
   moveMenuNodeInto,
   orderMenuNodes,
@@ -174,6 +176,78 @@ describe('arranging a menu', () => {
       const held = layout();
 
       expect(orderMenuNodes(held, null, ['chat']).nodes.map((node) => node.id)).toEqual(['chat', 'peerMenu', 'table']);
+    });
+  });
+
+  describe('dropping one entry beside another', () => {
+    function idsIn(held: MenuLayout, id: string): string[] {
+      return groupIn(held, id).items.map((item) => item.id);
+    }
+
+    function idsOf(held: MenuLayout): string[] {
+      return held.nodes.map((node) => node.id);
+    }
+
+    it('lands where it was dropped, counting from before it was lifted out', () => {
+      expect(idsOf(dropMenuNode(layout(), 'chat', 'peerMenu', 'after'))).toEqual(['peerMenu', 'chat', 'table']);
+      expect(idsOf(dropMenuNode(layout(), 'table', 'chat', 'before'))).toEqual(['table', 'chat', 'peerMenu']);
+    });
+
+    it('reads the gap under the head of a small menu as being inside it', () => {
+      expect(menuDropSpot(layout(), 'chat', 'table', 'after')).toEqual({ parent: 'table', index: 0 });
+      expect(idsIn(dropMenuNode(layout(), 'chat', 'table', 'after'), 'table')).toEqual([
+        'chat',
+        'tableSetting',
+        'mapEditor',
+      ]);
+    });
+
+    it('reads the gap above the head of a small menu as being outside it', () => {
+      expect(menuDropSpot(layout(), 'chat', 'table', 'before')).toEqual({ parent: null, index: 2 });
+    });
+
+    it('carries an entry in when it is dropped beside what a small menu holds', () => {
+      const after = dropMenuNode(layout(), 'chat', 'mapEditor', 'after');
+
+      expect(idsIn(after, 'table')).toEqual(['tableSetting', 'mapEditor', 'chat']);
+      expect(idsOf(after)).toEqual(['peerMenu', 'table']);
+    });
+
+    it('carries an entry back out when it is dropped beside one on the menu itself', () => {
+      const after = dropMenuNode(layout(), 'mapEditor', 'chat', 'before');
+
+      expect(idsOf(after)).toEqual(['mapEditor', 'chat', 'peerMenu', 'table']);
+      expect(idsIn(after, 'table')).toEqual(['tableSetting']);
+    });
+
+    it('moves an entry about inside the small menu it is already in', () => {
+      expect(idsIn(dropMenuNode(layout(), 'tableSetting', 'mapEditor', 'after'), 'table')).toEqual([
+        'mapEditor',
+        'tableSetting',
+      ]);
+    });
+
+    it('lands a small menu beside the one holding what it was dropped on, never inside it', () => {
+      const two = addMenuGroup(layout(), 'よく使う');
+      const id = two.nodes[two.nodes.length - 1].id;
+
+      expect(menuDropSpot(two, id, 'mapEditor', 'after')).toEqual({ parent: null, index: 3 });
+      expect(idsOf(dropMenuNode(two, id, 'mapEditor', 'before'))).toEqual(['chat', 'peerMenu', id, 'table']);
+    });
+
+    it('will not drop a small menu onto what it holds', () => {
+      const held = layout();
+
+      expect(menuDropSpot(held, 'table', 'mapEditor', 'after')).toBeNull();
+      expect(dropMenuNode(held, 'table', 'mapEditor', 'after')).toBe(held);
+    });
+
+    it('leaves the menu alone where it lands where it already stood', () => {
+      const held = layout();
+
+      expect(dropMenuNode(held, 'chat', 'peerMenu', 'before')).toBe(held);
+      expect(dropMenuNode(held, 'chat', 'chat', 'after')).toBe(held);
+      expect(dropMenuNode(held, 'chat', 'nowhere', 'after')).toBe(held);
     });
   });
 

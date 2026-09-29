@@ -4150,7 +4150,9 @@
     },
     "menuEditor": {
       "title": "Arrange the menus",
-      "hint": "This arrangement is kept on this screen alone. Add entries, rename them, give them another mark, put them in a small menu, or move them about.",
+      "hint": "This arrangement is kept on this screen alone. Take hold of the grip on the left to put an entry in order, or to carry it in and out of a small menu.",
+      "drag": "Take hold and move",
+      "moveInto": "Move to",
       "group": "menu",
       "topLevel": "On the menu itself",
       "unnamedGroup": "Unnamed small menu",

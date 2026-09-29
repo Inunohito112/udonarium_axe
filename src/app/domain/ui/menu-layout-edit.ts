@@ -170,3 +170,90 @@ export function moveMenuNodeInto(layout: MenuLayout, id: string, into: MenuParen
     isMenuGroup(held) && held.id === into ? { ...held, items: [...held.items, node as MenuItem] } : held
   );
 }
+
+/** Which half of an entry a drop landed on. */
+export type MenuDropSide = 'before' | 'after';
+
+/** Where an entry lands: which small menu, and which place among what is already there. */
+export interface MenuDropSpot {
+  parent: MenuParent;
+  index: number;
+}
+
+/** Which place an entry holds among the entries it sits with, or -1 where it is on no menu. */
+function placeOfMenuNode(layout: MenuLayout, id: string): number {
+  const parent = parentOfMenuNode(layout, id);
+  if (parent === null) return layout.nodes.findIndex((node) => node.id === id);
+  const group = layout.nodes.find((node) => node.id === parent);
+  return group && isMenuGroup(group) ? group.items.findIndex((item) => item.id === id) : -1;
+}
+
+function clamp(value: number, lowest: number, highest: number): number {
+  return Math.max(lowest, Math.min(value, highest));
+}
+
+/**
+ * Where an entry dropped beside another one lands.
+ *
+ * The gap just under the head of a small menu counts as being inside it, which is how an entry is
+ * carried in by dragging; every other gap belongs to whatever already sits in it. A small menu
+ * dropped beside something held in another lands beside that menu rather than inside it, one level
+ * being as deep as a menu goes. Null where it cannot land there at all.
+ */
+export function menuDropSpot(layout: MenuLayout, id: string, over: string, side: MenuDropSide): MenuDropSpot | null {
+  const held = findMenuNode(layout, id);
+  const onto = findMenuNode(layout, over);
+  if (!held || !onto || id === over) return null;
+
+  if (isMenuGroup(held)) {
+    if (held.items.some((item) => item.id === over)) return null;
+    const beside = parentOfMenuNode(layout, over) ?? over;
+    const at = layout.nodes.findIndex((node) => node.id === beside);
+    if (at < 0) return null;
+    return { parent: null, index: side === 'before' ? at : at + 1 };
+  }
+
+  const parent = parentOfMenuNode(layout, over);
+  const at = placeOfMenuNode(layout, over);
+  if (at < 0) return null;
+  if (parent === null && isMenuGroup(onto)) {
+    return side === 'before' ? { parent: null, index: at } : { parent: onto.id, index: 0 };
+  }
+  return { parent, index: side === 'before' ? at : at + 1 };
+}
+
+/**
+ * Puts an entry in a given place, taking it out of wherever it stood.
+ *
+ * Where it moves within the entries it already sat with, the place it is given counts from before
+ * it was lifted out, so dropping it one lower than it stood moves it one lower rather than leaving
+ * it where it was. The menu itself comes back where nothing moves.
+ */
+export function placeMenuNode(layout: MenuLayout, id: string, spot: MenuDropSpot): MenuLayout {
+  const node = findMenuNode(layout, id);
+  if (!node || (isMenuGroup(node) && spot.parent !== null)) return layout;
+
+  const from = parentOfMenuNode(layout, id);
+  const was = placeOfMenuNode(layout, id);
+  const index = from === spot.parent && was < spot.index ? spot.index - 1 : spot.index;
+  if (from === spot.parent && index === was) return layout;
+
+  const without = removeMenuNode(layout, id);
+  if (spot.parent === null) {
+    const nodes = [...without.nodes];
+    nodes.splice(clamp(index, 0, nodes.length), 0, node);
+    return { nodes };
+  }
+  return mapNodes(without, (held) => {
+    if (!isMenuGroup(held) || held.id !== spot.parent) return held;
+    const items = [...held.items];
+    items.splice(clamp(index, 0, items.length), 0, node as MenuItem);
+    return { ...held, items };
+  });
+}
+
+/** The menu with an entry carried to where it was dropped, or the menu itself where nothing moves. */
+export function dropMenuNode(layout: MenuLayout, id: string, over: string, side: MenuDropSide): MenuLayout {
+  const spot = menuDropSpot(layout, id, over, side);
+  return spot === null ? layout : placeMenuNode(layout, id, spot);
+}

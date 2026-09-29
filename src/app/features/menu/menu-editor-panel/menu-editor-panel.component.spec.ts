@@ -5,6 +5,7 @@ import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { DEFAULT_MENU_LAYOUTS } from '@axe/domain/ui/builtin-menu-layouts';
 import { isMenuGroup, MenuGroup } from '@axe/domain/ui/menu-layout';
+import { parentOfMenuNode } from '@axe/domain/ui/menu-layout-edit';
 import { MenuEditorPanelComponent } from '@axe/features/menu/menu-editor-panel/menu-editor-panel.component';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
@@ -26,6 +27,33 @@ describe('MenuEditorPanelComponent', () => {
     return Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('[data-testid^="menu-editor-row-"]')).map(
       (row) => row.dataset['testid']!.replace('menu-editor-row-', '')
     );
+  }
+
+  function dragEvent(name: string, clientY = 0): Event {
+    const fired = new Event(name, { bubbles: true, cancelable: true });
+    Object.defineProperty(fired, 'clientY', { value: clientY });
+    Object.defineProperty(fired, 'dataTransfer', {
+      value: { effectAllowed: '', setDragImage: vi.fn(), setData: vi.fn() },
+    });
+    return fired;
+  }
+
+  /** Drags one row onto the upper or lower half of another, the way a pointer would. */
+  async function drag(from: string, onto: string, side: 'before' | 'after'): Promise<void> {
+    const target = query(`menu-editor-row-${onto}`)!;
+    Object.defineProperty(target, 'getBoundingClientRect', { value: () => ({ top: 100, height: 20 }) });
+
+    query(`menu-editor-grip-${from}`)!.dispatchEvent(dragEvent('dragstart'));
+    target.dispatchEvent(dragEvent('dragover', side === 'after' ? 115 : 105));
+    await settle();
+    target.dispatchEvent(dragEvent('drop'));
+    await settle();
+  }
+
+  function nodeIds(): string[] {
+    return layouts
+      .layoutOf('fab')()
+      .nodes.map((node) => node.id);
   }
 
   /** Hands the panel a file the way the picker would. */
@@ -92,21 +120,33 @@ describe('MenuEditorPanelComponent', () => {
     ).not.toContain('chat');
   });
 
-  it('moves an entry up the menu', async () => {
-    query<HTMLButtonElement>('menu-editor-down-peerMenu')!.click();
-    await settle();
+  it('puts an entry in order when it is dragged past another', async () => {
+    await drag('peerMenu', 'chat', 'after');
 
-    expect(
-      layouts
-        .layoutOf('fab')()
-        .nodes.map((node) => node.id)
-        .slice(0, 2)
-    ).toEqual(['chat', 'peerMenu']);
+    expect(nodeIds().slice(0, 2)).toEqual(['chat', 'peerMenu']);
   });
 
-  it('offers no move off either end', () => {
-    expect(query<HTMLButtonElement>('menu-editor-up-peerMenu')!.disabled).toBe(true);
-    expect(query<HTMLButtonElement>('menu-editor-down-peerMenu')!.disabled).toBe(false);
+  it('carries an entry into a small menu when it is dropped under its head', async () => {
+    await drag('chat', 'table', 'after');
+
+    expect(parentOfMenuNode(layouts.layoutOf('fab')(), 'chat')).toBe('table');
+    expect(nodeIds()).not.toContain('chat');
+  });
+
+  it('carries an entry back out when it is dropped beside one on the menu itself', async () => {
+    await drag('mapEditor', 'peerMenu', 'before');
+
+    expect(parentOfMenuNode(layouts.layoutOf('fab')(), 'mapEditor')).toBeNull();
+    expect(nodeIds()[0]).toBe('mapEditor');
+  });
+
+  it('will not carry a small menu into one of its own entries', async () => {
+    await drag('table', 'mapEditor', 'after');
+    expect(layouts.isArranged('fab')).toBe(false);
+
+    await drag('table', 'peerMenu', 'before');
+
+    expect(nodeIds()[0]).toBe('table');
   });
 
   it('calls an entry what somebody types', async () => {
