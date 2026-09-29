@@ -671,6 +671,7 @@ describe('ChatWindowComponent', () => {
       vi.restoreAllMocks();
       mark?.destroy();
       character.destroy();
+      tab.destroy();
     });
 
     it('reads the sheet of the piece the line is spoken as', () => {

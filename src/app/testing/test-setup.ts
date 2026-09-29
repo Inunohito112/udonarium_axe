@@ -7,6 +7,7 @@ import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@ang
 import { Logger, LogLevel } from '@axe/core/logging/logger';
 import { resetPeerContextProvider } from '@axe/core/network/peer-context-source';
 import { ObjectStore } from '@axe/core/sync/object-store';
+import { ChatTabList } from '@axe/domain/chat/chat-tab-list';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { basename, join, resolve } from 'path';
@@ -17,8 +18,8 @@ import { LOCAL_MODE_STORAGE_KEY } from '@axe/application/ui/local-mode-preferenc
 import { PIECE_OVERLAY_STORAGE_KEY } from '@axe/application/ui/piece-overlay-preference.service';
 import { TABLETOP_DISPLAY_STORAGE_KEY } from '@axe/application/ui/tabletop-display-preference.service';
 import { TOOLBAR_FOLD_STORAGE_KEY } from '@axe/application/ui/toolbar-fold.service';
-import { WIDGET_VISIBILITY_STORAGE_KEY } from '@axe/application/ui/widget-visibility.service';
 import { VIEW_MODE_STORAGE_KEY } from '@axe/application/ui/view-mode-preference.service';
+import { WIDGET_VISIBILITY_STORAGE_KEY } from '@axe/application/ui/widget-visibility.service';
 
 const srcAppDir = resolve(process.cwd(), 'src/app');
 const fileMap = new Map<string, string>();
@@ -315,6 +316,10 @@ function emptyObjectStore(): void {
   const store = ObjectStore.instance;
   for (const object of store.getObjects()) store.delete(object, false);
   store.clearDeleteHistory();
+  // The tab list is held by its own module as well as by the store, and its tabs are its children
+  // rather than entries of the store. Emptying the store alone leaves that one holding every tab
+  // any spec ever added, and it hands them back the moment the next one reads it.
+  ChatTabList.forget();
 }
 
 // The cursor of whoever is reading is a static as well, and it decides what a role is allowed to
