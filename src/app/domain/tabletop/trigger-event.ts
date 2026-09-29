@@ -89,12 +89,6 @@ const DICE = /^\s*(\d*)\s*[dD]\s*(\d+)\s*$/;
 const WHOLE = /^\s*[-+]?\d+\s*$/;
 
 /**
- * What the ground takes, which may be a number or a handful of dice.
- *
- * `2d6`, `1d6+2`, `-3` and `4` are all answers. Anything else is nothing at all: a trap that
- * cannot say how much it takes takes nothing, rather than guessing at a number nobody wrote.
- */
-/**
  * What a piece of ground takes from somebody who made the roll it asked for.
  *
  * Nothing said takes nothing, which is the usual shape of getting out of the way of a trap.
@@ -112,6 +106,12 @@ export function triggerPassTake(pass: string, taken: number, roll: () => number 
 export const TRIGGER_PASS_HALF = 'half';
 const HALF = TRIGGER_PASS_HALF;
 
+/**
+ * What the ground takes, which may be a number or a handful of dice.
+ *
+ * `2d6`, `1d6+2`, `-3` and `4` are all answers. Anything else is nothing at all: a trap that
+ * cannot say how much it takes takes nothing, rather than guessing at a number nobody wrote.
+ */
 export function rollTriggerAmount(amount: string, roll: () => number = Math.random): number {
   let total = 0;
   let read = false;
