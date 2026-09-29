@@ -2,6 +2,7 @@ import { computed, Injectable, Signal, signal } from '@angular/core';
 import { defaultMenuLayout } from '@axe/domain/ui/builtin-menu-layouts';
 import { MENU_SURFACES, MenuSurface } from '@axe/domain/ui/menu-command';
 import { encodeMenuLayout, MenuLayout, parseMenuLayout } from '@axe/domain/ui/menu-layout';
+import { MenuLayoutFile } from '@axe/domain/ui/menu-layout-file';
 
 const STORAGE_PREFIX = 'axe.menu';
 
@@ -70,6 +71,24 @@ export class MenuLayoutService {
       localStorage.removeItem(storageKey(surface));
     } catch {
       // Nothing more to do: the menu is already back the way it came for this session.
+    }
+  }
+
+  /** The arrangements this screen has made, for writing out. A menu left as it came is left out. */
+  arrangements(): MenuLayoutFile {
+    const held: MenuLayoutFile = {};
+    for (const surface of MENU_SURFACES) {
+      const layout = this.slot(surface)();
+      if (layout) held[surface] = layout;
+    }
+    return held;
+  }
+
+  /** Takes arrangements read from a file, leaving the menus the file says nothing about alone. */
+  adopt(layouts: MenuLayoutFile): void {
+    for (const surface of MENU_SURFACES) {
+      const layout = layouts[surface];
+      if (layout) this.save(surface, layout);
     }
   }
 

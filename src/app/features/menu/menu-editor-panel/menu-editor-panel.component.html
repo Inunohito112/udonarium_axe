@@ -16,13 +16,44 @@
     <button
       type="button"
       class="rounded-ui-sm border-ui-border-panel text-ui-muted hover:bg-ui-menu-hover cursor-pointer border border-solid bg-transparent px-2 py-1 text-[11px] transition-colors disabled:cursor-default disabled:opacity-45"
+      [disabled]="!hasArrangements()"
+      data-testid="menu-editor-write-out"
+      (click)="writeOut()"
+    >
+      {{ 'feature.menuEditor.writeOut' | transloco }}
+    </button>
+    <button
+      type="button"
+      class="rounded-ui-sm border-ui-border-panel text-ui-muted hover:bg-ui-menu-hover cursor-pointer border border-solid bg-transparent px-2 py-1 text-[11px] transition-colors"
+      data-testid="menu-editor-read-in"
+      (click)="chooseFile()"
+    >
+      {{ 'feature.menuEditor.readIn' | transloco }}
+    </button>
+    <button
+      type="button"
+      class="rounded-ui-sm border-ui-border-panel text-ui-muted hover:bg-ui-menu-hover cursor-pointer border border-solid bg-transparent px-2 py-1 text-[11px] transition-colors disabled:cursor-default disabled:opacity-45"
       [disabled]="!arranged()"
       data-testid="menu-editor-reset"
       (click)="reset()"
     >
       {{ 'feature.menuEditor.reset' | transloco }}
     </button>
+    <input
+      #fileInput
+      type="file"
+      class="hidden"
+      accept="application/json,.json"
+      data-testid="menu-editor-file"
+      (change)="readIn($event)"
+    />
   </div>
+
+  @if (failed()) {
+    <p class="m-0 shrink-0 text-[11px] text-red-500" data-testid="menu-editor-failed">
+      {{ 'feature.menuEditor.readFailed' | transloco }}
+    </p>
+  }
 
   <p class="text-ui-dim m-0 shrink-0 text-[11px]">{{ 'feature.menuEditor.hint' | transloco }}</p>
 

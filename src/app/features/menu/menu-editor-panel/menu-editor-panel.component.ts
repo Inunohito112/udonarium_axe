@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { MenuLayoutService } from '@axe/application/ui/menu-layout.service';
+import { downloadBlob } from '@axe/core/util/download-blob';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { MENU_SURFACES, MenuCommand, menuCommandOf, menuCommandsFor, MenuSurface } from '@axe/domain/ui/menu-command';
 import { isMenuGroup, MenuGroup, MenuLayout, MenuNode } from '@axe/domain/ui/menu-layout';
@@ -17,6 +18,7 @@ import {
   renameMenuNode,
   setMenuNodeIcon,
 } from '@axe/domain/ui/menu-layout-edit';
+import { encodeMenuLayoutFile, MENU_LAYOUT_FILE_NAME, parseMenuLayoutFile } from '@axe/domain/ui/menu-layout-file';
 import { MenuCommandService } from '@axe/features/menu/menu-command.service';
 import { TranslocoModule } from '@jsverse/transloco';
 
@@ -165,6 +167,42 @@ export class MenuEditorPanelComponent {
     if (!(await this.confirm.ask(this.t('feature.menuEditor.resetConfirm')))) return;
     this.layouts.reset(this.surface());
   }
+
+  private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
+
+  /** Whether there is anything to write out: a screen that has arranged nothing has nothing to carry. */
+  protected readonly hasArrangements = computed(() => {
+    this.layout();
+    return Object.keys(this.layouts.arrangements()).length > 0;
+  });
+
+  /** Writes out every menu this screen has arranged, for carrying to another screen. */
+  protected writeOut(): void {
+    const written = encodeMenuLayoutFile(this.layouts.arrangements());
+    downloadBlob(new Blob([written], { type: 'application/json' }), MENU_LAYOUT_FILE_NAME);
+  }
+
+  protected chooseFile(): void {
+    this.fileInput()?.nativeElement.click();
+  }
+
+  /** Takes the arrangements out of a file, leaving the menus it says nothing about alone. */
+  protected async readIn(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    const layouts = parseMenuLayoutFile(await file.text());
+    if (!layouts) {
+      this.failed.set(true);
+      return;
+    }
+    this.failed.set(false);
+    this.layouts.adopt(layouts);
+  }
+
+  /** Whether the last file offered could not be read as an arrangement. */
+  protected readonly failed = signal(false);
 
   private write(layout: MenuLayout): void {
     this.layouts.save(this.surface(), layout);

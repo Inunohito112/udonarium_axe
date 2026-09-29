@@ -4167,7 +4167,10 @@
         "fab": "Fav menu",
         "gmToolbar": "GM tools",
         "plToolbar": "PL tools"
-      }
+      },
+      "writeOut": "Write out",
+      "readIn": "Read in",
+      "readFailed": "That file does not hold an arrangement of the menus"
     }
   },
   "app": {

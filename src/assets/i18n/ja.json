@@ -4167,7 +4167,10 @@
         "fab": "Fav メニュー",
         "gmToolbar": "GM ツール",
         "plToolbar": "PL ツール"
-      }
+      },
+      "writeOut": "書き出す",
+      "readIn": "読み込む",
+      "readFailed": "この端末の並びとして読めないファイルです"
     }
   },
   "app": {

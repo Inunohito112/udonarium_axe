@@ -28,6 +28,15 @@ describe('MenuEditorPanelComponent', () => {
     );
   }
 
+  /** Hands the panel a file the way the picker would. */
+  async function readFile(file: File): Promise<void> {
+    const input = query<HTMLInputElement>('menu-editor-file')!;
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    input.dispatchEvent(new Event('change'));
+    await settle();
+    await settle();
+  }
+
   async function settle(): Promise<void> {
     fixture.detectChanges();
     await fixture.whenStable();
@@ -176,6 +185,51 @@ describe('MenuEditorPanelComponent', () => {
     expect(query('menu-editor-surface-fab')).toBeTruthy();
     expect(query('menu-editor-surface-gmToolbar')).toBeNull();
     expect(query('menu-editor-surface-plToolbar')).toBeNull();
+  });
+
+  describe('carrying an arrangement to another screen', () => {
+    it('has nothing to write out before anything has been arranged', () => {
+      expect(query<HTMLButtonElement>('menu-editor-write-out')!.disabled).toBe(true);
+    });
+
+    it('offers to write out once a menu has been arranged', async () => {
+      query<HTMLButtonElement>('menu-editor-remove-chat')!.click();
+      await settle();
+
+      expect(query<HTMLButtonElement>('menu-editor-write-out')!.disabled).toBe(false);
+    });
+
+    it('takes the arrangements out of a file that holds them', async () => {
+      const file = new File(['{"axeMenus":1,"layouts":{"fab":[{"id":"a","command":"jukebox"}]}}'], 'menus.json');
+
+      await readFile(file);
+
+      expect(
+        layouts
+          .layoutOf('fab')()
+          .nodes.map((node) => node.id)
+      ).toEqual(['a']);
+      expect(query('menu-editor-failed')).toBeNull();
+    });
+
+    it('says so and changes nothing when the file holds no arrangement', async () => {
+      await readFile(new File(['not an arrangement'], 'menus.json'));
+
+      expect(layouts.isArranged('fab')).toBe(false);
+      expect(query('menu-editor-failed')).toBeTruthy();
+    });
+
+    it('leaves alone the menus the file says nothing about', async () => {
+      query<HTMLButtonElement>('menu-editor-surface-gmToolbar')!.click();
+      await settle();
+      query<HTMLButtonElement>('menu-editor-remove-darkness')!.click();
+      await settle();
+      const bar = layouts.layoutOf('gmToolbar')().nodes.length;
+
+      await readFile(new File(['{"axeMenus":1,"layouts":{"fab":[{"id":"a","command":"jukebox"}]}}'], 'menus.json'));
+
+      expect(layouts.layoutOf('gmToolbar')().nodes.length).toBe(bar);
+    });
   });
 
   it('arranges the bar it is switched to, and not the one it left', async () => {
