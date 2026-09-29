@@ -32,8 +32,9 @@ import { TRAP_KINDS } from '@axe/domain/tabletop/trap-presets';
 import { TRIGGER_MOMENTS, TRIGGER_REPEATS, TRIGGER_TARGETS } from '@axe/domain/tabletop/trigger-event';
 import { FACTION_PHASE_MODES, TURN_ORDER_MODES } from '@axe/domain/tabletop/turn-order-mode';
 import { LightPreset } from '@axe/domain/tabletop/vision-types';
-import { FAB_ENTRIES } from '@axe/domain/ui/fab-menu';
+import { DEFAULT_MENU_LAYOUTS } from '@axe/domain/ui/builtin-menu-layouts';
 import { MENU_COMMANDS } from '@axe/domain/ui/menu-command';
+import { isMenuGroup } from '@axe/domain/ui/menu-layout';
 import { VIEW_MODES } from '@axe/domain/ui/view-mode';
 import { MAP_KINDS } from '@axe/features/tabletop/dungeon-generator/dungeon-generator.component';
 const HOTBAR_FAILURES = ['noCharacter', 'notFound', 'noTab', 'offTable', 'empty'] as const;
@@ -90,7 +91,6 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.media.cutInEditor.look': CUT_IN_LAYER_PRESETS.map((preset) => preset.id),
   'feature.media.cutInEditor.preset': [...CUT_IN_ENTRANCES, ...CUT_IN_EXITS],
   'feature.tabletop.displaySetting.viewMode_': VIEW_MODES,
-  'app.fab.': FAB_ENTRIES.map((entry) => entry.key),
 };
 
 function dictionary(language: string): Record<string, unknown> {
@@ -122,6 +122,17 @@ describe('the names shown for a choice', () => {
       const missing = MENU_COMMANDS.map((command) => command.labelKey).filter(
         (key) => typeof lookup(tree, key) !== 'string'
       );
+
+      expect(missing).toEqual([]);
+    });
+
+    it(`name every small menu the menus come with in ${language}`, () => {
+      const tree = dictionary(language);
+      const keys = Object.values(DEFAULT_MENU_LAYOUTS)
+        .flatMap((layout) => layout.nodes)
+        .filter(isMenuGroup)
+        .map((group) => group.labelKey ?? '');
+      const missing = keys.filter((key) => typeof lookup(tree, key) !== 'string');
 
       expect(missing).toEqual([]);
     });

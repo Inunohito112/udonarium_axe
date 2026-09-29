@@ -80,6 +80,8 @@ export interface MenuCommand {
   audience: MenuAudience;
   /** The menus it may be put on. */
   surfaces: readonly MenuSurface[];
+  /** What the tests reach for it by, where it is older than the table and already had a name there. */
+  testId?: string;
 }
 
 const EVERYWHERE: readonly MenuSurface[] = MENU_SURFACES;
@@ -88,6 +90,7 @@ const TOOLBARS: readonly MenuSurface[] = ['gmToolbar', 'plToolbar'];
 type CommandOptions = {
   audience?: MenuAudience;
   surfaces?: readonly MenuSurface[];
+  testId?: string;
 };
 
 function make(
@@ -95,9 +98,9 @@ function make(
   icon: string,
   labelKey: string,
   action: MenuAction,
-  { audience = 'anyone', surfaces = EVERYWHERE }: CommandOptions = {}
+  { audience = 'anyone', surfaces = EVERYWHERE, testId }: CommandOptions = {}
 ): MenuCommand {
-  return { key, icon, labelKey, action, audience, surfaces };
+  return { key, icon, labelKey, action, audience, surfaces, ...(testId ? { testId } : {}) };
 }
 
 function panel(
@@ -154,7 +157,7 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
   panel('jukebox', 'queue_music', 'jukebox', 'app.fab.jukebox'),
   panel('cutIn', 'slideshow', 'cutInList', 'app.fab.cutIn'),
   panel('effectLibrary', 'auto_awesome', 'effectLibrary', 'feature.effect.title', { audience: 'playing' }),
-  panel('skin', 'palette', 'skin', 'app.fab.skin'),
+  panel('skin', 'palette', 'skin', 'app.fab.skin', { testId: 'seat-skin' }),
   panel('objectList', 'category', 'objectList', 'app.fab.objectList', { audience: 'gameMaster' }),
   panel('partyList', 'group_work', 'partyList', 'feature.gmTools.party.title', { audience: 'gameMaster' }),
   panel('ownedCharacters', 'groups', 'ownedCharacters', 'app.fab.ownedCharacters', { audience: 'playing' }),
@@ -168,28 +171,43 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
   toggle('handRail', 'style', 'app.fab.hand', { audience: 'playing' }),
   toggle('darkness', 'bedtime', 'app.fab.darknessOn', { audience: 'gameMaster' }),
   toggle('fog', 'foggy', 'app.fab.fogOn', { audience: 'gameMaster' }),
-  toggle('resourceBars', 'align_horizontal_left', 'app.fab.resourceBarsShown'),
-  toggle('buffs', 'auto_fix_high', 'app.fab.buffsShown'),
+  toggle('resourceBars', 'align_horizontal_left', 'app.fab.resourceBarsShown', {
+    testId: 'toolbar-resource-bars',
+  }),
+  toggle('buffs', 'auto_fix_high', 'app.fab.buffsShown', { testId: 'toolbar-buffs' }),
   toggle('npcBar', 'groups', 'app.fab.npcBar', { audience: 'gameMaster' }),
-  toggle('widgetPlToolbar', 'person', 'app.fab.plTools', { audience: 'player' }),
-  toggle('widgetGmToolbar', 'shield', 'app.fab.gmTools', { audience: 'gameMaster' }),
-  toggle('widgetClock', 'schedule', 'app.fab.clock'),
-  toggle('widgetRecording', 'radio_button_checked', 'app.fab.recording'),
-  toggle('widgetConnectionQuality', 'network_check', 'app.fab.connectionQuality'),
-  toggle('widgetMiniPlayer', 'play_circle', 'app.fab.miniPlayer'),
-  toggle('widgetHotbar', 'apps', 'feature.hotbar.toggle', { audience: 'playing' }),
+  toggle('widgetPlToolbar', 'person', 'app.fab.plTools', { audience: 'player', testId: 'seat-widget-plToolbar' }),
+  toggle('widgetGmToolbar', 'shield', 'app.fab.gmTools', {
+    audience: 'gameMaster',
+    testId: 'seat-widget-gmToolbar',
+  }),
+  toggle('widgetClock', 'schedule', 'app.fab.clock', { testId: 'seat-widget-clock' }),
+  toggle('widgetRecording', 'radio_button_checked', 'app.fab.recording', {
+    testId: 'seat-widget-recording',
+  }),
+  toggle('widgetConnectionQuality', 'network_check', 'app.fab.connectionQuality', {
+    testId: 'seat-widget-connectionQuality',
+  }),
+  toggle('widgetMiniPlayer', 'play_circle', 'app.fab.miniPlayer', { testId: 'seat-widget-miniPlayer' }),
+  toggle('widgetHotbar', 'apps', 'feature.hotbar.toggle', { audience: 'playing', testId: 'seat-widget-hotbar' }),
 
-  cycle('viewMode', 'view_in_ar', 'app.fab.viewPerspective'),
-  cycle('theme', 'brightness_auto', 'common.theme.auto'),
-  cycle('motion', 'motion_photos_auto', 'common.motion.auto'),
-  cycle('renderLite', 'blur_circular', 'common.renderLite.auto'),
-  cycle('language', 'translate', 'common.language.switchTooltip'),
-  cycle('buffView', 'auto_fix_high', 'feature.plTools.buffView', { audience: 'playing' }),
+  cycle('viewMode', 'view_in_ar', 'app.fab.viewPerspective', { testId: 'seat-view' }),
+  cycle('theme', 'brightness_auto', 'common.theme.auto', { testId: 'seat-theme' }),
+  cycle('motion', 'motion_photos_auto', 'common.motion.auto', { testId: 'seat-motion' }),
+  cycle('renderLite', 'blur_circular', 'common.renderLite.auto', { testId: 'seat-render-lite' }),
+  cycle('language', 'translate', 'common.language.switchTooltip', { testId: 'seat-lang' }),
+  cycle('buffView', 'auto_fix_high', 'feature.plTools.buffView', {
+    audience: 'playing',
+    testId: 'buff-view-cycle',
+  }),
 
-  act('save', 'save', 'app.fab.save'),
-  act('zipLoad', 'open_in_browser', 'app.fab.zipLoad', { audience: 'playing' }),
-  act('importCharacter', 'person_add', 'app.fab.importCharacter', { audience: 'playing' }),
-  act('useMobileLayout', 'smartphone', 'feature.mobile.useMobile'),
+  act('save', 'save', 'app.fab.save', { testId: 'save-load-save' }),
+  act('zipLoad', 'open_in_browser', 'app.fab.zipLoad', { audience: 'playing', testId: 'save-load-load' }),
+  act('importCharacter', 'person_add', 'app.fab.importCharacter', {
+    audience: 'playing',
+    testId: 'save-load-import-character',
+  }),
+  act('useMobileLayout', 'smartphone', 'feature.mobile.useMobile', { testId: 'seat-use-mobile' }),
   act('turnNext', 'chevron_right', 'feature.turnOrder.next', { audience: 'gameMaster' }),
   act('turnPrev', 'chevron_left', 'feature.turnOrder.prev', { audience: 'gameMaster' }),
   act('releaseOwnership', 'key_off', 'app.fab.releaseOwnership', { audience: 'gameMaster' }),

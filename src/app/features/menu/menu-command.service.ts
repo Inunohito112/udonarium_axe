@@ -24,9 +24,11 @@ import {
   isMenuCommandOffered,
   MenuActName,
   MenuCommand,
+  menuCommandOf,
   MenuCycleName,
   MenuToggleName,
 } from '@axe/domain/ui/menu-command';
+import { isMenuGroup, MenuLayout, MenuNode } from '@axe/domain/ui/menu-layout';
 import { nextViewMode, viewModeIcon, viewModeLabelKey } from '@axe/domain/ui/view-mode';
 import { HandRailService } from '@axe/features/card/hand-rail/hand-rail.service';
 import { NpcBarService } from '@axe/features/gm-tools/npc-bar/npc-bar.service';
@@ -67,6 +69,45 @@ export interface MenuHostActions {
 /** How a press turned out. Anything but `done` means nothing happened. */
 export type MenuRunResult = 'done' | 'notOffered' | 'unavailable' | 'noHost' | 'drawsItself';
 
+/** One entry of a menu as it is to be drawn just now. */
+export interface MenuEntryView {
+  id: string;
+  command: MenuCommand;
+  testId: string;
+  icon: string;
+  /** The translation key of its name, which a switch changes as it is switched. */
+  labelKey: string;
+  /** What somebody called it, which is written instead of the key when it is there. */
+  label: string | null;
+  /** Written in front of the name with a colon, where the name alone would not say what it is. */
+  prefixKey: string | null;
+  /** Written in place of the mark, for the language. */
+  text: string | null;
+  lit: boolean | null;
+  disabled: boolean;
+}
+
+/** One small menu of a menu, with whatever of it this seat is offered. */
+export interface MenuGroupView {
+  id: string;
+  /** What the tests reach its button by. */
+  testId: string;
+  /** What the tests reach the menu it opens by. */
+  menuTestId: string;
+  icon: string;
+  labelKey: string;
+  /** What somebody called it, which is written instead of the key when it is there. */
+  label: string | null;
+  entries: readonly MenuEntryView[];
+}
+
+export type MenuNodeView = MenuEntryView | MenuGroupView;
+
+/** Whether the node drawn is a small menu rather than a single press. */
+export function isMenuGroupView(node: MenuNodeView): node is MenuGroupView {
+  return Array.isArray((node as MenuGroupView).entries);
+}
+
 @Injectable({ providedIn: 'root' })
 export class MenuCommandService {
   private readonly roomPanels = inject(RoomPanelService);
@@ -98,6 +139,64 @@ export class MenuCommandService {
   /** The screen hands over the two things only it can do. Called once, from the composition root. */
   registerHost(host: MenuHostActions): void {
     this.host = host;
+  }
+
+  /**
+   * An arrangement as it is to be drawn just now.
+   *
+   * An entry naming a command this version has never heard of is left out, and so is one this seat
+   * is not offered or that would mean nothing here; a small menu left with nothing in it goes with
+   * them, since an empty menu is only a button that opens onto nothing.
+   */
+  viewOf(layout: MenuLayout): MenuNodeView[] {
+    const views: MenuNodeView[] = [];
+    for (const node of layout.nodes) {
+      if (isMenuGroup(node)) {
+        const entries = node.items
+          .map((item) => this.entryView(item))
+          .filter((entry): entry is MenuEntryView => entry !== null);
+        if (entries.length < 1) continue;
+        views.push({
+          id: node.id,
+          testId: node.testId ?? `fab-entry-${node.id}`,
+          menuTestId: node.menuTestId ?? `fab-submenu-${node.id}`,
+          icon: node.icon,
+          labelKey: node.labelKey ?? '',
+          label: node.label ?? null,
+          entries,
+        });
+        continue;
+      }
+      const entry = this.entryView(node);
+      if (entry) views.push(entry);
+    }
+    return views;
+  }
+
+  private entryView(node: MenuNode): MenuEntryView | null {
+    if (isMenuGroup(node)) return null;
+    const command = menuCommandOf(node.command);
+    if (!command) return null;
+    if (!this.offers(command) || !this.isAvailable(command)) return null;
+    return {
+      id: node.id,
+      command,
+      testId: command.testId ?? `fab-entry-${command.key}`,
+      icon: node.icon ?? this.iconOf(command),
+      labelKey: this.labelKeyOf(command),
+      label: node.label ?? null,
+      prefixKey: node.label ? null : this.prefixKeyOf(command),
+      text: this.textOf(command),
+      lit: this.litOf(command),
+      disabled: this.disabledOf(command),
+    };
+  }
+
+  /** What is written in front of a name that would not say what it is on its own. */
+  private prefixKeyOf(command: MenuCommand): string | null {
+    const action = command.action;
+    if (action.kind === 'cycle' && action.cycle === 'buffView') return 'feature.plTools.buffView';
+    return null;
   }
 
   /** This seat's role, which settles what the menus offer it. */
