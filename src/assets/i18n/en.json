@@ -4522,6 +4522,14 @@
       "ghost": "Ghost mode",
       "tabClose": "Close this panel"
     },
+    "iconPicker": {
+      "open": "{{name}} (click to choose a mark)",
+      "search": "Search by name",
+      "clear": "Put it back",
+      "none": "Nothing by that name",
+      "found": "{{count}} found",
+      "hint": "Type a name to search the marks this typeface can draw"
+    },
     "portraitPicker": {
       "title": "Portraits",
       "open": "{{name}} (click to choose a portrait)",

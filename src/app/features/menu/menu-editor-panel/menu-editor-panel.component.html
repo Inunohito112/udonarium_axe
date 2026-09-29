@@ -65,7 +65,13 @@
         [class.opacity-60]="row.lost"
         [attr.data-testid]="'menu-editor-row-' + row.node.id"
       >
-        <i class="material-icons text-ui-dim text-[18px]!" aria-hidden="true">{{ row.icon }}</i>
+        <ui-icon-picker
+          [value]="row.icon"
+          [suggested]="suggestedIcons"
+          [clearable]="true"
+          [attr.data-testid]="'menu-editor-icon-' + row.node.id"
+          (picked)="setIcon(row, $event)"
+        />
 
         @if (isGroupRow(row)) {
           <span class="text-ui-muted shrink-0 text-[10px]">{{ 'feature.menuEditor.group' | transloco }}</span>
@@ -77,14 +83,6 @@
           [name]="'menu-editor-name-' + row.node.id"
           [attr.data-testid]="'menu-editor-name-' + row.node.id"
           (ngModelChange)="rename(row, $event)"
-        />
-
-        <input
-          class="rounded-ui-sm border-ui-border-panel bg-ui-input text-ui-text w-24 border border-solid px-1 py-0.5 text-[11px] outline-none"
-          [ngModel]="row.icon"
-          [name]="'menu-editor-icon-' + row.node.id"
-          [attr.data-testid]="'menu-editor-icon-' + row.node.id"
-          (ngModelChange)="setIcon(row, $event)"
         />
 
         @if (!isGroupRow(row)) {

@@ -124,6 +124,41 @@ describe('MenuEditorPanelComponent', () => {
     });
   });
 
+  it('gives an entry another mark from the ones the picker offers', async () => {
+    const choice = query('menu-editor-icon-chat')!.querySelector<HTMLElement>('[role="option"]')!;
+    const mark = choice.title;
+
+    choice.click();
+    await settle();
+
+    expect(
+      layouts
+        .layoutOf('fab')()
+        .nodes.find((node) => node.id === 'chat')
+    ).toMatchObject({ icon: mark });
+  });
+
+  it('takes a mark back off an entry, leaving it to wear its own again', async () => {
+    query('menu-editor-icon-chat')!.querySelector<HTMLElement>('[role="option"]')!.click();
+    await settle();
+    expect(
+      layouts
+        .layoutOf('fab')()
+        .nodes.find((node) => node.id === 'chat')
+    ).toHaveProperty('icon');
+
+    query<HTMLButtonElement>('menu-editor-icon-chat')!
+      .querySelector<HTMLElement>('[data-testid="icon-picker-clear"]')!
+      .click();
+    await settle();
+
+    expect(
+      layouts
+        .layoutOf('fab')()
+        .nodes.find((node) => node.id === 'chat')
+    ).not.toHaveProperty('icon');
+  });
+
   it('makes a small menu of somebody’s own', async () => {
     const name = query<HTMLInputElement>('menu-editor-group-name')!;
     name.value = 'よく使う';

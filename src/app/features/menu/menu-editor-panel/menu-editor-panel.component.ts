@@ -5,7 +5,15 @@ import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { MenuLayoutService } from '@axe/application/ui/menu-layout.service';
 import { downloadBlob } from '@axe/core/util/download-blob';
 import { PeerRole } from '@axe/domain/peer/peer-role';
-import { MENU_SURFACES, MenuCommand, menuCommandOf, menuCommandsFor, MenuSurface } from '@axe/domain/ui/menu-command';
+import { defaultMenuLayout } from '@axe/domain/ui/builtin-menu-layouts';
+import {
+  MENU_COMMANDS,
+  MENU_SURFACES,
+  MenuCommand,
+  menuCommandOf,
+  menuCommandsFor,
+  MenuSurface,
+} from '@axe/domain/ui/menu-command';
 import { isMenuGroup, MenuGroup, MenuLayout, MenuNode } from '@axe/domain/ui/menu-layout';
 import {
   addMenuGroup,
@@ -20,6 +28,7 @@ import {
 } from '@axe/domain/ui/menu-layout-edit';
 import { encodeMenuLayoutFile, MENU_LAYOUT_FILE_NAME, parseMenuLayoutFile } from '@axe/domain/ui/menu-layout-file';
 import { MenuCommandService } from '@axe/features/menu/menu-command.service';
+import { IconPickerComponent } from '@axe/ui/components/icon-picker/icon-picker.component';
 import { TranslocoModule } from '@jsverse/transloco';
 
 /** One row of the arrangement being edited, at whichever level it sits. */
@@ -39,6 +48,15 @@ interface EditorRow {
   lost: boolean;
 }
 
+/** The marks the menus already wear, which are the ones worth offering before anything is typed. */
+function marksInUse(): string[] {
+  const marks = new Set(MENU_COMMANDS.map((command) => command.icon));
+  for (const surface of MENU_SURFACES) {
+    for (const node of defaultMenuLayout(surface).nodes) if (isMenuGroup(node)) marks.add(node.icon);
+  }
+  return [...marks].sort();
+}
+
 /** Somewhere an entry can be carried to. */
 interface MoveTarget {
   value: string;
@@ -56,13 +74,16 @@ interface MoveTarget {
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-menu-editor-panel',
   templateUrl: './menu-editor-panel.component.html',
-  imports: [FormsModule, TranslocoModule],
+  imports: [FormsModule, IconPickerComponent, TranslocoModule],
 })
 export class MenuEditorPanelComponent {
   private readonly layouts = inject(MenuLayoutService);
   private readonly commands = inject(MenuCommandService);
   private readonly confirm = inject(ConfirmService);
   private readonly t = inject(TRANSLATE_FN);
+
+  /** The marks offered before anything is typed into the search. */
+  protected readonly suggestedIcons = marksInUse();
 
   /** Which menu is being arranged. */
   readonly surface = signal<MenuSurface>('fab');

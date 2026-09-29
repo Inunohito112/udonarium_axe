@@ -4522,6 +4522,14 @@
       "ghost": "透明モード",
       "tabClose": "このパネルを閉じる"
     },
+    "iconPicker": {
+      "open": "{{name}}（クリックでアイコンを選ぶ）",
+      "search": "アイコン名で探す",
+      "clear": "既定に戻す",
+      "none": "見つかりません",
+      "found": "{{count}} 件",
+      "hint": "アイコン名を入れると、この書体で描けるものから探します"
+    },
     "portraitPicker": {
       "title": "立ち絵",
       "open": "{{name}}（クリックで立ち絵一覧）",
