@@ -7,6 +7,16 @@ export const MENU_SURFACES = ['fab', 'gmToolbar', 'plToolbar'] as const;
 export type MenuSurface = (typeof MENU_SURFACES)[number];
 
 /**
+ * Whether a menu on this surface can hold small menus of its own.
+ *
+ * Only the drawer has room to open one beside itself. A bar of buttons draws what a small menu
+ * holds in the bar instead, so putting one there gains nothing and loses the grouping.
+ */
+export function menuSurfaceTakesGroups(surface: MenuSurface): boolean {
+  return surface === 'fab';
+}
+
+/**
  * Who a command is offered to.
  *
  * `playing` is everyone at the table but those watching; `player` is the players alone, for the

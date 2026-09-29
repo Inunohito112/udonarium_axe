@@ -32,6 +32,27 @@ describe('MenuCommandService', () => {
     PeerCursor.myCursor = null!;
   });
 
+  describe('the entries of an arrangement', () => {
+    const WITH_A_GROUP = {
+      nodes: [
+        { id: 'chat', command: 'chat' },
+        { id: 'table', icon: 'folder', label: '卓', items: [{ id: 'tableSetting', command: 'tableSetting' }] },
+      ],
+    };
+
+    it('keeps a small menu whole for a menu that can open one', () => {
+      seatAs(PeerRole.Player);
+
+      expect(commands.viewOf(WITH_A_GROUP).map((node) => node.id)).toEqual(['chat', 'table']);
+    });
+
+    it('gives up what a small menu holds to a bar that has nowhere to open one', () => {
+      seatAs(PeerRole.Player);
+
+      expect(commands.entriesOf(WITH_A_GROUP).map((entry) => entry.command.key)).toEqual(['chat', 'tableSetting']);
+    });
+  });
+
   describe('what it will do', () => {
     it('opens a panel for a command anybody may have', () => {
       seatAs(PeerRole.Player);

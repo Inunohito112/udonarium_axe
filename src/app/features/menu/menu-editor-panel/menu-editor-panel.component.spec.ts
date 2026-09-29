@@ -308,6 +308,15 @@ describe('MenuEditorPanelComponent', () => {
     });
   });
 
+  it('offers to make a small menu on the drawer alone, the bars having nowhere to open one', async () => {
+    expect(query('menu-editor-add-group')).toBeTruthy();
+
+    query<HTMLButtonElement>('menu-editor-surface-gmToolbar')!.click();
+    await settle();
+
+    expect(query('menu-editor-add-group')).toBeNull();
+  });
+
   it('arranges the bar it is switched to, and not the one it left', async () => {
     query<HTMLButtonElement>('menu-editor-surface-gmToolbar')!.click();
     await settle();

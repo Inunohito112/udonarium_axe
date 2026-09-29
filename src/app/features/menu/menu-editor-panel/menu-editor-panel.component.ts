@@ -26,6 +26,7 @@ import {
   menuCommandOf,
   menuCommandsFor,
   MenuSurface,
+  menuSurfaceTakesGroups,
 } from '@axe/domain/ui/menu-command';
 import { isMenuGroup, MenuGroup, MenuLayout, MenuNode } from '@axe/domain/ui/menu-layout';
 import {
@@ -112,6 +113,9 @@ export class MenuEditorPanelComponent {
       return true;
     });
   });
+
+  /** Whether this menu has anywhere to open a small menu, which only the drawer has. */
+  protected readonly takesGroups = computed(() => menuSurfaceTakesGroups(this.surface()));
 
   private readonly layout = computed<MenuLayout>(() => this.layouts.layoutOf(this.surface())());
 

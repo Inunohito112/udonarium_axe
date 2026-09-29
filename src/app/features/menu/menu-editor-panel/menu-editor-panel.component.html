@@ -128,14 +128,16 @@
 
   <div class="border-ui-border-panel flex shrink-0 flex-wrap items-center gap-1.5 border-t border-solid pt-2">
     <menu-command-picker [commands]="offered()" (picked)="addCommand($event)" />
-    <button
-      type="button"
-      class="rounded-ui-sm border-ui-border-panel text-ui-text hover:bg-ui-menu-hover flex cursor-pointer items-center gap-1 border border-solid bg-transparent px-2 py-1 text-[11px] transition-colors [&_i]:text-[15px]!"
-      data-testid="menu-editor-add-group"
-      (click)="addGroup()"
-    >
-      <i class="material-icons">create_new_folder</i>
-      {{ 'feature.menuEditor.addGroup' | transloco }}
-    </button>
+    @if (takesGroups()) {
+      <button
+        type="button"
+        class="rounded-ui-sm border-ui-border-panel text-ui-text hover:bg-ui-menu-hover flex cursor-pointer items-center gap-1 border border-solid bg-transparent px-2 py-1 text-[11px] transition-colors [&_i]:text-[15px]!"
+        data-testid="menu-editor-add-group"
+        (click)="addGroup()"
+      >
+        <i class="material-icons">create_new_folder</i>
+        {{ 'feature.menuEditor.addGroup' | transloco }}
+      </button>
+    }
   </div>
 </div>

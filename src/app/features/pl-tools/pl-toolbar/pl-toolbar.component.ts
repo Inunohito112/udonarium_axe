@@ -57,9 +57,7 @@ export class PlToolbarComponent {
   private readonly barLayout = inject(MenuLayoutService).layoutOf('plToolbar');
 
   /** The bar as this seat has it arranged, with what it is not offered left out. */
-  protected readonly entries = computed<MenuEntryView[]>(
-    () => this.menuCommands.viewOf(this.barLayout()) as MenuEntryView[]
-  );
+  protected readonly entries = computed<MenuEntryView[]>(() => this.menuCommands.entriesOf(this.barLayout()));
 
   /** What is written on an entry, with a word in front where the name alone would not say. */
   protected entryLabel(entry: MenuEntryView): string {

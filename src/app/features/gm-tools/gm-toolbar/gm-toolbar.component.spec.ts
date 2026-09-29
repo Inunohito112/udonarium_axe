@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { GUEST_PERSONA, VisionService } from '@axe/application/tabletop/vision.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
+import { MenuLayoutService } from '@axe/application/ui/menu-layout.service';
 import { NpcBarService } from '@axe/application/ui/npc-bar.service';
 import { PanelService } from '@axe/application/ui/panel.service';
 import { PieceOverlayPreferenceService } from '@axe/application/ui/piece-overlay-preference.service';
@@ -11,6 +12,7 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { Card } from '@axe/domain/card/card';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
+import { parseMenuLayout } from '@axe/domain/ui/menu-layout';
 import { GameObjectListPanelComponent } from '@axe/features/gm-object-list/game-object-list-panel.component';
 import { GmToolbarComponent } from '@axe/features/gm-tools/gm-toolbar/gm-toolbar.component';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
@@ -45,6 +47,34 @@ describe('GmToolbarComponent', () => {
     button!.click();
     fixture.detectChanges();
   }
+
+  it('draws what a small menu holds rather than falling over it', async () => {
+    // A bar has nowhere to open a small menu, but one can still reach its arrangement from a
+    // file or from a version that allowed it, and a button standing for a menu has no command
+    // behind it to run.
+    localStorage.setItem(
+      'axe.menu.gmToolbar',
+      JSON.stringify([{ id: 'tools', icon: 'folder', label: '道具', items: [{ id: 'darkness', command: 'darkness' }] }])
+    );
+    try {
+      TestBed.inject(MenuLayoutService).adopt({
+        gmToolbar: parseMenuLayout(localStorage.getItem('axe.menu.gmToolbar')!)!,
+      });
+      PeerCursor.myCursor = Object.assign(new PeerCursor('me'), { role: PeerRole.GameMaster });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const icons = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('ui-icon-button button')).map(
+        (held) => held.querySelector('i')?.textContent?.trim()
+      );
+      expect(icons).toContain('bedtime_off');
+      expect(icons).not.toContain('folder');
+      expect(() => press('bedtime_off')).not.toThrow();
+    } finally {
+      localStorage.removeItem('axe.menu.gmToolbar');
+      TestBed.inject(MenuLayoutService).reset('gmToolbar');
+    }
+  });
 
   it('switches the resource bars and the buffs over the pieces off and on again', async () => {
     PeerCursor.myCursor = Object.assign(new PeerCursor('me'), { role: PeerRole.GameMaster });

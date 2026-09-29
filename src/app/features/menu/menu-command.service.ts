@@ -178,6 +178,17 @@ export class MenuCommandService {
     return views;
   }
 
+  /**
+   * The entries of an arrangement, whatever level each one sits at.
+   *
+   * A bar of buttons has nowhere to open a small menu on, so one that turns up in its arrangement
+   * — carried in from a file, or made before a version said it could not — gives up what it holds
+   * to the bar rather than taking it out of reach along with itself.
+   */
+  entriesOf(layout: MenuLayout): MenuEntryView[] {
+    return this.viewOf(layout).flatMap((node) => (isMenuGroupView(node) ? node.entries : [node]));
+  }
+
   private entryView(node: MenuNode): MenuEntryView | null {
     if (isMenuGroup(node)) return null;
     const command = menuCommandOf(node.command);
