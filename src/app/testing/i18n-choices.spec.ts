@@ -33,6 +33,7 @@ import { TRIGGER_MOMENTS, TRIGGER_REPEATS, TRIGGER_TARGETS } from '@axe/domain/t
 import { FACTION_PHASE_MODES, TURN_ORDER_MODES } from '@axe/domain/tabletop/turn-order-mode';
 import { LightPreset } from '@axe/domain/tabletop/vision-types';
 import { FAB_ENTRIES } from '@axe/domain/ui/fab-menu';
+import { MENU_COMMANDS } from '@axe/domain/ui/menu-command';
 import { VIEW_MODES } from '@axe/domain/ui/view-mode';
 import { MAP_KINDS } from '@axe/features/tabletop/dungeon-generator/dungeon-generator.component';
 const HOTBAR_FAILURES = ['noCharacter', 'notFound', 'noTab', 'offTable', 'empty'] as const;
@@ -112,6 +113,15 @@ describe('the names shown for a choice', () => {
           if (typeof lookup(tree, prefix + value) !== 'string') missing.push(prefix + value);
         }
       }
+
+      expect(missing).toEqual([]);
+    });
+
+    it(`name every command a menu can be given in ${language}`, () => {
+      const tree = dictionary(language);
+      const missing = MENU_COMMANDS.map((command) => command.labelKey).filter(
+        (key) => typeof lookup(tree, key) !== 'string'
+      );
 
       expect(missing).toEqual([]);
     });

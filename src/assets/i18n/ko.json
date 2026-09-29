@@ -335,6 +335,7 @@
     "plTools": {
       "buffView": "버프 표시(전체)",
       "active": {
+        "title": "조작 대상 캐릭터",
         "openChatPalette": "{{name}}의 채팅 팔레트 열기"
       },
       "range": {

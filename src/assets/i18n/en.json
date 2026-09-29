@@ -335,6 +335,7 @@
     "plTools": {
       "buffView": "Buff display (all)",
       "active": {
+        "title": "Character being moved",
         "openChatPalette": "Open the chat palette for {{name}}"
       },
       "range": {

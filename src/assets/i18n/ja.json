@@ -335,6 +335,7 @@
     "plTools": {
       "buffView": "バフ表示（全体）",
       "active": {
+        "title": "操作対象キャラクター",
         "openChatPalette": "{{name}} のチャットパレットを開く"
       },
       "range": {
