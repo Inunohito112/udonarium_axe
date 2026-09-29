@@ -424,13 +424,10 @@ export class OverviewPanelComponent {
     return getCellLabel(cell);
   }
 
-  /**
-   * The colour a field's current value is written in, or null for the default grey so the
-   * stylesheet decides.
-   */
+  /** The colour a field's current value is written in, or null to leave it to the stylesheet. */
   getPopupCurrentValueColor(element: DataElement): string | null {
-    const color = element.nowValueColor.trim().toLowerCase();
-    return color === '#444' ? null : color;
+    const color = element.nowValueColor.trim();
+    return color.length > 0 ? color : null;
   }
 
   /** Whether a check cell is ticked. */

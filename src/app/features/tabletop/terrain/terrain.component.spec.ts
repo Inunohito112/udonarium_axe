@@ -386,6 +386,46 @@ describe('TerrainComponent', () => {
       terrain.destroy();
     });
 
+    it('shows the master the ground it stands on, which is where it is picked up', async () => {
+      PeerCursor.createMyCursor();
+      PeerCursor.myCursor.role = PeerRole.GameMaster;
+      const terrain = blankWall();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const base = fixture.nativeElement.querySelector('[data-testid="terrain-blank-base"]') as HTMLElement;
+      expect(base).not.toBeNull();
+      expect(base.style.transform).toBe('');
+
+      terrain.destroy();
+    });
+
+    it('draws the ground once for a block with no wall over it', async () => {
+      PeerCursor.createMyCursor();
+      PeerCursor.myCursor.role = PeerRole.GameMaster;
+      const terrain = blankWall();
+      terrain.mode = TerrainViewState.FLOOR;
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.nativeElement.querySelector('[data-testid="terrain-blank-outline"]')).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('[data-testid="terrain-blank-base"]')).toBeNull();
+
+      terrain.destroy();
+    });
+
+    it('is still there to be taken hold of, wearing nothing', async () => {
+      const terrain = blankWall();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const held = fixture.nativeElement.querySelector('.pointer-events-auto') as HTMLElement;
+      expect(held).not.toBeNull();
+      expect(component.isLocked()).toBe(false);
+
+      terrain.destroy();
+    });
+
     it('shows a player nothing of it at all', async () => {
       PeerCursor.createMyCursor();
       PeerCursor.myCursor.role = PeerRole.Player;

@@ -1,4 +1,4 @@
-import { NpcBarService } from '@axe/features/gm-tools/npc-bar/npc-bar.service';
+import { NpcBarService } from '@axe/application/ui/npc-bar.service';
 
 describe('NpcBarService', () => {
   it('opens, closes and toggles', () => {

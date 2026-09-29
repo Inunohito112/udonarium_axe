@@ -43,6 +43,7 @@ import { DiceBot } from '@axe/domain/dice/dice-bot';
 import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { ChatColorSettingComponent } from '@axe/features/chat/chat-color-setting/chat-color-setting.component';
+import { ChatComposeService } from '@axe/features/chat/chat-compose.service';
 import { ChatInputDiceBotHelper } from '@axe/features/chat/chat-input/chat-input-dicebot';
 import { allowsChat } from '@axe/features/chat/chat-input/chat-input-helpers';
 import { ChatInputHistory } from '@axe/features/chat/chat-input/chat-input-history';
@@ -112,6 +113,14 @@ export class ChatInputComponent {
   private readonly vision = inject(VisionService);
   private readonly imageStorage = inject(ImageStorage);
   private readonly uiSignalService = inject(UiSignalService);
+  /**
+   * The panel this input belongs to, where it stands in one that asks it things.
+   *
+   * Answering and quoting are said to this input alone; the plain text the room hands round -
+   * a roll from the hotbar, a token from the effect library - is still said to whoever is out
+   * there, since it was never aimed at a panel in the first place.
+   */
+  private readonly compose = inject(ChatComposeService, { optional: true });
 
   private chatHistory = new ChatInputHistory();
   private dicebotHelper = new ChatInputDiceBotHelper();
@@ -212,10 +221,11 @@ export class ChatInputComponent {
     return text.length > 80 ? text.slice(0, 80) + '…' : text;
   });
 
-  /** Drops the message being replied to, both here and in the app-wide reply request. */
+  /** Drops the message being replied to, both here and wherever the asking came from. */
   cancelReply(): void {
     this.replyTarget.set(null);
-    this.uiSignalService.clearChatReply();
+    if (this.compose) this.compose.clearReply();
+    else this.uiSignalService.clearChatReply();
   }
 
   readonly quoteTarget = signal<ChatMessage | null>(null);
@@ -227,10 +237,11 @@ export class ChatInputComponent {
     return text.length > 80 ? text.slice(0, 80) + '…' : text;
   });
 
-  /** Drops the message being quoted, both here and in the app-wide quote request. */
+  /** Drops the message being quoted, both here and wherever the asking came from. */
   cancelQuote(): void {
     this.quoteTarget.set(null);
-    this.uiSignalService.clearChatQuote();
+    if (this.compose) this.compose.clearQuote();
+    else this.uiSignalService.clearChatQuote();
   }
 
   readonly autoCompleteSwitch = output<number>();
@@ -278,7 +289,7 @@ export class ChatInputComponent {
       });
     });
     effect(() => {
-      const req = this.uiSignalService.chatReplyRequest();
+      const req = this.compose ? this.compose.replyRequest() : this.uiSignalService.chatReplyRequest();
       if (!req) {
         this.replyTarget.set(null);
         return;
@@ -296,7 +307,7 @@ export class ChatInputComponent {
         this.quoteTarget.set(null);
         return;
       }
-      const req = this.uiSignalService.chatQuoteRequest();
+      const req = this.compose ? this.compose.quoteRequest() : this.uiSignalService.chatQuoteRequest();
       if (!req) {
         this.quoteTarget.set(null);
         return;

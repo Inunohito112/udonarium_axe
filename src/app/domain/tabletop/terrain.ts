@@ -46,6 +46,14 @@ export type TerrainImageSlot = TerrainFace | 'wall' | 'floor' | 'imageIdentifier
 
 export const TERRAIN_FACES: readonly TerrainFace[] = ['top', 'bottom', 'north', 'south', 'east', 'west'] as const;
 
+/**
+ * Every slot a picture can be put in, the two that stand in for the faces first.
+ *
+ * What makes a block glass is that none of these holds anything, so whatever asks the question
+ * and whatever answers it have to walk the same list.
+ */
+export const TERRAIN_IMAGE_SLOTS: readonly TerrainImageSlot[] = ['wall', 'floor', ...TERRAIN_FACES] as const;
+
 @SyncObject('terrain')
 export class Terrain extends TabletopObject {
   @SyncVar() isLocked: boolean = false;
@@ -252,10 +260,22 @@ export class Terrain extends TabletopObject {
   get hasFaceImage(): boolean {
     const images = this.imageDataElement;
     if (!images) return false;
-    for (const name of ['wall', 'floor', ...TERRAIN_FACES] as const) {
+    for (const name of TERRAIN_IMAGE_SLOTS) {
       if (this.faceImageIdentifier(name).length > 0) return true;
     }
     return false;
+  }
+
+  /**
+   * Takes every picture off the block, which is what turns it to glass.
+   *
+   * The slots are emptied rather than taken away: an image element is known by a name made from
+   * the block's own, so one destroyed could never be made again under the same name, and the face
+   * would be unable to wear anything afterwards.
+   */
+  clearFaceImages(): void {
+    if (!this.imageDataElement) return;
+    for (const name of TERRAIN_IMAGE_SLOTS) this.setFaceImage(name, '');
   }
 
   /**

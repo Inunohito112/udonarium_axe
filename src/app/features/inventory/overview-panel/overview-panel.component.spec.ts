@@ -575,7 +575,7 @@ describe('OverviewPanelComponent', () => {
       san.currentValue = 80;
 
       try {
-        expect(component.getPopupCurrentValueColor(san)).toBe('#d22');
+        expect(component.getPopupCurrentValueColor(san)).toBe('#D22');
       } finally {
         san.destroy();
       }

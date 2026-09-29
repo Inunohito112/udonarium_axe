@@ -41,7 +41,8 @@ import {
 import { asBreakOutMode, BREAK_OUT_MODES, BreakOutMode } from '@axe/domain/tabletop/move/engagement';
 import { DEFAULT_CELL_DISTANCE, DEFAULT_CELL_DISTANCE_UNIT } from '@axe/domain/tabletop/move/move-cells';
 import { MOVE_UNITS, MoveUnit, parseMoveUnit } from '@axe/domain/tabletop/move/move-units';
-import { asZocMode, ZOC_MODES, ZocMode } from '@axe/domain/tabletop/move/zone-of-control';
+import { PIECE_PASSAGE_MODES, PiecePassageMode } from '@axe/domain/tabletop/move/piece-passage';
+import { asZocMode, HOSTILITY_BY, HostilityBy, ZOC_MODES, ZocMode } from '@axe/domain/tabletop/move/zone-of-control';
 import { DEFAULT_MULTI_ANGLE_PIECE_REVOLUTION_SECONDS, MultiAngleMotionMode } from '@axe/domain/tabletop/multi-angle';
 import {
   asMultiAngleFontScale,
@@ -86,6 +87,9 @@ function wholeCells(value: number): number {
   const cells = Math.floor(Number(value));
   return Number.isFinite(cells) && cells > 0 ? cells : 0;
 }
+
+/** One of the three sides a table answers for when a piece walks into another. */
+type PiecePassageSide = 'samePartyPassage' | 'otherPartyPassage' | 'noPartyPassage';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -153,6 +157,15 @@ export class RoomSettingsPanelComponent {
   readonly moveUnits = MOVE_UNITS;
   readonly facingMarks = TABLE_FACING_MARKS;
   readonly zocModes = ZOC_MODES;
+  readonly hostilityWays = HOSTILITY_BY;
+
+  /** How the table tells its two sides apart, which decides who holds ground against whom. */
+  get hostilityBy(): HostilityBy {
+    return this.rules.hostilityBy;
+  }
+  set hostilityBy(value: HostilityBy) {
+    if (this.isEditable) this.config.hostilityBy = value;
+  }
   readonly diagonalMoves = DIAGONAL_MOVES;
   readonly breakOutModes = BREAK_OUT_MODES;
 
@@ -748,6 +761,63 @@ export class RoomSettingsPanelComponent {
   }
   set piecesShareCells(value: boolean) {
     if (this.isEditable) this.config.piecesShareCells = value;
+  }
+
+  /** The three sides a piece meets on the board, in the order the setting offers them. */
+  readonly piecePassageSides = ['samePartyPassage', 'otherPartyPassage', 'noPartyPassage'] as const;
+  readonly piecePassageModes = PIECE_PASSAGE_MODES;
+
+  /** What the table does with the ground one of the three sides stands on. */
+  piecePassage(side: PiecePassageSide): PiecePassageMode {
+    return this.rules[side];
+  }
+
+  setPiecePassage(side: PiecePassageSide, value: PiecePassageMode): void {
+    if (this.isEditable) this.config[side] = value;
+  }
+
+  /** Whether any of the three sides is charged for, which is the only time the price is asked. */
+  get showsPiecePassageCost(): boolean {
+    return this.piecePassageSides.some((side) => this.rules[side] === 'cost');
+  }
+
+  /** How far one leap carries, in cells. Nought carries as far as the move has left. */
+  get jumpCells(): number {
+    return this.rules.jumpCells;
+  }
+  set jumpCells(value: number) {
+    if (this.isEditable) this.config.jumpCells = wholeCells(value);
+  }
+
+  /** Whether a piece too big for a gap folds itself through it at a price. */
+  get squeezes(): boolean {
+    return this.rules.squeezes;
+  }
+  set squeezes(value: boolean) {
+    if (this.isEditable) this.config.squeezes = value;
+  }
+
+  /** Whether the ground between a piece's two ends goes off when a hand moves it. */
+  get handTracesWay(): boolean {
+    return this.rules.handTracesWay;
+  }
+  set handTracesWay(value: boolean) {
+    if (this.isEditable) this.config.handTracesWay = value;
+  }
+
+  /** Whether a piece squeezes past somebody far enough from it in size. */
+  get sizeSlipsPast(): boolean {
+    return this.rules.sizeSlipsPast;
+  }
+  set sizeSlipsPast(value: boolean) {
+    if (this.isEditable) this.config.sizeSlipsPast = value;
+  }
+
+  get piecePassageCost(): number {
+    return this.rules.piecePassageCost;
+  }
+  set piecePassageCost(value: number) {
+    if (this.isEditable) this.config.piecePassageCost = wholeCells(value);
   }
 
   /**

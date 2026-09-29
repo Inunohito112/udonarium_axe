@@ -24,6 +24,7 @@ import { ImageService } from '@axe/application/storage/image.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { HeldPieceService } from '@axe/application/tabletop/held-piece.service';
 import { MovePlanService } from '@axe/application/tabletop/move-plan.service';
+import { TableAmbienceService } from '@axe/application/tabletop/table-ambience.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { TerrainBatchService } from '@axe/application/tabletop/terrain-batch.service';
@@ -103,6 +104,7 @@ import { TableAltitudeGuideOverlayComponent } from '@axe/features/tabletop/table
 import { TableAmbienceComponent } from '@axe/features/tabletop/table-ambience/table-ambience.component';
 import { TableBeamOverlayComponent } from '@axe/features/tabletop/table-beam-overlay/table-beam-overlay.component';
 import { TableMoveBlockOverlayComponent } from '@axe/features/tabletop/table-move-block-overlay/table-move-block-overlay.component';
+import { TableMoveCostOverlayComponent } from '@axe/features/tabletop/table-move-cost-overlay/table-move-cost-overlay.component';
 import { TableMoveRangeOverlayComponent } from '@axe/features/tabletop/table-move-range-overlay/table-move-range-overlay.component';
 import { TableTargetOverlayComponent } from '@axe/features/tabletop/table-target-overlay/table-target-overlay.component';
 import { TableTriggerOverlayComponent } from '@axe/features/tabletop/table-trigger-overlay/table-trigger-overlay.component';
@@ -209,6 +211,7 @@ const NO_BEAM_WALL_GRIDS: readonly BeamWallGrid[] = [];
     TableAltitudeGuideOverlayComponent,
     TableMoveRangeOverlayComponent,
     TableMoveBlockOverlayComponent,
+    TableMoveCostOverlayComponent,
     TableTriggerOverlayComponent,
     TableEffectOverlayComponent,
     EffectTargetOverlayComponent,
@@ -237,6 +240,7 @@ export class GameTableComponent {
   private readonly imageService = inject(ImageService);
   private readonly motion = inject(MotionService);
   private readonly tabletopService = inject(TabletopService);
+  private readonly ambienceService = inject(TableAmbienceService);
   private readonly terrainBatch = inject(TerrainBatchService);
   private readonly tabletopActionService = inject(TabletopActionService);
   protected readonly visionService = inject(VisionService);
@@ -769,10 +773,7 @@ export class GameTableComponent {
     this.objectChangeService.collectionOf('terrain')();
     return this.tabletopService.terrains;
   });
-  readonly ambiences = computed(() => {
-    this.objectChangeService.collectionOf('table-ambience')();
-    return this.tabletopService.ambiences;
-  });
+  readonly ambiences = computed(() => this.ambienceService.shown());
   readonly textNotes = computed(() => {
     this.objectChangeService.collectionOf('text-note')();
     return this.tabletopService.textNotes;
