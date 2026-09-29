@@ -544,11 +544,19 @@ export class MoveRangeService {
     // asks about the cell its middle would be over, so a golem three across would otherwise
     // thread a one-cell doorway and come out the far side of it. Worked out in full before any
     // of it is written down, since each answer is read off the ground as it stands.
+    // Which cells are reached only folded up is written down here rather than asked again once
+    // the search is running: folding the too-narrow cells into `blocked` just below changes what
+    // `fits` and `tight` answer, since both read that set as it stands rather than as it stood.
+    const squeezed = tight ? new CellBits(cellCount(grid)) : null;
     if (fits) {
       const total = cellCount(grid);
       const tooNarrow = new CellBits(total);
       for (let cell = 0; cell < total; cell++) {
-        if (blocked.get(cell) || fits(cell) || (tight?.(cell) ?? false)) continue;
+        if (blocked.get(cell) || fits(cell)) continue;
+        if (tight?.(cell) ?? false) {
+          squeezed?.set(cell);
+          continue;
+        }
         tooNarrow.set(cell);
       }
       blocked.or(tooNarrow);
@@ -557,7 +565,7 @@ export class MoveRangeService {
       dear !== null ||
       going.toll > 0 ||
       crossing > 0 ||
-      tight !== null ||
+      squeezed !== null ||
       (held !== null && mode === 'cost') ||
       fights !== null;
 
@@ -570,7 +578,7 @@ export class MoveRangeService {
         ? (index, from) => {
             let price = 1 + going.toll + (dear ? dear[index] : 0);
             // Squeezing costs the step again, which is what makes a gap worth going round.
-            if (tight && fits && !fits(index) && tight(index)) price += 1;
+            if (squeezed?.get(index)) price += 1;
             if (crossing > 0 && passage.costly.get(index)) price += crossing;
             if (held && mode === 'cost' && held.get(index)) price += extra;
             if (fights && leavesFight(fights, from, index)) {

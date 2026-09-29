@@ -1488,7 +1488,7 @@ describe('MoveRangeService and a piece wider than one cell', () => {
     it('gets through where the room says it may', () => {
       Config.instance.squeezes = true;
       wallWithAGap(6, 5);
-      service.show(golemAt(4, 5, 3, 3));
+      service.show(golemAt(4, 5, 4, 3));
 
       expect(reached(7, 5)).toBe(true);
     });
@@ -1496,10 +1496,11 @@ describe('MoveRangeService and a piece wider than one cell', () => {
     it('pays a step again for the cell it spends folded up', () => {
       Config.instance.squeezes = true;
       wallWithAGap(6, 5);
-      service.show(golemAt(4, 5, 2, 3));
+      service.show(golemAt(4, 5, 3, 3));
 
-      // Two cells of ground away, and three steps of walking: the cell it folds itself into
-      // costs two rather than one, so two steps leave it a step short of the far side.
+      // It reaches the gap and stands in it folded up, and what that cell costs twice over is
+      // what leaves it short of the ground beyond, which a step apiece would have paid for.
+      expect(reached(6, 5)).toBe(true);
       expect(reached(7, 5)).toBe(false);
     });
   });
