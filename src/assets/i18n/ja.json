@@ -1568,6 +1568,7 @@
         "failed": "取り込みに失敗しました。",
         "success": "キャラコマを生成しました。",
         "successNoImage": "キャラコマを生成しました（画像は取得できなかったため、後から設定してください）。",
+        "systemUnknown": "取り込みました。倉庫のデータは URL を貼ると、特技表とチャットパレットも一緒に入ります。",
         "sourceAppspot": "キャラクターシート倉庫(character-sheets.appspot.com)：JSONまたはキャラURLを貼り付け（自動取得）",
         "sourceYtsheet": "ゆとシートⅡ(SW2.5)：キャラURLを貼り付け（自動取得）、または ?mode=json のJSONを貼り付け",
         "unsupported": "対応していないURLです。ココフォリアのコマJSONを貼り付けてください。",

@@ -1568,6 +1568,7 @@
         "failed": "가져오기에 실패했습니다.",
         "success": "캐릭터 말을 만들었습니다.",
         "successNoImage": "캐릭터 말을 만들었습니다(이미지를 가져오지 못했으니 나중에 설정해 주세요).",
+        "systemUnknown": "가져왔습니다. 창고 데이터는 URL을 붙여넣으면 특기표와 채팅 팔레트도 함께 들어옵니다.",
         "sourceAppspot": "캐릭터 시트 창고(character-sheets.appspot.com): JSON 또는 캐릭터 URL 붙여넣기(자동 취득)",
         "sourceYtsheet": "유토시트Ⅱ(SW2.5): 캐릭터 URL 붙여넣기(자동 취득), 또는 ?mode=json 의 JSON 붙여넣기",
         "unsupported": "지원하지 않는 URL입니다. 코코포리아 말 JSON을 붙여넣어 주세요.",
