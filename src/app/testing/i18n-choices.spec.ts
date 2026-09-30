@@ -13,6 +13,7 @@ import { CUT_IN_LAYER_PRESETS } from '@axe/domain/media/cut-in-layer-presets';
 import { CUT_IN_WIPES } from '@axe/domain/media/cut-in-wipe';
 import { LIGHT_SKIN_IDS } from '@axe/domain/media/light-skins';
 import { DUNGEON_PROP_IDS, TEXTURE_IDS, WALL_TEXTURE_IDS } from '@axe/domain/media/texture-catalog';
+import { SWITCH_ACTION_KINDS, SWITCH_SPEAKERS } from '@axe/domain/tabletop/board-switch/switch-definition';
 import {
   DUNGEON_ATMOSPHERE_IDS,
   DUNGEON_ENTRANCE_STYLES,
@@ -91,6 +92,9 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.media.cutInEditor.look': CUT_IN_LAYER_PRESETS.map((preset) => preset.id),
   'feature.media.cutInEditor.preset': [...CUT_IN_ENTRANCES, ...CUT_IN_EXITS],
   'feature.tabletop.displaySetting.viewMode_': VIEW_MODES,
+  'feature.boardSwitch.kind.': SWITCH_ACTION_KINDS,
+  'feature.boardSwitch.speakerOption.': SWITCH_SPEAKERS,
+  'feature.boardSwitch.refused.': ['nothing', 'watching', 'cannotSpeak', 'retired', 'busy'],
 };
 
 function dictionary(language: string): Record<string, unknown> {

@@ -4198,6 +4198,51 @@
       "writeOut": "書き出す",
       "readIn": "読み込む",
       "readFailed": "この端末の並びとして読めないファイルです"
+    },
+    "boardSwitch": {
+      "panelTitle": "スイッチ - {{name}}",
+      "unlabeled": "スイッチ",
+      "masterOnly": "スイッチの中身は GM だけが見られます",
+      "label": "名前",
+      "labelPlaceholder": "盤面に出す名前（例: 宝箱を開ける）",
+      "speaker": "発言者",
+      "speakerOption": {
+        "presser": "押した人（選んでいるキャラ）",
+        "host": "この物の名前",
+        "system": "システム"
+      },
+      "tab": "タブ",
+      "tabOpen": "押した人が開いているタブ",
+      "guests": "見学者も押せる（タブで見学者が発言できるとき）",
+      "actionsHint": "押すと上から順に動きます。2 つ目からは、前の動作のあとの待ちを入れられます（最大 10 秒）。",
+      "kind": {
+        "say": "発言",
+        "sound": "効果音",
+        "effect": "エフェクト",
+        "cutIn": "カットイン"
+      },
+      "delay": "待ち（秒）",
+      "moveUp": "上へ",
+      "moveDown": "下へ",
+      "removeAction": "この動作を消す",
+      "sayPlaceholder": "チャットに送る文。ダイス（2d6+3）や {HP} も書けます",
+      "unchosen": "（選んでください）",
+      "missing": "{{name}}（この部屋にありません）",
+      "unknownAction": "この版では扱えない動作（残しておきます）",
+      "noActions": "まだ何もしません。下のボタンで動作を足します。",
+      "try": "試しに押す",
+      "refused": {
+        "nothing": "何もしないスイッチです",
+        "watching": "見学中は押せません",
+        "cannotSpeak": "このタブでは発言できません",
+        "retired": "もう押せません",
+        "busy": "少し待ってから押してください"
+      },
+      "menu": {
+        "edit": "スイッチを設定…",
+        "try": "スイッチを試しに押す",
+        "remove": "スイッチを外す"
+      }
     }
   },
   "app": {

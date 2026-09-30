@@ -1,6 +1,7 @@
 import { ImageFile } from '@axe/core/storage/image-file';
 import { SyncObject, SyncVar } from '@axe/core/sync/decorator';
 import { DataElement } from '@axe/domain/data/data-element';
+import { BoardSwitch, switchOf } from '@axe/domain/tabletop/board-switch/board-switch';
 import { TabletopObject } from '@axe/domain/tabletop/tabletop-object';
 import {
   encodeSlopeSides,
@@ -115,6 +116,11 @@ export class Terrain extends TabletopObject {
   /** Whether this terrain is a door of any style. */
   get isDoor(): boolean {
     return this.doorStyle !== DoorStyle.NONE;
+  }
+
+  /** What pressing the block does, where the master has made it a switch. */
+  get boardSwitch(): BoardSwitch | null {
+    return switchOf(this);
   }
 
   /**

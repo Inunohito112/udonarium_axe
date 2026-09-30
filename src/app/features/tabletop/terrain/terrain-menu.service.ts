@@ -3,6 +3,7 @@ import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { GameObjectInventoryService } from '@axe/application/inventory/game-object-inventory.service';
+import { BoardSwitchService } from '@axe/application/tabletop/board-switch.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
@@ -15,6 +16,8 @@ import { multiAngleFontScaleFactor } from '@axe/domain/tabletop/multi-angle-font
 import { Terrain } from '@axe/domain/tabletop/terrain';
 import { gridSlopeSides } from '@axe/domain/tabletop/terrain-slope';
 import { ObjectPanelService } from '@axe/features/panels/object-panel.service';
+import { buildBoardSwitchMenu } from '@axe/features/tabletop/board-switch/board-switch-context-menu';
+import { BoardSwitchPanelService } from '@axe/features/tabletop/board-switch/board-switch-panel.service';
 import { buildTerrainContextMenuModel } from '@axe/features/tabletop/terrain/terrain-context-menu';
 
 /**
@@ -35,6 +38,8 @@ export class TerrainMenuService {
   private readonly tabletopActionService = inject(TabletopActionService);
   private readonly tabletopOverlap = inject(TabletopOverlapService);
   private readonly t = inject(TRANSLATE_FN);
+  private readonly switches = inject(BoardSwitchService);
+  private readonly switchPanels = inject(BoardSwitchPanelService);
 
   /**
    * Opens the terrain's right-click menu at the pointer, or the menu for the whole selection when
@@ -57,6 +62,15 @@ export class TerrainMenuService {
       this.t
     );
     const surfaceEntries = buildSurfaceSwitchContextMenu(terrain, this.tabletopService.currentTable, this.t);
+    const switchEntries = buildBoardSwitchMenu(
+      { canEdit: this.switches.canEdit(), hasSwitch: terrain.boardSwitch !== null, isDoor: terrain.isDoor },
+      {
+        edit: () => this.switchPanels.open(terrain),
+        press: () => void this.switchPanels.press(terrain),
+        remove: () => this.switches.remove(terrain),
+      },
+      this.t
+    );
     const menu = buildTerrainContextMenuModel(
       terrain,
       gridSize,
@@ -67,7 +81,8 @@ export class TerrainMenuService {
       this.t,
       overlapEntries,
       surfaceEntries,
-      gridSlopeSides(this.tabletopService.currentTable.gridType)
+      gridSlopeSides(this.tabletopService.currentTable.gridType),
+      switchEntries
     );
     const display = this.tabletopService.display();
     if (this.tabletopService.mode2d() && display.tabletopMenuStyle !== 'standard') {

@@ -314,6 +314,40 @@ export class ChatMessageService {
     return chat;
   }
 
+  /**
+   * Speaks a line under a name of its own, belonging to no piece and no peer.
+   *
+   * This is how something on the table talks: a door or a chest saying what it is. Dice in the line
+   * are rolled for it, and the result comes back under the same name. It leaves alone who this
+   * reader last spoke as, since the reader did not say it, and nothing in the line reaches a
+   * piece's resources, since no piece is speaking.
+   */
+  sendAsNamed(
+    chatTab: ChatTab,
+    text: string,
+    gameSystem: GameSystemClass | null,
+    name: string,
+    color?: string
+  ): ChatMessage {
+    const dicebot = this.objectStore.get<DiceBot>('DiceBot')!;
+    const chatMessage: ChatMessageContext = {
+      from: Network.peerContext.userId,
+      name,
+      imageIdentifier: '',
+      timestamp: this.calcTimeStamp(chatTab),
+      tag: resolveChatMessageTag(gameSystem, text, dicebot),
+      text,
+      imagePos: -1,
+      messColor: resolveMessageColor(color, '#000000'),
+      sendFrom: '',
+      senderRole: PeerCursor.myRole,
+    };
+    const chat = chatTab.addMessage(chatMessage);
+    emitSendMessage({ messageIdentifier: chat.identifier, messageTarget: null });
+    emitDiceTableMessage({ messageIdentifier: chat.identifier });
+    return chat;
+  }
+
   private resolveAttachmentImageReferences(
     text: string,
     sendFrom: string,

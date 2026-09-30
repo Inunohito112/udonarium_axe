@@ -4198,6 +4198,51 @@
       "writeOut": "Write out",
       "readIn": "Read in",
       "readFailed": "That file does not hold an arrangement of the menus"
+    },
+    "boardSwitch": {
+      "panelTitle": "Switch - {{name}}",
+      "unlabeled": "Switch",
+      "masterOnly": "Only the GM can see what a switch does",
+      "label": "Name",
+      "labelPlaceholder": "Name shown on the table (e.g. Open the chest)",
+      "speaker": "Speaker",
+      "speakerOption": {
+        "presser": "Whoever presses it (their selected character)",
+        "host": "This object's name",
+        "system": "System"
+      },
+      "tab": "Tab",
+      "tabOpen": "The tab the presser has open",
+      "guests": "Spectators can press it too (where the tab lets them speak)",
+      "actionsHint": "Pressing it runs these from the top. From the second one on, you can add a wait after the previous one (up to 10 seconds).",
+      "kind": {
+        "say": "Say",
+        "sound": "Sound",
+        "effect": "Effect",
+        "cutIn": "Cut-in"
+      },
+      "delay": "Wait (s)",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "removeAction": "Remove this action",
+      "sayPlaceholder": "Text to send to chat. Dice (2d6+3) and {HP} work too",
+      "unchosen": "(choose one)",
+      "missing": "{{name}} (not in this room)",
+      "unknownAction": "An action this version cannot run (kept as is)",
+      "noActions": "It does nothing yet. Add actions with the buttons below.",
+      "try": "Try it",
+      "refused": {
+        "nothing": "This switch does nothing",
+        "watching": "Spectators cannot press it",
+        "cannotSpeak": "You cannot speak in this tab",
+        "retired": "It can no longer be pressed",
+        "busy": "Wait a moment before pressing again"
+      },
+      "menu": {
+        "edit": "Set up switch…",
+        "try": "Try the switch",
+        "remove": "Remove switch"
+      }
     }
   },
   "app": {
