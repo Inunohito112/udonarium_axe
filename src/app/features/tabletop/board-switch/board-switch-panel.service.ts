@@ -34,10 +34,10 @@ export class BoardSwitchPanelService {
     const at = this.pointers.pointers[0];
     const editor = this.panels.open(BoardSwitchEditorComponent, {
       title: this.t('feature.boardSwitch.panelTitle', { name: host.name }),
-      left: at.x - 200,
+      left: at.x - 230,
       top: at.y - 150,
-      width: 400,
-      height: 460,
+      width: 460,
+      height: 520,
       single: `board-switch:${target.identifier}`,
     });
     editor.target.set(target);
