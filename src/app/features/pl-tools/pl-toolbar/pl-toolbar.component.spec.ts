@@ -7,6 +7,7 @@ import { ToolbarFoldService } from '@axe/application/ui/toolbar-fold.service';
 import { WidgetVisibilityService } from '@axe/application/ui/widget-visibility.service';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
+import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { OwnedCharacterListPanelComponent } from '@axe/features/pl-tools/owned-character-list/owned-character-list-panel.component';
 import { PlToolbarComponent } from '@axe/features/pl-tools/pl-toolbar/pl-toolbar.component';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
@@ -83,6 +84,16 @@ describe('PlToolbarComponent', () => {
       expect.objectContaining({ width: 420, height: 560 })
     );
     await expect(panelStub.openLazy.mock.calls[0][0]()).resolves.toBe(OwnedCharacterListPanelComponent);
+  });
+
+  it('opens the inventory, which it carries from the start', () => {
+    setRole(PeerRole.Player);
+    fixture.detectChanges();
+    const open = vi.spyOn(TestBed.inject(RoomPanelService), 'open').mockImplementation(() => {});
+
+    (fixture.nativeElement.querySelector('[data-testid="fab-entry-inventory"]') as HTMLButtonElement).click();
+
+    expect(open).toHaveBeenCalledWith('inventory');
   });
 
   it('shows the toolbar to a player alone', async () => {

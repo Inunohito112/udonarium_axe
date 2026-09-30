@@ -15,6 +15,7 @@ import { PeerRole } from '@axe/domain/peer/peer-role';
 import { parseMenuLayout } from '@axe/domain/ui/menu-layout';
 import { GameObjectListPanelComponent } from '@axe/features/gm-object-list/game-object-list-panel.component';
 import { GmToolbarComponent } from '@axe/features/gm-tools/gm-toolbar/gm-toolbar.component';
+import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 describe('GmToolbarComponent', () => {
@@ -137,6 +138,14 @@ describe('GmToolbarComponent', () => {
       expect.objectContaining({ width: 460, height: 620 })
     );
     await expect(panelStub.openLazy.mock.calls[0][0]()).resolves.toBe(GameObjectListPanelComponent);
+  });
+
+  it('opens the inventory, which it carries from the start', () => {
+    const open = vi.spyOn(TestBed.inject(RoomPanelService), 'open').mockImplementation(() => {});
+
+    press('folder_shared');
+
+    expect(open).toHaveBeenCalledWith('inventory');
   });
 
   it('opens and closes the non-player bar', () => {
