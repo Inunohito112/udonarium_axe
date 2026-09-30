@@ -4226,7 +4226,10 @@
         "reveal": "Reveal a hidden object",
         "conceal": "Hide an object",
         "removeSelf": "Remove what was pressed",
-        "spawn": "Call up pieces"
+        "spawn": "Call up pieces",
+        "showTable": "Switch the table",
+        "carry": "Carry the presser's piece",
+        "tableSetting": "Change table settings"
       },
       "delay": "Wait (s)",
       "moveUp": "Move up",
@@ -4297,6 +4300,23 @@
         "graveyard": "graveyard",
         "concealed": "hidden",
         "other": "stored"
+      },
+      "showTableHint": "Switches everyone's view to the chosen table (a scene change).",
+      "carryCol": "Column",
+      "carryRow": "Row",
+      "carryHere": "Stay on the current table",
+      "carryHint": "Moves the presser's selected character to the given cell. Choosing another table moves everyone's view too.",
+      "setting": {
+        "darkness": "Darkness",
+        "fog": "Fog of war",
+        "image": "Table image",
+        "bgm": "BGM",
+        "bgmStop": "Stop the BGM first"
+      },
+      "toggle": {
+        "keep": "Leave as is",
+        "on": "On",
+        "off": "Off"
       }
     }
   },

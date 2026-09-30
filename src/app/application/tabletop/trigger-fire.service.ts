@@ -280,10 +280,18 @@ export class TriggerFireService {
    */
   private carry(trigger: TableTrigger, piece: GameCharacter): void {
     if (!trigger.warps) return;
-    const table = this.landing(trigger);
+    this.carryTo(piece, trigger.warpCol, trigger.warpRow, this.landing(trigger));
+  }
+
+  /**
+   * Sets a piece down on a cell of a table, and turns the room's view to that table where it is not
+   * the one being looked at, since a piece stands on every table at once and what changes is which
+   * one the room is looking at.
+   */
+  carryTo(piece: GameCharacter, col: number, row: number, table: GameTable | null): void {
     if (!table || table.gridSize <= 0 || table.width <= 0 || table.height <= 0) return;
     const grid = cellGridOf(table.width, table.height, table.gridSize, table.gridType);
-    const to = cellIndexOf(grid, Math.round(trigger.warpCol), Math.round(trigger.warpRow));
+    const to = cellIndexOf(grid, Math.round(col), Math.round(row));
     // Ground pointing off the board carries nobody: a piece set down outside it would be a
     // piece nothing on the table could reach.
     if (to < 0) return;

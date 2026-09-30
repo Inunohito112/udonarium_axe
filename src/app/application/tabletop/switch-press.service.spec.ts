@@ -7,9 +7,12 @@ import { ConcealmentService } from '@axe/application/tabletop/concealment.servic
 import { SWITCH_COOLDOWN_MS, SwitchPressService } from '@axe/application/tabletop/switch-press.service';
 import { VisionService } from '@axe/application/tabletop/vision.service';
 import { Network } from '@axe/core/network/network';
+import { AudioStorage } from '@axe/core/storage/audio-storage';
+import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
+import { Jukebox } from '@axe/domain/media/jukebox';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { BoardSwitch } from '@axe/domain/tabletop/board-switch/board-switch';
@@ -395,6 +398,71 @@ describe('SwitchPressService', () => {
       const [called] = onTable('ゴブリン');
       expect(Math.abs(called.location.x / GRID - 1)).toBeLessThanOrEqual(1);
       expect(Math.abs(called.location.y / GRID - 1)).toBeLessThanOrEqual(1);
+    });
+  });
+
+  describe('turning the table', () => {
+    it('turns everybody’s view to another table, found by its name', async () => {
+      const cellar = new GameTable();
+      cellar.name = '地下室';
+      cellar.initialize();
+
+      await presses.press(
+        switchWith({
+          actions: [{ kind: 'showTable', table: { identifier: 'elsewhere', name: '地下室' }, delayMs: 0, extra: {} }],
+        })
+      );
+
+      expect(TestBed.inject(TableSelecter).viewTableIdentifier).toBe(cellar.identifier);
+    });
+
+    it('carries the presser’s piece to a cell, on the table being looked at unless another is named', async () => {
+      const hero = speakAs(1, 1);
+
+      await presses.press(
+        switchWith({
+          actions: [{ kind: 'carry', col: 8, row: 3, table: { identifier: '', name: '' }, delayMs: 0, extra: {} }],
+        })
+      );
+
+      expect(hero.location).toMatchObject({ name: 'table', x: 8 * GRID, y: 3 * GRID });
+    });
+
+    it('turns the darkness and the fog on or off, lays a picture on the table and puts music on', async () => {
+      table.darknessEnabled = false;
+      table.fogEnabled = true;
+      const jukebox = new Jukebox('Jukebox');
+      jukebox.initialize();
+      const stop = vi.spyOn(jukebox, 'stop');
+      const play = vi.spyOn(jukebox, 'play').mockImplementation(() => {});
+      const images = TestBed.inject(ImageStorage);
+      const picture = images.add('lit-map');
+      picture.context.name = '明るい部屋';
+      const audios = TestBed.inject(AudioStorage);
+      vi.spyOn(audios, 'get').mockReturnValue({ identifier: 'bgm-1', name: 'battle.mp3' } as never);
+
+      await presses.press(
+        switchWith({
+          actions: [
+            {
+              kind: 'tableSetting',
+              darkness: 'on',
+              fog: 'off',
+              image: { identifier: 'from-another-room', name: '明るい部屋' },
+              bgm: { identifier: 'bgm-1', name: 'battle.mp3' },
+              bgmStop: true,
+              delayMs: 0,
+              extra: {},
+            },
+          ],
+        })
+      );
+
+      expect(table.darknessEnabled).toBe(true);
+      expect(table.fogEnabled).toBe(false);
+      expect(table.imageIdentifier).toBe(picture.identifier);
+      expect(stop).toHaveBeenCalled();
+      expect(play).toHaveBeenCalledWith('bgm-1', true);
     });
   });
 

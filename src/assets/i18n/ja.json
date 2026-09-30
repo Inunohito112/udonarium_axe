@@ -4226,7 +4226,10 @@
         "reveal": "伏せた物を見せる",
         "conceal": "伏せる",
         "removeSelf": "押した物を消す",
-        "spawn": "コマを呼び出す"
+        "spawn": "コマを呼び出す",
+        "showTable": "テーブルを切り替える",
+        "carry": "押した人のコマを運ぶ",
+        "tableSetting": "テーブル設定を変える"
       },
       "delay": "待ち（秒）",
       "moveUp": "上へ",
@@ -4297,6 +4300,23 @@
         "graveyard": "墓場",
         "concealed": "伏せ",
         "other": "保管"
+      },
+      "showTableHint": "全員の見ているテーブルを選んだテーブルに切り替えます（場面転換）。",
+      "carryCol": "列",
+      "carryRow": "行",
+      "carryHere": "見ているテーブルのまま",
+      "carryHint": "押した人が選んでいるキャラのコマを、指定したマスへ運びます。別のテーブルを選ぶと全員の視点も移ります。",
+      "setting": {
+        "darkness": "暗闇",
+        "fog": "戦場の霧",
+        "image": "テーブル画像",
+        "bgm": "BGM",
+        "bgmStop": "先に BGM を止める"
+      },
+      "toggle": {
+        "keep": "そのまま",
+        "on": "オン",
+        "off": "オフ"
       }
     }
   },

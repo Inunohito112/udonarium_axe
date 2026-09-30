@@ -6,14 +6,19 @@ import { NamedCueService } from '@axe/application/media/named-cue.service';
 import { ConcealmentService } from '@axe/application/tabletop/concealment.service';
 import { blockFootprintOf } from '@axe/application/tabletop/functional-paint.service';
 import { TableTriggerService } from '@axe/application/tabletop/table-trigger.service';
+import { TriggerFireService } from '@axe/application/tabletop/trigger-fire.service';
 import { VisionService } from '@axe/application/tabletop/vision.service';
+import { emitSelectGameTable } from '@axe/core/event/domain-events';
 import { Network } from '@axe/core/network/network';
+import { AudioStorage } from '@axe/core/storage/audio-storage';
+import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectNode } from '@axe/core/sync/object-node';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { evaluateCharacterReferences } from '@axe/domain/chat/chat-palette';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { findByReference } from '@axe/domain/hotbar/hotbar-reference';
+import { Jukebox } from '@axe/domain/media/jukebox';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { BoardSwitch, spendSwitch, switchHasGoFor } from '@axe/domain/tabletop/board-switch/board-switch';
 import {
@@ -21,11 +26,14 @@ import {
   SwitchAction,
   SwitchDefinition,
   SwitchSpawn,
+  SwitchTableSetting,
+  SwitchTargetRef,
 } from '@axe/domain/tabletop/board-switch/switch-definition';
 import { pressRefusal, SwitchReach, SwitchRefusal } from '@axe/domain/tabletop/board-switch/switch-press-rules';
 import { cellsOfRect, stepsToReach } from '@axe/domain/tabletop/board-switch/switch-reach';
 import { CellRect } from '@axe/domain/tabletop/cell-rectangles';
 import { cellColRow, CellGrid, cellGridOf, cellIndexAt, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
+import { GameTable } from '@axe/domain/tabletop/game-table';
 import { groundInSight } from '@axe/domain/tabletop/ground-in-sight';
 import { gatherSpotsAround } from '@axe/domain/tabletop/move/gather-cells';
 import { occupiedCells } from '@axe/domain/tabletop/move/occupied-cells';
@@ -91,6 +99,9 @@ export class SwitchPressService {
   private readonly objectStore = inject(ObjectStore);
   private readonly triggers = inject(TableTriggerService);
   private readonly concealment = inject(ConcealmentService);
+  private readonly fire = inject(TriggerFireService);
+  private readonly images = inject(ImageStorage);
+  private readonly audios = inject(AudioStorage);
 
   private readonly running = new Set<string>();
   private readonly pressedAt = new Map<string, number>();
@@ -232,6 +243,26 @@ export class SwitchPressService {
       case 'spawn':
         this.spawn(action, context);
         return;
+      case 'showTable': {
+        const table = this.tableNamed(action.table);
+        if (table) emitSelectGameTable({ identifier: table.identifier });
+        return;
+      }
+      case 'carry': {
+        const piece = context.character;
+        if (!piece || piece.location.name !== 'table') return;
+        const named = action.table.identifier.length > 0 || action.table.name.trim().length > 0;
+        this.fire.carryTo(
+          piece,
+          action.col,
+          action.row,
+          named ? this.tableNamed(action.table) : this.tableSelecter.viewTable
+        );
+        return;
+      }
+      case 'tableSetting':
+        this.changeTable(action);
+        return;
       case 'unknown':
         return;
     }
@@ -254,6 +285,46 @@ export class SwitchPressService {
         this.chat.sendSystemMessageToTab(tab, line);
         return;
     }
+  }
+
+  /** The table a switch names, by where it was chosen, else by its name. */
+  private tableNamed(ref: SwitchTargetRef): GameTable | null {
+    const tables = this.objectStore.getObjects<GameTable>(GameTable);
+    return findByReference(tables, ref.identifier, ref.name.trim())?.thing ?? null;
+  }
+
+  /**
+   * Changes the table being looked at: its darkness and fog, the picture laid on it, and the music.
+   *
+   * The music is stopped before anything is put on, so a switch can end one piece and start another.
+   * A picture or a track named by something the room no longer has is left as it was.
+   */
+  private changeTable(action: SwitchTableSetting): void {
+    const table = this.tableSelecter.viewTable;
+    if (table && action.darkness !== 'keep') table.darknessEnabled = action.darkness === 'on';
+    if (table && action.fog !== 'keep') table.fogEnabled = action.fog === 'on';
+    const image = this.fileNamed(action.image, this.images.images, (identifier) => this.images.get(identifier));
+    if (table && image) table.imageIdentifier = image.identifier;
+    const jukebox = this.objectStore.get<Jukebox>('Jukebox');
+    if (!jukebox) return;
+    if (action.bgmStop) jukebox.stop();
+    const track = this.fileNamed(action.bgm, this.audios.audios, (identifier) => this.audios.get(identifier));
+    if (track) jukebox.play(track.identifier, true);
+  }
+
+  private fileNamed<T extends { identifier: string; name: string }>(
+    ref: SwitchTargetRef,
+    all: readonly T[],
+    byIdentifier: (identifier: string) => T | null
+  ): T | null {
+    if (ref.identifier.length > 0) {
+      const held = byIdentifier(ref.identifier);
+      if (held) return held;
+    }
+    const name = ref.name.trim();
+    if (name.length < 1) return null;
+    const named = all.filter((file) => file.name.trim() === name);
+    return named.length === 1 ? named[0] : null;
   }
 
   /**

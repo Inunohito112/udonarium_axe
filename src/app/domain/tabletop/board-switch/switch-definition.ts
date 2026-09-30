@@ -24,6 +24,9 @@ export const SWITCH_ACTION_KINDS = [
   'conceal',
   'removeSelf',
   'spawn',
+  'showTable',
+  'carry',
+  'tableSetting',
 ] as const;
 
 export type SwitchActionKind = (typeof SWITCH_ACTION_KINDS)[number];
@@ -117,6 +120,42 @@ export interface SwitchSpawn extends SwitchTargetAction {
   place: SwitchSpawnPlace;
 }
 
+/** Everybody's view turned to another table, which is how a scene changes. */
+export interface SwitchShowTable extends SwitchActionBase {
+  kind: 'showTable';
+  table: SwitchTargetRef;
+}
+
+/**
+ * The presser's piece carried to a cell, on the table being looked at or on another, which turns
+ * the room's view with it the way a pitfall to the floor below does.
+ */
+export interface SwitchCarry extends SwitchActionBase {
+  kind: 'carry';
+  col: number;
+  row: number;
+  /** The table it is carried onto. Empty keeps it on the one being looked at. */
+  table: SwitchTargetRef;
+}
+
+/** What a switch does to a setting of the table: leaves it, turns it on, or turns it off. */
+export const SWITCH_TOGGLES = ['keep', 'on', 'off'] as const;
+
+export type SwitchToggle = (typeof SWITCH_TOGGLES)[number];
+
+/** The table being looked at changed: its darkness, its fog, its picture, and the music. */
+export interface SwitchTableSetting extends SwitchActionBase {
+  kind: 'tableSetting';
+  darkness: SwitchToggle;
+  fog: SwitchToggle;
+  /** The picture laid on the table. Empty leaves it. */
+  image: SwitchTargetRef;
+  /** The music to put on. Empty leaves whatever is playing. */
+  bgm: SwitchTargetRef;
+  /** Whether the music stops, which it does before anything is put on. */
+  bgmStop: boolean;
+}
+
 /**
  * The thing the switch sits on taken away once it has done everything else: a block is taken off
  * the table, and painted ground is put away where only the master sees it.
@@ -146,6 +185,9 @@ export type SwitchAction =
   | SwitchConceal
   | SwitchRemoveSelf
   | SwitchSpawn
+  | SwitchShowTable
+  | SwitchCarry
+  | SwitchTableSetting
   | SwitchUnknownAction;
 
 /** What a switch is called and what it does when it is pressed. */
@@ -205,6 +247,18 @@ const SECRET_KEYS = ['kind', 'delayMs', 'text', 'to'];
 const TARGET_KEYS = ['kind', 'delayMs', 'target'];
 const BARE_KEYS = ['kind', 'delayMs'];
 const SPAWN_KEYS = ['kind', 'delayMs', 'target', 'count', 'place'];
+const SHOW_TABLE_KEYS = ['kind', 'delayMs', 'table'];
+const CARRY_KEYS = ['kind', 'delayMs', 'col', 'row', 'table'];
+const TABLE_SETTING_KEYS = ['kind', 'delayMs', 'darkness', 'fog', 'image', 'bgm', 'bgmStop'];
+
+function readToggle(value: unknown): SwitchToggle {
+  return value === 'on' || value === 'off' ? value : 'keep';
+}
+
+function readCell(value: unknown): number {
+  const held = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(held) && held > 0 ? Math.min(999, Math.round(held)) : 0;
+}
 const CUE_KEYS = ['kind', 'delayMs', 'name'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -292,6 +346,30 @@ function readAction(raw: unknown): SwitchAction | null {
     return { kind, target: readTarget(raw['target']), delayMs, extra: leftOver(raw, TARGET_KEYS) };
   }
   if (kind === 'removeSelf') return { kind, delayMs, extra: leftOver(raw, BARE_KEYS) };
+  if (kind === 'showTable')
+    return { kind, table: readTarget(raw['table']), delayMs, extra: leftOver(raw, SHOW_TABLE_KEYS) };
+  if (kind === 'carry') {
+    return {
+      kind,
+      col: readCell(raw['col']),
+      row: readCell(raw['row']),
+      table: readTarget(raw['table']),
+      delayMs,
+      extra: leftOver(raw, CARRY_KEYS),
+    };
+  }
+  if (kind === 'tableSetting') {
+    return {
+      kind,
+      darkness: readToggle(raw['darkness']),
+      fog: readToggle(raw['fog']),
+      image: readTarget(raw['image']),
+      bgm: readTarget(raw['bgm']),
+      bgmStop: readFlag(raw['bgmStop']),
+      delayMs,
+      extra: leftOver(raw, TABLE_SETTING_KEYS),
+    };
+  }
   if (kind === 'spawn') {
     return {
       kind,
@@ -357,6 +435,28 @@ function writeAction(action: SwitchAction): Record<string, unknown> {
       return { ...action.extra, kind: action.kind, delayMs: action.delayMs, target: { ...action.target } };
     case 'removeSelf':
       return { ...action.extra, kind: action.kind, delayMs: action.delayMs };
+    case 'showTable':
+      return { ...action.extra, kind: action.kind, delayMs: action.delayMs, table: { ...action.table } };
+    case 'carry':
+      return {
+        ...action.extra,
+        kind: action.kind,
+        delayMs: action.delayMs,
+        col: action.col,
+        row: action.row,
+        table: { ...action.table },
+      };
+    case 'tableSetting':
+      return {
+        ...action.extra,
+        kind: action.kind,
+        delayMs: action.delayMs,
+        darkness: action.darkness,
+        fog: action.fog,
+        image: { ...action.image },
+        bgm: { ...action.bgm },
+        bgmStop: action.bgmStop,
+      };
     case 'spawn':
       return {
         ...action.extra,
@@ -394,6 +494,9 @@ export function newSwitchAction(kind: 'secret'): SwitchSecret;
 export function newSwitchAction(kind: SwitchShowHide['kind']): SwitchShowHide;
 export function newSwitchAction(kind: 'removeSelf'): SwitchRemoveSelf;
 export function newSwitchAction(kind: 'spawn'): SwitchSpawn;
+export function newSwitchAction(kind: 'showTable'): SwitchShowTable;
+export function newSwitchAction(kind: 'carry'): SwitchCarry;
+export function newSwitchAction(kind: 'tableSetting'): SwitchTableSetting;
 export function newSwitchAction(kind: SwitchCue['kind']): SwitchCue;
 export function newSwitchAction(kind: SwitchActionKind): SwitchAction;
 export function newSwitchAction(kind: SwitchActionKind): SwitchAction {
@@ -405,7 +508,25 @@ export function newSwitchAction(kind: SwitchActionKind): SwitchAction {
   if (kind === 'spawn') {
     return { kind, target: { identifier: '', name: '' }, count: 1, place: 'host', delayMs: 0, extra: {} };
   }
+  if (kind === 'showTable') return { kind, table: { identifier: '', name: '' }, delayMs: 0, extra: {} };
+  if (kind === 'carry') return { kind, col: 0, row: 0, table: { identifier: '', name: '' }, delayMs: 0, extra: {} };
+  if (kind === 'tableSetting') {
+    return {
+      kind,
+      darkness: 'keep',
+      fog: 'keep',
+      image: { identifier: '', name: '' },
+      bgm: { identifier: '', name: '' },
+      bgmStop: false,
+      delayMs: 0,
+      extra: {},
+    };
+  }
   return { kind, name: '', delayMs: 0, extra: {} };
+}
+
+function names(ref: SwitchTargetRef): boolean {
+  return ref.identifier.length > 0 || ref.name.trim().length > 0;
 }
 
 /** Whether pressing the switch would do anything this version knows how to do. */
@@ -415,7 +536,17 @@ export function switchDoesAnything(definition: SwitchDefinition): boolean {
     if (action.kind === 'reveal' || action.kind === 'conceal' || action.kind === 'spawn') {
       return action.target.identifier.length > 0 || action.target.name.trim().length > 0;
     }
-    if (action.kind === 'removeSelf') return true;
+    if (action.kind === 'removeSelf' || action.kind === 'carry') return true;
+    if (action.kind === 'showTable') return names(action.table);
+    if (action.kind === 'tableSetting') {
+      return (
+        action.darkness !== 'keep' ||
+        action.fog !== 'keep' ||
+        names(action.image) ||
+        names(action.bgm) ||
+        action.bgmStop
+      );
+    }
     if (action.kind === 'unknown') return false;
     return action.name.trim().length > 0;
   });

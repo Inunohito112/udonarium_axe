@@ -18,6 +18,7 @@ import {
   SWITCH_SECRET_READERS,
   SWITCH_SPAWN_PLACES,
   SWITCH_SPEAKERS,
+  SWITCH_TOGGLES,
 } from '@axe/domain/tabletop/board-switch/switch-definition';
 import { SWITCH_REFUSALS } from '@axe/domain/tabletop/board-switch/switch-press-rules';
 import {
@@ -104,6 +105,7 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.boardSwitch.repeatOption.': TRIGGER_REPEATS,
   'feature.boardSwitch.reader.': SWITCH_SECRET_READERS,
   'feature.boardSwitch.spawnPlace.': SWITCH_SPAWN_PLACES,
+  'feature.boardSwitch.toggle.': SWITCH_TOGGLES,
 };
 
 function dictionary(language: string): Record<string, unknown> {

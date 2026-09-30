@@ -36,6 +36,18 @@ describe('switch definitions', () => {
         { kind: 'reveal' as const, target: { identifier: 'door-1', name: '隠し扉' }, delayMs: 0, extra: {} },
         { kind: 'conceal' as const, target: { identifier: 'wall-1', name: '壁' }, delayMs: 0, extra: {} },
         { kind: 'removeSelf' as const, delayMs: 0, extra: {} },
+        { kind: 'showTable' as const, table: { identifier: 'cellar', name: '地下室' }, delayMs: 0, extra: {} },
+        { kind: 'carry' as const, col: 3, row: 4, table: { identifier: '', name: '' }, delayMs: 0, extra: {} },
+        {
+          kind: 'tableSetting' as const,
+          darkness: 'on' as const,
+          fog: 'keep' as const,
+          image: { identifier: 'img', name: 'map.png' },
+          bgm: { identifier: '', name: '' },
+          bgmStop: true,
+          delayMs: 0,
+          extra: {},
+        },
         {
           kind: 'spawn' as const,
           target: { identifier: 'goblin-1', name: 'ゴブリン' },

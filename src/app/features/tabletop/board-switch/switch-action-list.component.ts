@@ -4,6 +4,7 @@ import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { ConcealmentService } from '@axe/application/tabletop/concealment.service';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
+import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { CutIn } from '@axe/domain/media/cut-in';
@@ -17,11 +18,13 @@ import {
   SWITCH_ACTION_KINDS,
   SWITCH_SECRET_READERS,
   SWITCH_SPAWN_PLACES,
+  SWITCH_TOGGLES,
   SwitchAction,
   SwitchActionKind,
   SwitchShowHide,
   SwitchSpawn,
 } from '@axe/domain/tabletop/board-switch/switch-definition';
+import { GameTable } from '@axe/domain/tabletop/game-table';
 import { TabletopObject } from '@axe/domain/tabletop/tabletop-object';
 import { TranslocoModule } from '@jsverse/transloco';
 
@@ -46,6 +49,7 @@ interface NameChoice {
 export class SwitchActionListComponent {
   private readonly effectLibrary = inject(EffectLibraryService);
   private readonly audioStorage = inject(AudioStorage);
+  private readonly imageStorage = inject(ImageStorage);
   private readonly objectStore = inject(ObjectStore);
   private readonly objectChange = inject(ObjectChangeService);
   private readonly t = inject(TRANSLATE_FN);
@@ -121,6 +125,59 @@ export class SwitchActionListComponent {
   }
 
   protected readonly spawnPlaces = SWITCH_SPAWN_PLACES;
+  protected readonly toggles = SWITCH_TOGGLES;
+
+  /** The tables of the room, which a switch can turn everybody's view to or carry a piece onto. */
+  protected readonly tables = computed<NameChoice[]>(() => {
+    this.objectChange.collectionOf(GameTable.aliasName)();
+    return this.objectStore
+      .getObjects<GameTable>(GameTable)
+      .map((table) => ({ value: table.identifier, name: table.name.trim() || table.identifier }));
+  });
+
+  /** The pictures the room has, which a switch can lay on the table. */
+  protected readonly images = computed<NameChoice[]>(() => {
+    this.objectChange.fileVersion();
+    return this.imageStorage.images
+      .filter((image) => image.name.trim().length > 0)
+      .map((image) => ({ value: image.identifier, name: image.name }));
+  });
+
+  /** The music the room has, which a switch can put on. */
+  protected readonly tracks = computed<NameChoice[]>(() => {
+    this.objectChange.fileVersion();
+    return [...this.audioStorage.audios]
+      .map((audio) => ({ value: audio.identifier, name: soundFileName(audio.name) }))
+      .sort((left, right) => left.name.localeCompare(right.name, 'ja'));
+  });
+
+  /** Points a table, a picture or a track an action names at another, by what it is called too. */
+  protected setRef(index: number, key: 'table' | 'image' | 'bgm', identifier: string, choices: NameChoice[]): void {
+    const held = this.actions()[index];
+    if (!held) return;
+    const name = choices.find((choice) => choice.value === identifier)?.name ?? '';
+    const ref = { identifier, name: identifier.length > 0 ? name : '' };
+    if (key === 'table' && (held.kind === 'showTable' || held.kind === 'carry'))
+      this.replace(index, { ...held, table: ref });
+    if (key !== 'table' && held.kind === 'tableSetting') this.replace(index, { ...held, [key]: ref });
+  }
+
+  protected setCell(index: number, key: 'col' | 'row', value: string): void {
+    const held = this.actions()[index];
+    const cell = Math.max(0, Math.min(999, Math.round(Number(value) || 0)));
+    if (held?.kind === 'carry') this.replace(index, { ...held, [key]: cell });
+  }
+
+  protected setToggle(index: number, key: 'darkness' | 'fog', value: string): void {
+    const held = this.actions()[index];
+    const toggle = value === 'on' || value === 'off' ? value : 'keep';
+    if (held?.kind === 'tableSetting') this.replace(index, { ...held, [key]: toggle });
+  }
+
+  protected setBgmStop(index: number, stop: boolean): void {
+    const held = this.actions()[index];
+    if (held?.kind === 'tableSetting') this.replace(index, { ...held, bgmStop: stop });
+  }
 
   protected setSpawnCount(index: number, count: string): void {
     const held = this.actions()[index];

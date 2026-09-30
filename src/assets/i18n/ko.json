@@ -4474,7 +4474,10 @@
         "reveal": "숨긴 물체 보이기",
         "conceal": "숨기기",
         "removeSelf": "누른 물체 지우기",
-        "spawn": "말 불러내기"
+        "spawn": "말 불러내기",
+        "showTable": "테이블 전환",
+        "carry": "누른 사람의 말 옮기기",
+        "tableSetting": "테이블 설정 바꾸기"
       },
       "delay": "대기 (초)",
       "moveUp": "위로",
@@ -4545,6 +4548,23 @@
         "graveyard": "묘지",
         "concealed": "숨김",
         "other": "보관"
+      },
+      "showTableHint": "모두가 보는 테이블을 선택한 테이블로 바꿉니다 (장면 전환).",
+      "carryCol": "열",
+      "carryRow": "행",
+      "carryHere": "보고 있는 테이블 그대로",
+      "carryHint": "누른 사람이 선택한 캐릭터의 말을 지정한 칸으로 옮깁니다. 다른 테이블을 고르면 모두의 시점도 옮겨집니다.",
+      "setting": {
+        "darkness": "어둠",
+        "fog": "전장의 안개",
+        "image": "테이블 이미지",
+        "bgm": "BGM",
+        "bgmStop": "먼저 BGM 멈추기"
+      },
+      "toggle": {
+        "keep": "그대로",
+        "on": "켜기",
+        "off": "끄기"
       }
     }
   },
