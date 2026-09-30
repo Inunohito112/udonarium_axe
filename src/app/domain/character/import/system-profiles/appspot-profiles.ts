@@ -5,7 +5,10 @@ import { resolveAppspotDicebot } from '@axe/domain/character/import/system-profi
 import { buildDx3AppspotCharacter } from '@axe/domain/character/import/system-profiles/dx3-appspot-profile';
 import { appspotLabelMap } from '@axe/domain/character/import/system-profiles/label-maps';
 import { fillFromGeneral } from '@axe/domain/character/import/system-profiles/profile-fill';
-import { buildPsychoFictionCharacter } from '@axe/domain/character/import/system-profiles/psychofiction-appspot';
+import {
+  buildPsychoFictionCharacter,
+  nameResources,
+} from '@axe/domain/character/import/system-profiles/psychofiction-appspot';
 import { PF_APPSPOT_SYSTEMS } from '@axe/domain/character/import/system-profiles/psychofiction-systems';
 import { buildStellarAppspotCharacter } from '@axe/domain/character/import/system-profiles/stellar-appspot-profile';
 
@@ -38,7 +41,7 @@ export function parseAppspotCharacterForSystem(parsed: unknown, systemHint?: str
   const pfConfig = PF_APPSPOT_SYSTEMS[slug];
   if (pfConfig) {
     const profile = buildPsychoFictionCharacter(parsed, pfConfig);
-    if (profile) return fillFromGeneral(profile, general);
+    if (profile) return nameResources(fillFromGeneral(profile, general), pfConfig.resourceLabels);
   }
 
   const character = general;
