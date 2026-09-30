@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { GameObject } from '@axe/core/sync/game-object';
 import { ambienceKindOf } from '@axe/domain/effect/ambience/ambience-kind';
+import { BoardSwitch } from '@axe/domain/tabletop/board-switch/board-switch';
 import { parseCellKey } from '@axe/domain/tabletop/cell-key';
 import { cellKeyOf, CellRect } from '@axe/domain/tabletop/cell-rectangles';
 import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
@@ -32,6 +33,7 @@ import { TableSnapshot } from '@axe/domain/tabletop/table-snapshot';
 import { TableTrigger, triggersOn } from '@axe/domain/tabletop/table-trigger';
 import { Terrain, TERRAIN_FACES } from '@axe/domain/tabletop/terrain';
 import { encodeSlopeSides, parseSlopeSides } from '@axe/domain/tabletop/terrain-slope';
+import { isPressMoment } from '@axe/domain/tabletop/trigger-event';
 
 function terrainsOn(table: GameTable): Terrain[] {
   return table.children.filter((child): child is Terrain => child instanceof Terrain);
@@ -293,6 +295,20 @@ function hexFootprintOf(
 }
 
 /** What one piece of trigger ground looks like to the editor, which is everything but its state. */
+/**
+ * Writes pressed ground down as a trap already spent, for the versions that have never heard of
+ * pressing.
+ *
+ * Such a version reads the moment it does not know as the end of a walk, and would spring the
+ * ground under every piece that stopped on it. Spent, it has nothing left to spring. This version
+ * asks the ground's own switch instead.
+ */
+function guardPressedGround(trigger: TableTrigger): void {
+  trigger.once = true;
+  trigger.repeat = 'once';
+  trigger.spent = true;
+}
+
 function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
   return {
     name: trigger.name,
@@ -323,6 +339,7 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
     warpCol: trigger.warpCol,
     warpRow: trigger.warpRow,
     warpTable: trigger.warpTable,
+    ...(trigger.pressSwitch ? { once: false, repeat: '', press: trigger.pressSwitch.definition } : { press: '' }),
   };
 }
 
@@ -499,8 +516,15 @@ export class FunctionalPaintService {
       trigger.warpCol = block.spec.warpCol;
       trigger.warpRow = block.spec.warpRow;
       trigger.warpTable = block.spec.warpTable;
+      if (isPressMoment(block.spec.moment)) guardPressedGround(trigger);
       trigger.initialize();
       table.appendChild(trigger);
+      if (isPressMoment(block.spec.moment)) {
+        const held = new BoardSwitch();
+        held.definition = block.spec.press;
+        held.initialize();
+        trigger.appendChild(held);
+      }
     }
   }
 

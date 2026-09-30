@@ -4,6 +4,7 @@ import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { ChatSpeakerService } from '@axe/application/chat/chat-speaker.service';
 import { NamedCueService } from '@axe/application/media/named-cue.service';
 import { blockFootprintOf } from '@axe/application/tabletop/functional-paint.service';
+import { TableTriggerService } from '@axe/application/tabletop/table-trigger.service';
 import { VisionService } from '@axe/application/tabletop/vision.service';
 import { Network } from '@axe/core/network/network';
 import { ObjectNode } from '@axe/core/sync/object-node';
@@ -17,7 +18,7 @@ import { SwitchAction, SwitchDefinition } from '@axe/domain/tabletop/board-switc
 import { pressRefusal, SwitchReach, SwitchRefusal } from '@axe/domain/tabletop/board-switch/switch-press-rules';
 import { cellsOfRect, stepsToReach } from '@axe/domain/tabletop/board-switch/switch-reach';
 import { CellRect } from '@axe/domain/tabletop/cell-rectangles';
-import { CellGrid, cellGridOf } from '@axe/domain/tabletop/fog/cell-grid';
+import { cellColRow, CellGrid, cellGridOf, cellIndexAt } from '@axe/domain/tabletop/fog/cell-grid';
 import { groundInSight } from '@axe/domain/tabletop/ground-in-sight';
 import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
@@ -74,6 +75,7 @@ export class SwitchPressService {
   private readonly vision = inject(VisionService);
   private readonly tableSelecter = inject(TableSelecter);
   private readonly objectStore = inject(ObjectStore);
+  private readonly triggers = inject(TableTriggerService);
 
   private readonly running = new Set<string>();
   private readonly pressedAt = new Map<string, number>();
@@ -105,6 +107,30 @@ export class SwitchPressService {
       inSight: definition.needsSight ? this.sees(host) : undefined,
       trial: options.trial,
     });
+  }
+
+  /**
+   * Presses the pressed ground under a point of the table, where there is any this seat is shown,
+   * and answers how it went; null where there is none to press.
+   *
+   * Where two stretches overlap, the one laid last is pressed, which is the one drawn on top.
+   * Ground that gives itself away is shown to the room by being pressed, as a trap is by going off.
+   */
+  async pressGroundAt(x: number, y: number): Promise<SwitchPressOutcome | null> {
+    const grid = this.grid();
+    if (!grid) return null;
+    const cell = cellIndexAt(grid, x, y);
+    if (cell < 0) return null;
+    const { col, row } = cellColRow(grid, cell);
+    const ground = this.triggers
+      .shown()
+      .filter((trigger) => trigger.pressSwitch && !trigger.pressSwitch.retired && trigger.covers(col, row))
+      .pop();
+    const held = ground?.pressSwitch;
+    if (!ground || !held) return null;
+    const outcome = await this.press(held);
+    if (outcome === 'pressed' && ground.reveals && !ground.found) ground.found = true;
+    return outcome;
   }
 
   /** Presses the switch, and answers once everything it does has been done or turned away. */

@@ -3379,7 +3379,9 @@
         "triggerPassAmount": "성공했을 때의 증감",
         "triggerCheckRollHint": "「1d20+3」처럼 적으면 테이블이 대신 굴려 목표값과 비교합니다. 비워 두면 본인이 굴립니다",
         "moveCostHalves": "길 (절반으로 이동)",
-        "moveCostHalvesHint": "1칸을 0.5 소비로 지나갑니다. 아래에 무엇이 칠해져 있어도 길이 우선되므로 늪을 관통하는 가도를 만들 수 있습니다"
+        "moveCostHalvesHint": "1칸을 0.5 소비로 지나갑니다. 아래에 무엇이 칠해져 있어도 길이 우선되므로 늪을 관통하는 가도를 만들 수 있습니다",
+        "triggerMoment_press": "눌렀을 때 (스위치)",
+        "triggerPressHint": "칠한 칸을 클릭하면 아래 동작이 일어납니다. 발언자, 누를 수 있는 거리, 횟수, 비밀 결과도 여기서 정합니다."
       },
       "stampCategories": {
         "door": "문",
@@ -4511,7 +4513,8 @@
         "presser": "누른 사람과 GM만 읽을 수 있음",
         "master": "GM만 읽을 수 있음"
       },
-      "secretPlaceholder": "숨겨서 쓸 문장. {HP} 같은 참조도 쓸 수 있습니다"
+      "secretPlaceholder": "숨겨서 쓸 문장. {HP} 같은 참조도 쓸 수 있습니다",
+      "pressHere": "클릭해서 누르기"
     }
   },
   "app": {

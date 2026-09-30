@@ -3379,7 +3379,9 @@
         "triggerPassAmount": "成功したときの増減",
         "triggerCheckRollHint": "「1d20+3」のように書くと、卓が代わりに振って目標値と比べます。空欄なら振るのは本人",
         "moveCostHalves": "道（半分で進める）",
-        "moveCostHalvesHint": "1 マスを 0.5 消費で渡れます。下に何が塗ってあっても道が優先されるので、沼を貫く街道が作れます"
+        "moveCostHalvesHint": "1 マスを 0.5 消費で渡れます。下に何が塗ってあっても道が優先されるので、沼を貫く街道が作れます",
+        "triggerMoment_press": "押したとき（スイッチ）",
+        "triggerPressHint": "塗ったマスをクリックすると、下の動作が起きます。発言する人・押せる距離・回数・秘密の結果もここで決めます。"
       },
       "stampCategories": {
         "door": "扉",
@@ -4263,7 +4265,8 @@
         "presser": "押した人と GM だけが読める",
         "master": "GM だけが読める"
       },
-      "secretPlaceholder": "伏せて書く文。{HP} などの参照も使えます"
+      "secretPlaceholder": "伏せて書く文。{HP} などの参照も使えます",
+      "pressHere": "クリックで押す"
     }
   },
   "app": {

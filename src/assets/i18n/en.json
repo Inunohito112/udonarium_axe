@@ -3379,7 +3379,9 @@
         "triggerPassAmount": "Taken on a success",
         "triggerCheckRollHint": "Write something like 1d20+3 and the table throws it against the target. Empty leaves the roll to whoever walked in",
         "moveCostHalves": "Road (half a step)",
-        "moveCostHalvesHint": "Crossed for half a cell. A road wins over whatever is painted under it, so a made road runs straight through a swamp"
+        "moveCostHalvesHint": "Crossed for half a cell. A road wins over whatever is painted under it, so a made road runs straight through a swamp",
+        "triggerMoment_press": "When pressed (switch)",
+        "triggerPressHint": "Clicking a painted cell runs the actions below. Set who speaks, the reach, the uses and any secret result here too."
       },
       "stampCategories": {
         "door": "Doors",
@@ -4263,7 +4265,8 @@
         "presser": "Only the presser and the GM can read it",
         "master": "Only the GM can read it"
       },
-      "secretPlaceholder": "Text kept back from the room. {HP} and other references work too"
+      "secretPlaceholder": "Text kept back from the room. {HP} and other references work too",
+      "pressHere": "Click to press"
     }
   },
   "app": {

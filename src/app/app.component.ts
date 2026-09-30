@@ -86,6 +86,7 @@ import { ReplayStagingBannerComponent } from '@axe/features/replay/replay-stagin
 import { RoomArchiveEventHandlerService } from '@axe/features/room-archive/room-archive-event-handler.service';
 import { RoomRestoreBannerComponent } from '@axe/features/room-archive/room-restore-banner/room-restore-banner.component';
 import { StreamingOverlayComponent } from '@axe/features/streaming-overlay/streaming-overlay.component';
+import { SwitchNoticeComponent } from '@axe/features/tabletop/board-switch/switch-notice.component';
 import { CcfoliaRoomImportEventHandlerService } from '@axe/features/tabletop/ccfolia-room-import/ccfolia-room-import-event-handler.service';
 import { FogMemoryWriterService } from '@axe/features/tabletop/fog-of-war/fog-memory-writer.service';
 import { GameTableComponent } from '@axe/features/tabletop/game-table/game-table.component';
@@ -153,6 +154,7 @@ const FAB_MARGIN_PX = 12;
     ReplayBoardBannerComponent,
     InviteJoinComponent,
     StreamingOverlayComponent,
+    SwitchNoticeComponent,
     ChatTickerComponent,
     UiFabSubmenuComponent,
     UiFabSubmenuButtonComponent,

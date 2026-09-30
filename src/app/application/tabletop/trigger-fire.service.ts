@@ -16,13 +16,7 @@ import { pieceCellOf, pieceCornerOn } from '@axe/domain/tabletop/move/piece-on-g
 import { resolveRoomRules } from '@axe/domain/tabletop/room-rules';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger, triggersOn } from '@axe/domain/tabletop/table-trigger';
-import {
-  isTurnMoment,
-  rollTriggerAmount,
-  triggerCatches,
-  TriggerMoment,
-  triggerPassTake,
-} from '@axe/domain/tabletop/trigger-event';
+import { rollTriggerAmount, triggerCatches, TriggerMoment, triggerPassTake } from '@axe/domain/tabletop/trigger-event';
 import { TurnState } from '@axe/domain/tabletop/turn-state';
 
 /** One piece of ground going off, and what it came to. */
@@ -159,14 +153,19 @@ export class TriggerFireService {
    * A walk drawn cell by cell is walked cell by cell, and a trap under the second cell of it
    * goes off while the piece is standing on the second cell. Springing them all at the end
    * would land four explosions on the far side of a swamp the piece waded through.
+   *
+   * Only the two moments a walk reaches are asked about. Ground that answers to the round is not
+   * ground a walk reaches, since crossing a fire is not standing in one, and ground that is a
+   * switch goes off when it is pressed, never underfoot.
    */
   stepped(piece: GameCharacter, grid: CellGrid, cell: number, ending: boolean): TriggerFiring[] {
-    return this.fire(piece, grid, cell, ending, (trigger) => {
-      // Ground that answers to the round is not ground a walk reaches: crossing a fire is not
-      // standing in one, and the round is what says a piece stood anywhere at all.
-      if (isTurnMoment(trigger.firesOn)) return false;
-      return trigger.firesOn !== 'stop' || ending;
-    });
+    return this.fire(
+      piece,
+      grid,
+      cell,
+      ending,
+      (trigger) => trigger.firesOn === 'enter' || (trigger.firesOn === 'stop' && ending)
+    );
   }
 
   /**
