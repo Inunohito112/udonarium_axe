@@ -1,19 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { StatusAilmentService } from '@axe/application/character/status-ailment.service';
 import { ChatMessageService } from '@axe/application/chat/chat-message.service';
-import { EffectCastService } from '@axe/application/effect/effect-cast.service';
-import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
-import { CutInService } from '@axe/application/media/cut-in.service';
+import { NamedCueService } from '@axe/application/media/named-cue.service';
 import { MoveRangeService } from '@axe/application/tabletop/move-range.service';
-import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { newStatusAilment } from '@axe/domain/character/status-ailment';
 import { DataElement } from '@axe/domain/data/data-element';
-import { findByReference } from '@axe/domain/hotbar/hotbar-reference';
-import { CutIn } from '@axe/domain/media/cut-in';
-import { SoundEffect } from '@axe/domain/media/sound-effect';
 import { Config } from '@axe/domain/peer/config';
 import { cellColRow, cellCount, CellGrid, cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { GameTable } from '@axe/domain/tabletop/game-table';
@@ -54,13 +48,10 @@ export interface TriggerFiring {
 @Injectable({ providedIn: 'root' })
 export class TriggerFireService {
   private readonly tableSelecter = inject(TableSelecter);
-  private readonly effectLibrary = inject(EffectLibraryService);
-  private readonly effectCast = inject(EffectCastService);
   private readonly chat = inject(ChatMessageService);
   private readonly ailments = inject(StatusAilmentService);
   private readonly moveRange = inject(MoveRangeService);
-  private readonly cutIns = inject(CutInService);
-  private readonly audioStorage = inject(AudioStorage);
+  private readonly cues = inject(NamedCueService);
   private readonly objectStore = inject(ObjectStore);
   private readonly t = inject(TRANSLATE_FN);
 
@@ -342,29 +333,13 @@ export class TriggerFireService {
    * Sets off whatever the ground was told to play, on the piece that set it off.
    *
    * Each of the three is tried on its own, so a cut-in nobody has made does not take the sound
-   * down with it. All three are named rather than pointed at: a map carried into another room
-   * holds identifiers that mean nothing there, and a name that matches one thing and no other
-   * still finds it.
+   * down with it.
    */
   private play(firing: TriggerFiring, piece: GameCharacter): void {
     const trigger = firing.trigger;
-    const named = trigger.effect.trim();
-    // Looked up past the master-only gate: the ground was painted by the master, so playing
-    // what it was told to play is the ground's doing rather than the reader's reaching.
-    const preset = named.length > 0 ? this.effectLibrary.presets().find((held) => held.name.trim() === named) : null;
-    if (preset) this.effectCast.fire(preset, [piece], null);
-
-    const heard = trigger.sound.trim();
-    if (heard.length > 0) {
-      const audio = this.audioStorage.audios.filter((held) => held.name.trim() === heard);
-      if (audio.length === 1) SoundEffect.play(audio[0]);
-    }
-
-    const shown = trigger.cutIn.trim();
-    if (shown.length > 0) {
-      const found = findByReference(this.objectStore.getObjects<CutIn>(CutIn), '', shown);
-      if (found) this.cutIns.launch(found.thing);
-    }
+    this.cues.playEffect(trigger.effect, [piece]);
+    this.cues.playSound(trigger.sound);
+    this.cues.launchCutIn(trigger.cutIn);
   }
 
   /**
