@@ -7,7 +7,7 @@ import { createSyncTranslate } from '@axe/testing/transloco-testing';
 const t = createSyncTranslate('ja');
 
 describe('buildBoardSwitchMenu', () => {
-  const callbacks = { edit: vi.fn(), press: vi.fn(), remove: vi.fn() };
+  const callbacks = { edit: vi.fn(), press: vi.fn(), reset: vi.fn(), remove: vi.fn() };
 
   function names(state: Partial<BoardSwitchMenuState>): string[] {
     return buildBoardSwitchMenu({ canEdit: true, hasSwitch: false, isDoor: false, ...state }, callbacks, t).map(
@@ -26,6 +26,15 @@ describe('buildBoardSwitchMenu', () => {
 
   it('offers the master to write, try and take off a switch the block has', () => {
     expect(names({ hasSwitch: true })).toEqual(['スイッチを設定…', 'スイッチを試しに押す', 'スイッチを外す']);
+  });
+
+  it('offers to clear the record of presses once the switch has been pressed', () => {
+    expect(names({ hasSwitch: true, pressed: true })).toEqual([
+      'スイッチを設定…',
+      'スイッチを試しに押す',
+      '押された記録を消す',
+      'スイッチを外す',
+    ]);
   });
 
   it('offers no switch on a door, whose click already opens it, but still reaches one it has', () => {

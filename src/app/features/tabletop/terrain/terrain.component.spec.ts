@@ -1272,7 +1272,7 @@ describe('TerrainComponent', () => {
 
       click({ x: 10, y: 10 }, { x: 12, y: 11 });
 
-      expect(press).toHaveBeenCalledWith(made, { name: '宝箱' });
+      expect(press).toHaveBeenCalledWith(made);
       expect(block().hasAttribute('data-switch-host')).toBe(true);
     });
 

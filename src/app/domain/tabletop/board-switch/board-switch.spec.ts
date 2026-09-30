@@ -2,7 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { ObjectFactory } from '@axe/core/sync/object-factory';
 import { ObjectSerializer } from '@axe/core/sync/object-serializer';
 import { ObjectStore } from '@axe/core/sync/object-store';
-import { BoardSwitch, switchOf } from '@axe/domain/tabletop/board-switch/board-switch';
+import {
+  BoardSwitch,
+  resetSwitch,
+  spendSwitch,
+  switchHasGoFor,
+  switchOf,
+  switchWasPressed,
+} from '@axe/domain/tabletop/board-switch/board-switch';
 import { defaultSwitchDefinition, newSwitchAction } from '@axe/domain/tabletop/board-switch/switch-definition';
 import { Terrain } from '@axe/domain/tabletop/terrain';
 
@@ -128,6 +135,50 @@ describe('BoardSwitch', () => {
     made.write(made.def);
 
     expect(made.majorVersion).toBe(version);
+  });
+
+  describe('counting its presses', () => {
+    function counting(repeat: 'always' | 'once' | 'oncePerPiece' | 'oncePerRound'): BoardSwitch {
+      const made = new BoardSwitch();
+      made.initialize();
+      made.write({ ...defaultSwitchDefinition(), repeat });
+      return made;
+    }
+
+    it('goes any number of times where it is not counted', () => {
+      const made = counting('always');
+      spendSwitch(made, 'hero', 1);
+
+      expect(switchHasGoFor(made, 'hero', 1)).toBe(true);
+      expect(switchWasPressed(made)).toBe(false);
+    });
+
+    it('goes once for everybody, once for each presser, or once a round', () => {
+      const once = counting('once');
+      spendSwitch(once, 'hero', 1);
+      expect(switchHasGoFor(once, 'rogue', 1)).toBe(false);
+
+      const each = counting('oncePerPiece');
+      spendSwitch(each, 'hero', 1);
+      expect(switchHasGoFor(each, 'hero', 1)).toBe(false);
+      expect(switchHasGoFor(each, 'rogue', 1)).toBe(true);
+
+      const perRound = counting('oncePerRound');
+      spendSwitch(perRound, 'hero', 2);
+      expect(switchHasGoFor(perRound, 'rogue', 2)).toBe(false);
+      expect(switchHasGoFor(perRound, 'rogue', 3)).toBe(true);
+    });
+
+    it('forgets every press when the master sets it again', () => {
+      const made = counting('once');
+      spendSwitch(made, 'hero', 1);
+      expect(switchWasPressed(made)).toBe(true);
+
+      resetSwitch(made);
+
+      expect(switchWasPressed(made)).toBe(false);
+      expect(switchHasGoFor(made, 'hero', 1)).toBe(true);
+    });
   });
 
   it('reads a saved block that carries something this version has never heard of as the block it is', () => {

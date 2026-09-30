@@ -4,6 +4,8 @@ import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { ChatSpeakerService } from '@axe/application/chat/chat-speaker.service';
 import { NamedCueService } from '@axe/application/media/named-cue.service';
 import { SWITCH_COOLDOWN_MS, SwitchPressService } from '@axe/application/tabletop/switch-press.service';
+import { VisionService } from '@axe/application/tabletop/vision.service';
+import { Network } from '@axe/core/network/network';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
@@ -15,12 +17,20 @@ import {
   SwitchAction,
   SwitchDefinition,
 } from '@axe/domain/tabletop/board-switch/switch-definition';
+import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
+import { cellCount, cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
+import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
+import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
+import { Terrain } from '@axe/domain/tabletop/terrain';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
+
+const GRID = 50;
 
 describe('SwitchPressService', () => {
   let presses: SwitchPressService;
   let macro: CharacterMacroService;
   let said: string[];
+  let table: GameTable;
   const tab = { plCanView: true, plCanSpeak: true, guestCanView: true, guestCanSpeak: false } as unknown as ChatTab;
 
   function say(text: string, delayMs = 0): SwitchAction {
@@ -34,9 +44,31 @@ describe('SwitchPressService', () => {
     return made;
   }
 
+  /** A block one cell across standing on a cell of the table, with a switch under it. */
+  function chestAt(col: number, row: number, change: Partial<SwitchDefinition>): BoardSwitch {
+    const chest = Terrain.create('宝箱', 1, 1, 1, '', '');
+    chest.location = { name: 'table', x: col * GRID, y: row * GRID } as never;
+    const made = switchWith(change);
+    chest.appendChild(made);
+    return made;
+  }
+
+  function speakAs(col: number, row: number): GameCharacter {
+    const hero = GameCharacter.create('勇者', 1, '');
+    hero.location = { name: 'table', x: col * GRID, y: row * GRID } as never;
+    TestBed.inject(ChatSpeakerService).set(hero.identifier);
+    return hero;
+  }
+
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
     PeerCursor.createMyCursor().role = PeerRole.Player;
+    table = new GameTable();
+    table.width = 12;
+    table.height = 12;
+    table.gridSize = GRID;
+    table.initialize();
+    TestBed.inject(TableSelecter).viewTableIdentifier = table.identifier;
     presses = TestBed.inject(SwitchPressService);
     macro = TestBed.inject(CharacterMacroService);
     said = [];
@@ -64,9 +96,7 @@ describe('SwitchPressService', () => {
 
   it('does what the switch says in order, waiting as long as each thing asks after the one before', async () => {
     vi.useFakeTimers();
-    const played: string[] = [];
     vi.spyOn(TestBed.inject(NamedCueService), 'playSound').mockImplementation((name) => {
-      played.push(name);
       said.push(`sound:${name}`);
       return true;
     });
@@ -74,7 +104,7 @@ describe('SwitchPressService', () => {
       actions: [say('one', 3000), { kind: 'sound', name: 'bell', delayMs: 500, extra: {} }, say('two', 1000)],
     });
 
-    const pressing = presses.press(lever, { name: 'lever' });
+    const pressing = presses.press(lever);
     await vi.advanceTimersByTimeAsync(0);
     expect(said).toEqual(['self:one']);
 
@@ -90,10 +120,10 @@ describe('SwitchPressService', () => {
     vi.useFakeTimers();
     const lever = switchWith({ actions: [say('one'), say('two', SWITCH_COOLDOWN_MS * 2)] });
 
-    const first = presses.press(lever, { name: '' });
+    const first = presses.press(lever);
     await vi.advanceTimersByTimeAsync(SWITCH_COOLDOWN_MS + 100);
 
-    expect(await presses.press(lever, { name: '' })).toBe('busy');
+    expect(await presses.press(lever)).toBe('busy');
     await vi.advanceTimersByTimeAsync(SWITCH_COOLDOWN_MS);
     await expect(first).resolves.toBe('pressed');
     expect(said).toEqual(['self:one', 'self:two']);
@@ -103,26 +133,25 @@ describe('SwitchPressService', () => {
     vi.useFakeTimers();
     const lever = switchWith({ actions: [say('one')] });
 
-    expect(await presses.press(lever, { name: '' })).toBe('pressed');
-    expect(await presses.press(lever, { name: '' })).toBe('busy');
+    expect(await presses.press(lever)).toBe('pressed');
+    expect(await presses.press(lever)).toBe('busy');
     await vi.advanceTimersByTimeAsync(SWITCH_COOLDOWN_MS);
 
-    expect(await presses.press(lever, { name: '' })).toBe('pressed');
+    expect(await presses.press(lever)).toBe('pressed');
     expect(said).toEqual(['self:one', 'self:one']);
   });
 
   it('speaks as the piece the presser has picked in the chat, where they have one', async () => {
-    const hero = GameCharacter.create('勇者', 1, '');
-    TestBed.inject(ChatSpeakerService).set(hero.identifier);
+    speakAs(0, 0);
 
-    await presses.press(switchWith({ actions: [say('1d100<={目星}')] }), { name: '' });
+    await presses.press(switchWith({ actions: [say('1d100<={目星}')] }));
 
     expect(said).toEqual(['勇者:1d100<={目星}']);
   });
 
   it('speaks under the name of what it sits on, else its own label, where it speaks for itself', async () => {
-    await presses.press(switchWith({ speaker: 'host', label: 'lever', actions: [say('creak')] }), { name: '宝箱' });
-    await presses.press(switchWith({ speaker: 'host', label: 'lever', actions: [say('creak')] }), { name: ' ' });
+    await presses.press(chestAt(1, 1, { speaker: 'host', label: 'lever', actions: [say('creak')] }));
+    await presses.press(switchWith({ speaker: 'host', label: 'lever', actions: [say('creak')] }));
 
     expect(said).toEqual(['named 宝箱:creak', 'named lever:creak']);
   });
@@ -130,7 +159,7 @@ describe('SwitchPressService', () => {
   it('writes a system line in the tab where it speaks as the room', async () => {
     const system = vi.spyOn(TestBed.inject(ChatMessageService), 'sendSystemMessageToTab').mockReturnValue(null!);
 
-    await presses.press(switchWith({ speaker: 'system', actions: [say('the floor gives way')] }), { name: '' });
+    await presses.press(switchWith({ speaker: 'system', actions: [say('the floor gives way')] }));
 
     expect(system).toHaveBeenCalledWith(tab, 'the floor gives way');
   });
@@ -138,7 +167,7 @@ describe('SwitchPressService', () => {
   it('turns a watcher away without saying anything', async () => {
     PeerCursor.myCursor.role = PeerRole.Guest;
 
-    expect(await presses.press(switchWith({ actions: [say('hi')] }), { name: '' })).toBe('watching');
+    expect(await presses.press(switchWith({ actions: [say('hi')] }))).toBe('watching');
     expect(said).toEqual([]);
   });
 
@@ -146,10 +175,9 @@ describe('SwitchPressService', () => {
     const effect = vi.spyOn(TestBed.inject(NamedCueService), 'playEffect').mockReturnValue(true);
     const sparkle = { kind: 'effect' as const, name: 'sparkle', delayMs: 0, extra: {} };
 
-    await presses.press(switchWith({ actions: [sparkle] }), { name: '' });
-    const hero = GameCharacter.create('勇者', 1, '');
-    TestBed.inject(ChatSpeakerService).set(hero.identifier);
-    await presses.press(switchWith({ actions: [sparkle] }), { name: '' });
+    await presses.press(switchWith({ actions: [sparkle] }));
+    const hero = speakAs(0, 0);
+    await presses.press(switchWith({ actions: [sparkle] }));
 
     expect(effect).toHaveBeenNthCalledWith(1, 'sparkle', []);
     expect(effect).toHaveBeenNthCalledWith(2, 'sparkle', [hero]);
@@ -161,11 +189,113 @@ describe('SwitchPressService', () => {
     });
 
     const outcome = await presses.press(
-      switchWith({ actions: [{ kind: 'cutIn', name: 'boom', delayMs: 0, extra: {} }, say('after')] }),
-      { name: '' }
+      switchWith({ actions: [{ kind: 'cutIn', name: 'boom', delayMs: 0, extra: {} }, say('after')] })
     );
 
     expect(outcome).toBe('pressed');
     expect(said).toEqual(['self:after']);
+  });
+
+  describe('how often it can be pressed', () => {
+    it('is used up by the first press where it goes once, written down before it does anything', async () => {
+      vi.useFakeTimers();
+      const chest = switchWith({ repeat: 'once', actions: [say('opened', 0), say('later', 1000)] });
+
+      const pressing = presses.press(chest);
+      expect(chest.spent).toBe(true);
+      await vi.advanceTimersByTimeAsync(1000 + SWITCH_COOLDOWN_MS);
+      await pressing;
+
+      expect(await presses.press(chest)).toBe('spent');
+      expect(said).toEqual(['self:opened', 'self:later']);
+    });
+
+    it('goes once for each piece where it goes once a piece', async () => {
+      vi.useFakeTimers();
+      const chest = switchWith({ repeat: 'oncePerPiece', actions: [say('searched')] });
+      speakAs(0, 0);
+
+      expect(await presses.press(chest)).toBe('pressed');
+      await vi.advanceTimersByTimeAsync(SWITCH_COOLDOWN_MS);
+      expect(await presses.press(chest)).toBe('spent');
+
+      speakAs(0, 0);
+      await vi.advanceTimersByTimeAsync(SWITCH_COOLDOWN_MS);
+      expect(await presses.press(chest)).toBe('pressed');
+    });
+
+    it('lets the master try it out without spending it, however often', async () => {
+      vi.useFakeTimers();
+      const chest = switchWith({ repeat: 'once', actions: [say('opened')] });
+      expect(await presses.press(chest)).toBe('pressed');
+      await vi.advanceTimersByTimeAsync(SWITCH_COOLDOWN_MS);
+      PeerCursor.myCursor.role = PeerRole.GameMaster;
+
+      expect(await presses.press(chest, { trial: true })).toBe('pressed');
+      expect(chest.spent).toBe(true);
+    });
+  });
+
+  describe('where it has to be pressed from', () => {
+    it('lets a piece standing within reach press it, and turns one farther off away', async () => {
+      vi.useFakeTimers();
+      const chest = chestAt(5, 5, { range: 2, actions: [say('opened')] });
+
+      speakAs(7, 3);
+      expect(await presses.press(chest)).toBe('pressed');
+
+      speakAs(8, 5);
+      await vi.advanceTimersByTimeAsync(SWITCH_COOLDOWN_MS);
+      expect(await presses.press(chest)).toBe('tooFar');
+    });
+
+    it('turns away somebody with no piece on the table, but not the master', async () => {
+      const chest = chestAt(5, 5, { range: 1, actions: [say('opened')] });
+
+      expect(await presses.press(chest)).toBe('noPiece');
+
+      PeerCursor.myCursor.role = PeerRole.GameMaster;
+      expect(await presses.press(chest)).toBe('pressed');
+    });
+
+    it('turns away somebody who cannot see it, where it has to be seen', async () => {
+      const grid = cellGridOf(table.width, table.height, GRID, GridType.SQUARE);
+      const seen = new CellBits(cellCount(grid));
+      seen.set(cellIndexOf(grid, 1, 1));
+      vi.spyOn(TestBed.inject(VisionService), 'overlayVision').mockReturnValue({ visible: seen } as never);
+
+      expect(await presses.press(chestAt(5, 5, { needsSight: true, actions: [say('hidden')] }))).toBe('unseen');
+      expect(await presses.press(chestAt(1, 1, { needsSight: true, actions: [say('in view')] }))).toBe('pressed');
+    });
+  });
+
+  describe('lines kept back from the room', () => {
+    it('keeps a line for the presser and the master, filled in from the presser’s piece', async () => {
+      const secret = vi
+        .spyOn(TestBed.inject(ChatMessageService), 'sendSecretSystemMessageToTab')
+        .mockReturnValue(null!);
+      const hero = speakAs(0, 0);
+      hero.chatPalette!.setPalette('//目星=60');
+
+      await presses.press(
+        switchWith({
+          actions: [{ kind: 'secret', text: '目星 {目星} で見つけた', to: 'presser', delayMs: 0, extra: {} }],
+        })
+      );
+
+      expect(secret).toHaveBeenCalledWith(tab, '目星 60 で見つけた', Network.peerContext.userId);
+    });
+
+    it('keeps a line for the master alone, sent from nobody in particular', async () => {
+      const secret = vi
+        .spyOn(TestBed.inject(ChatMessageService), 'sendSecretSystemMessageToTab')
+        .mockReturnValue(null!);
+
+      await presses.press(
+        switchWith({ actions: [{ kind: 'secret', text: 'the wire is crossed', to: 'master', delayMs: 0, extra: {} }] })
+      );
+
+      expect(secret).toHaveBeenCalledWith(tab, 'the wire is crossed', undefined);
+    });
   });
 });

@@ -3,7 +3,7 @@ import { ObjectChangeService } from '@axe/application/sync/object-change.service
 import { ObjectNode } from '@axe/core/sync/object-node';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
-import { BoardSwitch, switchOf } from '@axe/domain/tabletop/board-switch/board-switch';
+import { BoardSwitch, resetSwitch, switchOf } from '@axe/domain/tabletop/board-switch/board-switch';
 import { SwitchDefinition } from '@axe/domain/tabletop/board-switch/switch-definition';
 
 /**
@@ -38,6 +38,13 @@ export class BoardSwitchService {
   write(target: BoardSwitch, definition: SwitchDefinition): void {
     if (!this.canEdit()) return;
     target.write(definition);
+  }
+
+  /** Forgets that the switch on something was ever pressed, so it can be pressed again. */
+  reset(host: ObjectNode): void {
+    if (!this.canEdit()) return;
+    const held = switchOf(host);
+    if (held) resetSwitch(held);
   }
 
   /** Takes the switch off something, leaving it the plain thing it was. */

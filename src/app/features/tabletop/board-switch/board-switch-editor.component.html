@@ -50,6 +50,45 @@
       <span>{{ 'feature.boardSwitch.guests' | transloco }}</span>
     </label>
 
+    <label class="flex items-center gap-2">
+      <span class="text-ui-muted w-20 shrink-0">{{ 'feature.boardSwitch.range' | transloco }}</span>
+      <input
+        type="number"
+        min="0"
+        max="99"
+        class="border-ui-border-panel bg-ui-elevated text-ui-text w-16 rounded-[3px] border border-solid px-1.5 py-1"
+        data-testid="board-switch-range"
+        [value]="definition().range"
+        (change)="setRange($any($event.target).value)"
+      />
+      <span class="text-ui-muted text-[11px]">{{ 'feature.boardSwitch.rangeHint' | transloco }}</span>
+    </label>
+
+    <label class="flex items-center gap-2">
+      <input
+        type="checkbox"
+        data-testid="board-switch-sight"
+        [checked]="definition().needsSight"
+        (change)="setNeedsSight($any($event.target).checked)"
+      />
+      <span>{{ 'feature.boardSwitch.needsSight' | transloco }}</span>
+    </label>
+
+    <label class="flex items-center gap-2">
+      <span class="text-ui-muted w-20 shrink-0">{{ 'feature.boardSwitch.repeat' | transloco }}</span>
+      <select
+        class="border-ui-border-panel bg-ui-elevated text-ui-text min-w-0 flex-1 rounded-[3px] border border-solid px-1.5 py-1"
+        data-testid="board-switch-repeat"
+        (change)="setRepeat($any($event.target).value)"
+      >
+        @for (repeat of repeats; track repeat) {
+          <option [value]="repeat" [selected]="repeat === definition().repeat">
+            {{ 'feature.boardSwitch.repeatOption.' + repeat | transloco }}
+          </option>
+        }
+      </select>
+    </label>
+
     <p class="text-ui-muted m-0 text-[11px] leading-snug">{{ 'feature.boardSwitch.actionsHint' | transloco }}</p>
     <app-switch-action-list [actions]="definition().actions" (actionsChange)="setActions($event)" />
 

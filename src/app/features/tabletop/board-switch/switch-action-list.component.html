@@ -64,7 +64,26 @@
         </button>
       </div>
 
-      @if (action.kind === 'say') {
+      @if (action.kind === 'secret') {
+        <select
+          class="border-ui-border-panel bg-ui-elevated text-ui-text min-w-0 rounded-[3px] border border-solid px-1.5 py-0.5 text-[12px]"
+          data-testid="switch-action-reader"
+          (change)="setReader(index, $any($event.target).value)"
+        >
+          @for (reader of readers; track reader) {
+            <option [value]="reader" [selected]="reader === action.to">
+              {{ 'feature.boardSwitch.reader.' + reader | transloco }}
+            </option>
+          }
+        </select>
+        <textarea
+          class="border-ui-border-panel bg-ui-elevated text-ui-text min-h-12 w-full resize-y rounded-[3px] border border-solid px-1.5 py-1 font-sans text-[12px]"
+          data-testid="switch-action-text"
+          [placeholder]="'feature.boardSwitch.secretPlaceholder' | transloco"
+          [value]="action.text"
+          (input)="setText(index, $any($event.target).value)"
+        ></textarea>
+      } @else if (action.kind === 'say') {
         <textarea
           class="border-ui-border-panel bg-ui-elevated text-ui-text min-h-12 w-full resize-y rounded-[3px] border border-solid px-1.5 py-1 font-sans text-[12px]"
           data-testid="switch-action-text"

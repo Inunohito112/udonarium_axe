@@ -7,11 +7,14 @@ export interface BoardSwitchMenuState {
   hasSwitch: boolean;
   /** Whether the thing opens and shuts when clicked, which a switch would take the click from. */
   isDoor: boolean;
+  /** Whether the switch has been pressed in a way it counts. */
+  pressed?: boolean;
 }
 
 export interface BoardSwitchMenuCallbacks {
   edit: () => void;
   press: () => void;
+  reset: () => void;
   remove: () => void;
 }
 
@@ -35,6 +38,7 @@ export function buildBoardSwitchMenu(
   return [
     { name: t('feature.boardSwitch.menu.edit'), action: callbacks.edit },
     { name: t('feature.boardSwitch.menu.try'), action: callbacks.press },
+    ...(state.pressed ? [{ name: t('feature.boardSwitch.menu.reset'), action: callbacks.reset }] : []),
     { name: t('feature.boardSwitch.menu.remove'), action: callbacks.remove },
   ];
 }

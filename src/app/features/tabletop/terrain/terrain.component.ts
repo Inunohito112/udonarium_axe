@@ -469,7 +469,7 @@ export class TerrainComponent {
   private async pressSwitch(): Promise<void> {
     const held = this.activeSwitch();
     if (!held) return;
-    const outcome = await this.switchPresses.press(held, { name: this.terrain().name });
+    const outcome = await this.switchPresses.press(held);
     if (outcome === 'pressed' || outcome === 'busy') return;
     this.switchNotice.set(this.t(`feature.boardSwitch.refused.${outcome}`));
     if (this.noticeTimer !== null) clearTimeout(this.noticeTimer);

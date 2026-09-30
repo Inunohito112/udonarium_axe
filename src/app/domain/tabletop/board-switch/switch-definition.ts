@@ -1,3 +1,5 @@
+import { asTriggerRepeat, DEFAULT_TRIGGER_REPEAT, TriggerRepeat } from '@axe/domain/tabletop/trigger-event';
+
 /**
  * Who a switch speaks as.
  *
@@ -12,7 +14,7 @@ export type SwitchSpeaker = (typeof SWITCH_SPEAKERS)[number];
 export const DEFAULT_SWITCH_SPEAKER: SwitchSpeaker = 'presser';
 
 /** The kinds of thing a switch can do that this version knows how to do. */
-export const SWITCH_ACTION_KINDS = ['say', 'sound', 'effect', 'cutIn'] as const;
+export const SWITCH_ACTION_KINDS = ['say', 'secret', 'sound', 'effect', 'cutIn'] as const;
 
 export type SwitchActionKind = (typeof SWITCH_ACTION_KINDS)[number];
 
@@ -21,6 +23,19 @@ export const MAX_SWITCH_DELAY_MS = 10_000;
 
 /** As many things as one switch may do, so a pasted file cannot hold the room up for an hour. */
 export const MAX_SWITCH_ACTIONS = 20;
+
+/** As far away as a switch can ask the presser's piece to stand, in cells. */
+export const MAX_SWITCH_RANGE = 99;
+
+/**
+ * Who reads a line kept back from the room: the presser and the master, or the master alone.
+ *
+ * What a search turns up is for whoever searched, and a trip wire the party is not meant to notice
+ * is for the master; either way the rest of the room sees only that something was kept back.
+ */
+export const SWITCH_SECRET_READERS = ['presser', 'master'] as const;
+
+export type SwitchSecretReader = (typeof SWITCH_SECRET_READERS)[number];
 
 interface SwitchActionBase {
   /** How long to wait after the thing before this one. The first runs at once. */
@@ -33,6 +48,13 @@ interface SwitchActionBase {
 export interface SwitchSay extends SwitchActionBase {
   kind: 'say';
   text: string;
+}
+
+/** A line kept back from the room, which only the presser and the master, or the master alone, read. */
+export interface SwitchSecret extends SwitchActionBase {
+  kind: 'secret';
+  text: string;
+  to: SwitchSecretReader;
 }
 
 /** Something played by name: a sound, an effect or a cut-in. */
@@ -54,7 +76,7 @@ export interface SwitchUnknownAction extends SwitchActionBase {
   raw: Record<string, unknown>;
 }
 
-export type SwitchAction = SwitchSay | SwitchCue | SwitchUnknownAction;
+export type SwitchAction = SwitchSay | SwitchSecret | SwitchCue | SwitchUnknownAction;
 
 /** What a switch is called and what it does when it is pressed. */
 export interface SwitchDefinition {
@@ -67,17 +89,49 @@ export interface SwitchDefinition {
   gameType: string;
   /** Whether somebody watching may press it, where the tab lets watchers speak. */
   guests: boolean;
+  /**
+   * How near the presser's piece has to stand, in cells counted the way pieces step. Nought lets
+   * it be pressed from anywhere.
+   */
+  range: number;
+  /** Whether it can only be pressed by somebody who can see it. */
+  needsSight: boolean;
+  /** How often it can be pressed, in the words painted ground uses. */
+  repeat: TriggerRepeat;
   actions: SwitchAction[];
   /** Whatever a newer version wrote on the switch and this one cannot read, kept as it came. */
   extra: Record<string, unknown>;
 }
 
 export function defaultSwitchDefinition(): SwitchDefinition {
-  return { label: '', speaker: DEFAULT_SWITCH_SPEAKER, tab: '', gameType: '', guests: false, actions: [], extra: {} };
+  return {
+    label: '',
+    speaker: DEFAULT_SWITCH_SPEAKER,
+    tab: '',
+    gameType: '',
+    guests: false,
+    range: 0,
+    needsSight: false,
+    repeat: DEFAULT_TRIGGER_REPEAT,
+    actions: [],
+    extra: {},
+  };
 }
 
-const DEFINITION_KEYS = ['v', 'label', 'speaker', 'tab', 'gameType', 'guests', 'actions'];
+const DEFINITION_KEYS = [
+  'v',
+  'label',
+  'speaker',
+  'tab',
+  'gameType',
+  'guests',
+  'range',
+  'needsSight',
+  'repeat',
+  'actions',
+];
 const SAY_KEYS = ['kind', 'delayMs', 'text'];
+const SECRET_KEYS = ['kind', 'delayMs', 'text', 'to'];
 const CUE_KEYS = ['kind', 'delayMs', 'name'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -115,6 +169,17 @@ function leftOver(record: Record<string, unknown>, known: readonly string[]): Re
   return extra;
 }
 
+/** A reach read from what was stored, as a whole number of cells from none to the farthest. */
+export function clampSwitchRange(value: unknown): number {
+  const held = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(held) || held <= 0) return 0;
+  return Math.min(MAX_SWITCH_RANGE, Math.round(held));
+}
+
+function readSecretReader(value: unknown): SwitchSecretReader {
+  return value === 'master' ? 'master' : 'presser';
+}
+
 function readSpeaker(value: unknown): SwitchSpeaker {
   return typeof value === 'string' && (SWITCH_SPEAKERS as readonly string[]).includes(value)
     ? (value as SwitchSpeaker)
@@ -126,6 +191,15 @@ function readAction(raw: unknown): SwitchAction | null {
   const delayMs = clampSwitchDelay(raw['delayMs']);
   const kind = raw['kind'];
   if (kind === 'say') return { kind, text: readText(raw['text']), delayMs, extra: leftOver(raw, SAY_KEYS) };
+  if (kind === 'secret') {
+    return {
+      kind,
+      text: readText(raw['text']),
+      to: readSecretReader(raw['to']),
+      delayMs,
+      extra: leftOver(raw, SECRET_KEYS),
+    };
+  }
   if (kind === 'sound' || kind === 'effect' || kind === 'cutIn') {
     return { kind, name: readText(raw['name']), delayMs, extra: leftOver(raw, CUE_KEYS) };
   }
@@ -158,6 +232,9 @@ export function parseSwitchDefinition(stored: string | null | undefined): Switch
     tab: readText(held['tab']),
     gameType: readText(held['gameType']),
     guests: readFlag(held['guests']),
+    range: clampSwitchRange(held['range']),
+    needsSight: readFlag(held['needsSight']),
+    repeat: asTriggerRepeat(held['repeat']),
     actions: actions
       .map(readAction)
       .filter((action): action is SwitchAction => action !== null)
@@ -170,6 +247,8 @@ function writeAction(action: SwitchAction): Record<string, unknown> {
   switch (action.kind) {
     case 'say':
       return { ...action.extra, kind: action.kind, delayMs: action.delayMs, text: action.text };
+    case 'secret':
+      return { ...action.extra, kind: action.kind, delayMs: action.delayMs, text: action.text, to: action.to };
     case 'sound':
     case 'effect':
     case 'cutIn':
@@ -189,23 +268,28 @@ export function encodeSwitchDefinition(definition: SwitchDefinition): string {
     tab: definition.tab,
     gameType: definition.gameType,
     guests: definition.guests,
+    range: clampSwitchRange(definition.range),
+    needsSight: definition.needsSight,
+    repeat: definition.repeat,
     actions: definition.actions.slice(0, MAX_SWITCH_ACTIONS).map(writeAction),
   });
 }
 
 /** A fresh action of a kind, with nothing written in it yet. */
 export function newSwitchAction(kind: 'say'): SwitchSay;
+export function newSwitchAction(kind: 'secret'): SwitchSecret;
 export function newSwitchAction(kind: SwitchCue['kind']): SwitchCue;
 export function newSwitchAction(kind: SwitchActionKind): SwitchAction;
 export function newSwitchAction(kind: SwitchActionKind): SwitchAction {
   if (kind === 'say') return { kind, text: '', delayMs: 0, extra: {} };
+  if (kind === 'secret') return { kind, text: '', to: 'presser', delayMs: 0, extra: {} };
   return { kind, name: '', delayMs: 0, extra: {} };
 }
 
 /** Whether pressing the switch would do anything this version knows how to do. */
 export function switchDoesAnything(definition: SwitchDefinition): boolean {
   return definition.actions.some((action) => {
-    if (action.kind === 'say') return action.text.trim().length > 0;
+    if (action.kind === 'say' || action.kind === 'secret') return action.text.trim().length > 0;
     if (action.kind === 'unknown') return false;
     return action.name.trim().length > 0;
   });

@@ -5,6 +5,7 @@ import {
   parseSwitchDefinition,
   SwitchDefinition,
 } from '@axe/domain/tabletop/board-switch/switch-definition';
+import { readSpentBy, writeSpentBy } from '@axe/domain/tabletop/trigger-event';
 
 /**
  * What happens when somebody presses the thing it is attached to.
@@ -54,6 +55,44 @@ export class BoardSwitch extends ObjectNode {
     const round = Number(held);
     return Number.isFinite(round) ? round : -1;
   }
+}
+
+/**
+ * Whether it has a press left for this presser, in this round.
+ *
+ * Asked of the presser rather than of the switch alone, since a chest one piece has opened is not
+ * a chest spent for the next. A round below nought is a table counting no rounds, where a switch
+ * pressed once a round is pressed once and no more.
+ */
+export function switchHasGoFor(target: BoardSwitch, presser: string, round: number): boolean {
+  const repeats = target.def.repeat;
+  if (repeats === 'once') return !target.spent;
+  if (repeats === 'oncePerPiece') return !readSpentBy(target.spentBy).includes(presser);
+  if (repeats === 'oncePerRound') return target.lastRound !== round;
+  return true;
+}
+
+/** Writes down that it has been pressed, by this presser, in this round. */
+export function spendSwitch(target: BoardSwitch, presser: string, round: number): void {
+  const repeats = target.def.repeat;
+  if (repeats === 'once' && !target.spent) target.spent = true;
+  if (repeats === 'oncePerPiece') {
+    const had = readSpentBy(target.spentBy);
+    if (!had.includes(presser)) target.spentBy = writeSpentBy([...had, presser]);
+  }
+  if (repeats === 'oncePerRound' && target.lastRound !== round) target.spentRound = round;
+}
+
+/** Whether anything has been written down about it being pressed. */
+export function switchWasPressed(target: BoardSwitch): boolean {
+  return Boolean(target.spent) || target.spentBy.trim().length > 0 || target.lastRound >= 0;
+}
+
+/** Forgets that it was ever pressed, so the master can set it again. */
+export function resetSwitch(target: BoardSwitch): void {
+  if (target.spent) target.spent = false;
+  if (target.spentBy.length > 0) target.spentBy = '';
+  if (target.lastRound !== -1) target.spentRound = -1;
 }
 
 /** The switch hung under something, or null where it has none. */

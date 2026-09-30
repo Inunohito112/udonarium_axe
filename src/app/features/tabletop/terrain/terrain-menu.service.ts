@@ -12,6 +12,7 @@ import { PieceContextMenuService } from '@axe/application/ui/piece-context-menu.
 import { sheetPanelTitle } from '@axe/application/ui/sheet-panel';
 import { buildSurfaceSwitchContextMenu } from '@axe/application/ui/surface-switch-context-menu';
 import { TabletopOverlapService } from '@axe/application/ui/tabletop-overlap.service';
+import { switchWasPressed } from '@axe/domain/tabletop/board-switch/board-switch';
 import { multiAngleFontScaleFactor } from '@axe/domain/tabletop/multi-angle-font-scale';
 import { Terrain } from '@axe/domain/tabletop/terrain';
 import { gridSlopeSides } from '@axe/domain/tabletop/terrain-slope';
@@ -63,10 +64,16 @@ export class TerrainMenuService {
     );
     const surfaceEntries = buildSurfaceSwitchContextMenu(terrain, this.tabletopService.currentTable, this.t);
     const switchEntries = buildBoardSwitchMenu(
-      { canEdit: this.switches.canEdit(), hasSwitch: terrain.boardSwitch !== null, isDoor: terrain.isDoor },
+      {
+        canEdit: this.switches.canEdit(),
+        hasSwitch: terrain.boardSwitch !== null,
+        isDoor: terrain.isDoor,
+        pressed: terrain.boardSwitch !== null && switchWasPressed(terrain.boardSwitch),
+      },
       {
         edit: () => this.switchPanels.open(terrain),
-        press: () => void this.switchPanels.press(terrain),
+        press: () => void this.switchPanels.tryOut(terrain),
+        reset: () => this.switches.reset(terrain),
         remove: () => this.switches.remove(terrain),
       },
       this.t

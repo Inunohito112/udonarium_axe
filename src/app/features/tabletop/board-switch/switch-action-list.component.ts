@@ -11,6 +11,7 @@ import {
   MAX_SWITCH_ACTIONS,
   newSwitchAction,
   SWITCH_ACTION_KINDS,
+  SWITCH_SECRET_READERS,
   SwitchAction,
   SwitchActionKind,
 } from '@axe/domain/tabletop/board-switch/switch-definition';
@@ -45,6 +46,7 @@ export class SwitchActionListComponent {
   readonly actionsChange = output<SwitchAction[]>();
 
   protected readonly kinds = SWITCH_ACTION_KINDS;
+  protected readonly readers = SWITCH_SECRET_READERS;
   protected readonly full = computed(() => this.actions().length >= MAX_SWITCH_ACTIONS);
 
   private readonly effectChoices = computed<NameChoice[]>(() =>
@@ -71,7 +73,7 @@ export class SwitchActionListComponent {
    * the room goes by it, so opening the list does not quietly swap it for something else.
    */
   protected choicesFor(action: SwitchAction): NameChoice[] {
-    if (action.kind === 'say' || action.kind === 'unknown') return [];
+    if (action.kind === 'say' || action.kind === 'secret' || action.kind === 'unknown') return [];
     const choices =
       action.kind === 'sound'
         ? this.soundChoices()
@@ -101,12 +103,19 @@ export class SwitchActionListComponent {
 
   protected setText(index: number, text: string): void {
     const held = this.actions()[index];
-    if (held?.kind === 'say') this.replace(index, { ...held, text });
+    if (held?.kind === 'say' || held?.kind === 'secret') this.replace(index, { ...held, text });
+  }
+
+  protected setReader(index: number, to: string): void {
+    const held = this.actions()[index];
+    if (held?.kind === 'secret') this.replace(index, { ...held, to: to === 'master' ? 'master' : 'presser' });
   }
 
   protected setName(index: number, name: string): void {
     const held = this.actions()[index];
-    if (held && held.kind !== 'say' && held.kind !== 'unknown') this.replace(index, { ...held, name });
+    if (held && (held.kind === 'sound' || held.kind === 'effect' || held.kind === 'cutIn')) {
+      this.replace(index, { ...held, name });
+    }
   }
 
   protected setDelay(index: number, seconds: string): void {

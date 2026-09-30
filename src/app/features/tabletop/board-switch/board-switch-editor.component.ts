@@ -2,16 +2,18 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { BoardSwitchService } from '@axe/application/tabletop/board-switch.service';
-import { SwitchHost, SwitchPressService } from '@axe/application/tabletop/switch-press.service';
+import { SwitchPressService } from '@axe/application/tabletop/switch-press.service';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { BoardSwitch } from '@axe/domain/tabletop/board-switch/board-switch';
 import {
+  clampSwitchRange,
   defaultSwitchDefinition,
   SWITCH_SPEAKERS,
   SwitchAction,
   SwitchDefinition,
   SwitchSpeaker,
 } from '@axe/domain/tabletop/board-switch/switch-definition';
+import { asTriggerRepeat, TRIGGER_REPEATS } from '@axe/domain/tabletop/trigger-event';
 import { SwitchActionListComponent } from '@axe/features/tabletop/board-switch/switch-action-list.component';
 import { TranslocoModule } from '@jsverse/transloco';
 
@@ -36,11 +38,10 @@ export class BoardSwitchEditorComponent {
 
   /** The switch being written, handed in by whoever opened the panel. */
   readonly target = signal<BoardSwitch | null>(null);
-  /** What the switch sits on, for trying it from here. */
-  readonly host = signal<SwitchHost>({ name: '' });
 
   protected readonly canEdit = this.switches.canEdit;
   protected readonly speakers = SWITCH_SPEAKERS;
+  protected readonly repeats = TRIGGER_REPEATS;
 
   /** Counts this panel's own writes, so what it draws follows them before the room has heard. */
   private readonly written = signal(0);
@@ -77,15 +78,27 @@ export class BoardSwitchEditorComponent {
     this.update({ guests });
   }
 
+  protected setRange(range: string): void {
+    this.update({ range: clampSwitchRange(range) });
+  }
+
+  protected setNeedsSight(needsSight: boolean): void {
+    this.update({ needsSight });
+  }
+
+  protected setRepeat(repeat: string): void {
+    this.update({ repeat: asTriggerRepeat(repeat) });
+  }
+
   protected setActions(actions: SwitchAction[]): void {
     this.update({ actions });
   }
 
-  /** Presses the switch from the panel, the way a player would, and says how it went. */
+  /** Tries the switch out from the panel without counting it as a press, and says how it went. */
   protected async tryIt(): Promise<void> {
     const target = this.target();
     if (!target) return;
-    const outcome = await this.presses.press(target, this.host());
+    const outcome = await this.presses.press(target, { trial: true });
     this.tried.set(outcome);
   }
 

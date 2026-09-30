@@ -41,13 +41,12 @@ export class BoardSwitchPanelService {
       single: `board-switch:${target.identifier}`,
     });
     editor.target.set(target);
-    editor.host.set({ name: host.name });
   }
 
-  /** Presses the switch on something, where it has one. */
-  press(host: SwitchHostNode): Promise<SwitchPressOutcome | null> {
+  /** Tries the switch on something out, where it has one, without counting it as a press. */
+  tryOut(host: SwitchHostNode): Promise<SwitchPressOutcome | null> {
     const target = switchOf(host);
     if (!target) return Promise.resolve(null);
-    return this.presses.press(target, { name: host.name });
+    return this.presses.press(target, { trial: true });
   }
 }

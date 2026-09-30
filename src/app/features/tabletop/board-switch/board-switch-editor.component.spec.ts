@@ -28,7 +28,6 @@ describe('BoardSwitchEditorComponent', () => {
     target.initialize();
     fixture = TestBed.createComponent(BoardSwitchEditorComponent);
     fixture.componentInstance.target.set(target);
-    fixture.componentInstance.host.set({ name: '宝箱' });
     fixture.detectChanges();
   });
 
@@ -52,14 +51,14 @@ describe('BoardSwitchEditorComponent', () => {
     });
   });
 
-  it('presses the switch from the panel and says why it came to nothing', async () => {
+  it('tries the switch from the panel without counting it, and says why it came to nothing', async () => {
     const press = vi.spyOn(TestBed.inject(SwitchPressService), 'press').mockResolvedValue('nothing');
 
     field<HTMLButtonElement>('board-switch-try').click();
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(press).toHaveBeenCalledWith(target, { name: '宝箱' });
+    expect(press).toHaveBeenCalledWith(target, { trial: true });
     expect(field('board-switch-tried').textContent?.trim()).toBe('何もしないスイッチです');
   });
 

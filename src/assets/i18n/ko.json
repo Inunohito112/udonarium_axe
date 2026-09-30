@@ -4467,7 +4467,8 @@
         "say": "발언",
         "sound": "효과음",
         "effect": "이펙트",
-        "cutIn": "컷인"
+        "cutIn": "컷인",
+        "secret": "비밀 결과"
       },
       "delay": "대기 (초)",
       "moveUp": "위로",
@@ -4484,13 +4485,33 @@
         "watching": "관전 중에는 누를 수 없습니다",
         "cannotSpeak": "이 탭에서는 발언할 수 없습니다",
         "retired": "더 이상 누를 수 없습니다",
-        "busy": "잠시 후에 다시 눌러 주세요"
+        "busy": "잠시 후에 다시 눌러 주세요",
+        "spent": "더 이상 누를 수 없습니다 (횟수를 다 썼습니다)",
+        "noPiece": "테이블 위에 움직이는 캐릭터가 없습니다",
+        "tooFar": "더 가까이 가야 누를 수 있습니다",
+        "unseen": "보이지 않아서 누를 수 없습니다"
       },
       "menu": {
         "edit": "스위치 설정…",
         "try": "스위치 시험 누르기",
-        "remove": "스위치 제거"
-      }
+        "remove": "스위치 제거",
+        "reset": "누른 기록 지우기"
+      },
+      "range": "누를 수 있는 거리",
+      "rangeHint": "칸 이내 (0은 어디서나)",
+      "needsSight": "보일 때만 누를 수 있음",
+      "repeat": "횟수",
+      "repeatOption": {
+        "always": "몇 번이든",
+        "once": "한 번만 (전체 1회)",
+        "oncePerPiece": "캐릭터마다 1회",
+        "oncePerRound": "라운드마다 1회"
+      },
+      "reader": {
+        "presser": "누른 사람과 GM만 읽을 수 있음",
+        "master": "GM만 읽을 수 있음"
+      },
+      "secretPlaceholder": "숨겨서 쓸 문장. {HP} 같은 참조도 쓸 수 있습니다"
     }
   },
   "app": {

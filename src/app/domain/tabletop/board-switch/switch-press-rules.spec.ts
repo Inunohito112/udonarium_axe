@@ -48,6 +48,25 @@ describe('pressRefusal', () => {
     ).toBe('cannotSpeak');
   });
 
+  it('turns away a press where the switch has none left for the presser, bar a trial', () => {
+    expect(pressRefusal(state({ hasGo: false }))).toBe('spent');
+    expect(pressRefusal(state({ hasGo: false, role: PeerRole.GameMaster }))).toBe('spent');
+    expect(pressRefusal(state({ hasGo: false, trial: true }))).toBeNull();
+  });
+
+  it('holds a player to where the switch has to be reached and seen from, but not the master', () => {
+    const reached = { ...speaks, range: 2 };
+    expect(pressRefusal(state({ definition: reached, reach: 'near' }))).toBeNull();
+    expect(pressRefusal(state({ definition: reached, reach: 'tooFar' }))).toBe('tooFar');
+    expect(pressRefusal(state({ definition: reached, reach: 'noPiece' }))).toBe('noPiece');
+    expect(pressRefusal(state({ definition: reached, reach: 'tooFar', role: PeerRole.GameMaster }))).toBeNull();
+
+    const seen = { ...speaks, needsSight: true };
+    expect(pressRefusal(state({ definition: seen, inSight: false }))).toBe('unseen');
+    expect(pressRefusal(state({ definition: seen, inSight: true }))).toBeNull();
+    expect(pressRefusal(state({ definition: seen, inSight: false, role: PeerRole.GameMaster }))).toBeNull();
+  });
+
   it('asks nothing of the tab for a switch that only plays something', () => {
     expect(pressRefusal(state({ definition: plays, tab: null }))).toBeNull();
   });

@@ -24,8 +24,12 @@ describe('switch definitions', () => {
       tab: 'tab-1',
       gameType: 'Cthulhu7th',
       guests: true,
+      range: 3,
+      needsSight: true,
+      repeat: 'oncePerPiece' as const,
       actions: [
         { ...newSwitchAction('say'), text: '1d100<={目星}' },
+        { ...newSwitchAction('secret'), text: '床板の下に鍵', to: 'master' as const },
         { kind: 'sound' as const, name: 'chest.mp3', delayMs: 500, extra: {} },
         { kind: 'effect' as const, name: 'sparkle', delayMs: 0, extra: {} },
         { kind: 'cutIn' as const, name: 'found', delayMs: 1200, extra: {} },
@@ -33,6 +37,16 @@ describe('switch definitions', () => {
     };
 
     expect(parseSwitchDefinition(encodeSwitchDefinition(written))).toEqual(written);
+  });
+
+  it('reads a reach, a sight rule and a count that make no sense as none', () => {
+    const read = parseSwitchDefinition(JSON.stringify({ range: -3, needsSight: 'no', repeat: 'twice' }));
+
+    expect(read.range).toBe(0);
+    expect(read.needsSight).toBe(true);
+    expect(read.repeat).toBe('always');
+    expect(parseSwitchDefinition(JSON.stringify({ range: 500 })).range).toBe(99);
+    expect(parseSwitchDefinition(JSON.stringify({ needsSight: 'false' })).needsSight).toBe(false);
   });
 
   it('reads a speaker it has never heard of as the presser', () => {

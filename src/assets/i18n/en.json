@@ -4219,7 +4219,8 @@
         "say": "Say",
         "sound": "Sound",
         "effect": "Effect",
-        "cutIn": "Cut-in"
+        "cutIn": "Cut-in",
+        "secret": "Secret result"
       },
       "delay": "Wait (s)",
       "moveUp": "Move up",
@@ -4236,13 +4237,33 @@
         "watching": "Spectators cannot press it",
         "cannotSpeak": "You cannot speak in this tab",
         "retired": "It can no longer be pressed",
-        "busy": "Wait a moment before pressing again"
+        "busy": "Wait a moment before pressing again",
+        "spent": "It can no longer be pressed (no uses left)",
+        "noPiece": "You have no character on the table",
+        "tooFar": "Get closer to press it",
+        "unseen": "You cannot see it"
       },
       "menu": {
         "edit": "Set up switch…",
         "try": "Try the switch",
-        "remove": "Remove switch"
-      }
+        "remove": "Remove switch",
+        "reset": "Clear the record of presses"
+      },
+      "range": "Reach",
+      "rangeHint": "cells or closer (0 means from anywhere)",
+      "needsSight": "Only while it can be seen",
+      "repeat": "Uses",
+      "repeatOption": {
+        "always": "Any number of times",
+        "once": "Once (for everyone)",
+        "oncePerPiece": "Once per character",
+        "oncePerRound": "Once per round"
+      },
+      "reader": {
+        "presser": "Only the presser and the GM can read it",
+        "master": "Only the GM can read it"
+      },
+      "secretPlaceholder": "Text kept back from the room. {HP} and other references work too"
     }
   },
   "app": {
