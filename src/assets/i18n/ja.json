@@ -4187,6 +4187,8 @@
       "empty": "項目がありません",
       "reset": "初期配置に戻す",
       "resetConfirm": "このメニューを初期配置に戻します。よろしいですか？",
+      "resetAll": "すべてのメニューを初期配置に戻す",
+      "resetAllConfirm": "Fav メニューと GM／PL ツールを、すべて初期配置に戻します。よろしいですか？",
       "surface": {
         "fab": "Fav メニュー",
         "gmToolbar": "GM ツール",
@@ -4200,6 +4202,7 @@
   "app": {
     "fab": {
       "menuOpen": "メニューを開く",
+      "menuHint": "メニューを開く（右クリックで編集・初期化）",
       "menuClose": "メニューを閉じる",
       "peerMenu": "接続",
       "chat": "チャット",

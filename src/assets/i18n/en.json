@@ -4187,6 +4187,8 @@
       "empty": "Nothing on this menu",
       "reset": "Put it back the way it came",
       "resetConfirm": "This puts the menu back the way it came. Go ahead?",
+      "resetAll": "Put every menu back the way it came",
+      "resetAllConfirm": "This puts the drawer and both toolbars back the way they came. Go ahead?",
       "surface": {
         "fab": "Fav menu",
         "gmToolbar": "GM tools",
@@ -4200,6 +4202,7 @@
   "app": {
     "fab": {
       "menuOpen": "Open menu",
+      "menuHint": "Open the menu (right click to arrange or put back)",
       "menuClose": "Close menu",
       "peerMenu": "Connection",
       "chat": "Chat",

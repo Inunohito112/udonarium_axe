@@ -14,6 +14,7 @@ import { Title } from '@angular/platform-browser';
 import { SaveDataService } from '@axe/application/file/save-data.service';
 import { LanguageService } from '@axe/application/i18n/language.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
+import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { CutInService } from '@axe/application/media/cut-in.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
@@ -42,6 +43,7 @@ import { FileArchiver } from '@axe/core/storage/file-archiver';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { ReloadCheck } from '@axe/domain/peer/reload-check';
+import { MENU_SURFACES } from '@axe/domain/ui/menu-command';
 import { RoomPanelName } from '@axe/domain/ui/room-panel';
 import { AlarmEventHandlerService } from '@axe/features/alarm/alarm-event-handler.service';
 import { CardStackListImageComponent } from '@axe/features/card/card-stack-list-img/card-stack-list-img.component';
@@ -212,7 +214,38 @@ export class AppComponent {
   protected readonly fabColumns = FAB_COLUMN_CLASSES;
 
   private readonly menuCommands = inject(MenuCommandService);
-  private readonly fabLayout = inject(MenuLayoutService).layoutOf('fab');
+  private readonly menuLayouts = inject(MenuLayoutService);
+  private readonly fabLayout = this.menuLayouts.layoutOf('fab');
+  private readonly contextMenuService = inject(ContextMenuService);
+  private readonly pointers = inject(PointerDeviceService);
+  private readonly confirm = inject(ConfirmService);
+
+  /**
+   * The way back into the menus, from the drawer's own button.
+   *
+   * Everything else about the drawer can be arranged away, the entry that opens the editor
+   * included, and somebody who takes that one off has nothing left to put it back with. The
+   * button is not part of any arrangement, so what it offers cannot be arranged away either.
+   */
+  protected onFabContextMenu(event: MouseEvent): void {
+    if (!this.pointers.isAllowedToOpenContextMenu) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.contextMenuService.open(
+      this.pointers.pointers[0],
+      [
+        { name: this.t('feature.menuEditor.title'), action: () => this.open('menuEditor') },
+        { name: this.t('feature.menuEditor.resetAll'), action: () => void this.resetEveryMenu() },
+      ],
+      this.t('app.fab.menuOpen')
+    );
+  }
+
+  /** Puts every menu on this screen back the way it came, once whoever asked has said they mean it. */
+  private async resetEveryMenu(): Promise<void> {
+    if (!(await this.confirm.ask(this.t('feature.menuEditor.resetAllConfirm')))) return;
+    for (const surface of MENU_SURFACES) this.menuLayouts.reset(surface);
+  }
 
   /** The drawer as this seat is offered it, in the order this screen has it arranged. */
   protected readonly fabNodes = computed<MenuNodeView[]>(() => this.menuCommands.viewOf(this.fabLayout()));
