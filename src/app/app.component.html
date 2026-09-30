@@ -39,7 +39,7 @@
       #fabMenu
       class="group fixed top-0 left-0 z-200 flex w-14 cursor-grab justify-center active:cursor-grabbing"
       data-testid="fab-menu"
-      [class.open]="fabOpen()"
+      [class.open]="fabOpen() || guide.shown()"
       appDraggable
       [appWidgetPlace]="fabWidget"
       [widgetFallback]="fabFallback"
@@ -49,14 +49,16 @@
     >
       <nav
         class="panel-no-drag border-ui-border-panel bg-ui-panel rounded-ui-lg shadow-ui-md pointer-events-none absolute z-8 w-14 cursor-default border border-solid opacity-0 [backdrop-filter:blur(24px)_saturate(1.5)] transition-[transform,opacity] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] [-webkit-backdrop-filter:blur(24px)_saturate(1.5)] group-[.open]:pointer-events-auto group-[.open]:translate-y-0 group-[.open]:opacity-100 [@media(max-height:760px)]:w-28"
-        [ngClass]="[fabDrawerPlace(), fabLabelSide()]"
+        [ngClass]="[fabDrawerPlace(), fabLabelSide(), guide.shown() ? fabGuideDrawer : '']"
+        [attr.data-button-guide-keep]="guide.shown() ? '' : null"
       >
-        <ul class="m-0 list-none p-1.5" [ngClass]="fabColumns">
+        <ul class="m-0 list-none p-1.5" [ngClass]="guide.shown() ? '' : fabColumns">
           @for (node of fabNodes(); track node.id) {
             <li
               class="text-ui-dim hover:text-ui-accent hover:bg-ui-accent-bg rounded-ui after:bg-ui-panel after:border-ui-border-panel after:text-ui-text after:rounded-ui after:shadow-ui-sm relative flex size-11 cursor-pointer items-center justify-center transition-[color,background] after:pointer-events-none after:absolute after:top-1/2 after:left-[calc(100%+10px)] after:z-10000 after:-translate-y-1/2 after:border after:border-solid after:px-2.5 after:py-1 after:text-[11px] after:whitespace-nowrap after:opacity-0 after:[backdrop-filter:blur(24px)_saturate(1.5)] after:transition-opacity after:content-[attr(data-label)] after:[-webkit-backdrop-filter:blur(24px)_saturate(1.5)] hover:after:opacity-100 [&_i]:text-[22px]"
               [class.text-ui-accent]="fabSubmenu() === node.id || (!isGroup(node) && $any(node).lit)"
-              [class.after:hidden]="isGroup(node) && fabSubmenu() !== null"
+              [class.after:hidden]="(isGroup(node) && fabSubmenu() !== null) || guide.shown()"
+              [ngClass]="guide.shown() ? fabGuideRow : ''"
               [attr.data-label]="fabNodeLabel(node)"
               [attr.data-testid]="node.testId"
               [attr.data-fab-submenu-toggle]="isGroup(node) ? '' : null"
@@ -66,6 +68,34 @@
               <i class="material-icons" [class.vibration-amine]="node.id === 'saveLoad' && isSaving()">{{
                 node.icon
               }}</i>
+              @if (guide.shown()) {
+                <span
+                  class="text-ui-text absolute top-1/2 z-10 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap"
+                  [ngClass]="fabSubmenuSide()"
+                >
+                  <span
+                    class="bg-ui-elevated border-ui-accent rounded-ui shadow-ui-sm border border-solid px-2.5 py-0.5 text-[11px]/4"
+                    data-testid="button-guide-label"
+                    >{{ fabNodeLabel(node) }}</span
+                  >
+                  @for (entry of entriesOf(node); track entry.id) {
+                    <button
+                      type="button"
+                      class="bg-ui-elevated border-ui-border-panel text-ui-text hover:border-ui-accent hover:text-ui-accent rounded-ui shadow-ui-sm flex cursor-pointer items-center gap-1 border border-solid px-2 py-0.5 text-[11px]/4 transition-colors disabled:cursor-default disabled:opacity-45 [&_i]:text-[15px]!"
+                      data-testid="button-guide-entry"
+                      [disabled]="entry.disabled"
+                      (click)="$event.stopPropagation(); chooseFromFabSubmenu(entry)"
+                    >
+                      @if (entry.text) {
+                        <span class="font-semibold">{{ entry.text }}</span>
+                      } @else {
+                        <i class="material-icons" aria-hidden="true">{{ entry.icon }}</i>
+                      }
+                      {{ fabNodeLabel(entry) }}
+                    </button>
+                  }
+                </span>
+              }
             </li>
           }
         </ul>

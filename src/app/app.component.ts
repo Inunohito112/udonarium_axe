@@ -4,9 +4,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   signal,
+  untracked,
   viewChild,
   ViewContainerRef,
 } from '@angular/core';
@@ -23,6 +25,7 @@ import { LegacyScratchMaskMigrationService } from '@axe/application/tabletop/leg
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { TurnOrderService } from '@axe/application/turn/turn-order.service';
+import { ButtonGuideService } from '@axe/application/ui/button-guide.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { MenuLayoutService } from '@axe/application/ui/menu-layout.service';
@@ -46,6 +49,7 @@ import { ReloadCheck } from '@axe/domain/peer/reload-check';
 import { MENU_SURFACES } from '@axe/domain/ui/menu-command';
 import { RoomPanelName } from '@axe/domain/ui/room-panel';
 import { AlarmEventHandlerService } from '@axe/features/alarm/alarm-event-handler.service';
+import { ButtonGuideEventHandlerService } from '@axe/features/button-guide/button-guide-event-handler.service';
 import { CardStackListImageComponent } from '@axe/features/card/card-stack-list-img/card-stack-list-img.component';
 import { HandDragGhostComponent } from '@axe/features/card/hand-rail/hand-drag-ghost.component';
 import { HandRailComponent } from '@axe/features/card/hand-rail/hand-rail.component';
@@ -107,6 +111,8 @@ import { TooltipDirective } from '@axe/ui/directives/tooltip.directive';
 import { WidgetPlaceDirective } from '@axe/ui/directives/widget-place.directive';
 import {
   FAB_COLUMN_CLASSES,
+  FAB_GUIDE_DRAWER_CLASSES,
+  FAB_GUIDE_ROW_CLASSES,
   fabDrawerPlaceClasses,
   FabDrawerSide,
   fabDrawerSide,
@@ -213,6 +219,11 @@ export class AppComponent {
 
   protected readonly fabColumns = FAB_COLUMN_CLASSES;
 
+  /** Whether every button in the drawer and on the toolbars is saying what it is. */
+  protected readonly guide = inject(ButtonGuideService);
+  protected readonly fabGuideDrawer = FAB_GUIDE_DRAWER_CLASSES;
+  protected readonly fabGuideRow = FAB_GUIDE_ROW_CLASSES;
+
   private readonly menuCommands = inject(MenuCommandService);
   private readonly menuLayouts = inject(MenuLayoutService);
   private readonly fabLayout = this.menuLayouts.layoutOf('fab');
@@ -236,6 +247,7 @@ export class AppComponent {
       [
         { name: this.t('feature.menuEditor.title'), action: () => this.open('menuEditor') },
         { name: this.t('feature.menuEditor.resetAll'), action: () => void this.resetEveryMenu() },
+        { name: this.t('app.fab.buttonGuide'), action: () => this.guide.show() },
       ],
       this.t('app.fab.menuOpen')
     );
@@ -328,10 +340,22 @@ export class AppComponent {
   /** The ticker is drawn for the screens that asked for it, and not fetched for the rest. */
   protected readonly tickerWanted = computed(() => this.tabletop.display().multiAngleTickerEnabled);
 
-  /** Opens a small menu of the drawer, or does what one of its own entries is for. */
+  /**
+   * Opens a small menu of the drawer, or does what one of its own entries is for.
+   *
+   * With every name written out, a small menu is opened the usual way once the guide is put away,
+   * so whoever went looking for it sees where it lives.
+   */
   protected chooseFab(node: MenuNodeView, event: MouseEvent): void {
-    if (isMenuGroupView(node)) this.toggleFabSubmenu(node.id, event);
-    else this.chooseFromFabSubmenu(node);
+    if (isMenuGroupView(node)) {
+      this.guide.hide();
+      this.toggleFabSubmenu(node.id, event);
+    } else this.chooseFromFabSubmenu(node);
+  }
+
+  /** What a small menu holds, written beside it while every name is written out. */
+  protected entriesOf(node: MenuNodeView): readonly MenuEntryView[] {
+    return isMenuGroupView(node) ? node.entries : [];
   }
 
   /** Does what an entry is for, and closes the menu it was in behind it. */
@@ -375,10 +399,17 @@ export class AppComponent {
 
     if (new URLSearchParams(window.location.search).get('stats') === '1') this.widgets.renderStats.set(true);
 
+    // What a small menu holds is written out beside it with the rest, so one left open would only
+    // say it twice, and over the names beside it.
+    effect(() => {
+      if (this.guide.shown()) untracked(() => this.fabSubmenu.set(null));
+    });
+
     // Start every feature's event handler and the application layer's orchestration services.
     // Each one subscribes from its own constructor under @Injectable({ providedIn: 'root' }),
     // so there is nothing to hold onto here — the injection is the point.
     inject(AlarmEventHandlerService);
+    inject(ButtonGuideEventHandlerService);
     inject(DiceChatEventHandlerService);
     inject(ChatSettingsEventHandlerService);
     inject(ChatSoundEventHandlerService);

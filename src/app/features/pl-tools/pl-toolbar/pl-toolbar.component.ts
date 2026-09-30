@@ -13,6 +13,7 @@ import { ObjectChangeService } from '@axe/application/sync/object-change.service
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { getRangeMenuItems } from '@axe/application/tabletop/tabletop-action-helpers';
 import { TurnOrderService } from '@axe/application/turn/turn-order.service';
+import { ButtonGuideService } from '@axe/application/ui/button-guide.service';
 import { MenuLayoutService } from '@axe/application/ui/menu-layout.service';
 import { PanelService } from '@axe/application/ui/panel.service';
 import { PieceOverlayPreferenceService } from '@axe/application/ui/piece-overlay-preference.service';
@@ -29,6 +30,7 @@ import { ObjectPanelService } from '@axe/features/panels/object-panel.service';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { ActiveCharacterService } from '@axe/features/pl-tools/active-character.service';
 import { isOwnedByUser } from '@axe/features/pl-tools/owned-character-list/owned-characters';
+import { UiButtonGuideComponent } from '@axe/ui/components/button-guide/button-guide.component';
 import { UiIconButtonComponent } from '@axe/ui/components/icon-button/icon-button.component';
 import { DraggableDirective } from '@axe/ui/directives/draggable.directive';
 import { SafePipe } from '@axe/ui/pipes/safe.pipe';
@@ -39,7 +41,7 @@ import { TranslocoModule } from '@jsverse/transloco';
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-pl-toolbar',
   templateUrl: './pl-toolbar.component.html',
-  imports: [DraggableDirective, SafePipe, TranslocoModule, UiIconButtonComponent],
+  imports: [DraggableDirective, SafePipe, TranslocoModule, UiButtonGuideComponent, UiIconButtonComponent],
 })
 export class PlToolbarComponent {
   protected readonly isCompact = inject(ViewportService).isCompact;
@@ -80,6 +82,9 @@ export class PlToolbarComponent {
 
   /** Whether the bar is folded down to its title. */
   protected readonly folded = computed(() => this.folds.isFolded('pl'));
+
+  /** Whether the name of every button is written out beside the bar. */
+  protected readonly guide = inject(ButtonGuideService);
 
   /** Folds the bar down to its title, or opens it again; what was open in it closes with it. */
   protected toggleFold(): void {

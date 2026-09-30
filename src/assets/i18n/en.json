@@ -4255,7 +4255,8 @@
       "display": "Display",
       "widgets": "Widgets",
       "foldToolbar": "Fold the toolbar",
-      "unfoldToolbar": "Open the toolbar"
+      "unfoldToolbar": "Open the toolbar",
+      "buttonGuide": "Show every button's name (? key)"
     },
     "roomDataDefault": "Room data"
   },

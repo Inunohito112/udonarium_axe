@@ -4503,7 +4503,8 @@
       "display": "표시",
       "widgets": "위젯",
       "foldToolbar": "도구 모음 접기",
-      "unfoldToolbar": "도구 모음 펼치기"
+      "unfoldToolbar": "도구 모음 펼치기",
+      "buttonGuide": "모든 버튼 이름 표시 (? 키)"
     },
     "roomDataDefault": "룸 데이터"
   },
