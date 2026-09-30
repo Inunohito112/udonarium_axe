@@ -4152,6 +4152,11 @@
     },
     "compass": {
       "anomaly": "磁場異常",
+      "face": {
+        "modern": "現代風",
+        "fantasy": "ファンタジー風",
+        "sf": "SF 風"
+      },
       "point": {
         "n": "北",
         "ne": "北東",

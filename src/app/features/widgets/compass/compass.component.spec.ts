@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
+import { COMPASS_FACE_STORAGE_KEY, CompassFaceService } from '@axe/application/ui/compass-face.service';
 import { MotionService } from '@axe/application/ui/motion.service';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { WidgetVisibilityService } from '@axe/application/ui/widget-visibility.service';
+import { COMPASS_FACES } from '@axe/domain/ui/compass-face';
 import { CompassComponent } from '@axe/features/widgets/compass/compass.component';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
@@ -179,5 +181,63 @@ describe('CompassComponent under a magnetic anomaly', () => {
 
     expect(roseAngle()).toBe(start);
     expect(query('compass-anomaly')).toBeTruthy();
+  });
+});
+
+describe('CompassComponent and the face it is drawn with', () => {
+  let fixture: ComponentFixture<CompassComponent>;
+  let faces: CompassFaceService;
+
+  /** What the rose is actually made of, which is the whole of the difference between the faces. */
+  function roseShape(): string {
+    return fixture.nativeElement.querySelector('[data-testid="compass-rose"]')!.innerHTML;
+  }
+
+  beforeEach(async () => {
+    localStorage.removeItem(COMPASS_FACE_STORAGE_KEY);
+    await TestBed.configureTestingModule({
+      imports: [CompassComponent],
+      providers: [...TEST_PROVIDERS],
+    }).compileComponents();
+    TestBed.inject(WidgetVisibilityService).compass.set(true);
+    faces = TestBed.inject(CompassFaceService);
+    fixture = TestBed.createComponent(CompassComponent);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    localStorage.removeItem('ui-widgets');
+    localStorage.removeItem(COMPASS_FACE_STORAGE_KEY);
+  });
+
+  it('is drawn plainly until somebody asks for something else', () => {
+    expect(faces.face()).toBe('modern');
+  });
+
+  it('draws a rose of its own for each face', () => {
+    const drawn = new Map<string, string>();
+    for (const face of COMPASS_FACES) {
+      faces.choose(face);
+      fixture.detectChanges();
+      drawn.set(face, roseShape());
+    }
+
+    expect(new Set(drawn.values()).size).toBe(COMPASS_FACES.length);
+  });
+
+  it('keeps the north of every face where the table put it', () => {
+    for (const face of COMPASS_FACES) {
+      faces.choose(face);
+      TestBed.inject(UiSignalService).notifyTableViewRotation(50, 0, 90);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('[data-testid="compass-rose"]')!.dataset['angle']).toBe('90');
+    }
+  });
+
+  it('remembers the face for the next time this screen opens', () => {
+    faces.choose('fantasy');
+
+    expect(localStorage.getItem(COMPASS_FACE_STORAGE_KEY)).toBe('fantasy');
   });
 });

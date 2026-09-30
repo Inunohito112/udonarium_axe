@@ -1,5 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
+import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
+import { CompassFaceService } from '@axe/application/ui/compass-face.service';
+import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { MotionService } from '@axe/application/ui/motion.service';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { WIDGET_COMPASS } from '@axe/application/ui/widget-place';
@@ -12,6 +16,7 @@ import {
   screenBearingOf,
   swingNeedle,
 } from '@axe/domain/ui/compass';
+import { COMPASS_FACES } from '@axe/domain/ui/compass-face';
 import { DraggableDirective } from '@axe/ui/directives/draggable.directive';
 import { WidgetPlaceDirective } from '@axe/ui/directives/widget-place.directive';
 import { TranslocoModule } from '@jsverse/transloco';
@@ -37,6 +42,13 @@ export class CompassComponent {
   private readonly uiSignal = inject(UiSignalService);
   private readonly tabletop = inject(TabletopService);
   private readonly motion = inject(MotionService);
+  private readonly faces = inject(CompassFaceService);
+  private readonly contextMenu = inject(ContextMenuService);
+  private readonly pointers = inject(PointerDeviceService);
+  private readonly t = inject(TRANSLATE_FN);
+
+  /** Which face this screen draws it with, which is a matter of taste rather than of the table. */
+  protected readonly face = this.faces.face;
 
   protected readonly widgetName = WIDGET_COMPASS;
   protected readonly fallback = (el: HTMLElement) => ({
@@ -87,6 +99,21 @@ export class CompassComponent {
       }, SWING_SECONDS * 1000);
       onCleanup(() => clearInterval(timer));
     });
+  }
+
+  /** Offers the faces from a right click or a press held on the compass. */
+  protected onContextMenu(event: MouseEvent): void {
+    if (!this.pointers.isAllowedToOpenContextMenu) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.contextMenu.open(
+      this.pointers.pointers[0],
+      COMPASS_FACES.map((face) => ({
+        name: this.t(`feature.compass.face.${face}`),
+        action: () => this.faces.choose(face),
+      })),
+      this.t('app.fab.compass')
+    );
   }
 
   protected close(): void {

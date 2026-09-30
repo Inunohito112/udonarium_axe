@@ -4152,6 +4152,11 @@
     },
     "compass": {
       "anomaly": "Anomaly",
+      "face": {
+        "modern": "Modern",
+        "fantasy": "Fantasy",
+        "sf": "Science fiction"
+      },
       "point": {
         "n": "N",
         "ne": "NE",

@@ -4400,6 +4400,11 @@
     },
     "compass": {
       "anomaly": "자기장 이상",
+      "face": {
+        "modern": "현대풍",
+        "fantasy": "판타지풍",
+        "sf": "SF풍"
+      },
       "point": {
         "n": "북",
         "ne": "북동",
