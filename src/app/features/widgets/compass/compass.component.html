@@ -10,12 +10,13 @@
     (contextmenu)="onContextMenu($event)"
   >
     <div class="flex flex-col items-center gap-1">
-      <div class="relative size-16 filter-[drop-shadow(0_1px_2px_rgba(0,0,0,0.55))] group-hover:filter-none">
+      <div class="relative size-16 filter-[drop-shadow(0_1px_2px_rgba(0,0,0,0.3))] group-hover:filter-none">
         <!-- The housing, which stays where it is: its mark at the top is where the screen looks. -->
         <svg viewBox="0 0 100 100" class="text-ui-muted absolute inset-0 size-full" aria-hidden="true">
           @switch (face()) {
             @case ('fantasy') {
-              <circle cx="50" cy="50" r="48" fill="rgba(28,18,6,0.55)" stroke="currentColor" stroke-width="3" />
+              <circle cx="50" cy="50" r="48" class="text-ui-panel" fill="currentColor" />
+              <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" stroke-width="3" />
               <circle cx="50" cy="50" r="41" fill="none" stroke="currentColor" stroke-width="1" opacity="0.7" />
               <circle
                 cx="50"
@@ -31,7 +32,7 @@
               <path d="M50 1 L54 10 L50 8 L46 10 Z" class="text-ui-accent" fill="currentColor" />
             }
             @case ('sf') {
-              <circle cx="50" cy="50" r="46" fill="rgba(0,16,24,0.5)" stroke="none" />
+              <circle cx="50" cy="50" r="46" class="text-ui-panel" fill="currentColor" />
               <g stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8">
                 <path d="M8 26 L8 8 L26 8" />
                 <path d="M74 8 L92 8 L92 26" />
@@ -48,7 +49,8 @@
               />
             }
             @default {
-              <circle cx="50" cy="50" r="47" fill="rgba(0,0,0,0.35)" stroke="currentColor" stroke-width="2" />
+              <circle cx="50" cy="50" r="47" class="text-ui-panel" fill="currentColor" />
+              <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" stroke-width="2" />
               <path d="M50 2 L55 12 L45 12 Z" class="text-ui-accent" fill="currentColor" />
             }
           }

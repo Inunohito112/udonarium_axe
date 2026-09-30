@@ -8,6 +8,8 @@ import { WidgetVisibilityService } from '@axe/application/ui/widget-visibility.s
 import { COMPASS_FACES } from '@axe/domain/ui/compass-face';
 import { CompassComponent } from '@axe/features/widgets/compass/compass.component';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 describe('CompassComponent', () => {
   let fixture: ComponentFixture<CompassComponent>;
@@ -233,6 +235,18 @@ describe('CompassComponent and the face it is drawn with', () => {
 
       expect(fixture.nativeElement.querySelector('[data-testid="compass-rose"]')!.dataset['angle']).toBe('90');
     }
+  });
+
+  it('takes every colour from the theme, so a light one does not get a dark blot', () => {
+    const drawn = readFileSync(resolve(process.cwd(), 'src/app/features/widgets/compass/compass.component.html'), {
+      encoding: 'utf-8',
+    });
+
+    // A colour written into the drawing holds whatever the theme says, which is how a dial meant
+    // for a dark screen turns up as a dark disc on a light one.
+    const painted = [...drawn.matchAll(/(?:fill|stroke)="([^"]+)"/g)].map((match) => match[1]);
+
+    expect(painted.filter((paint) => paint !== 'currentColor' && paint !== 'none')).toEqual([]);
   });
 
   it('remembers the face for the next time this screen opens', () => {
