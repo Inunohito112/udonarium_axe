@@ -4470,7 +4470,10 @@
         "sound": "효과음",
         "effect": "이펙트",
         "cutIn": "컷인",
-        "secret": "비밀 결과"
+        "secret": "비밀 결과",
+        "reveal": "숨긴 물체 보이기",
+        "conceal": "숨기기",
+        "removeSelf": "누른 물체 지우기"
       },
       "delay": "대기 (초)",
       "moveUp": "위로",
@@ -4497,7 +4500,9 @@
         "edit": "스위치 설정…",
         "try": "스위치 시험 누르기",
         "remove": "스위치 제거",
-        "reset": "누른 기록 지우기"
+        "reset": "누른 기록 지우기",
+        "conceal": "숨기기 (스위치로 보이기)",
+        "concealed": "숨긴 물체 보이기"
       },
       "range": "누를 수 있는 거리",
       "rangeHint": "칸 이내 (0은 어디서나)",
@@ -4514,7 +4519,20 @@
         "master": "GM만 읽을 수 있음"
       },
       "secretPlaceholder": "숨겨서 쓸 문장. {HP} 같은 참조도 쓸 수 있습니다",
-      "pressHere": "클릭해서 누르기"
+      "pressHere": "클릭해서 누르기",
+      "revealHint": "GM이 숨겨 둔 물체를 숨긴 자리로 되돌려 모두에게 보입니다.",
+      "concealHint": "테이블 위의 물체를 그 자리에 둔 채로 숨깁니다. 숨긴 지형은 지나가고 너머를 볼 수 있습니다.",
+      "removeSelfHint": "다른 동작을 모두 마친 뒤 스위치의 지형을 테이블에서 지웁니다. 칠한 칸이면 정리해서 GM만 보이게 합니다. 시험 누르기로는 지워지지 않습니다.",
+      "unnamedThing": "이름 없음",
+      "thing": {
+        "terrain": "지형",
+        "table-mask": "맵 마스크",
+        "character": "캐릭터",
+        "text-note": "공유 메모",
+        "dice-symbol": "주사위",
+        "coin": "코인",
+        "card-stack": "덱"
+      }
     }
   },
   "app": {

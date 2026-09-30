@@ -4222,7 +4222,10 @@
         "sound": "効果音",
         "effect": "エフェクト",
         "cutIn": "カットイン",
-        "secret": "秘密の結果"
+        "secret": "秘密の結果",
+        "reveal": "伏せた物を見せる",
+        "conceal": "伏せる",
+        "removeSelf": "押した物を消す"
       },
       "delay": "待ち（秒）",
       "moveUp": "上へ",
@@ -4249,7 +4252,9 @@
         "edit": "スイッチを設定…",
         "try": "スイッチを試しに押す",
         "remove": "スイッチを外す",
-        "reset": "押された記録を消す"
+        "reset": "押された記録を消す",
+        "conceal": "伏せる（スイッチで見せる）",
+        "concealed": "伏せた物を見せる"
       },
       "range": "押せる距離",
       "rangeHint": "マス以内（0 はどこからでも）",
@@ -4266,7 +4271,20 @@
         "master": "GM だけが読める"
       },
       "secretPlaceholder": "伏せて書く文。{HP} などの参照も使えます",
-      "pressHere": "クリックで押す"
+      "pressHere": "クリックで押す",
+      "revealHint": "GM が伏せておいた物を、伏せたときの場所に戻して全員に見せます。",
+      "concealHint": "卓の上の物を、その場所のまま伏せます。伏せた地形は通れて、見通せます。",
+      "removeSelfHint": "ほかの動作を終えてから、スイッチの地形を卓から消します。塗りの場合は片付けて GM だけに見える状態にします。試し押しでは消えません。",
+      "unnamedThing": "名前なし",
+      "thing": {
+        "terrain": "地形",
+        "table-mask": "マップマスク",
+        "character": "キャラクター",
+        "text-note": "共有メモ",
+        "dice-symbol": "ダイス",
+        "coin": "コイン",
+        "card-stack": "山札"
+      }
     }
   },
   "app": {

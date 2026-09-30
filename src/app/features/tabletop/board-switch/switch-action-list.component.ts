@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
+import { ConcealmentService } from '@axe/application/tabletop/concealment.service';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { CutIn } from '@axe/domain/media/cut-in';
@@ -14,7 +15,9 @@ import {
   SWITCH_SECRET_READERS,
   SwitchAction,
   SwitchActionKind,
+  SwitchShowHide,
 } from '@axe/domain/tabletop/board-switch/switch-definition';
+import { TabletopObject } from '@axe/domain/tabletop/tabletop-object';
 import { TranslocoModule } from '@jsverse/transloco';
 
 interface NameChoice {
@@ -41,6 +44,7 @@ export class SwitchActionListComponent {
   private readonly objectStore = inject(ObjectStore);
   private readonly objectChange = inject(ObjectChangeService);
   private readonly t = inject(TRANSLATE_FN);
+  private readonly concealment = inject(ConcealmentService);
 
   readonly actions = input.required<readonly SwitchAction[]>();
   readonly actionsChange = output<SwitchAction[]>();
@@ -73,7 +77,7 @@ export class SwitchActionListComponent {
    * the room goes by it, so opening the list does not quietly swap it for something else.
    */
   protected choicesFor(action: SwitchAction): NameChoice[] {
-    if (action.kind === 'say' || action.kind === 'secret' || action.kind === 'unknown') return [];
+    if (action.kind !== 'sound' && action.kind !== 'effect' && action.kind !== 'cutIn') return [];
     const choices =
       action.kind === 'sound'
         ? this.soundChoices()
@@ -83,6 +87,32 @@ export class SwitchActionListComponent {
     const name = action.name.trim();
     if (name.length < 1 || choices.some((choice) => choice.value === name)) return choices;
     return [{ value: name, name: this.t('feature.boardSwitch.missing', { name }) }, ...choices];
+  }
+
+  /**
+   * What a reveal or a conceal can name: what the master has put out of sight, or what stands on
+   * the table being looked at, each with the kind of thing it is. What it already names is kept on
+   * offer even where it is gone, so opening the list does not quietly point it at something else.
+   */
+  protected targetsFor(action: SwitchShowHide): NameChoice[] {
+    const pool = action.kind === 'reveal' ? this.concealment.concealed() : this.concealment.concealable();
+    const choices = pool.map((object) => ({ value: object.identifier, name: this.labelOf(object) }));
+    const held = action.target;
+    if (held.identifier.length < 1 || choices.some((choice) => choice.value === held.identifier)) return choices;
+    return [{ value: held.identifier, name: this.t('feature.boardSwitch.missing', { name: held.name }) }, ...choices];
+  }
+
+  protected setTarget(index: number, identifier: string): void {
+    const held = this.actions()[index];
+    if (held?.kind !== 'reveal' && held?.kind !== 'conceal') return;
+    const found = this.objectStore.get(identifier);
+    const name = found instanceof TabletopObject ? found.name : held.target.name;
+    this.replace(index, { ...held, target: { identifier, name: identifier.length > 0 ? name : '' } });
+  }
+
+  private labelOf(object: TabletopObject): string {
+    const name = object.name.trim() || this.t('feature.boardSwitch.unnamedThing');
+    return `${name}（${this.t(`feature.boardSwitch.thing.${object.aliasName}`)}）`;
   }
 
   protected delaySeconds(action: SwitchAction): number {

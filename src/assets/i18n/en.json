@@ -4222,7 +4222,10 @@
         "sound": "Sound",
         "effect": "Effect",
         "cutIn": "Cut-in",
-        "secret": "Secret result"
+        "secret": "Secret result",
+        "reveal": "Reveal a hidden object",
+        "conceal": "Hide an object",
+        "removeSelf": "Remove what was pressed"
       },
       "delay": "Wait (s)",
       "moveUp": "Move up",
@@ -4249,7 +4252,9 @@
         "edit": "Set up switch…",
         "try": "Try the switch",
         "remove": "Remove switch",
-        "reset": "Clear the record of presses"
+        "reset": "Clear the record of presses",
+        "conceal": "Hide (to reveal with a switch)",
+        "concealed": "Reveal a hidden object"
       },
       "range": "Reach",
       "rangeHint": "cells or closer (0 means from anywhere)",
@@ -4266,7 +4271,20 @@
         "master": "Only the GM can read it"
       },
       "secretPlaceholder": "Text kept back from the room. {HP} and other references work too",
-      "pressHere": "Click to press"
+      "pressHere": "Click to press",
+      "revealHint": "Puts an object the GM hid back where it was, for everyone to see.",
+      "concealHint": "Hides an object on the table where it stands. Hidden terrain can be walked and seen through.",
+      "removeSelfHint": "After everything else, removes the switch's terrain from the table. Painted ground is put away so only the GM sees it. Trying it out does not remove it.",
+      "unnamedThing": "Unnamed",
+      "thing": {
+        "terrain": "Terrain",
+        "table-mask": "Map mask",
+        "character": "Character",
+        "text-note": "Shared note",
+        "dice-symbol": "Dice",
+        "coin": "Coin",
+        "card-stack": "Deck"
+      }
     }
   },
   "app": {

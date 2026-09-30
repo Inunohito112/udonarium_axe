@@ -3,6 +3,7 @@ import { CharacterMacroService } from '@axe/application/chat/character-macro.ser
 import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { ChatSpeakerService } from '@axe/application/chat/chat-speaker.service';
 import { NamedCueService } from '@axe/application/media/named-cue.service';
+import { ConcealmentService } from '@axe/application/tabletop/concealment.service';
 import { SWITCH_COOLDOWN_MS, SwitchPressService } from '@axe/application/tabletop/switch-press.service';
 import { VisionService } from '@axe/application/tabletop/vision.service';
 import { Network } from '@axe/core/network/network';
@@ -21,6 +22,7 @@ import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
 import { cellCount, cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
+import { TableTrigger, triggersOn } from '@axe/domain/tabletop/table-trigger';
 import { Terrain } from '@axe/domain/tabletop/terrain';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
@@ -266,6 +268,64 @@ describe('SwitchPressService', () => {
 
       expect(await presses.press(chestAt(5, 5, { needsSight: true, actions: [say('hidden')] }))).toBe('unseen');
       expect(await presses.press(chestAt(1, 1, { needsSight: true, actions: [say('in view')] }))).toBe('pressed');
+    });
+  });
+
+  describe('what it does to the table', () => {
+    it('brings back what the master put out of sight, and puts out of sight what it names', async () => {
+      const concealment = TestBed.inject(ConcealmentService);
+      const door = Terrain.create('隠し扉', 1, 1, 2, '', '');
+      table.appendChild(door);
+      concealment.conceal(door);
+      const goblin = GameCharacter.create('ゴブリン', 1, '');
+      goblin.location = { name: 'table', x: 0, y: 0 } as never;
+
+      await presses.press(
+        switchWith({
+          actions: [
+            { kind: 'reveal', target: { identifier: door.identifier, name: '隠し扉' }, delayMs: 0, extra: {} },
+            { kind: 'conceal', target: { identifier: 'elsewhere', name: 'ゴブリン' }, delayMs: 0, extra: {} },
+          ],
+        })
+      );
+
+      expect(table.terrains).toContain(door);
+      expect(concealment.isConcealed(goblin)).toBe(true);
+    });
+
+    it('takes away the block it sits on once everything else is done, but not on a trial', async () => {
+      vi.useFakeTimers();
+      const chest = chestAt(3, 3, { actions: [{ kind: 'removeSelf', delayMs: 0, extra: {} }, say('opened', 500)] });
+      const block = chest.parent as Terrain;
+      PeerCursor.myCursor.role = PeerRole.GameMaster;
+
+      const trial = presses.press(chest, { trial: true });
+      await vi.advanceTimersByTimeAsync(500);
+      await trial;
+      expect(ObjectStore.instance.get(block.identifier)).toBe(block);
+
+      await vi.advanceTimersByTimeAsync(SWITCH_COOLDOWN_MS);
+      const pressing = presses.press(chest);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(ObjectStore.instance.get(block.identifier)).toBe(block);
+      await vi.advanceTimersByTimeAsync(500);
+      await pressing;
+
+      expect(said).toEqual(['self:opened', 'self:opened']);
+      expect(ObjectStore.instance.get(block.identifier)).toBeFalsy();
+    });
+
+    it('puts away painted ground it sits on rather than taking it off the map', async () => {
+      const ground = new TableTrigger();
+      ground.initialize();
+      table.appendChild(ground);
+      const made = switchWith({ actions: [{ kind: 'removeSelf', delayMs: 0, extra: {} }] });
+      ground.appendChild(made);
+
+      await presses.press(made);
+
+      expect(made.retired).toBe(true);
+      expect(triggersOn(table)).toContain(ground);
     });
   });
 

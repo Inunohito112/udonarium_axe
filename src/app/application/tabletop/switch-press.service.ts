@@ -3,6 +3,7 @@ import { CharacterMacroService } from '@axe/application/chat/character-macro.ser
 import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { ChatSpeakerService } from '@axe/application/chat/chat-speaker.service';
 import { NamedCueService } from '@axe/application/media/named-cue.service';
+import { ConcealmentService } from '@axe/application/tabletop/concealment.service';
 import { blockFootprintOf } from '@axe/application/tabletop/functional-paint.service';
 import { TableTriggerService } from '@axe/application/tabletop/table-trigger.service';
 import { VisionService } from '@axe/application/tabletop/vision.service';
@@ -46,7 +47,12 @@ export interface SwitchHost {
 }
 
 interface PressContext {
+  target: BoardSwitch;
   definition: SwitchDefinition;
+  /** Whether the master is trying it out, which leaves the thing it sits on standing. */
+  trial: boolean;
+  /** Whether it has been asked to take away the thing it sits on once it is done. */
+  removesSelf: boolean;
   host: SwitchHost;
   tab: ChatTab | null;
   /** The piece the presser is speaking as, or null where they speak as themselves. */
@@ -76,6 +82,7 @@ export class SwitchPressService {
   private readonly tableSelecter = inject(TableSelecter);
   private readonly objectStore = inject(ObjectStore);
   private readonly triggers = inject(TableTriggerService);
+  private readonly concealment = inject(ConcealmentService);
 
   private readonly running = new Set<string>();
   private readonly pressedAt = new Map<string, number>();
@@ -148,7 +155,10 @@ export class SwitchPressService {
     const character = this.speaker.current();
     if (!options.trial) spendSwitch(target, this.presserKey(character), this.round());
     const context: PressContext = {
+      target,
       definition,
+      trial: options.trial === true,
+      removesSelf: false,
       host: this.hostOf(target),
       tab: this.macro.currentTab(definition.tab),
       character,
@@ -162,10 +172,23 @@ export class SwitchPressService {
           // One thing going wrong is no reason to leave the rest of the switch undone.
         }
       }
+      if (context.removesSelf && !context.trial) this.removeHost(target);
     } finally {
       this.running.delete(key);
     }
     return 'pressed';
+  }
+
+  /**
+   * Takes away the thing the switch sits on, last of all.
+   *
+   * A block goes from the table, switch and all. Painted ground belongs to the master's map, so it
+   * is put away instead, out of sight of all but the master, where the map editor can find it again.
+   */
+  private removeHost(target: BoardSwitch): void {
+    const host = target.parent;
+    if (host instanceof Terrain) host.destroy();
+    else target.retired = true;
   }
 
   private async run(action: SwitchAction, context: PressContext): Promise<void> {
@@ -184,6 +207,19 @@ export class SwitchPressService {
         return;
       case 'cutIn':
         this.cues.launchCutIn(action.name);
+        return;
+      case 'reveal': {
+        const found = this.concealment.find(action.target, this.concealment.concealed());
+        if (found) this.concealment.reveal(found);
+        return;
+      }
+      case 'conceal': {
+        const found = this.concealment.find(action.target, this.concealment.concealable());
+        if (found) this.concealment.conceal(found);
+        return;
+      }
+      case 'removeSelf':
+        context.removesSelf = true;
         return;
       case 'unknown':
         return;

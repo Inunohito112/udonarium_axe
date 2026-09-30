@@ -91,7 +91,7 @@
           [value]="action.text"
           (input)="setText(index, $any($event.target).value)"
         ></textarea>
-      } @else if (action.kind !== 'unknown') {
+      } @else if (action.kind === 'sound' || action.kind === 'effect' || action.kind === 'cutIn') {
         <select
           class="border-ui-border-panel bg-ui-elevated text-ui-text min-w-0 rounded-[3px] border border-solid px-1.5 py-0.5 text-[12px]"
           data-testid="switch-action-name"
@@ -102,6 +102,26 @@
             <option [value]="choice.value" [selected]="choice.value === action.name">{{ choice.name }}</option>
           }
         </select>
+      } @else if (action.kind === 'reveal' || action.kind === 'conceal') {
+        <select
+          class="border-ui-border-panel bg-ui-elevated text-ui-text min-w-0 rounded-[3px] border border-solid px-1.5 py-0.5 text-[12px]"
+          data-testid="switch-action-target"
+          (change)="setTarget(index, $any($event.target).value)"
+        >
+          <option value="" [selected]="!action.target.identifier">
+            {{ 'feature.boardSwitch.unchosen' | transloco }}
+          </option>
+          @for (choice of targetsFor(action); track choice.value) {
+            <option [value]="choice.value" [selected]="choice.value === action.target.identifier">
+              {{ choice.name }}
+            </option>
+          }
+        </select>
+        <p class="text-ui-muted m-0 text-[11px] leading-snug">
+          {{ 'feature.boardSwitch.' + action.kind + 'Hint' | transloco }}
+        </p>
+      } @else if (action.kind === 'removeSelf') {
+        <p class="text-ui-muted m-0 text-[11px] leading-snug">{{ 'feature.boardSwitch.removeSelfHint' | transloco }}</p>
       }
     </div>
   } @empty {

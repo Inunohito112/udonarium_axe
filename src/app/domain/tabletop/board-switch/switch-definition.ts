@@ -14,7 +14,16 @@ export type SwitchSpeaker = (typeof SWITCH_SPEAKERS)[number];
 export const DEFAULT_SWITCH_SPEAKER: SwitchSpeaker = 'presser';
 
 /** The kinds of thing a switch can do that this version knows how to do. */
-export const SWITCH_ACTION_KINDS = ['say', 'secret', 'sound', 'effect', 'cutIn'] as const;
+export const SWITCH_ACTION_KINDS = [
+  'say',
+  'secret',
+  'sound',
+  'effect',
+  'cutIn',
+  'reveal',
+  'conceal',
+  'removeSelf',
+] as const;
 
 export type SwitchActionKind = (typeof SWITCH_ACTION_KINDS)[number];
 
@@ -64,6 +73,39 @@ export interface SwitchCue extends SwitchActionBase {
 }
 
 /**
+ * Something on the table, named the way a map carried into another room can still find it: by what
+ * it was in the room it was chosen in, and failing that by what it is called.
+ */
+export interface SwitchTargetRef {
+  identifier: string;
+  name: string;
+}
+
+interface SwitchTargetAction extends SwitchActionBase {
+  target: SwitchTargetRef;
+}
+
+/** Something the master put out of sight, brought back to where it was. */
+export interface SwitchReveal extends SwitchTargetAction {
+  kind: 'reveal';
+}
+
+/** Something on the table, put out of sight where it stands. */
+export interface SwitchConceal extends SwitchTargetAction {
+  kind: 'conceal';
+}
+
+export type SwitchShowHide = SwitchReveal | SwitchConceal;
+
+/**
+ * The thing the switch sits on taken away once it has done everything else: a block is taken off
+ * the table, and painted ground is put away where only the master sees it.
+ */
+export interface SwitchRemoveSelf extends SwitchActionBase {
+  kind: 'removeSelf';
+}
+
+/**
  * Something a newer version knows how to do and this one does not.
  *
  * Kept whole rather than read as something this version does know: a switch that makes monsters
@@ -76,7 +118,8 @@ export interface SwitchUnknownAction extends SwitchActionBase {
   raw: Record<string, unknown>;
 }
 
-export type SwitchAction = SwitchSay | SwitchSecret | SwitchCue | SwitchUnknownAction;
+export type SwitchAction =
+  SwitchSay | SwitchSecret | SwitchCue | SwitchReveal | SwitchConceal | SwitchRemoveSelf | SwitchUnknownAction;
 
 /** What a switch is called and what it does when it is pressed. */
 export interface SwitchDefinition {
@@ -132,6 +175,8 @@ const DEFINITION_KEYS = [
 ];
 const SAY_KEYS = ['kind', 'delayMs', 'text'];
 const SECRET_KEYS = ['kind', 'delayMs', 'text', 'to'];
+const TARGET_KEYS = ['kind', 'delayMs', 'target'];
+const BARE_KEYS = ['kind', 'delayMs'];
 const CUE_KEYS = ['kind', 'delayMs', 'name'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -176,6 +221,11 @@ export function clampSwitchRange(value: unknown): number {
   return Math.min(MAX_SWITCH_RANGE, Math.round(held));
 }
 
+function readTarget(value: unknown): SwitchTargetRef {
+  if (!isRecord(value)) return { identifier: '', name: '' };
+  return { identifier: readText(value['identifier']), name: readText(value['name']) };
+}
+
 function readSecretReader(value: unknown): SwitchSecretReader {
   return value === 'master' ? 'master' : 'presser';
 }
@@ -203,6 +253,10 @@ function readAction(raw: unknown): SwitchAction | null {
   if (kind === 'sound' || kind === 'effect' || kind === 'cutIn') {
     return { kind, name: readText(raw['name']), delayMs, extra: leftOver(raw, CUE_KEYS) };
   }
+  if (kind === 'reveal' || kind === 'conceal') {
+    return { kind, target: readTarget(raw['target']), delayMs, extra: leftOver(raw, TARGET_KEYS) };
+  }
+  if (kind === 'removeSelf') return { kind, delayMs, extra: leftOver(raw, BARE_KEYS) };
   if (typeof kind !== 'string' || kind.length < 1) return null;
   return { kind: 'unknown', raw: { ...raw }, delayMs, extra: {} };
 }
@@ -253,6 +307,11 @@ function writeAction(action: SwitchAction): Record<string, unknown> {
     case 'effect':
     case 'cutIn':
       return { ...action.extra, kind: action.kind, delayMs: action.delayMs, name: action.name };
+    case 'reveal':
+    case 'conceal':
+      return { ...action.extra, kind: action.kind, delayMs: action.delayMs, target: { ...action.target } };
+    case 'removeSelf':
+      return { ...action.extra, kind: action.kind, delayMs: action.delayMs };
     case 'unknown':
       return { ...action.raw, delayMs: action.delayMs };
   }
@@ -278,11 +337,16 @@ export function encodeSwitchDefinition(definition: SwitchDefinition): string {
 /** A fresh action of a kind, with nothing written in it yet. */
 export function newSwitchAction(kind: 'say'): SwitchSay;
 export function newSwitchAction(kind: 'secret'): SwitchSecret;
+export function newSwitchAction(kind: SwitchShowHide['kind']): SwitchShowHide;
+export function newSwitchAction(kind: 'removeSelf'): SwitchRemoveSelf;
 export function newSwitchAction(kind: SwitchCue['kind']): SwitchCue;
 export function newSwitchAction(kind: SwitchActionKind): SwitchAction;
 export function newSwitchAction(kind: SwitchActionKind): SwitchAction {
   if (kind === 'say') return { kind, text: '', delayMs: 0, extra: {} };
   if (kind === 'secret') return { kind, text: '', to: 'presser', delayMs: 0, extra: {} };
+  if (kind === 'reveal' || kind === 'conceal')
+    return { kind, target: { identifier: '', name: '' }, delayMs: 0, extra: {} };
+  if (kind === 'removeSelf') return { kind, delayMs: 0, extra: {} };
   return { kind, name: '', delayMs: 0, extra: {} };
 }
 
@@ -290,6 +354,10 @@ export function newSwitchAction(kind: SwitchActionKind): SwitchAction {
 export function switchDoesAnything(definition: SwitchDefinition): boolean {
   return definition.actions.some((action) => {
     if (action.kind === 'say' || action.kind === 'secret') return action.text.trim().length > 0;
+    if (action.kind === 'reveal' || action.kind === 'conceal') {
+      return action.target.identifier.length > 0 || action.target.name.trim().length > 0;
+    }
+    if (action.kind === 'removeSelf') return true;
     if (action.kind === 'unknown') return false;
     return action.name.trim().length > 0;
   });

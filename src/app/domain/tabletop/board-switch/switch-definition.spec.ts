@@ -33,6 +33,9 @@ describe('switch definitions', () => {
         { kind: 'sound' as const, name: 'chest.mp3', delayMs: 500, extra: {} },
         { kind: 'effect' as const, name: 'sparkle', delayMs: 0, extra: {} },
         { kind: 'cutIn' as const, name: 'found', delayMs: 1200, extra: {} },
+        { kind: 'reveal' as const, target: { identifier: 'door-1', name: '隠し扉' }, delayMs: 0, extra: {} },
+        { kind: 'conceal' as const, target: { identifier: 'wall-1', name: '壁' }, delayMs: 0, extra: {} },
+        { kind: 'removeSelf' as const, delayMs: 0, extra: {} },
       ],
     };
 

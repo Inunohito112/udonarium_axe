@@ -4,6 +4,7 @@ import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { GameObjectInventoryService } from '@axe/application/inventory/game-object-inventory.service';
 import { BoardSwitchService } from '@axe/application/tabletop/board-switch.service';
+import { ConcealmentService } from '@axe/application/tabletop/concealment.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
@@ -19,6 +20,7 @@ import { gridSlopeSides } from '@axe/domain/tabletop/terrain-slope';
 import { ObjectPanelService } from '@axe/features/panels/object-panel.service';
 import { buildBoardSwitchMenu } from '@axe/features/tabletop/board-switch/board-switch-context-menu';
 import { BoardSwitchPanelService } from '@axe/features/tabletop/board-switch/board-switch-panel.service';
+import { buildConcealMenu } from '@axe/features/tabletop/board-switch/concealment-context-menu';
 import { buildTerrainContextMenuModel } from '@axe/features/tabletop/terrain/terrain-context-menu';
 
 /**
@@ -41,6 +43,7 @@ export class TerrainMenuService {
   private readonly t = inject(TRANSLATE_FN);
   private readonly switches = inject(BoardSwitchService);
   private readonly switchPanels = inject(BoardSwitchPanelService);
+  private readonly concealment = inject(ConcealmentService);
 
   /**
    * Opens the terrain's right-click menu at the pointer, or the menu for the whole selection when
@@ -63,21 +66,24 @@ export class TerrainMenuService {
       this.t
     );
     const surfaceEntries = buildSurfaceSwitchContextMenu(terrain, this.tabletopService.currentTable, this.t);
-    const switchEntries = buildBoardSwitchMenu(
-      {
-        canEdit: this.switches.canEdit(),
-        hasSwitch: terrain.boardSwitch !== null,
-        isDoor: terrain.isDoor,
-        pressed: terrain.boardSwitch !== null && switchWasPressed(terrain.boardSwitch),
-      },
-      {
-        edit: () => this.switchPanels.open(terrain),
-        press: () => void this.switchPanels.tryOut(terrain),
-        reset: () => this.switches.reset(terrain),
-        remove: () => this.switches.remove(terrain),
-      },
-      this.t
-    );
+    const switchEntries = [
+      ...buildBoardSwitchMenu(
+        {
+          canEdit: this.switches.canEdit(),
+          hasSwitch: terrain.boardSwitch !== null,
+          isDoor: terrain.isDoor,
+          pressed: terrain.boardSwitch !== null && switchWasPressed(terrain.boardSwitch),
+        },
+        {
+          edit: () => this.switchPanels.open(terrain),
+          press: () => void this.switchPanels.tryOut(terrain),
+          reset: () => this.switches.reset(terrain),
+          remove: () => this.switches.remove(terrain),
+        },
+        this.t
+      ),
+      ...buildConcealMenu(this.switches.canEdit(), () => this.concealment.conceal(terrain), this.t),
+    ];
     const menu = buildTerrainContextMenuModel(
       terrain,
       gridSize,
