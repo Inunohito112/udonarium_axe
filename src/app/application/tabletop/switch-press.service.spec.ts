@@ -329,6 +329,75 @@ describe('SwitchPressService', () => {
     });
   });
 
+  describe('calling pieces up', () => {
+    /** A copy made the way cloning makes one, since a saved piece cannot be read back in this test runner. */
+    function copiesOf(template: GameCharacter): void {
+      vi.spyOn(template, 'clone').mockImplementation(() => GameCharacter.create(template.name, template.size, ''));
+    }
+
+    function onTable(name: string): GameCharacter[] {
+      return ObjectStore.instance
+        .getObjects<GameCharacter>(GameCharacter)
+        .filter((piece) => piece.name === name && piece.location.name === 'table');
+    }
+
+    it('sets down as many copies as asked for round the switch, on free ground, leaving the template where it is', async () => {
+      const goblin = GameCharacter.create('ゴブリン', 1, '');
+      goblin.location = { name: 'graveyard', x: 0, y: 0 } as never;
+      copiesOf(goblin);
+      const blocker = GameCharacter.create('岩', 1, '');
+      blocker.location = { name: 'table', x: 5 * GRID, y: 5 * GRID } as never;
+
+      await presses.press(
+        chestAt(5, 5, {
+          actions: [
+            {
+              kind: 'spawn',
+              target: { identifier: goblin.identifier, name: 'ゴブリン' },
+              count: 3,
+              place: 'host',
+              delayMs: 0,
+              extra: {},
+            },
+          ],
+        })
+      );
+
+      const called = onTable('ゴブリン');
+      expect(called).toHaveLength(3);
+      const cells = called.map((piece) => `${piece.location.x / GRID},${piece.location.y / GRID}`);
+      expect(new Set(cells).size).toBe(3);
+      expect(cells).not.toContain('5,5');
+      expect(goblin.location.name).toBe('graveyard');
+    });
+
+    it('sets them down round the presser’s piece where asked to, finding the template by name', async () => {
+      const goblin = GameCharacter.create('ゴブリン', 1, '');
+      goblin.location = { name: 'graveyard', x: 0, y: 0 } as never;
+      copiesOf(goblin);
+      speakAs(1, 1);
+
+      await presses.press(
+        chestAt(9, 9, {
+          actions: [
+            {
+              kind: 'spawn',
+              target: { identifier: 'elsewhere', name: 'ゴブリン' },
+              count: 1,
+              place: 'presser',
+              delayMs: 0,
+              extra: {},
+            },
+          ],
+        })
+      );
+
+      const [called] = onTable('ゴブリン');
+      expect(Math.abs(called.location.x / GRID - 1)).toBeLessThanOrEqual(1);
+      expect(Math.abs(called.location.y / GRID - 1)).toBeLessThanOrEqual(1);
+    });
+  });
+
   describe('lines kept back from the room', () => {
     it('keeps a line for the presser and the master, filled in from the presser’s piece', async () => {
       const secret = vi

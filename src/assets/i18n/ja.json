@@ -4225,7 +4225,8 @@
         "secret": "秘密の結果",
         "reveal": "伏せた物を見せる",
         "conceal": "伏せる",
-        "removeSelf": "押した物を消す"
+        "removeSelf": "押した物を消す",
+        "spawn": "コマを呼び出す"
       },
       "delay": "待ち（秒）",
       "moveUp": "上へ",
@@ -4284,6 +4285,18 @@
         "dice-symbol": "ダイス",
         "coin": "コイン",
         "card-stack": "山札"
+      },
+      "spawnCount": "数",
+      "spawnPlace": {
+        "host": "スイッチのそばに置く",
+        "presser": "押した人のコマのそばに置く"
+      },
+      "spawnHint": "選んだキャラクターの複製を、近い空きマスから順に並べます。ひな形は墓場や伏せた場所に置いておけます。",
+      "where": {
+        "table": "卓上",
+        "graveyard": "墓場",
+        "concealed": "伏せ",
+        "other": "保管"
       }
     }
   },

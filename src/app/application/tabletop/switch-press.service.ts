@@ -13,14 +13,22 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { evaluateCharacterReferences } from '@axe/domain/chat/chat-palette';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
+import { findByReference } from '@axe/domain/hotbar/hotbar-reference';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { BoardSwitch, spendSwitch, switchHasGoFor } from '@axe/domain/tabletop/board-switch/board-switch';
-import { SwitchAction, SwitchDefinition } from '@axe/domain/tabletop/board-switch/switch-definition';
+import {
+  clampSwitchSpawn,
+  SwitchAction,
+  SwitchDefinition,
+  SwitchSpawn,
+} from '@axe/domain/tabletop/board-switch/switch-definition';
 import { pressRefusal, SwitchReach, SwitchRefusal } from '@axe/domain/tabletop/board-switch/switch-press-rules';
 import { cellsOfRect, stepsToReach } from '@axe/domain/tabletop/board-switch/switch-reach';
 import { CellRect } from '@axe/domain/tabletop/cell-rectangles';
-import { cellColRow, CellGrid, cellGridOf, cellIndexAt } from '@axe/domain/tabletop/fog/cell-grid';
+import { cellColRow, CellGrid, cellGridOf, cellIndexAt, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { groundInSight } from '@axe/domain/tabletop/ground-in-sight';
+import { gatherSpotsAround } from '@axe/domain/tabletop/move/gather-cells';
+import { occupiedCells } from '@axe/domain/tabletop/move/occupied-cells';
 import { pieceCellOf } from '@axe/domain/tabletop/move/piece-on-grid';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger } from '@axe/domain/tabletop/table-trigger';
@@ -221,6 +229,9 @@ export class SwitchPressService {
       case 'removeSelf':
         context.removesSelf = true;
         return;
+      case 'spawn':
+        this.spawn(action, context);
+        return;
       case 'unknown':
         return;
     }
@@ -243,6 +254,42 @@ export class SwitchPressService {
         this.chat.sendSystemMessageToTab(tab, line);
         return;
     }
+  }
+
+  /**
+   * Sets down copies of a piece round the switch, or round the presser's piece, nearest first.
+   *
+   * Ground something is already standing on is passed over, and a copy that finds no room within
+   * reach is not made at all rather than piled onto somebody. The piece copied stays where it is.
+   */
+  private spawn(action: SwitchSpawn, context: PressContext): void {
+    const grid = this.grid();
+    const table = this.tableSelecter.viewTable;
+    const characters = this.objectStore.getObjects<GameCharacter>(GameCharacter);
+    const template = findByReference(characters, action.target.identifier, action.target.name.trim())?.thing;
+    if (!grid || !table || !template) return;
+    const start = this.spawnStart(grid, action, context);
+    if (start < 0) return;
+    const copies = Array.from({ length: clampSwitchSpawn(action.count) }, () => template.clone());
+    const spots = gatherSpotsAround(grid, grid.sizePx, start, copies, occupiedCells(grid, characters, ''));
+    const placed = new Set<GameCharacter>();
+    for (const spot of spots) {
+      spot.character.location = { name: 'table', x: spot.x, y: spot.y };
+      placed.add(spot.character);
+    }
+    for (const copy of copies) if (!placed.has(copy)) copy.destroy();
+  }
+
+  /** The cell copies gather round: the middle of what the switch sits on, or the presser's piece. */
+  private spawnStart(grid: CellGrid, action: SwitchSpawn, context: PressContext): number {
+    const piece = context.character;
+    if (action.place === 'presser' && piece && piece.location.name === 'table') {
+      const cell = pieceCellOf(grid, piece, grid.sizePx);
+      if (cell >= 0) return cell;
+    }
+    const rect = context.host.rect;
+    if (!rect) return -1;
+    return cellIndexOf(grid, rect.col + Math.floor(rect.width / 2), rect.row + Math.floor(rect.height / 2));
   }
 
   /**

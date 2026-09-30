@@ -4225,7 +4225,8 @@
         "secret": "Secret result",
         "reveal": "Reveal a hidden object",
         "conceal": "Hide an object",
-        "removeSelf": "Remove what was pressed"
+        "removeSelf": "Remove what was pressed",
+        "spawn": "Call up pieces"
       },
       "delay": "Wait (s)",
       "moveUp": "Move up",
@@ -4284,6 +4285,18 @@
         "dice-symbol": "Dice",
         "coin": "Coin",
         "card-stack": "Deck"
+      },
+      "spawnCount": "Count",
+      "spawnPlace": {
+        "host": "Next to the switch",
+        "presser": "Next to the presser's piece"
+      },
+      "spawnHint": "Places copies of the chosen character on the nearest free cells. Keep the original in the graveyard or hidden.",
+      "where": {
+        "table": "on the table",
+        "graveyard": "graveyard",
+        "concealed": "hidden",
+        "other": "stored"
       }
     }
   },

@@ -117,7 +117,7 @@ describe('BoardSwitch', () => {
   it('carries what a newer version wrote through a press written by this one', () => {
     const made = new BoardSwitch();
     made.initialize();
-    const newer = JSON.stringify({ v: 2, label: 'lever', range: 2, actions: [{ kind: 'spawn', count: 3 }] });
+    const newer = JSON.stringify({ v: 2, label: 'lever', range: 2, actions: [{ kind: 'weather', strength: 3 }] });
     made.definition = newer;
 
     made.spentRound = 4;

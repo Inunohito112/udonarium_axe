@@ -23,6 +23,7 @@ export const SWITCH_ACTION_KINDS = [
   'reveal',
   'conceal',
   'removeSelf',
+  'spawn',
 ] as const;
 
 export type SwitchActionKind = (typeof SWITCH_ACTION_KINDS)[number];
@@ -97,6 +98,25 @@ export interface SwitchConceal extends SwitchTargetAction {
 
 export type SwitchShowHide = SwitchReveal | SwitchConceal;
 
+/** As many copies as one press may set down, so a slip of the keyboard does not fill the table. */
+export const MAX_SWITCH_SPAWN = 10;
+
+/** Where copies are set down: round the switch, or round the presser's piece. */
+export const SWITCH_SPAWN_PLACES = ['host', 'presser'] as const;
+
+export type SwitchSpawnPlace = (typeof SWITCH_SPAWN_PLACES)[number];
+
+/**
+ * Copies of a piece set down on the table, as many as asked for, nearest first round where they
+ * are to stand. The piece copied is left where it is, which is usually the graveyard or somewhere
+ * out of sight, kept for the purpose.
+ */
+export interface SwitchSpawn extends SwitchTargetAction {
+  kind: 'spawn';
+  count: number;
+  place: SwitchSpawnPlace;
+}
+
 /**
  * The thing the switch sits on taken away once it has done everything else: a block is taken off
  * the table, and painted ground is put away where only the master sees it.
@@ -119,7 +139,14 @@ export interface SwitchUnknownAction extends SwitchActionBase {
 }
 
 export type SwitchAction =
-  SwitchSay | SwitchSecret | SwitchCue | SwitchReveal | SwitchConceal | SwitchRemoveSelf | SwitchUnknownAction;
+  | SwitchSay
+  | SwitchSecret
+  | SwitchCue
+  | SwitchReveal
+  | SwitchConceal
+  | SwitchRemoveSelf
+  | SwitchSpawn
+  | SwitchUnknownAction;
 
 /** What a switch is called and what it does when it is pressed. */
 export interface SwitchDefinition {
@@ -177,6 +204,7 @@ const SAY_KEYS = ['kind', 'delayMs', 'text'];
 const SECRET_KEYS = ['kind', 'delayMs', 'text', 'to'];
 const TARGET_KEYS = ['kind', 'delayMs', 'target'];
 const BARE_KEYS = ['kind', 'delayMs'];
+const SPAWN_KEYS = ['kind', 'delayMs', 'target', 'count', 'place'];
 const CUE_KEYS = ['kind', 'delayMs', 'name'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -221,6 +249,13 @@ export function clampSwitchRange(value: unknown): number {
   return Math.min(MAX_SWITCH_RANGE, Math.round(held));
 }
 
+/** How many copies a press sets down, from one to the most. */
+export function clampSwitchSpawn(value: unknown): number {
+  const held = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(held) || held < 1) return 1;
+  return Math.min(MAX_SWITCH_SPAWN, Math.round(held));
+}
+
 function readTarget(value: unknown): SwitchTargetRef {
   if (!isRecord(value)) return { identifier: '', name: '' };
   return { identifier: readText(value['identifier']), name: readText(value['name']) };
@@ -257,6 +292,16 @@ function readAction(raw: unknown): SwitchAction | null {
     return { kind, target: readTarget(raw['target']), delayMs, extra: leftOver(raw, TARGET_KEYS) };
   }
   if (kind === 'removeSelf') return { kind, delayMs, extra: leftOver(raw, BARE_KEYS) };
+  if (kind === 'spawn') {
+    return {
+      kind,
+      target: readTarget(raw['target']),
+      count: clampSwitchSpawn(raw['count']),
+      place: raw['place'] === 'presser' ? 'presser' : 'host',
+      delayMs,
+      extra: leftOver(raw, SPAWN_KEYS),
+    };
+  }
   if (typeof kind !== 'string' || kind.length < 1) return null;
   return { kind: 'unknown', raw: { ...raw }, delayMs, extra: {} };
 }
@@ -312,6 +357,15 @@ function writeAction(action: SwitchAction): Record<string, unknown> {
       return { ...action.extra, kind: action.kind, delayMs: action.delayMs, target: { ...action.target } };
     case 'removeSelf':
       return { ...action.extra, kind: action.kind, delayMs: action.delayMs };
+    case 'spawn':
+      return {
+        ...action.extra,
+        kind: action.kind,
+        delayMs: action.delayMs,
+        target: { ...action.target },
+        count: clampSwitchSpawn(action.count),
+        place: action.place,
+      };
     case 'unknown':
       return { ...action.raw, delayMs: action.delayMs };
   }
@@ -339,6 +393,7 @@ export function newSwitchAction(kind: 'say'): SwitchSay;
 export function newSwitchAction(kind: 'secret'): SwitchSecret;
 export function newSwitchAction(kind: SwitchShowHide['kind']): SwitchShowHide;
 export function newSwitchAction(kind: 'removeSelf'): SwitchRemoveSelf;
+export function newSwitchAction(kind: 'spawn'): SwitchSpawn;
 export function newSwitchAction(kind: SwitchCue['kind']): SwitchCue;
 export function newSwitchAction(kind: SwitchActionKind): SwitchAction;
 export function newSwitchAction(kind: SwitchActionKind): SwitchAction {
@@ -347,6 +402,9 @@ export function newSwitchAction(kind: SwitchActionKind): SwitchAction {
   if (kind === 'reveal' || kind === 'conceal')
     return { kind, target: { identifier: '', name: '' }, delayMs: 0, extra: {} };
   if (kind === 'removeSelf') return { kind, delayMs: 0, extra: {} };
+  if (kind === 'spawn') {
+    return { kind, target: { identifier: '', name: '' }, count: 1, place: 'host', delayMs: 0, extra: {} };
+  }
   return { kind, name: '', delayMs: 0, extra: {} };
 }
 
@@ -354,7 +412,7 @@ export function newSwitchAction(kind: SwitchActionKind): SwitchAction {
 export function switchDoesAnything(definition: SwitchDefinition): boolean {
   return definition.actions.some((action) => {
     if (action.kind === 'say' || action.kind === 'secret') return action.text.trim().length > 0;
-    if (action.kind === 'reveal' || action.kind === 'conceal') {
+    if (action.kind === 'reveal' || action.kind === 'conceal' || action.kind === 'spawn') {
       return action.target.identifier.length > 0 || action.target.name.trim().length > 0;
     }
     if (action.kind === 'removeSelf') return true;

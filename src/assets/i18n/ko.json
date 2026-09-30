@@ -4473,7 +4473,8 @@
         "secret": "비밀 결과",
         "reveal": "숨긴 물체 보이기",
         "conceal": "숨기기",
-        "removeSelf": "누른 물체 지우기"
+        "removeSelf": "누른 물체 지우기",
+        "spawn": "말 불러내기"
       },
       "delay": "대기 (초)",
       "moveUp": "위로",
@@ -4532,6 +4533,18 @@
         "dice-symbol": "주사위",
         "coin": "코인",
         "card-stack": "덱"
+      },
+      "spawnCount": "수",
+      "spawnPlace": {
+        "host": "스위치 옆에 놓기",
+        "presser": "누른 사람의 말 옆에 놓기"
+      },
+      "spawnHint": "선택한 캐릭터의 복제를 가까운 빈칸부터 차례로 놓습니다. 원본은 묘지나 숨긴 자리에 두면 됩니다.",
+      "where": {
+        "table": "테이블 위",
+        "graveyard": "묘지",
+        "concealed": "숨김",
+        "other": "보관"
       }
     }
   },

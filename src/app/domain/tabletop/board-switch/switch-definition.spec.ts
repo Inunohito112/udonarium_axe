@@ -36,6 +36,14 @@ describe('switch definitions', () => {
         { kind: 'reveal' as const, target: { identifier: 'door-1', name: '隠し扉' }, delayMs: 0, extra: {} },
         { kind: 'conceal' as const, target: { identifier: 'wall-1', name: '壁' }, delayMs: 0, extra: {} },
         { kind: 'removeSelf' as const, delayMs: 0, extra: {} },
+        {
+          kind: 'spawn' as const,
+          target: { identifier: 'goblin-1', name: 'ゴブリン' },
+          count: 3,
+          place: 'presser' as const,
+          delayMs: 0,
+          extra: {},
+        },
       ],
     };
 
@@ -50,6 +58,14 @@ describe('switch definitions', () => {
     expect(read.repeat).toBe('always');
     expect(parseSwitchDefinition(JSON.stringify({ range: 500 })).range).toBe(99);
     expect(parseSwitchDefinition(JSON.stringify({ needsSight: 'false' })).needsSight).toBe(false);
+  });
+
+  it('calls up at least one copy and no more than the most', () => {
+    const count = (value: unknown) =>
+      parseSwitchDefinition(JSON.stringify({ actions: [{ kind: 'spawn', count: value }] })).actions[0];
+
+    expect(count(0)).toMatchObject({ count: 1, place: 'host' });
+    expect(count(99)).toMatchObject({ count: 10 });
   });
 
   it('reads a speaker it has never heard of as the presser', () => {
@@ -72,7 +88,7 @@ describe('switch definitions', () => {
       range: 2,
       actions: [
         { kind: 'say', text: 'creak', delayMs: 0, to: 'presser' },
-        { kind: 'spawn', template: { name: 'goblin' }, count: 3, delayMs: 200 },
+        { kind: 'weather', sky: { name: 'storm' }, strength: 3, delayMs: 200 },
       ],
     });
 
@@ -82,7 +98,7 @@ describe('switch definitions', () => {
     expect(read.actions.map((action) => action.kind)).toEqual(['say', 'unknown']);
     expect(again.range).toBe(2);
     expect(again.actions[0].to).toBe('presser');
-    expect(again.actions[1]).toEqual({ kind: 'spawn', template: { name: 'goblin' }, count: 3, delayMs: 200 });
+    expect(again.actions[1]).toEqual({ kind: 'weather', sky: { name: 'storm' }, strength: 3, delayMs: 200 });
   });
 
   it('drops an action with no kind at all rather than taking the rest with it', () => {
@@ -110,7 +126,7 @@ describe('switch definitions', () => {
     expect(switchDoesAnything(blank)).toBe(false);
     expect(switchDoesAnything({ ...blank, actions: [newSwitchAction('say'), newSwitchAction('sound')] })).toBe(false);
     expect(
-      switchDoesAnything({ ...blank, actions: [{ kind: 'unknown', raw: { kind: 'spawn' }, delayMs: 0, extra: {} }] })
+      switchDoesAnything({ ...blank, actions: [{ kind: 'unknown', raw: { kind: 'weather' }, delayMs: 0, extra: {} }] })
     ).toBe(false);
     expect(switchDoesAnything({ ...blank, actions: [{ ...newSwitchAction('say'), text: 'hello' }] })).toBe(true);
     expect(switchDoesAnything({ ...blank, actions: [{ kind: 'sound', name: 'bell', delayMs: 0, extra: {} }] })).toBe(

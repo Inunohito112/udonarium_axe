@@ -16,6 +16,7 @@ import { DUNGEON_PROP_IDS, TEXTURE_IDS, WALL_TEXTURE_IDS } from '@axe/domain/med
 import {
   SWITCH_ACTION_KINDS,
   SWITCH_SECRET_READERS,
+  SWITCH_SPAWN_PLACES,
   SWITCH_SPEAKERS,
 } from '@axe/domain/tabletop/board-switch/switch-definition';
 import { SWITCH_REFUSALS } from '@axe/domain/tabletop/board-switch/switch-press-rules';
@@ -102,6 +103,7 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.boardSwitch.refused.': [...SWITCH_REFUSALS, 'busy'],
   'feature.boardSwitch.repeatOption.': TRIGGER_REPEATS,
   'feature.boardSwitch.reader.': SWITCH_SECRET_READERS,
+  'feature.boardSwitch.spawnPlace.': SWITCH_SPAWN_PLACES,
 };
 
 function dictionary(language: string): Record<string, unknown> {
