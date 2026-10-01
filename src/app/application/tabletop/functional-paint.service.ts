@@ -1,6 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { GameObject } from '@axe/core/sync/game-object';
+import { ObjectNode } from '@axe/core/sync/object-node';
 import { ambienceKindOf } from '@axe/domain/effect/ambience/ambience-kind';
+import { BoardSwitch } from '@axe/domain/tabletop/board-switch/board-switch';
+import { stashOf } from '@axe/domain/tabletop/board-switch/concealment';
 import { parseCellKey } from '@axe/domain/tabletop/cell-key';
 import { cellKeyOf, CellRect } from '@axe/domain/tabletop/cell-rectangles';
 import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
@@ -32,13 +35,26 @@ import { TableSnapshot } from '@axe/domain/tabletop/table-snapshot';
 import { TableTrigger, triggersOn } from '@axe/domain/tabletop/table-trigger';
 import { Terrain, TERRAIN_FACES } from '@axe/domain/tabletop/terrain';
 import { encodeSlopeSides, parseSlopeSides } from '@axe/domain/tabletop/terrain-slope';
+import { isPressMoment } from '@axe/domain/tabletop/trigger-event';
+
+/**
+ * What hangs under a table, together with what the master has put out of sight on it.
+ *
+ * A block put out of sight is still part of the map: an editor that could not see it would lay it
+ * again, in plain view, the next time the painting was put on the table, and would never take it
+ * away when the painting stopped holding it.
+ */
+function laidOn(table: GameTable): readonly ObjectNode[] {
+  const stash = stashOf(table);
+  return stash ? [...table.children, ...stash.children] : table.children;
+}
 
 function terrainsOn(table: GameTable): Terrain[] {
-  return table.children.filter((child): child is Terrain => child instanceof Terrain);
+  return laidOn(table).filter((child): child is Terrain => child instanceof Terrain);
 }
 
 function masksOn(table: GameTable): GameTableMask[] {
-  return table.children.filter((child): child is GameTableMask => child instanceof GameTableMask);
+  return laidOn(table).filter((child): child is GameTableMask => child instanceof GameTableMask);
 }
 
 /** Lays one block of terrain wearing everything the block carries. */
@@ -292,6 +308,20 @@ function hexFootprintOf(
   };
 }
 
+/**
+ * Writes pressed ground down as a trap already spent, for the versions that have never heard of
+ * pressing.
+ *
+ * Such a version reads the moment it does not know as the end of a walk, and would spring the
+ * ground under every piece that stopped on it. Spent, it has nothing left to spring. This version
+ * asks the ground's own switch instead.
+ */
+function guardPressedGround(trigger: TableTrigger): void {
+  trigger.once = true;
+  trigger.repeat = 'once';
+  trigger.spent = true;
+}
+
 /** What one piece of trigger ground looks like to the editor, which is everything but its state. */
 function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
   return {
@@ -323,6 +353,7 @@ function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
     warpCol: trigger.warpCol,
     warpRow: trigger.warpRow,
     warpTable: trigger.warpTable,
+    ...(trigger.pressSwitch ? { once: false, repeat: '', press: trigger.pressSwitch.definition } : { press: '' }),
   };
 }
 
@@ -499,8 +530,15 @@ export class FunctionalPaintService {
       trigger.warpCol = block.spec.warpCol;
       trigger.warpRow = block.spec.warpRow;
       trigger.warpTable = block.spec.warpTable;
+      if (isPressMoment(block.spec.moment)) guardPressedGround(trigger);
       trigger.initialize();
       table.appendChild(trigger);
+      if (isPressMoment(block.spec.moment)) {
+        const held = new BoardSwitch();
+        held.definition = block.spec.press;
+        held.initialize();
+        trigger.appendChild(held);
+      }
     }
   }
 

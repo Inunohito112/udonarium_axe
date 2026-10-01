@@ -1,5 +1,7 @@
 import { inject, TestBed } from '@angular/core/testing';
 import { ChatMessageService } from '@axe/application/chat/chat-message.service';
+import { Network } from '@axe/core/network/network';
+import { IPeerContext } from '@axe/core/network/peer-context';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { setPortraitNameOf } from '@axe/domain/character/character-portrait';
@@ -219,6 +221,31 @@ describe('ChatMessageService', () => {
       const message = service.sendMessage(chatTab, 'では、判定を', null, PeerCursor.myCursor.identifier);
 
       expect(message.senderRole).toBe(PeerRole.GameMaster);
+    });
+  });
+
+  describe('a line spoken under a name of its own', () => {
+    afterEach(() => {
+      PeerCursor.myCursor = null!;
+    });
+
+    it('carries that name and no speaker, and leaves who the reader last spoke as alone', () => {
+      const service = TestBed.inject(ChatMessageService);
+      vi.spyOn(Network.instance, 'peerContext', 'get').mockReturnValue({ userId: 'door-opener' } as IPeerContext);
+      PeerCursor.createMyCursor();
+      PeerCursor.myCursor.lastControlCharacterName = '勇者';
+      const chatTab = new ChatTab();
+      chatTab.initialize();
+      ObjectStore.instance.add(chatTab);
+
+      const message = service.sendAsNamed(chatTab, '古い扉がきしむ', null, '古い扉');
+
+      expect(message.name).toBe('古い扉');
+      expect(message.sendFrom).toBe('');
+      expect(message.text).toBe('古い扉がきしむ');
+      expect(message.from).toBe('door-opener');
+      expect(message.isSystem).toBe(false);
+      expect(PeerCursor.myCursor.lastControlCharacterName).toBe('勇者');
     });
   });
 

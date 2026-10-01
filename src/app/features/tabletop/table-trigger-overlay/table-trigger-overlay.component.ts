@@ -67,6 +67,21 @@ export class TableTriggerOverlayComponent {
       }
       if (cells.isEmpty) continue;
       const middle = cellIndexOf(grid, rect.col + Math.floor(rect.width / 2), rect.row + Math.floor(rect.height / 2));
+      const pressed = trigger.pressSwitch;
+      const at = middle >= 0 ? cellCenterOf(grid, middle) : { x: 0, y: 0 };
+      if (pressed) {
+        const definition = pressed.def;
+        patches.push({
+          cells,
+          color: trigger.color,
+          hidden: !trigger.isShown,
+          spent: pressed.retired || (definition.repeat === 'once' && Boolean(pressed.spent)),
+          name: definition.label.trim() || trigger.name.trim() || this.t('feature.boardSwitch.unlabeled'),
+          effect: this.t('feature.boardSwitch.pressHere'),
+          at,
+        });
+        continue;
+      }
       patches.push({
         cells,
         color: trigger.color,
@@ -74,7 +89,7 @@ export class TableTriggerOverlayComponent {
         spent: trigger.repeats === 'once' && trigger.spent,
         name: trigger.name.trim() || this.t('feature.tabletop.trigger.unnamed'),
         effect: triggerEffectLine(trigger),
-        at: middle >= 0 ? cellCenterOf(grid, middle) : { x: 0, y: 0 },
+        at,
       });
     }
     return patches;

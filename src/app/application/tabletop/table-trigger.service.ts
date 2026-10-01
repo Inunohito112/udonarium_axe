@@ -33,11 +33,16 @@ export class TableTriggerService {
     return triggers;
   }
 
-  /** The ones to draw: everything for the master, and whatever the rest have been shown. */
+  /**
+   * The ones to draw: everything for the master, and whatever the rest have been shown.
+   *
+   * Pressed ground the master has put away is the master's alone to see again.
+   */
   shown(): TableTrigger[] {
     this.objectChange.trackMyCursor();
-    const triggers = this.all();
-    if (this.rolePermission.canSeeHidden) return triggers;
+    const all = this.all();
+    if (this.rolePermission.canSeeHidden) return all;
+    const triggers = all.filter((trigger) => !trigger.pressSwitch?.retired);
     if (!triggers.some((trigger) => trigger.shows === 'sight')) {
       return triggers.filter((trigger) => trigger.isShown);
     }

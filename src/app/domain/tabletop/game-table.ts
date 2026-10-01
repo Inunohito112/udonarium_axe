@@ -97,6 +97,13 @@ export class GameTable extends ObjectNode {
   @SyncVar() facingMark: TableFacingMark = DEFAULT_TABLE_FACING_MARK;
   /** How wide one square is meant to measure on the glass, for a screen laid flat under miniatures. */
   @SyncVar() cellMm: number = DEFAULT_CELL_MM;
+  /**
+   * Whether the needle of a compass wanders on this table rather than finding north.
+   *
+   * A table of its own, since a lodestone cavern is one room of a dungeon rather than a rule of
+   * the room: a party that walks out of it should get their bearings back.
+   */
+  @SyncVar() magneticAnomaly: boolean = false;
   @SyncVar() wallHeight: number = 10;
   @SyncVar() northWallImageIdentifier: string = 'imageIdentifier';
   @SyncVar() eastWallImageIdentifier: string = 'imageIdentifier';

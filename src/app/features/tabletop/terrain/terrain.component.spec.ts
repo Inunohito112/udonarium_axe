@@ -1,7 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { ObjectChangeService as ObjectChangeServiceForSpec } from '@axe/application/sync/object-change.service';
+import { SwitchPressService } from '@axe/application/tabletop/switch-press.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { VisionService } from '@axe/application/tabletop/vision.service';
+import { ButtonGuideService } from '@axe/application/ui/button-guide.service';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { ViewModePreferenceService } from '@axe/application/ui/view-mode-preference.service';
 import { objectChanged$ } from '@axe/core/sync/object-event-extension';
@@ -10,6 +13,8 @@ import { PERF_TERRAIN_GRID_RASTER, perfCounters } from '@axe/core/util/perf-coun
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
+import { BoardSwitch } from '@axe/domain/tabletop/board-switch/board-switch';
+import { defaultSwitchDefinition, newSwitchAction } from '@axe/domain/tabletop/board-switch/switch-definition';
 import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
 import { cellCount, cellGridOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { ensureFogMemoryOn } from '@axe/domain/tabletop/fog/fog-memory';
@@ -1208,6 +1213,156 @@ describe('TerrainComponent', () => {
 
       expect(component['topFogStyle']()).toBeNull();
       expect(component.isHiddenByFog()).toBe(false);
+    });
+  });
+
+  describe('a block made into a switch', () => {
+    let press: ReturnType<typeof vi.spyOn>;
+
+    function lever(locked = true): Terrain {
+      const terrain = Terrain.create('宝箱', 1, 1, 1, 'wall.png', 'floor.png');
+      terrain.isLocked = locked;
+      return terrain;
+    }
+
+    function makeSwitch(terrain: Terrain): BoardSwitch {
+      const made = new BoardSwitch();
+      made.initialize();
+      made.write({
+        ...defaultSwitchDefinition(),
+        label: '開ける',
+        actions: [{ ...newSwitchAction('say'), text: 'hi' }],
+      });
+      terrain.appendChild(made);
+      return made;
+    }
+
+    function show(terrain: Terrain): void {
+      fixture.componentRef.setInput('terrain', terrain);
+      fixture.detectChanges();
+    }
+
+    function block(): HTMLElement {
+      return fixture.nativeElement.querySelector('.pointer-events-auto');
+    }
+
+    function click(from: { x: number; y: number }, to: { x: number; y: number }): void {
+      block().dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: from.x, clientY: from.y }));
+      block().dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: to.x, clientY: to.y }));
+    }
+
+    function label(): HTMLElement | null {
+      return fixture.nativeElement.querySelector('[data-testid="terrain-switch-label"] span');
+    }
+
+    beforeEach(() => {
+      PeerCursor.createMyCursor().role = PeerRole.Player;
+      press = vi.spyOn(TestBed.inject(SwitchPressService), 'press').mockResolvedValue('pressed');
+    });
+
+    afterEach(() => {
+      TestBed.inject(ButtonGuideService).hide();
+      PeerCursor.myCursor = null!;
+    });
+
+    it('presses the switch when the locked block is clicked where it was pressed', () => {
+      const terrain = lever();
+      const made = makeSwitch(terrain);
+      show(terrain);
+
+      click({ x: 10, y: 10 }, { x: 12, y: 11 });
+
+      expect(press).toHaveBeenCalledWith(made);
+      expect(block().hasAttribute('data-switch-host')).toBe(true);
+    });
+
+    it('takes a click that ends away from where it began for the end of turning the table', () => {
+      const terrain = lever();
+      makeSwitch(terrain);
+      show(terrain);
+
+      click({ x: 10, y: 10 }, { x: 60, y: 10 });
+
+      expect(press).not.toHaveBeenCalled();
+    });
+
+    it('leaves a block that is not locked to be picked up rather than pressed', () => {
+      const terrain = lever(false);
+      makeSwitch(terrain);
+      show(terrain);
+
+      click({ x: 10, y: 10 }, { x: 10, y: 10 });
+
+      expect(press).not.toHaveBeenCalled();
+      expect(block().hasAttribute('data-switch-host')).toBe(false);
+    });
+
+    it('writes its name over the block for a player once it can be pressed, and for the master while it is set up', () => {
+      const terrain = lever(false);
+      makeSwitch(terrain);
+      show(terrain);
+      expect(label()).toBeNull();
+
+      PeerCursor.myCursor.role = PeerRole.GameMaster;
+      TestBed.inject(ObjectChangeServiceForSpec).notifyChanged(PeerCursor.myCursor.identifier);
+      fixture.detectChanges();
+      expect(label()?.textContent?.trim()).toBe('開ける');
+
+      PeerCursor.myCursor.role = PeerRole.Player;
+      terrain.isLocked = true;
+      TestBed.inject(ObjectChangeServiceForSpec).notifyChanged(PeerCursor.myCursor.identifier);
+      objectChanged$.emit({ aliasName: 'terrain', identifier: terrain.identifier, isSendFromSelf: true });
+      fixture.detectChanges();
+      expect(label()?.textContent?.trim()).toBe('開ける');
+    });
+
+    it('shows its name at rest only while the guide to the buttons is out', () => {
+      const terrain = lever();
+      makeSwitch(terrain);
+      show(terrain);
+      expect(label()?.classList).toContain('opacity-0');
+
+      TestBed.inject(ButtonGuideService).show();
+      fixture.detectChanges();
+
+      expect(label()?.classList).not.toContain('opacity-0');
+    });
+
+    it('picks up a switch hung under the block after it was drawn', () => {
+      const terrain = lever();
+      show(terrain);
+      expect(label()).toBeNull();
+
+      makeSwitch(terrain);
+      fixture.detectChanges();
+
+      expect(label()?.textContent?.trim()).toBe('開ける');
+    });
+
+    it('follows the name the master writes after the block was drawn', () => {
+      const terrain = lever();
+      const made = makeSwitch(terrain);
+      show(terrain);
+
+      made.write({ ...made.def, label: '宝箱を開ける' });
+      objectChanged$.emit({ aliasName: 'board-switch', identifier: made.identifier, isSendFromSelf: true });
+      fixture.detectChanges();
+
+      expect(label()?.textContent?.trim()).toBe('宝箱を開ける');
+    });
+
+    it('says over the block why a press came to nothing', async () => {
+      press.mockResolvedValue('watching');
+      const terrain = lever();
+      makeSwitch(terrain);
+      show(terrain);
+
+      click({ x: 10, y: 10 }, { x: 10, y: 10 });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(label()?.textContent?.trim()).toBe('見学中は押せません');
+      expect(label()?.classList).not.toContain('opacity-0');
     });
   });
 });

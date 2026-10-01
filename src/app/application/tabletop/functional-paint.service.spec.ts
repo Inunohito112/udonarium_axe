@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { ConcealmentService } from '@axe/application/tabletop/concealment.service';
 import { blockedCellKeysOn, FunctionalPaintService } from '@axe/application/tabletop/functional-paint.service';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { CellRect, rectKey } from '@axe/domain/tabletop/cell-rectangles';
@@ -172,6 +173,25 @@ describe('FunctionalPaintService', () => {
       service.apply(plan({ terrain: { add: [wall({ col: 1, row: 2, width: 4, height: 2 })], remove: [] } }));
 
       expect(service.snapshot()!.terrainBlocks.map(rectKey)).toEqual(['1,2,4,2']);
+    });
+
+    it('still reads a block the master put out of sight, so laying the painting again does not bring it back', () => {
+      service.apply(plan({ terrain: { add: [wall({ col: 1, row: 2, width: 4, height: 2 })], remove: [] } }));
+      TestBed.inject(ConcealmentService).conceal(terrainOn()[0]);
+
+      expect(terrainOn()).toHaveLength(0);
+      expect(service.snapshot()!.terrainBlocks.map(rectKey)).toEqual(['1,2,4,2']);
+    });
+
+    it('takes away a block out of sight once the painting no longer holds it', () => {
+      const stood = wall({ col: 1, row: 2, width: 4, height: 2 });
+      service.apply(plan({ terrain: { add: [stood], remove: [] } }));
+      const laid = terrainOn()[0];
+      TestBed.inject(ConcealmentService).conceal(laid);
+
+      service.apply(plan({ terrain: { add: [], remove: [stood] } }));
+
+      expect(ObjectStore.instance.get(laid.identifier)).toBeNull();
     });
 
     it('pulls a block down only when the block itself is the one going', () => {

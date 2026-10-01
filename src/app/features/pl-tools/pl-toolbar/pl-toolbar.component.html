@@ -55,6 +55,7 @@
               <span
                 class="border-ui-border-panel text-ui-muted flex h-8 max-w-52 items-center gap-1.5 border-l border-solid pl-2 text-[12px]"
                 [title]="'feature.turnOrder.title' | transloco"
+                [attr.data-guide-label]="'feature.turnOrder.title' | transloco"
               >
                 <span class="text-ui-accent shrink-0 font-semibold">{{
                   'feature.turnOrder.roundShort' | transloco: { n: turn.round }
@@ -79,6 +80,7 @@
                 type="button"
                 class="rounded-ui-sm bg-ui-accent-bg text-ui-accent hover:bg-ui-menu-hover flex h-8 max-w-44 cursor-pointer items-center gap-1.5 border-none px-1.5 transition-colors"
                 [title]="'feature.plTools.active.openChatPalette' | transloco: { name: character.name }"
+                [attr.data-guide-label]="'feature.plTools.active.openChatPalette' | transloco: { name: character.name }"
                 (click)="openActiveChatPalette()"
               >
                 <span class="bg-ui-elevated size-6 shrink-0 overflow-hidden rounded-sm">
@@ -102,6 +104,10 @@
           }
         }
       }
+    }
+
+    @if (guide.shown()) {
+      <ui-button-guide />
     }
   </div>
 }

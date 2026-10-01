@@ -6,6 +6,7 @@ import { ObjectChangeService } from '@axe/application/sync/object-change.service
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TurnOrderService } from '@axe/application/turn/turn-order.service';
 import { BuffViewPreferenceService } from '@axe/application/ui/buff-view-preference.service';
+import { ButtonGuideService } from '@axe/application/ui/button-guide.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { MobileLayoutService } from '@axe/application/ui/mobile-layout.service';
 import { MotionService, MotionSetting } from '@axe/application/ui/motion.service';
@@ -129,6 +130,7 @@ export class MenuCommandService {
   private readonly npcBar = inject(NpcBarService);
   private readonly overlay = inject(PieceOverlayPreferenceService);
   private readonly widgets = inject(WidgetVisibilityService);
+  private readonly buttonGuide = inject(ButtonGuideService);
 
   private readonly viewMode = inject(ViewModePreferenceService);
   private readonly theme = inject(ThemeService);
@@ -352,6 +354,8 @@ export class MenuCommandService {
         return this.widgets.gmToolbar();
       case 'widgetClock':
         return this.widgets.clock();
+      case 'widgetCompass':
+        return this.widgets.compass();
       case 'widgetRecording':
         return this.widgets.recording();
       case 'widgetConnectionQuality':
@@ -376,13 +380,16 @@ export class MenuCommandService {
    * Does what the command is for.
    *
    * The role is asked again here rather than trusted from whoever drew the button, since an
-   * arrangement is stored on the screen it belongs to and a stored name proves nothing.
+   * arrangement is stored on the screen it belongs to and a stored name proves nothing. Whatever
+   * runs puts the guide to the buttons away, since it was read to find what to press, bar the one
+   * that brings it out.
    */
   run(command: MenuCommand): MenuRunResult {
     if (!this.offers(command)) return 'notOffered';
     if (!this.isAvailable(command)) return 'unavailable';
 
     const action = command.action;
+    if (action.kind !== 'act' || action.act !== 'buttonGuide') this.buttonGuide.hide();
     switch (action.kind) {
       case 'panel':
         this.roomPanels.open(action.panel);
@@ -431,6 +438,9 @@ export class MenuCommandService {
         return;
       case 'widgetClock':
         this.widgets.toggleClock();
+        return;
+      case 'widgetCompass':
+        this.widgets.toggleCompass();
         return;
       case 'widgetRecording':
         this.widgets.toggleRecording();
@@ -494,6 +504,9 @@ export class MenuCommandService {
         return 'done';
       case 'releaseOwnership':
         void this.releaseOrphanedOwnership();
+        return 'done';
+      case 'buttonGuide':
+        this.buttonGuide.show();
         return 'done';
     }
   }

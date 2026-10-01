@@ -1568,6 +1568,7 @@
         "failed": "가져오기에 실패했습니다.",
         "success": "캐릭터 말을 만들었습니다.",
         "successNoImage": "캐릭터 말을 만들었습니다(이미지를 가져오지 못했으니 나중에 설정해 주세요).",
+        "systemUnknown": "가져왔습니다. 창고 데이터는 URL을 붙여넣으면 특기표와 채팅 팔레트도 함께 들어옵니다.",
         "sourceAppspot": "캐릭터 시트 창고(character-sheets.appspot.com): JSON 또는 캐릭터 URL 붙여넣기(자동 취득)",
         "sourceYtsheet": "유토시트Ⅱ(SW2.5): 캐릭터 URL 붙여넣기(자동 취득), 또는 ?mode=json 의 JSON 붙여넣기",
         "unsupported": "지원하지 않는 URL입니다. 코코포리아 말 JSON을 붙여넣어 주세요.",
@@ -2023,6 +2024,8 @@
         "sectionDarkness": "어둠(시야·조명)",
         "darknessEnabled": "어둠 사용",
         "lightSnapToGrid": "조명을 칸에 맞추기",
+        "magneticAnomaly": "자기장 이상 (나침반이 흔들림)",
+        "magneticAnomalyHint": "나침반 위젯의 바늘이 북쪽을 찾지 못하게 됩니다. 이 테이블에 있는 동안만입니다.",
         "darknessLevel": "어두움",
         "globalIllumination": "환경광",
         "ambientColor": "어둠의 색",
@@ -3376,7 +3379,9 @@
         "triggerPassAmount": "성공했을 때의 증감",
         "triggerCheckRollHint": "「1d20+3」처럼 적으면 테이블이 대신 굴려 목표값과 비교합니다. 비워 두면 본인이 굴립니다",
         "moveCostHalves": "길 (절반으로 이동)",
-        "moveCostHalvesHint": "1칸을 0.5 소비로 지나갑니다. 아래에 무엇이 칠해져 있어도 길이 우선되므로 늪을 관통하는 가도를 만들 수 있습니다"
+        "moveCostHalvesHint": "1칸을 0.5 소비로 지나갑니다. 아래에 무엇이 칠해져 있어도 길이 우선되므로 늪을 관통하는 가도를 만들 수 있습니다",
+        "triggerMoment_press": "눌렀을 때 (스위치)",
+        "triggerPressHint": "칠한 칸을 클릭하면 아래 동작이 일어납니다. 발언자, 누를 수 있는 거리, 횟수, 비밀 결과도 여기서 정합니다."
       },
       "stampCategories": {
         "door": "문",
@@ -4396,6 +4401,24 @@
         "label": "위젯"
       }
     },
+    "compass": {
+      "anomaly": "자기장 이상",
+      "face": {
+        "modern": "현대풍",
+        "fantasy": "판타지풍",
+        "sf": "SF풍"
+      },
+      "point": {
+        "n": "북",
+        "ne": "북동",
+        "e": "동",
+        "se": "남동",
+        "s": "남",
+        "sw": "남서",
+        "w": "서",
+        "nw": "북서"
+      }
+    },
     "menuEditor": {
       "title": "메뉴 편집",
       "hint": "이 단말에만 저장되는 배열입니다. 왼쪽 손잡이를 잡고 움직이면 순서가 바뀌고, 작은 메뉴에도 넣고 뺄 수 있습니다.",
@@ -4415,6 +4438,8 @@
       "empty": "항목이 없습니다",
       "reset": "초기 배치로 되돌리기",
       "resetConfirm": "이 메뉴를 초기 배치로 되돌립니다. 계속할까요?",
+      "resetAll": "모든 메뉴를 초기 배치로 되돌리기",
+      "resetAllConfirm": "Fav 메뉴와 GM／PL 도구를 모두 초기 배치로 되돌립니다. 계속할까요?",
       "surface": {
         "fab": "Fav 메뉴",
         "gmToolbar": "GM 도구",
@@ -4423,11 +4448,133 @@
       "writeOut": "내보내기",
       "readIn": "불러오기",
       "readFailed": "메뉴 배열로 읽을 수 없는 파일입니다"
+    },
+    "boardSwitch": {
+      "panelTitle": "스위치 - {{name}}",
+      "unlabeled": "스위치",
+      "masterOnly": "스위치의 내용은 GM만 볼 수 있습니다",
+      "label": "이름",
+      "labelPlaceholder": "테이블에 표시할 이름 (예: 상자를 연다)",
+      "speaker": "발언자",
+      "speakerOption": {
+        "presser": "누른 사람 (선택한 캐릭터)",
+        "host": "이 물체의 이름",
+        "system": "시스템"
+      },
+      "tab": "탭",
+      "tabOpen": "누른 사람이 열어 둔 탭",
+      "guests": "관전자도 누를 수 있음 (탭에서 관전자가 발언할 수 있을 때)",
+      "actionsHint": "누르면 위에서부터 차례로 실행합니다. 두 번째부터는 앞 동작 뒤의 대기 시간을 넣을 수 있습니다 (최대 10초).",
+      "kind": {
+        "say": "발언",
+        "sound": "효과음",
+        "effect": "이펙트",
+        "cutIn": "컷인",
+        "secret": "비밀 결과",
+        "reveal": "숨긴 물체 보이기",
+        "conceal": "숨기기",
+        "removeSelf": "누른 물체 지우기",
+        "spawn": "말 불러내기",
+        "showTable": "테이블 전환",
+        "carry": "누른 사람의 말 옮기기",
+        "tableSetting": "테이블 설정 바꾸기"
+      },
+      "delay": "대기 (초)",
+      "moveUp": "위로",
+      "moveDown": "아래로",
+      "removeAction": "이 동작 삭제",
+      "sayPlaceholder": "채팅에 보낼 문장. 주사위 (2d6+3)나 {HP}도 쓸 수 있습니다",
+      "unchosen": "(선택하세요)",
+      "missing": "{{name}} (이 방에 없음)",
+      "unknownAction": "이 버전에서 실행할 수 없는 동작 (그대로 남겨 둡니다)",
+      "noActions": "아직 아무것도 하지 않습니다. 아래 버튼으로 동작을 추가하세요.",
+      "try": "시험 삼아 누르기",
+      "refused": {
+        "nothing": "아무것도 하지 않는 스위치입니다",
+        "watching": "관전 중에는 누를 수 없습니다",
+        "cannotSpeak": "이 탭에서는 발언할 수 없습니다",
+        "retired": "더 이상 누를 수 없습니다",
+        "busy": "잠시 후에 다시 눌러 주세요",
+        "spent": "더 이상 누를 수 없습니다 (횟수를 다 썼습니다)",
+        "noPiece": "테이블 위에 움직이는 캐릭터가 없습니다",
+        "tooFar": "더 가까이 가야 누를 수 있습니다",
+        "unseen": "보이지 않아서 누를 수 없습니다"
+      },
+      "menu": {
+        "edit": "스위치 설정…",
+        "try": "스위치 시험 누르기",
+        "remove": "스위치 제거",
+        "reset": "누른 기록 지우기",
+        "conceal": "숨기기 (스위치로 보이기)",
+        "concealed": "숨긴 물체 보이기"
+      },
+      "range": "누를 수 있는 거리",
+      "rangeHint": "칸 이내 (0은 어디서나)",
+      "needsSight": "보일 때만 누를 수 있음",
+      "repeat": "횟수",
+      "repeatOption": {
+        "always": "몇 번이든",
+        "once": "한 번만 (전체 1회)",
+        "oncePerPiece": "캐릭터마다 1회",
+        "oncePerRound": "라운드마다 1회"
+      },
+      "reader": {
+        "presser": "누른 사람과 GM만 읽을 수 있음",
+        "master": "GM만 읽을 수 있음"
+      },
+      "secretPlaceholder": "숨겨서 쓸 문장. {HP} 같은 참조도 쓸 수 있습니다",
+      "pressHere": "클릭해서 누르기",
+      "revealHint": "GM이 숨겨 둔 물체를 숨긴 자리로 되돌려 모두에게 보입니다.",
+      "concealHint": "테이블 위의 물체를 그 자리에 둔 채로 숨깁니다. 숨긴 지형은 지나가고 너머를 볼 수 있습니다.",
+      "removeSelfHint": "다른 동작을 모두 마친 뒤 스위치의 지형을 테이블에서 지웁니다. 칠한 칸이면 정리해서 GM만 보이게 합니다. 시험 누르기로는 지워지지 않습니다.",
+      "unnamedThing": "이름 없음",
+      "listed": "{{name}} ({{note}})",
+      "groundPressed": "누른 칸",
+      "groundRetired": "치운 칸",
+      "thing": {
+        "terrain": "지형",
+        "table-mask": "맵 마스크",
+        "character": "캐릭터",
+        "text-note": "공유 메모",
+        "dice-symbol": "주사위",
+        "coin": "코인",
+        "card-stack": "덱"
+      },
+      "spawnCount": "수",
+      "spawnPlace": {
+        "host": "스위치 옆에 놓기",
+        "presser": "누른 사람의 말 옆에 놓기"
+      },
+      "spawnHint": "선택한 캐릭터의 복제를 가까운 빈칸부터 차례로 놓습니다. 원본은 묘지나 숨긴 자리에 두면 됩니다.",
+      "where": {
+        "table": "테이블 위",
+        "graveyard": "묘지",
+        "concealed": "숨김",
+        "other": "보관"
+      },
+      "showTableHint": "모두가 보는 테이블을 선택한 테이블로 바꿉니다 (장면 전환).",
+      "carryCol": "열",
+      "carryRow": "행",
+      "carryHere": "보고 있는 테이블 그대로",
+      "carryHint": "누른 사람이 선택한 캐릭터의 말을 지정한 칸으로 옮깁니다. 다른 테이블을 고르면 모두의 시점도 옮겨집니다.",
+      "setting": {
+        "darkness": "어둠",
+        "fog": "전장의 안개",
+        "image": "테이블 이미지",
+        "bgm": "BGM",
+        "bgmStop": "먼저 BGM 멈추기"
+      },
+      "toggle": {
+        "keep": "그대로",
+        "on": "켜기",
+        "off": "끄기"
+      }
     }
   },
   "app": {
     "fab": {
       "menuOpen": "메뉴 열기",
+      "menuHint": "메뉴 열기 (우클릭으로 편집·초기화)",
       "menuClose": "메뉴 닫기",
       "peerMenu": "접속",
       "chat": "채팅",
@@ -4441,6 +4588,7 @@
       "gameResources": "게임 리소스",
       "media": "미디어",
       "clock": "시계",
+      "compass": "나침반",
       "connectionQuality": "통신 품질",
       "miniPlayer": "미니 플레이어",
       "visualNovel": "노벨 모드",
@@ -4478,7 +4626,8 @@
       "display": "표시",
       "widgets": "위젯",
       "foldToolbar": "도구 모음 접기",
-      "unfoldToolbar": "도구 모음 펼치기"
+      "unfoldToolbar": "도구 모음 펼치기",
+      "buttonGuide": "모든 버튼 이름 표시 (? 키)"
     },
     "roomDataDefault": "룸 데이터"
   },

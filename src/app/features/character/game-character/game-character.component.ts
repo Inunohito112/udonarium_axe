@@ -24,6 +24,8 @@ import { GameObjectInventoryService } from '@axe/application/inventory/game-obje
 import { DisclosureService } from '@axe/application/permission/disclosure.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
+import { BoardSwitchService } from '@axe/application/tabletop/board-switch.service';
+import { ConcealmentService } from '@axe/application/tabletop/concealment.service';
 import { MovePlanService } from '@axe/application/tabletop/move-plan.service';
 import { MoveRangeService } from '@axe/application/tabletop/move-range.service';
 import { RangeShapeInvokeService } from '@axe/application/tabletop/range-shape-invoke.service';
@@ -94,6 +96,7 @@ import { buildGameCharacterContextMenuModel } from '@axe/features/character/game
 import { GameCharacterBuffViewComponent } from '@axe/features/character/game-character-buff-view/game-character-buff-view.component';
 import { GameDataElementBuffComponent } from '@axe/features/character/game-data-element-buff/game-data-element-buff.component';
 import { ObjectPanelService } from '@axe/features/panels/object-panel.service';
+import { buildConcealMenu } from '@axe/features/tabletop/board-switch/concealment-context-menu';
 import { LightSettingsComponent } from '@axe/features/tabletop/light-settings/light-settings.component';
 import { BillboardDirective } from '@axe/ui/directives/billboard.directive';
 import { MovableOption } from '@axe/ui/directives/movable.directive';
@@ -193,6 +196,8 @@ interface PieceRightDrag {
 })
 export class GameCharacterComponent {
   private readonly contextMenuService = inject(ContextMenuService);
+  private readonly boardSwitches = inject(BoardSwitchService);
+  private readonly concealment = inject(ConcealmentService);
   private readonly pieceContextMenu = inject(PieceContextMenuService);
   private readonly characterDice = inject(CharacterDiceService);
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -1273,7 +1278,10 @@ export class GameCharacterComponent {
     );
     const table = this.tabletopService.currentTable;
     const display = this.tabletopService.display();
-    const surfaceEntries = buildSurfaceSwitchContextMenu(char, table, this.translateFn);
+    const surfaceEntries = [
+      ...buildSurfaceSwitchContextMenu(char, table, this.translateFn),
+      ...buildConcealMenu(this.boardSwitches.canEdit(), () => this.concealment.conceal(char), this.translateFn),
+    ];
     const menu = buildGameCharacterContextMenuModel(
       char,
       this.gridSize,

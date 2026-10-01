@@ -5,17 +5,23 @@
  * ground remembers nothing about who painted it, only what it does and to whom, so a table
  * can be read for its traps without asking the master anything.
  */
-export const TRIGGER_MOMENTS = ['stop', 'enter', 'turnStart', 'turnEnd'] as const;
+export const TRIGGER_MOMENTS = ['stop', 'enter', 'turnStart', 'turnEnd', 'press'] as const;
 
 /**
  * When the ground goes off.
  *
  * Two of them answer to walking: as a walk ends on the ground, or the moment it is stepped on
- * at all. The other two answer to the round, and go off under whoever is standing there as
+ * at all. The next two answer to the round, and go off under whoever is standing there as
  * their turn opens or closes. Ground that burns is ground a piece stands in rather than ground
- * it crosses, and no counting of steps says that.
+ * it crosses, and no counting of steps says that. The last answers to nobody walking at all: the
+ * ground is a switch, and goes off when somebody presses it.
  */
 export type TriggerMoment = (typeof TRIGGER_MOMENTS)[number];
+
+/** Whether ground goes off when it is pressed rather than when anybody walks onto it. */
+export function isPressMoment(moment: TriggerMoment): boolean {
+  return moment === 'press';
+}
 
 /** Whether a moment is one the round brings round rather than one a walk reaches. */
 export function isTurnMoment(moment: TriggerMoment): boolean {

@@ -1,19 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { StatusAilmentService } from '@axe/application/character/status-ailment.service';
 import { ChatMessageService } from '@axe/application/chat/chat-message.service';
-import { EffectCastService } from '@axe/application/effect/effect-cast.service';
-import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
-import { CutInService } from '@axe/application/media/cut-in.service';
+import { NamedCueService } from '@axe/application/media/named-cue.service';
 import { MoveRangeService } from '@axe/application/tabletop/move-range.service';
-import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { newStatusAilment } from '@axe/domain/character/status-ailment';
 import { DataElement } from '@axe/domain/data/data-element';
-import { findByReference } from '@axe/domain/hotbar/hotbar-reference';
-import { CutIn } from '@axe/domain/media/cut-in';
-import { SoundEffect } from '@axe/domain/media/sound-effect';
 import { Config } from '@axe/domain/peer/config';
 import { cellColRow, cellCount, CellGrid, cellGridOf, cellIndexOf } from '@axe/domain/tabletop/fog/cell-grid';
 import { GameTable } from '@axe/domain/tabletop/game-table';
@@ -22,13 +16,7 @@ import { pieceCellOf, pieceCornerOn } from '@axe/domain/tabletop/move/piece-on-g
 import { resolveRoomRules } from '@axe/domain/tabletop/room-rules';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
 import { TableTrigger, triggersOn } from '@axe/domain/tabletop/table-trigger';
-import {
-  isTurnMoment,
-  rollTriggerAmount,
-  triggerCatches,
-  TriggerMoment,
-  triggerPassTake,
-} from '@axe/domain/tabletop/trigger-event';
+import { rollTriggerAmount, triggerCatches, TriggerMoment, triggerPassTake } from '@axe/domain/tabletop/trigger-event';
 import { TurnState } from '@axe/domain/tabletop/turn-state';
 
 /** One piece of ground going off, and what it came to. */
@@ -54,13 +42,10 @@ export interface TriggerFiring {
 @Injectable({ providedIn: 'root' })
 export class TriggerFireService {
   private readonly tableSelecter = inject(TableSelecter);
-  private readonly effectLibrary = inject(EffectLibraryService);
-  private readonly effectCast = inject(EffectCastService);
   private readonly chat = inject(ChatMessageService);
   private readonly ailments = inject(StatusAilmentService);
   private readonly moveRange = inject(MoveRangeService);
-  private readonly cutIns = inject(CutInService);
-  private readonly audioStorage = inject(AudioStorage);
+  private readonly cues = inject(NamedCueService);
   private readonly objectStore = inject(ObjectStore);
   private readonly t = inject(TRANSLATE_FN);
 
@@ -168,14 +153,19 @@ export class TriggerFireService {
    * A walk drawn cell by cell is walked cell by cell, and a trap under the second cell of it
    * goes off while the piece is standing on the second cell. Springing them all at the end
    * would land four explosions on the far side of a swamp the piece waded through.
+   *
+   * Only the two moments a walk reaches are asked about. Ground that answers to the round is not
+   * ground a walk reaches, since crossing a fire is not standing in one, and ground that is a
+   * switch goes off when it is pressed, never underfoot.
    */
   stepped(piece: GameCharacter, grid: CellGrid, cell: number, ending: boolean): TriggerFiring[] {
-    return this.fire(piece, grid, cell, ending, (trigger) => {
-      // Ground that answers to the round is not ground a walk reaches: crossing a fire is not
-      // standing in one, and the round is what says a piece stood anywhere at all.
-      if (isTurnMoment(trigger.firesOn)) return false;
-      return trigger.firesOn !== 'stop' || ending;
-    });
+    return this.fire(
+      piece,
+      grid,
+      cell,
+      ending,
+      (trigger) => trigger.firesOn === 'enter' || (trigger.firesOn === 'stop' && ending)
+    );
   }
 
   /**
@@ -290,10 +280,18 @@ export class TriggerFireService {
    */
   private carry(trigger: TableTrigger, piece: GameCharacter): void {
     if (!trigger.warps) return;
-    const table = this.landing(trigger);
+    this.carryTo(piece, trigger.warpCol, trigger.warpRow, this.landing(trigger));
+  }
+
+  /**
+   * Sets a piece down on a cell of a table, and turns the room's view to that table where it is not
+   * the one being looked at, since a piece stands on every table at once and what changes is which
+   * one the room is looking at.
+   */
+  carryTo(piece: GameCharacter, col: number, row: number, table: GameTable | null): void {
     if (!table || table.gridSize <= 0 || table.width <= 0 || table.height <= 0) return;
     const grid = cellGridOf(table.width, table.height, table.gridSize, table.gridType);
-    const to = cellIndexOf(grid, Math.round(trigger.warpCol), Math.round(trigger.warpRow));
+    const to = cellIndexOf(grid, Math.round(col), Math.round(row));
     // Ground pointing off the board carries nobody: a piece set down outside it would be a
     // piece nothing on the table could reach.
     if (to < 0) return;
@@ -342,29 +340,13 @@ export class TriggerFireService {
    * Sets off whatever the ground was told to play, on the piece that set it off.
    *
    * Each of the three is tried on its own, so a cut-in nobody has made does not take the sound
-   * down with it. All three are named rather than pointed at: a map carried into another room
-   * holds identifiers that mean nothing there, and a name that matches one thing and no other
-   * still finds it.
+   * down with it.
    */
   private play(firing: TriggerFiring, piece: GameCharacter): void {
     const trigger = firing.trigger;
-    const named = trigger.effect.trim();
-    // Looked up past the master-only gate: the ground was painted by the master, so playing
-    // what it was told to play is the ground's doing rather than the reader's reaching.
-    const preset = named.length > 0 ? this.effectLibrary.presets().find((held) => held.name.trim() === named) : null;
-    if (preset) this.effectCast.fire(preset, [piece], null);
-
-    const heard = trigger.sound.trim();
-    if (heard.length > 0) {
-      const audio = this.audioStorage.audios.filter((held) => held.name.trim() === heard);
-      if (audio.length === 1) SoundEffect.play(audio[0]);
-    }
-
-    const shown = trigger.cutIn.trim();
-    if (shown.length > 0) {
-      const found = findByReference(this.objectStore.getObjects<CutIn>(CutIn), '', shown);
-      if (found) this.cutIns.launch(found.thing);
-    }
+    this.cues.playEffect(trigger.effect, [piece]);
+    this.cues.playSound(trigger.sound);
+    this.cues.launchCutIn(trigger.cutIn);
   }
 
   /**

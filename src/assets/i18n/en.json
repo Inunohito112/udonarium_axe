@@ -1568,6 +1568,7 @@
         "failed": "Import failed.",
         "success": "Character piece created.",
         "successNoImage": "Character piece created (image could not be fetched; set it manually later).",
+        "systemUnknown": "Taken in. A warehouse sheet pasted as its address brings its skill table and palette too.",
         "sourceAppspot": "Character Sheet Vault (character-sheets.appspot.com): paste JSON or the character URL (auto-fetched)",
         "sourceYtsheet": "Yuto-sheet II (SW2.5): paste the character URL (auto-fetched), or its ?mode=json JSON",
         "unsupported": "Unsupported URL. Paste a CCFOLIA character JSON instead.",
@@ -2023,6 +2024,8 @@
         "sectionDarkness": "Darkness (vision & lighting)",
         "darknessEnabled": "Enable darkness",
         "lightSnapToGrid": "Snap light to the grid",
+        "magneticAnomaly": "Magnetic anomaly (the compass wanders)",
+        "magneticAnomalyHint": "The compass widget's needle stops finding north. It holds for this table alone.",
         "darknessLevel": "Darkness",
         "globalIllumination": "Ambient light",
         "ambientColor": "Darkness color",
@@ -3376,7 +3379,9 @@
         "triggerPassAmount": "Taken on a success",
         "triggerCheckRollHint": "Write something like 1d20+3 and the table throws it against the target. Empty leaves the roll to whoever walked in",
         "moveCostHalves": "Road (half a step)",
-        "moveCostHalvesHint": "Crossed for half a cell. A road wins over whatever is painted under it, so a made road runs straight through a swamp"
+        "moveCostHalvesHint": "Crossed for half a cell. A road wins over whatever is painted under it, so a made road runs straight through a swamp",
+        "triggerMoment_press": "When pressed (switch)",
+        "triggerPressHint": "Clicking a painted cell runs the actions below. Set who speaks, the reach, the uses and any secret result here too."
       },
       "stampCategories": {
         "door": "Doors",
@@ -4148,6 +4153,24 @@
         "label": "Widgets"
       }
     },
+    "compass": {
+      "anomaly": "Anomaly",
+      "face": {
+        "modern": "Modern",
+        "fantasy": "Fantasy",
+        "sf": "Science fiction"
+      },
+      "point": {
+        "n": "N",
+        "ne": "NE",
+        "e": "E",
+        "se": "SE",
+        "s": "S",
+        "sw": "SW",
+        "w": "W",
+        "nw": "NW"
+      }
+    },
     "menuEditor": {
       "title": "Arrange the menus",
       "hint": "This arrangement is kept on this screen alone. Take hold of the grip on the left to put an entry in order, or to carry it in and out of a small menu.",
@@ -4167,6 +4190,8 @@
       "empty": "Nothing on this menu",
       "reset": "Put it back the way it came",
       "resetConfirm": "This puts the menu back the way it came. Go ahead?",
+      "resetAll": "Put every menu back the way it came",
+      "resetAllConfirm": "This puts the drawer and both toolbars back the way they came. Go ahead?",
       "surface": {
         "fab": "Fav menu",
         "gmToolbar": "GM tools",
@@ -4175,11 +4200,133 @@
       "writeOut": "Write out",
       "readIn": "Read in",
       "readFailed": "That file does not hold an arrangement of the menus"
+    },
+    "boardSwitch": {
+      "panelTitle": "Switch - {{name}}",
+      "unlabeled": "Switch",
+      "masterOnly": "Only the GM can see what a switch does",
+      "label": "Name",
+      "labelPlaceholder": "Name shown on the table (e.g. Open the chest)",
+      "speaker": "Speaker",
+      "speakerOption": {
+        "presser": "Whoever presses it (their selected character)",
+        "host": "This object's name",
+        "system": "System"
+      },
+      "tab": "Tab",
+      "tabOpen": "The tab the presser has open",
+      "guests": "Spectators can press it too (where the tab lets them speak)",
+      "actionsHint": "Pressing it runs these from the top. From the second one on, you can add a wait after the previous one (up to 10 seconds).",
+      "kind": {
+        "say": "Say",
+        "sound": "Sound",
+        "effect": "Effect",
+        "cutIn": "Cut-in",
+        "secret": "Secret result",
+        "reveal": "Reveal a hidden object",
+        "conceal": "Hide an object",
+        "removeSelf": "Remove what was pressed",
+        "spawn": "Call up pieces",
+        "showTable": "Switch the table",
+        "carry": "Carry the presser's piece",
+        "tableSetting": "Change table settings"
+      },
+      "delay": "Wait (s)",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "removeAction": "Remove this action",
+      "sayPlaceholder": "Text to send to chat. Dice (2d6+3) and {HP} work too",
+      "unchosen": "(choose one)",
+      "missing": "{{name}} (not in this room)",
+      "unknownAction": "An action this version cannot run (kept as is)",
+      "noActions": "It does nothing yet. Add actions with the buttons below.",
+      "try": "Try it",
+      "refused": {
+        "nothing": "This switch does nothing",
+        "watching": "Spectators cannot press it",
+        "cannotSpeak": "You cannot speak in this tab",
+        "retired": "It can no longer be pressed",
+        "busy": "Wait a moment before pressing again",
+        "spent": "It can no longer be pressed (no uses left)",
+        "noPiece": "You have no character on the table",
+        "tooFar": "Get closer to press it",
+        "unseen": "You cannot see it"
+      },
+      "menu": {
+        "edit": "Set up switch…",
+        "try": "Try the switch",
+        "remove": "Remove switch",
+        "reset": "Clear the record of presses",
+        "conceal": "Hide (to reveal with a switch)",
+        "concealed": "Reveal a hidden object"
+      },
+      "range": "Reach",
+      "rangeHint": "cells or closer (0 means from anywhere)",
+      "needsSight": "Only while it can be seen",
+      "repeat": "Uses",
+      "repeatOption": {
+        "always": "Any number of times",
+        "once": "Once (for everyone)",
+        "oncePerPiece": "Once per character",
+        "oncePerRound": "Once per round"
+      },
+      "reader": {
+        "presser": "Only the presser and the GM can read it",
+        "master": "Only the GM can read it"
+      },
+      "secretPlaceholder": "Text kept back from the room. {HP} and other references work too",
+      "pressHere": "Click to press",
+      "revealHint": "Puts an object the GM hid back where it was, for everyone to see.",
+      "concealHint": "Hides an object on the table where it stands. Hidden terrain can be walked and seen through.",
+      "removeSelfHint": "After everything else, removes the switch's terrain from the table. Painted ground is put away so only the GM sees it. Trying it out does not remove it.",
+      "unnamedThing": "Unnamed",
+      "listed": "{{name}} ({{note}})",
+      "groundPressed": "pressed ground",
+      "groundRetired": "ground put away",
+      "thing": {
+        "terrain": "Terrain",
+        "table-mask": "Map mask",
+        "character": "Character",
+        "text-note": "Shared note",
+        "dice-symbol": "Dice",
+        "coin": "Coin",
+        "card-stack": "Deck"
+      },
+      "spawnCount": "Count",
+      "spawnPlace": {
+        "host": "Next to the switch",
+        "presser": "Next to the presser's piece"
+      },
+      "spawnHint": "Places copies of the chosen character on the nearest free cells. Keep the original in the graveyard or hidden.",
+      "where": {
+        "table": "on the table",
+        "graveyard": "graveyard",
+        "concealed": "hidden",
+        "other": "stored"
+      },
+      "showTableHint": "Switches everyone's view to the chosen table (a scene change).",
+      "carryCol": "Column",
+      "carryRow": "Row",
+      "carryHere": "Stay on the current table",
+      "carryHint": "Moves the presser's selected character to the given cell. Choosing another table moves everyone's view too.",
+      "setting": {
+        "darkness": "Darkness",
+        "fog": "Fog of war",
+        "image": "Table image",
+        "bgm": "BGM",
+        "bgmStop": "Stop the BGM first"
+      },
+      "toggle": {
+        "keep": "Leave as is",
+        "on": "On",
+        "off": "Off"
+      }
     }
   },
   "app": {
     "fab": {
       "menuOpen": "Open menu",
+      "menuHint": "Open the menu (right click to arrange or put back)",
       "menuClose": "Close menu",
       "peerMenu": "Connection",
       "chat": "Chat",
@@ -4193,6 +4340,7 @@
       "gameResources": "Game resources",
       "media": "Media",
       "clock": "Clock",
+      "compass": "Compass",
       "connectionQuality": "Connection quality",
       "miniPlayer": "Mini player",
       "visualNovel": "Novel mode",
@@ -4230,7 +4378,8 @@
       "display": "Display",
       "widgets": "Widgets",
       "foldToolbar": "Fold the toolbar",
-      "unfoldToolbar": "Open the toolbar"
+      "unfoldToolbar": "Open the toolbar",
+      "buttonGuide": "Show every button's name (? key)"
     },
     "roomDataDefault": "Room data"
   },

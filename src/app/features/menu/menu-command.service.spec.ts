@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { ButtonGuideService } from '@axe/application/ui/button-guide.service';
 import { PieceOverlayPreferenceService } from '@axe/application/ui/piece-overlay-preference.service';
 import { WidgetVisibilityService } from '@axe/application/ui/widget-visibility.service';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
@@ -91,6 +92,28 @@ describe('MenuCommandService', () => {
 
       expect(commands.run(commandOf('save'))).toBe('done');
       expect(save).toHaveBeenCalled();
+    });
+
+    it('brings out the guide to the buttons for anybody, watchers among them', () => {
+      seatAs(PeerRole.Guest);
+      const guide = TestBed.inject(ButtonGuideService);
+
+      expect(commands.run(commandOf('buttonGuide'))).toBe('done');
+      expect(guide.shown()).toBe(true);
+
+      commands.run(commandOf('buttonGuide'));
+      expect(guide.shown()).toBe(true);
+    });
+
+    it('puts the guide away once anything else is pressed', () => {
+      seatAs(PeerRole.Player);
+      vi.spyOn(TestBed.inject(RoomPanelService), 'open').mockImplementation(() => {});
+      const guide = TestBed.inject(ButtonGuideService);
+      guide.show();
+
+      commands.run(commandOf('inventory'));
+
+      expect(guide.shown()).toBe(false);
     });
   });
 

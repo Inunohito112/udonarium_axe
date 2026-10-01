@@ -4,9 +4,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   signal,
+  untracked,
   viewChild,
   ViewContainerRef,
 } from '@angular/core';
@@ -14,6 +16,7 @@ import { Title } from '@angular/platform-browser';
 import { SaveDataService } from '@axe/application/file/save-data.service';
 import { LanguageService } from '@axe/application/i18n/language.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
+import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { CutInService } from '@axe/application/media/cut-in.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
@@ -22,6 +25,7 @@ import { LegacyScratchMaskMigrationService } from '@axe/application/tabletop/leg
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { TurnOrderService } from '@axe/application/turn/turn-order.service';
+import { ButtonGuideService } from '@axe/application/ui/button-guide.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { MenuLayoutService } from '@axe/application/ui/menu-layout.service';
@@ -42,8 +46,10 @@ import { FileArchiver } from '@axe/core/storage/file-archiver';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { ReloadCheck } from '@axe/domain/peer/reload-check';
+import { MENU_SURFACES } from '@axe/domain/ui/menu-command';
 import { RoomPanelName } from '@axe/domain/ui/room-panel';
 import { AlarmEventHandlerService } from '@axe/features/alarm/alarm-event-handler.service';
+import { ButtonGuideEventHandlerService } from '@axe/features/button-guide/button-guide-event-handler.service';
 import { CardStackListImageComponent } from '@axe/features/card/card-stack-list-img/card-stack-list-img.component';
 import { HandDragGhostComponent } from '@axe/features/card/hand-rail/hand-drag-ghost.component';
 import { HandRailComponent } from '@axe/features/card/hand-rail/hand-rail.component';
@@ -80,6 +86,7 @@ import { ReplayStagingBannerComponent } from '@axe/features/replay/replay-stagin
 import { RoomArchiveEventHandlerService } from '@axe/features/room-archive/room-archive-event-handler.service';
 import { RoomRestoreBannerComponent } from '@axe/features/room-archive/room-restore-banner/room-restore-banner.component';
 import { StreamingOverlayComponent } from '@axe/features/streaming-overlay/streaming-overlay.component';
+import { SwitchNoticeComponent } from '@axe/features/tabletop/board-switch/switch-notice.component';
 import { CcfoliaRoomImportEventHandlerService } from '@axe/features/tabletop/ccfolia-room-import/ccfolia-room-import-event-handler.service';
 import { FogMemoryWriterService } from '@axe/features/tabletop/fog-of-war/fog-memory-writer.service';
 import { GameTableComponent } from '@axe/features/tabletop/game-table/game-table.component';
@@ -89,6 +96,7 @@ import { VisualNovelModeService } from '@axe/features/visual-novel/visual-novel-
 import { VisualNovelOverlayComponent } from '@axe/features/visual-novel/visual-novel-overlay/visual-novel-overlay.component';
 import { VoteEventHandlerService } from '@axe/features/vote/vote-event-handler.service';
 import { VoteWidgetComponent } from '@axe/features/vote/vote-widget/vote-widget.component';
+import { CompassComponent } from '@axe/features/widgets/compass/compass.component';
 import { ConnectionQualityComponent } from '@axe/features/widgets/connection-quality/connection-quality.component';
 import { DigitalClockComponent } from '@axe/features/widgets/digital-clock/digital-clock.component';
 import { RenderStatsComponent } from '@axe/features/widgets/render-stats/render-stats.component';
@@ -104,6 +112,8 @@ import { TooltipDirective } from '@axe/ui/directives/tooltip.directive';
 import { WidgetPlaceDirective } from '@axe/ui/directives/widget-place.directive';
 import {
   FAB_COLUMN_CLASSES,
+  FAB_GUIDE_DRAWER_CLASSES,
+  FAB_GUIDE_ROW_CLASSES,
   fabDrawerPlaceClasses,
   FabDrawerSide,
   fabDrawerSide,
@@ -134,6 +144,7 @@ const FAB_MARGIN_PX = 12;
     ConnectionQualityComponent,
     RenderStatsComponent,
     DigitalClockComponent,
+    CompassComponent,
     VoteWidgetComponent,
     HotbarBarComponent,
     MobileShellComponent,
@@ -143,6 +154,7 @@ const FAB_MARGIN_PX = 12;
     ReplayBoardBannerComponent,
     InviteJoinComponent,
     StreamingOverlayComponent,
+    SwitchNoticeComponent,
     ChatTickerComponent,
     UiFabSubmenuComponent,
     UiFabSubmenuButtonComponent,
@@ -209,8 +221,45 @@ export class AppComponent {
 
   protected readonly fabColumns = FAB_COLUMN_CLASSES;
 
+  /** Whether every button in the drawer and on the toolbars is saying what it is. */
+  protected readonly guide = inject(ButtonGuideService);
+  protected readonly fabGuideDrawer = FAB_GUIDE_DRAWER_CLASSES;
+  protected readonly fabGuideRow = FAB_GUIDE_ROW_CLASSES;
+
   private readonly menuCommands = inject(MenuCommandService);
-  private readonly fabLayout = inject(MenuLayoutService).layoutOf('fab');
+  private readonly menuLayouts = inject(MenuLayoutService);
+  private readonly fabLayout = this.menuLayouts.layoutOf('fab');
+  private readonly contextMenuService = inject(ContextMenuService);
+  private readonly pointers = inject(PointerDeviceService);
+  private readonly confirm = inject(ConfirmService);
+
+  /**
+   * The way back into the menus, from the drawer's own button.
+   *
+   * Everything else about the drawer can be arranged away, the entry that opens the editor
+   * included, and somebody who takes that one off has nothing left to put it back with. The
+   * button is not part of any arrangement, so what it offers cannot be arranged away either.
+   */
+  protected onFabContextMenu(event: MouseEvent): void {
+    if (!this.pointers.isAllowedToOpenContextMenu) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.contextMenuService.open(
+      this.pointers.pointers[0],
+      [
+        { name: this.t('feature.menuEditor.title'), action: () => this.open('menuEditor') },
+        { name: this.t('feature.menuEditor.resetAll'), action: () => void this.resetEveryMenu() },
+        { name: this.t('app.fab.buttonGuide'), action: () => this.guide.show() },
+      ],
+      this.t('app.fab.menuOpen')
+    );
+  }
+
+  /** Puts every menu on this screen back the way it came, once whoever asked has said they mean it. */
+  private async resetEveryMenu(): Promise<void> {
+    if (!(await this.confirm.ask(this.t('feature.menuEditor.resetAllConfirm')))) return;
+    for (const surface of MENU_SURFACES) this.menuLayouts.reset(surface);
+  }
 
   /** The drawer as this seat is offered it, in the order this screen has it arranged. */
   protected readonly fabNodes = computed<MenuNodeView[]>(() => this.menuCommands.viewOf(this.fabLayout()));
@@ -293,10 +342,22 @@ export class AppComponent {
   /** The ticker is drawn for the screens that asked for it, and not fetched for the rest. */
   protected readonly tickerWanted = computed(() => this.tabletop.display().multiAngleTickerEnabled);
 
-  /** Opens a small menu of the drawer, or does what one of its own entries is for. */
+  /**
+   * Opens a small menu of the drawer, or does what one of its own entries is for.
+   *
+   * With every name written out, a small menu is opened the usual way once the guide is put away,
+   * so whoever went looking for it sees where it lives.
+   */
   protected chooseFab(node: MenuNodeView, event: MouseEvent): void {
-    if (isMenuGroupView(node)) this.toggleFabSubmenu(node.id, event);
-    else this.chooseFromFabSubmenu(node);
+    if (isMenuGroupView(node)) {
+      this.guide.hide();
+      this.toggleFabSubmenu(node.id, event);
+    } else this.chooseFromFabSubmenu(node);
+  }
+
+  /** What a small menu holds, written beside it while every name is written out. */
+  protected entriesOf(node: MenuNodeView): readonly MenuEntryView[] {
+    return isMenuGroupView(node) ? node.entries : [];
   }
 
   /** Does what an entry is for, and closes the menu it was in behind it. */
@@ -340,10 +401,17 @@ export class AppComponent {
 
     if (new URLSearchParams(window.location.search).get('stats') === '1') this.widgets.renderStats.set(true);
 
+    // What a small menu holds is written out beside it with the rest, so one left open would only
+    // say it twice, and over the names beside it.
+    effect(() => {
+      if (this.guide.shown()) untracked(() => this.fabSubmenu.set(null));
+    });
+
     // Start every feature's event handler and the application layer's orchestration services.
     // Each one subscribes from its own constructor under @Injectable({ providedIn: 'root' }),
     // so there is nothing to hold onto here — the injection is the point.
     inject(AlarmEventHandlerService);
+    inject(ButtonGuideEventHandlerService);
     inject(DiceChatEventHandlerService);
     inject(ChatSettingsEventHandlerService);
     inject(ChatSoundEventHandlerService);

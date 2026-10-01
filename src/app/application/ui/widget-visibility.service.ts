@@ -7,6 +7,7 @@ const STORAGE_KEY = WIDGET_VISIBILITY_STORAGE_KEY;
 
 export interface WidgetVisibility {
   readonly clock: boolean;
+  readonly compass: boolean;
   readonly miniPlayer: boolean;
   readonly connectionQuality: boolean;
   readonly recording: boolean;
@@ -18,6 +19,7 @@ export interface WidgetVisibility {
 
 const DEFAULT_VISIBILITY: WidgetVisibility = {
   clock: false,
+  compass: false,
   miniPlayer: true,
   connectionQuality: false,
   recording: true,
@@ -37,6 +39,7 @@ export function parseWidgetVisibility(raw: string | null): WidgetVisibility {
     const parsed = JSON.parse(raw) as Partial<WidgetVisibility>;
     return {
       clock: typeof parsed.clock === 'boolean' ? parsed.clock : DEFAULT_VISIBILITY.clock,
+      compass: typeof parsed.compass === 'boolean' ? parsed.compass : DEFAULT_VISIBILITY.compass,
       miniPlayer: typeof parsed.miniPlayer === 'boolean' ? parsed.miniPlayer : DEFAULT_VISIBILITY.miniPlayer,
       connectionQuality:
         typeof parsed.connectionQuality === 'boolean' ? parsed.connectionQuality : DEFAULT_VISIBILITY.connectionQuality,
@@ -56,6 +59,7 @@ export class WidgetVisibilityService {
   private readonly restored = parseWidgetVisibility(localStorage.getItem(STORAGE_KEY));
 
   readonly clock = signal(this.restored.clock);
+  readonly compass = signal(this.restored.compass);
   readonly miniPlayer = signal(this.restored.miniPlayer);
   readonly connectionQuality = signal(this.restored.connectionQuality);
   readonly recording = signal(this.restored.recording);
@@ -68,6 +72,7 @@ export class WidgetVisibilityService {
     effect(() => {
       const state: WidgetVisibility = {
         clock: this.clock(),
+        compass: this.compass(),
         miniPlayer: this.miniPlayer(),
         connectionQuality: this.connectionQuality(),
         recording: this.recording(),
@@ -83,6 +88,11 @@ export class WidgetVisibilityService {
   /** Shows or hides the clock widget. Remembered in this browser. */
   toggleClock(): void {
     this.clock.update((visible) => !visible);
+  }
+
+  /** Shows or hides the compass. Remembered in this browser. */
+  toggleCompass(): void {
+    this.compass.update((visible) => !visible);
   }
 
   /** Shows or hides the mini music player. Remembered in this browser. */

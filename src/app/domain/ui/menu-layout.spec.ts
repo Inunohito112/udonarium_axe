@@ -5,6 +5,7 @@ import {
   isMenuGroup,
   isMenuSurface,
   MenuGroup,
+  MenuItem,
   menuItemsOf,
   parseMenuLayout,
 } from '@axe/domain/ui/menu-layout';
@@ -105,7 +106,7 @@ describe('how a menu is arranged', () => {
       }
     });
 
-    it('draws the drawer as it has always been drawn', () => {
+    it('draws the drawer as it has always been drawn, with the guide to its buttons last', () => {
       expect(DEFAULT_MENU_LAYOUTS.fab.nodes.map((node) => node.id)).toEqual([
         'peerMenu',
         'chat',
@@ -116,7 +117,16 @@ describe('how a menu is arranged', () => {
         'saveLoad',
         'widgets',
         'display',
+        'buttonGuide',
       ]);
+    });
+
+    it('puts the inventory on both toolbars, next to the lists each already leads with', () => {
+      const commands = (surface: 'gmToolbar' | 'plToolbar') =>
+        DEFAULT_MENU_LAYOUTS[surface].nodes.map((node) => (node as MenuItem).command);
+
+      expect(commands('gmToolbar').slice(0, 4)).toEqual(['objectList', 'npcBar', 'partyList', 'inventory']);
+      expect(commands('plToolbar').slice(0, 2)).toEqual(['ownedCharacters', 'inventory']);
     });
 
     it('holds the table tools it always held, in the order it held them', () => {

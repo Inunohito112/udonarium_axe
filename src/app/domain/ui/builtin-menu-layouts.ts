@@ -20,7 +20,8 @@ function group(
  *
  * Who is here and what is being said come first, then the room, the table's own tools gathered
  * under one entry, what the game is played with, and what is put in front of the table. Saving and
- * loading, the widgets and this seat's display follow, each a small menu of its own.
+ * loading, the widgets and this seat's display follow, each a small menu of its own, and last of all
+ * the way to have every button say what it is.
  */
 const FAB: MenuLayout = {
   nodes: [
@@ -54,6 +55,7 @@ const FAB: MenuLayout = {
         'widgetPlToolbar',
         'widgetGmToolbar',
         'widgetClock',
+        'widgetCompass',
         'widgetRecording',
         'widgetConnectionQuality',
         'widgetMiniPlayer',
@@ -68,6 +70,7 @@ const FAB: MenuLayout = {
       ['viewMode', 'theme', 'skin', 'motion', 'renderLite', 'language', 'menuEditor', 'useMobileLayout'],
       { testId: 'fab-display', menuTestId: 'seat-display' }
     ),
+    item('buttonGuide'),
   ],
 };
 
@@ -77,6 +80,7 @@ const GM_TOOLBAR: MenuLayout = {
     item('objectList'),
     item('npcBar'),
     item('partyList'),
+    item('inventory'),
     item('darkness'),
     item('fog'),
     item('resourceBars'),
@@ -92,6 +96,7 @@ const GM_TOOLBAR: MenuLayout = {
 const PL_TOOLBAR: MenuLayout = {
   nodes: [
     item('ownedCharacters'),
+    item('inventory'),
     item('rangeShortcut'),
     item('resourceBars'),
     item('buffs'),

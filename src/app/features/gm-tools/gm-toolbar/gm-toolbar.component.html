@@ -35,6 +35,9 @@
                   type="button"
                   class="rounded-ui-sm text-ui-dim hover:bg-ui-hover hover:text-ui-text flex size-6 cursor-pointer items-center justify-center border-none bg-transparent transition-colors [&_i]:text-[16px]!"
                   [title]="'feature.turnOrder.prev' | transloco"
+                  [attr.data-guide-label]="
+                    ('feature.turnOrder.title' | transloco) + ': ' + ('feature.turnOrder.prev' | transloco)
+                  "
                   (click)="turnPrev()"
                 >
                   <i class="material-icons">chevron_left</i>
@@ -59,6 +62,9 @@
                   type="button"
                   class="rounded-ui-sm text-ui-dim hover:bg-ui-hover hover:text-ui-text flex size-6 cursor-pointer items-center justify-center border-none bg-transparent transition-colors [&_i]:text-[16px]!"
                   [title]="'feature.turnOrder.next' | transloco"
+                  [attr.data-guide-label]="
+                    ('feature.turnOrder.title' | transloco) + ': ' + ('feature.turnOrder.next' | transloco)
+                  "
                   (click)="turnNext()"
                 >
                   <i class="material-icons">chevron_right</i>
@@ -74,6 +80,7 @@
                 [class.bg-amber-400/20]="currentPersona() || previewingGuest()"
                 [class.text-amber-500]="currentPersona() || previewingGuest()"
                 [title]="'feature.gmTools.persona.title' | transloco"
+                [attr.data-guide-label]="'feature.gmTools.persona.title' | transloco"
                 (click)="togglePersona()"
               >
                 <i class="material-icons">{{
@@ -144,6 +151,10 @@
           }
         }
       }
+    }
+
+    @if (guide.shown()) {
+      <ui-button-guide />
     }
   </div>
 }

@@ -12,6 +12,7 @@ import {
   DEFAULT_TRIGGER_COLOR,
   DEFAULT_TRIGGER_MOMENT,
   DEFAULT_TRIGGER_TARGET,
+  isPressMoment,
   TriggerMoment,
   TriggerTarget,
 } from '@axe/domain/tabletop/trigger-event';
@@ -211,6 +212,11 @@ export interface TriggerPaintSpec {
    * room to it: the table the room is looking at changes with the piece.
    */
   warpTable: string;
+  /**
+   * What pressing the ground does, as `encodeSwitchDefinition` writes it, for ground that is
+   * pressed rather than walked on. Empty for every other moment.
+   */
+  press: string;
 }
 
 /**
@@ -365,6 +371,7 @@ export const DEFAULT_FUNCTION_SPEC: FunctionSpec = {
     warpCol: 0,
     warpRow: 0,
     warpTable: '',
+    press: '',
   },
 };
 
@@ -524,8 +531,24 @@ export function sanitizeFunctionSpec(value: unknown): FunctionSpec {
       warpCol: countIn(trigger, 'warpCol', fallback.trigger.warpCol, 0, 999),
       warpRow: countIn(trigger, 'warpRow', fallback.trigger.warpRow, 0, 999),
       warpTable: textIn(trigger, 'warpTable', fallback.trigger.warpTable),
+      ...pressFields(trigger, fallback.trigger),
     },
   };
+}
+
+/**
+ * What a brush for pressed ground carries of its count, and what pressing it does.
+ *
+ * Pressed ground keeps its count in its switch, so the trap's own count is left at nothing for it;
+ * written otherwise, ground laid and read back again would read as a different painting and be
+ * laid afresh, forgetting it had been pressed. Every other moment carries nothing to press.
+ */
+function pressFields(
+  trigger: Record<string, unknown>,
+  fallback: TriggerPaintSpec
+): Pick<TriggerPaintSpec, 'press'> & Partial<Pick<TriggerPaintSpec, 'once' | 'repeat'>> {
+  if (!isPressMoment(asTriggerMoment(trigger['moment']))) return { press: '' };
+  return { press: textIn(trigger, 'press', fallback.press), once: false, repeat: '' };
 }
 
 /** A block of wall, and the look it wears. Every block carries its own. */

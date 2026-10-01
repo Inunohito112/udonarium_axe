@@ -50,6 +50,11 @@ import {
 } from '@axe/domain/media/texture-catalog';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import {
+  encodeSwitchDefinition,
+  parseSwitchDefinition,
+  SwitchDefinition,
+} from '@axe/domain/tabletop/board-switch/switch-definition';
+import {
   HazardPaintSpec,
   MAP_FUNCTION_ROLES,
   MaskPaintSpec,
@@ -120,6 +125,7 @@ import {
 import { RenderHelpers, renderScene } from '@axe/features/map-editor/render/render-scene';
 import { getStampImage, loadStampImage } from '@axe/features/map-editor/render/stamp-image';
 import { createImageTexturePattern } from '@axe/features/map-editor/render/texture-pattern';
+import { SwitchDefinitionFieldsComponent } from '@axe/features/tabletop/board-switch/switch-definition-fields.component';
 import { FileSelecterComponent } from '@axe/ui/components/file-selecter/file-selecter.component';
 import { TranslocoModule } from '@jsverse/transloco';
 
@@ -200,6 +206,7 @@ interface ToolDef {
     MapEditorLayerDrawerComponent,
     MapEditorStampPickerComponent,
     MapEditorTexturePickerComponent,
+    SwitchDefinitionFieldsComponent,
   ],
 })
 export class MapEditorPanelComponent implements AfterViewInit {
@@ -326,6 +333,17 @@ export class MapEditorPanelComponent implements AfterViewInit {
 
   protected readonly triggerMoments = TRIGGER_MOMENTS;
   protected readonly triggerTargets = TRIGGER_TARGETS;
+
+  /** What pressing the brush's ground does, where it paints ground that is pressed. */
+  protected readonly pressDefinition = computed<SwitchDefinition>(() =>
+    parseSwitchDefinition(this.state.functionSpec().trigger.press)
+  );
+
+  /** Writes a change to what pressing the brush's ground does onto what the brush says now. */
+  protected setPressDefinition(change: Partial<SwitchDefinition>): void {
+    const held = parseSwitchDefinition(this.state.functionSpec().trigger.press);
+    this.setTriggerPaint({ press: encodeSwitchDefinition({ ...held, ...change }) });
+  }
 
   /** The effects the room has to play, offered by name the way chat and the sheets name one. */
   protected readonly effectNames = computed<string[]>(() =>

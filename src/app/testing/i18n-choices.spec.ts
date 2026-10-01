@@ -14,6 +14,14 @@ import { CUT_IN_WIPES } from '@axe/domain/media/cut-in-wipe';
 import { LIGHT_SKIN_IDS } from '@axe/domain/media/light-skins';
 import { DUNGEON_PROP_IDS, TEXTURE_IDS, WALL_TEXTURE_IDS } from '@axe/domain/media/texture-catalog';
 import {
+  SWITCH_ACTION_KINDS,
+  SWITCH_SECRET_READERS,
+  SWITCH_SPAWN_PLACES,
+  SWITCH_SPEAKERS,
+  SWITCH_TOGGLES,
+} from '@axe/domain/tabletop/board-switch/switch-definition';
+import { SWITCH_REFUSALS } from '@axe/domain/tabletop/board-switch/switch-press-rules';
+import {
   DUNGEON_ATMOSPHERE_IDS,
   DUNGEON_ENTRANCE_STYLES,
   DUNGEON_ROLE_NAMINGS,
@@ -91,6 +99,13 @@ const CHOICES: Record<string, readonly string[]> = {
   'feature.media.cutInEditor.look': CUT_IN_LAYER_PRESETS.map((preset) => preset.id),
   'feature.media.cutInEditor.preset': [...CUT_IN_ENTRANCES, ...CUT_IN_EXITS],
   'feature.tabletop.displaySetting.viewMode_': VIEW_MODES,
+  'feature.boardSwitch.kind.': SWITCH_ACTION_KINDS,
+  'feature.boardSwitch.speakerOption.': SWITCH_SPEAKERS,
+  'feature.boardSwitch.refused.': [...SWITCH_REFUSALS, 'busy'],
+  'feature.boardSwitch.repeatOption.': TRIGGER_REPEATS,
+  'feature.boardSwitch.reader.': SWITCH_SECRET_READERS,
+  'feature.boardSwitch.spawnPlace.': SWITCH_SPAWN_PLACES,
+  'feature.boardSwitch.toggle.': SWITCH_TOGGLES,
 };
 
 function dictionary(language: string): Record<string, unknown> {

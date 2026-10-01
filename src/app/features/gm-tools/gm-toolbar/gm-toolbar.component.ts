@@ -13,6 +13,7 @@ import { ObjectChangeService } from '@axe/application/sync/object-change.service
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { GUEST_PERSONA, VisionService } from '@axe/application/tabletop/vision.service';
 import { TurnOrderService } from '@axe/application/turn/turn-order.service';
+import { ButtonGuideService } from '@axe/application/ui/button-guide.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { MenuLayoutService } from '@axe/application/ui/menu-layout.service';
 import { NpcBarService } from '@axe/application/ui/npc-bar.service';
@@ -27,6 +28,7 @@ import { NpcBarComponent } from '@axe/features/gm-tools/npc-bar/npc-bar.componen
 import { NpcDragService } from '@axe/features/gm-tools/npc-bar/npc-drag.service';
 import { MenuCommandService, MenuEntryView } from '@axe/features/menu/menu-command.service';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
+import { UiButtonGuideComponent } from '@axe/ui/components/button-guide/button-guide.component';
 import { UiIconButtonComponent } from '@axe/ui/components/icon-button/icon-button.component';
 import { DraggableDirective } from '@axe/ui/directives/draggable.directive';
 import { turnIndicatorSignal } from '@axe/ui/turn/turn-indicator.signal';
@@ -36,7 +38,7 @@ import { TranslocoModule } from '@jsverse/transloco';
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-gm-toolbar',
   templateUrl: './gm-toolbar.component.html',
-  imports: [DraggableDirective, NpcBarComponent, TranslocoModule, UiIconButtonComponent],
+  imports: [DraggableDirective, NpcBarComponent, TranslocoModule, UiButtonGuideComponent, UiIconButtonComponent],
 })
 export class GmToolbarComponent {
   protected readonly isCompact = inject(ViewportService).isCompact;
@@ -65,6 +67,9 @@ export class GmToolbarComponent {
 
   /** Whether the bar is folded down to its title. */
   protected readonly folded = computed(() => this.folds.isFolded('gm'));
+
+  /** Whether the name of every button is written out beside the bar. */
+  protected readonly guide = inject(ButtonGuideService);
 
   /** Folds the bar down to its title, or opens it again; what was open in it closes with it. */
   protected toggleFold(): void {

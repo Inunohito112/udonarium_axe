@@ -1,5 +1,6 @@
 import { SyncObject, SyncVar } from '@axe/core/sync/decorator';
 import { ObjectNode } from '@axe/core/sync/object-node';
+import { BoardSwitch, switchOf } from '@axe/domain/tabletop/board-switch/board-switch';
 import { CellRect } from '@axe/domain/tabletop/cell-rectangles';
 import { GameTable } from '@axe/domain/tabletop/game-table';
 import { asShownTo, ShownTo } from '@axe/domain/tabletop/shown-to';
@@ -10,6 +11,7 @@ import {
   DEFAULT_TRIGGER_COLOR,
   DEFAULT_TRIGGER_MOMENT,
   DEFAULT_TRIGGER_TARGET,
+  isPressMoment,
   readSpentBy,
   TriggerMoment,
   TriggerRepeat,
@@ -175,9 +177,21 @@ export class TableTrigger extends ObjectNode {
     return asTriggerTarget(this.targets);
   }
 
-  /** Whether this ground still has anything left in it. */
+  /**
+   * Whether this ground still has anything left in it.
+   *
+   * Ground that is pressed is written down as spent on purpose, so that a version that has never
+   * heard of pressing, and reads it as ground a walk ends on, finds it has nothing left and never
+   * goes off underfoot. Its own switch keeps its count, and says whether it has been put away.
+   */
   get isArmed(): boolean {
+    if (isPressMoment(this.firesOn)) return !(this.pressSwitch?.retired ?? false);
     return !(this.repeats === 'once' && this.spent);
+  }
+
+  /** The switch that says what pressing this ground does, where it is pressed rather than walked on. */
+  get pressSwitch(): BoardSwitch | null {
+    return isPressMoment(this.firesOn) ? switchOf(this) : null;
   }
 
   /**

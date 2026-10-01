@@ -1568,6 +1568,7 @@
         "failed": "取り込みに失敗しました。",
         "success": "キャラコマを生成しました。",
         "successNoImage": "キャラコマを生成しました（画像は取得できなかったため、後から設定してください）。",
+        "systemUnknown": "取り込みました。倉庫のデータは URL を貼ると、特技表とチャットパレットも一緒に入ります。",
         "sourceAppspot": "キャラクターシート倉庫(character-sheets.appspot.com)：JSONまたはキャラURLを貼り付け（自動取得）",
         "sourceYtsheet": "ゆとシートⅡ(SW2.5)：キャラURLを貼り付け（自動取得）、または ?mode=json のJSONを貼り付け",
         "unsupported": "対応していないURLです。ココフォリアのコマJSONを貼り付けてください。",
@@ -2023,6 +2024,8 @@
         "sectionDarkness": "暗闇（視界・照明）",
         "darknessEnabled": "暗闇を有効化",
         "lightSnapToGrid": "照明をマス目に沿わせる",
+        "magneticAnomaly": "磁場異常（方位磁石が狂う）",
+        "magneticAnomalyHint": "方位磁石ウィジェットの針が定まらなくなります。このテーブルにいるあいだだけです。",
         "darknessLevel": "暗さ",
         "globalIllumination": "環境光",
         "ambientColor": "暗闇の色",
@@ -3376,7 +3379,9 @@
         "triggerPassAmount": "成功したときの増減",
         "triggerCheckRollHint": "「1d20+3」のように書くと、卓が代わりに振って目標値と比べます。空欄なら振るのは本人",
         "moveCostHalves": "道（半分で進める）",
-        "moveCostHalvesHint": "1 マスを 0.5 消費で渡れます。下に何が塗ってあっても道が優先されるので、沼を貫く街道が作れます"
+        "moveCostHalvesHint": "1 マスを 0.5 消費で渡れます。下に何が塗ってあっても道が優先されるので、沼を貫く街道が作れます",
+        "triggerMoment_press": "押したとき（スイッチ）",
+        "triggerPressHint": "塗ったマスをクリックすると、下の動作が起きます。発言する人・押せる距離・回数・秘密の結果もここで決めます。"
       },
       "stampCategories": {
         "door": "扉",
@@ -4148,6 +4153,24 @@
         "label": "ウィジェット"
       }
     },
+    "compass": {
+      "anomaly": "磁場異常",
+      "face": {
+        "modern": "現代風",
+        "fantasy": "ファンタジー風",
+        "sf": "SF 風"
+      },
+      "point": {
+        "n": "北",
+        "ne": "北東",
+        "e": "東",
+        "se": "南東",
+        "s": "南",
+        "sw": "南西",
+        "w": "西",
+        "nw": "北西"
+      }
+    },
     "menuEditor": {
       "title": "メニューの編集",
       "hint": "この端末だけの並びです。左端の取っ手をつかんで動かすと、順番が変わり、小窓にも出し入れできます。",
@@ -4167,6 +4190,8 @@
       "empty": "項目がありません",
       "reset": "初期配置に戻す",
       "resetConfirm": "このメニューを初期配置に戻します。よろしいですか？",
+      "resetAll": "すべてのメニューを初期配置に戻す",
+      "resetAllConfirm": "Fav メニューと GM／PL ツールを、すべて初期配置に戻します。よろしいですか？",
       "surface": {
         "fab": "Fav メニュー",
         "gmToolbar": "GM ツール",
@@ -4175,11 +4200,133 @@
       "writeOut": "書き出す",
       "readIn": "読み込む",
       "readFailed": "この端末の並びとして読めないファイルです"
+    },
+    "boardSwitch": {
+      "panelTitle": "スイッチ - {{name}}",
+      "unlabeled": "スイッチ",
+      "masterOnly": "スイッチの中身は GM だけが見られます",
+      "label": "名前",
+      "labelPlaceholder": "盤面に出す名前（例: 宝箱を開ける）",
+      "speaker": "発言者",
+      "speakerOption": {
+        "presser": "押した人（選んでいるキャラ）",
+        "host": "この物の名前",
+        "system": "システム"
+      },
+      "tab": "タブ",
+      "tabOpen": "押した人が開いているタブ",
+      "guests": "見学者も押せる（タブで見学者が発言できるとき）",
+      "actionsHint": "押すと上から順に動きます。2 つ目からは、前の動作のあとの待ちを入れられます（最大 10 秒）。",
+      "kind": {
+        "say": "発言",
+        "sound": "効果音",
+        "effect": "エフェクト",
+        "cutIn": "カットイン",
+        "secret": "秘密の結果",
+        "reveal": "伏せた物を見せる",
+        "conceal": "伏せる",
+        "removeSelf": "押した物を消す",
+        "spawn": "コマを呼び出す",
+        "showTable": "テーブルを切り替える",
+        "carry": "押した人のコマを運ぶ",
+        "tableSetting": "テーブル設定を変える"
+      },
+      "delay": "待ち（秒）",
+      "moveUp": "上へ",
+      "moveDown": "下へ",
+      "removeAction": "この動作を消す",
+      "sayPlaceholder": "チャットに送る文。ダイス（2d6+3）や {HP} も書けます",
+      "unchosen": "（選んでください）",
+      "missing": "{{name}}（この部屋にありません）",
+      "unknownAction": "この版では扱えない動作（残しておきます）",
+      "noActions": "まだ何もしません。下のボタンで動作を足します。",
+      "try": "試しに押す",
+      "refused": {
+        "nothing": "何もしないスイッチです",
+        "watching": "見学中は押せません",
+        "cannotSpeak": "このタブでは発言できません",
+        "retired": "もう押せません",
+        "busy": "少し待ってから押してください",
+        "spent": "もう押せません（回数を使い切りました）",
+        "noPiece": "卓の上に動かしているキャラがいません",
+        "tooFar": "もっと近づかないと押せません",
+        "unseen": "見えていないので押せません"
+      },
+      "menu": {
+        "edit": "スイッチを設定…",
+        "try": "スイッチを試しに押す",
+        "remove": "スイッチを外す",
+        "reset": "押された記録を消す",
+        "conceal": "伏せる（スイッチで見せる）",
+        "concealed": "伏せた物を見せる"
+      },
+      "range": "押せる距離",
+      "rangeHint": "マス以内（0 はどこからでも）",
+      "needsSight": "見えているときだけ押せる",
+      "repeat": "回数",
+      "repeatOption": {
+        "always": "何度でも",
+        "once": "一度きり（全体で 1 回）",
+        "oncePerPiece": "キャラごとに 1 回",
+        "oncePerRound": "1 ラウンドに 1 回"
+      },
+      "reader": {
+        "presser": "押した人と GM だけが読める",
+        "master": "GM だけが読める"
+      },
+      "secretPlaceholder": "伏せて書く文。{HP} などの参照も使えます",
+      "pressHere": "クリックで押す",
+      "revealHint": "GM が伏せておいた物を、伏せたときの場所に戻して全員に見せます。",
+      "concealHint": "卓の上の物を、その場所のまま伏せます。伏せた地形は通れて、見通せます。",
+      "removeSelfHint": "ほかの動作を終えてから、スイッチの地形を卓から消します。塗りの場合は片付けて GM だけに見える状態にします。試し押しでは消えません。",
+      "unnamedThing": "名前なし",
+      "listed": "{{name}}（{{note}}）",
+      "groundPressed": "押された塗り",
+      "groundRetired": "片付けた塗り",
+      "thing": {
+        "terrain": "地形",
+        "table-mask": "マップマスク",
+        "character": "キャラクター",
+        "text-note": "共有メモ",
+        "dice-symbol": "ダイス",
+        "coin": "コイン",
+        "card-stack": "山札"
+      },
+      "spawnCount": "数",
+      "spawnPlace": {
+        "host": "スイッチのそばに置く",
+        "presser": "押した人のコマのそばに置く"
+      },
+      "spawnHint": "選んだキャラクターの複製を、近い空きマスから順に並べます。ひな形は墓場や伏せた場所に置いておけます。",
+      "where": {
+        "table": "卓上",
+        "graveyard": "墓場",
+        "concealed": "伏せ",
+        "other": "保管"
+      },
+      "showTableHint": "全員の見ているテーブルを選んだテーブルに切り替えます（場面転換）。",
+      "carryCol": "列",
+      "carryRow": "行",
+      "carryHere": "見ているテーブルのまま",
+      "carryHint": "押した人が選んでいるキャラのコマを、指定したマスへ運びます。別のテーブルを選ぶと全員の視点も移ります。",
+      "setting": {
+        "darkness": "暗闇",
+        "fog": "戦場の霧",
+        "image": "テーブル画像",
+        "bgm": "BGM",
+        "bgmStop": "先に BGM を止める"
+      },
+      "toggle": {
+        "keep": "そのまま",
+        "on": "オン",
+        "off": "オフ"
+      }
     }
   },
   "app": {
     "fab": {
       "menuOpen": "メニューを開く",
+      "menuHint": "メニューを開く（右クリックで編集・初期化）",
       "menuClose": "メニューを閉じる",
       "peerMenu": "接続",
       "chat": "チャット",
@@ -4193,6 +4340,7 @@
       "gameResources": "ゲームリソース",
       "media": "メディア",
       "clock": "時計",
+      "compass": "方位磁石",
       "connectionQuality": "通信品質",
       "miniPlayer": "ミニプレイヤー",
       "visualNovel": "ノベルモード",
@@ -4230,7 +4378,8 @@
       "display": "表示",
       "widgets": "ウィジェット",
       "foldToolbar": "ツールバーを畳む",
-      "unfoldToolbar": "ツールバーを開く"
+      "unfoldToolbar": "ツールバーを開く",
+      "buttonGuide": "ボタンの名前をすべて表示（? キー）"
     },
     "roomDataDefault": "ルームデータ"
   },
