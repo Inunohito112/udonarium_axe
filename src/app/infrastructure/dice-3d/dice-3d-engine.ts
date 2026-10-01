@@ -7,7 +7,6 @@ import { diceStudio } from '@axe/infrastructure/dice-3d/dice-studio';
 import { DiceLook, drawDiceAtlas, lookFor } from '@axe/infrastructure/dice-3d/dice-textures';
 import {
   AdditiveBlending,
-  AgXToneMapping,
   BufferAttribute,
   BufferGeometry,
   CanvasTexture,
@@ -17,6 +16,7 @@ import {
   MeshBasicMaterial,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
+  NeutralToneMapping,
   NoColorSpace,
   PCFShadowMap,
   PerspectiveCamera,
@@ -117,7 +117,7 @@ const ACCENT_COLORS = { critical: 0xffc53d, fumble: 0xff3344 } as const;
 const HALO_SPREAD = 3.4;
 const ACCENT_SECONDS = 1.1;
 /** The colour of the felt the dice land on in a frame. */
-const FELT = '#2b2f36';
+const FELT = '#53585f';
 const TEXTURE_CACHE_SIZE = 24;
 const SHADOW_MAP_PX = 1024;
 /** How the frame's camera looks at the tray: its field of view, and how high above the floor it stands. */
@@ -168,8 +168,9 @@ export class Dice3dEngine {
       powerPreference: 'high-performance',
     });
     this.renderer.outputColorSpace = SRGBColorSpace;
-    this.renderer.toneMapping = AgXToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    // The neutral curve keeps a die the colour the roll was said in, where others wash it out.
+    this.renderer.toneMapping = NeutralToneMapping;
+    this.renderer.toneMappingExposure = 1;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = PCFShadowMap;
     this.renderer.setClearColor(0x000000, 0);
