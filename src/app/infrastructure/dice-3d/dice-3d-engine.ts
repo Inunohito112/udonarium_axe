@@ -1,5 +1,5 @@
 import { DieLabels } from '@axe/domain/dice/dice-3d/dice-throw-plan';
-import { dieRadiusOf, DieShape } from '@axe/domain/dice/dice-3d/polyhedra';
+import { dieRadiusOf, DieShape, polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
 import { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
 import { diceMeshOf } from '@axe/infrastructure/dice-3d/dice-geometry';
 import { DiceThrowResult, FRAME_STRIDE, FRAMES_PER_SECOND } from '@axe/infrastructure/dice-3d/dice-physics-message';
@@ -13,6 +13,7 @@ import {
   DirectionalLight,
   Group,
   Mesh,
+  MeshBasicMaterial,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   NoColorSpace,
@@ -78,6 +79,11 @@ export interface DrawSize {
 export interface PreparedThrow {
   readonly root: Group;
   readonly bodies: readonly Group[];
+  /** The soft dark patch under each die where it meets the floor. */
+  readonly contacts: readonly Mesh<PlaneGeometry, MeshBasicMaterial>[];
+  /** How far each die reaches from its middle, and how high its middle stands when it lies on a face. */
+  readonly radii: readonly number[];
+  readonly restHeights: readonly number[];
   readonly result: DiceThrowResult;
   readonly tray: Tray;
   /** How long the dice take to stop, in seconds. */
@@ -86,6 +92,16 @@ export interface PreparedThrow {
   readonly totalSeconds: number;
 }
 
+/**
+ * How dark the patch under a die is where it touches the floor, how wide beside the die, and how
+ * high the die rises before the patch is gone: the light's shadow alone leaves a die looking stuck
+ * on rather than standing on a busy table.
+ */
+const CONTACT_OPACITY = 0.55;
+const CONTACT_SPREAD = 2.3;
+const CONTACT_FADE_HEIGHT = 3;
+/** How far above the floor the patch lies, so it is drawn over the floor and not into it. */
+const CONTACT_LIFT = 0.02;
 /** The colour of the felt the dice land on in a frame. */
 const FELT = '#2b2f36';
 const TEXTURE_CACHE_SIZE = 24;
@@ -122,6 +138,8 @@ export class Dice3dEngine {
   private readonly felt: Mesh;
   private readonly shadowCatcher: Mesh;
   private readonly geometries = new Map<DieShape, BufferGeometry>();
+  private readonly contactGeometry = new PlaneGeometry(1, 1);
+  private readonly contactTexture = contactTexture();
   private readonly materials = new Map<string, MeshPhysicalMaterial>();
   private lost = false;
 
@@ -160,7 +178,7 @@ export class Dice3dEngine {
       new MeshStandardMaterial({ color: FELT, roughness: 0.96, metalness: 0, map: feltTexture() })
     );
     this.felt.receiveShadow = true;
-    this.shadowCatcher = new Mesh(new PlaneGeometry(1, 1), new ShadowMaterial({ opacity: 0.38 }));
+    this.shadowCatcher = new Mesh(new PlaneGeometry(1, 1), new ShadowMaterial({ opacity: 0.5 }));
     this.shadowCatcher.receiveShadow = true;
     this.scene.add(this.felt, this.shadowCatcher);
 
@@ -215,9 +233,20 @@ export class Dice3dEngine {
       root.add(body);
       return body;
     });
+    const contacts = draw.dice.map(() => {
+      const contact = new Mesh(
+        this.contactGeometry,
+        new MeshBasicMaterial({ color: 0x000000, map: this.contactTexture, transparent: true, depthWrite: false })
+      );
+      root.add(contact);
+      return contact;
+    });
     return {
       root,
       bodies,
+      contacts,
+      radii: draw.dice.map((die) => dieRadiusOf(die.shape)),
+      restHeights: draw.dice.map((die) => polyhedronOf(die.shape).inradius * dieRadiusOf(die.shape)),
       result: draw.result,
       tray: draw.tray,
       restSeconds: draw.result.restFrame / FRAMES_PER_SECOND,
@@ -247,6 +276,8 @@ export class Dice3dEngine {
   dispose(): void {
     this.geometries.forEach((geometry) => geometry.dispose());
     this.materials.forEach(disposeMaterial);
+    this.contactGeometry.dispose();
+    this.contactTexture.dispose();
     this.renderer.dispose();
   }
 
@@ -384,6 +415,13 @@ function pose(prepared: PreparedThrow, seconds: number): void {
     q0.set(f[a + 3], f[a + 4], f[a + 5], f[a + 6]);
     q1.set(f[b + 3], f[b + 4], f[b + 5], f[b + 6]);
     body.quaternion.slerpQuaternions(q0, q1, t);
+
+    // The patch under the die spreads and fades as the die leaves the floor.
+    const lift = Math.max(0, body.position.z - prepared.restHeights[index]);
+    const contact = prepared.contacts[index];
+    contact.position.set(body.position.x, body.position.y, CONTACT_LIFT);
+    contact.scale.setScalar(prepared.radii[index] * CONTACT_SPREAD * (1 + lift * 0.12));
+    contact.material.opacity = CONTACT_OPACITY * Math.max(0, 1 - lift / CONTACT_FADE_HEIGHT);
   });
 }
 
@@ -420,6 +458,22 @@ function fitFrameCamera(camera: PerspectiveCamera, tray: Tray, aspect: number): 
   camera.far = far * 3;
   camera.updateMatrixWorld();
   camera.updateProjectionMatrix();
+}
+
+/** A round patch, darkest in the middle and fading out softly to nothing at its edge. */
+function contactTexture(): CanvasTexture {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  gradient.addColorStop(0, 'rgba(255,255,255,1)');
+  gradient.addColorStop(0.35, 'rgba(255,255,255,0.62)');
+  gradient.addColorStop(0.7, 'rgba(255,255,255,0.16)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  return new CanvasTexture(canvas);
 }
 
 /** A faint weave for the felt, so it reads as cloth rather than a flat colour. */
