@@ -9,6 +9,14 @@ export interface ConcealedEntry {
 }
 
 /**
+ * What something is listed as in the master's lists: its name, or a word for a thing with none,
+ * and beside it what kind of thing it is or where it is kept.
+ */
+export function listedThingLabel(name: string, note: string, t: TranslateFn): string {
+  return t('feature.boardSwitch.listed', { name: name.trim() || t('feature.boardSwitch.unnamedThing'), note });
+}
+
+/**
  * The master's entry for putting something on the table out of sight, until a switch or the table's
  * menu brings it back. Nobody else is offered it.
  */

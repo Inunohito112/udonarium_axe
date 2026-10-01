@@ -1,4 +1,8 @@
-import { buildConcealMenu, buildRevealMenu } from '@axe/features/tabletop/board-switch/concealment-context-menu';
+import {
+  buildConcealMenu,
+  buildRevealMenu,
+  listedThingLabel,
+} from '@axe/features/tabletop/board-switch/concealment-context-menu';
 import { createSyncTranslate } from '@axe/testing/transloco-testing';
 
 const t = createSyncTranslate('ja');
@@ -27,5 +31,11 @@ describe('the menus for putting things out of sight', () => {
     expect(menu.name).toBe('伏せた物を見せる');
     expect(menu.subActions?.map((entry) => entry.name)).toEqual(['隠し扉（地形）']);
     expect(reveal).toHaveBeenCalled();
+  });
+
+  it('lists a thing by its name and its kind, in the brackets the language writes', () => {
+    expect(listedThingLabel(' 隠し扉 ', '地形', t)).toBe('隠し扉（地形）');
+    expect(listedThingLabel('', '地形', t)).toBe('名前なし（地形）');
+    expect(listedThingLabel('Hidden door', 'Terrain', createSyncTranslate('en'))).toBe('Hidden door (Terrain)');
   });
 });

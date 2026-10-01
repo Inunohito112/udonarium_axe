@@ -4280,6 +4280,7 @@
       "concealHint": "Hides an object on the table where it stands. Hidden terrain can be walked and seen through.",
       "removeSelfHint": "After everything else, removes the switch's terrain from the table. Painted ground is put away so only the GM sees it. Trying it out does not remove it.",
       "unnamedThing": "Unnamed",
+      "listed": "{{name}} ({{note}})",
       "thing": {
         "terrain": "Terrain",
         "table-mask": "Map mask",

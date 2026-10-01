@@ -26,6 +26,7 @@ import {
 } from '@axe/domain/tabletop/board-switch/switch-definition';
 import { GameTable } from '@axe/domain/tabletop/game-table';
 import { TabletopObject } from '@axe/domain/tabletop/tabletop-object';
+import { listedThingLabel } from '@axe/features/tabletop/board-switch/concealment-context-menu';
 import { TranslocoModule } from '@jsverse/transloco';
 
 interface NameChoice {
@@ -198,13 +199,11 @@ export class SwitchActionListComponent {
   private templateLabelOf(piece: GameCharacter): string {
     const place = piece.location.name;
     const where = ['table', 'graveyard', CONCEALED_LOCATION].includes(place) ? place : 'other';
-    const name = piece.name.trim() || this.t('feature.boardSwitch.unnamedThing');
-    return `${name}（${this.t(`feature.boardSwitch.where.${where}`)}）`;
+    return listedThingLabel(piece.name, this.t(`feature.boardSwitch.where.${where}`), this.t);
   }
 
   private labelOf(object: TabletopObject): string {
-    const name = object.name.trim() || this.t('feature.boardSwitch.unnamedThing');
-    return `${name}（${this.t(`feature.boardSwitch.thing.${object.aliasName}`)}）`;
+    return listedThingLabel(object.name, this.t(`feature.boardSwitch.thing.${object.aliasName}`), this.t);
   }
 
   protected delaySeconds(action: SwitchAction): number {

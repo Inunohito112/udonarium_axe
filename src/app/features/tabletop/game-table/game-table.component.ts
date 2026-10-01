@@ -79,7 +79,7 @@ import { TableEffectOverlayComponent } from '@axe/features/effect/table-effect-o
 import { PeerCursorComponent } from '@axe/features/lobby/peer-cursor/peer-cursor.component';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { ReplayRouteOverlayComponent } from '@axe/features/replay/replay-route-overlay/replay-route-overlay.component';
-import { buildRevealMenu } from '@axe/features/tabletop/board-switch/concealment-context-menu';
+import { buildRevealMenu, listedThingLabel } from '@axe/features/tabletop/board-switch/concealment-context-menu';
 import { TableFogAirOverlayComponent } from '@axe/features/tabletop/fog-of-war/table-fog-air-overlay.component';
 import { beamTopGridGeometry, beamWallFaceGrid } from '@axe/features/tabletop/game-table/beam-top-grid';
 import { glideTransform } from '@axe/features/tabletop/game-table/game-table-camera';
@@ -952,9 +952,7 @@ export class GameTableComponent {
     const revealActions = buildRevealMenu(
       this.boardSwitches.canEdit(),
       this.concealment.concealed().map((object) => ({
-        label: `${object.name.trim() || this.t('feature.boardSwitch.unnamedThing')}（${this.t(
-          `feature.boardSwitch.thing.${object.aliasName}`
-        )}）`,
+        label: listedThingLabel(object.name, this.t(`feature.boardSwitch.thing.${object.aliasName}`), this.t),
         reveal: () => this.concealment.reveal(object),
       })),
       this.t
