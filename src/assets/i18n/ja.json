@@ -4578,6 +4578,7 @@
       "formula": "計算式",
       "imagePopupOriginal": "ポップアップで原寸表示",
       "pieceGauge": "コマにバーを表示",
+      "resourceSlider": "スライダー表示",
       "gaugeInverted": "マイナスリソース",
       "changeEffect": "増減でエフェクト",
       "changeSound": "増減で効果音",

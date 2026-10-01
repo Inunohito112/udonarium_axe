@@ -4578,6 +4578,7 @@
       "formula": "Formula",
       "imagePopupOriginal": "Show full size in popup",
       "pieceGauge": "Show a bar on the piece",
+      "resourceSlider": "Slider",
       "gaugeInverted": "Negative resource",
       "changeEffect": "Effect on change",
       "changeSound": "Sound on change",
