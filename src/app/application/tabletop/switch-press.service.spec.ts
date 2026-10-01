@@ -374,6 +374,38 @@ describe('SwitchPressService', () => {
       expect(goblin.location.name).toBe('graveyard');
     });
 
+    it('has each copy out of the graveyard before the next is made, so each is numbered after the last', async () => {
+      const goblin = GameCharacter.create('ゴブリン', 1, '');
+      goblin.location = { name: 'graveyard', x: 0, y: 0 } as never;
+      const made: GameCharacter[] = [];
+      const leftInGraveyard: number[] = [];
+      vi.spyOn(goblin, 'clone').mockImplementation(() => {
+        leftInGraveyard.push(made.filter((copy) => copy.location.name === 'graveyard').length);
+        const copy = GameCharacter.create(goblin.name, goblin.size, '');
+        copy.location = { name: 'graveyard', x: 0, y: 0 } as never;
+        made.push(copy);
+        return copy;
+      });
+
+      await presses.press(
+        chestAt(5, 5, {
+          actions: [
+            {
+              kind: 'spawn',
+              target: { identifier: goblin.identifier, name: 'ゴブリン' },
+              count: 3,
+              place: 'host',
+              delayMs: 0,
+              extra: {},
+            },
+          ],
+        })
+      );
+
+      expect(leftInGraveyard).toEqual([0, 0, 0]);
+      expect(onTable('ゴブリン')).toHaveLength(3);
+    });
+
     it('sets them down round the presser’s piece where asked to, finding the template by name', async () => {
       const goblin = GameCharacter.create('ゴブリン', 1, '');
       goblin.location = { name: 'graveyard', x: 0, y: 0 } as never;

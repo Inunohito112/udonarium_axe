@@ -332,6 +332,10 @@ export class SwitchPressService {
    *
    * Ground something is already standing on is passed over, and a copy that finds no room within
    * reach is not made at all rather than piled onto somebody. The piece copied stays where it is.
+   *
+   * Each copy is stood on the table as soon as it is made. A copy starts wherever the template is,
+   * which is usually the graveyard, and the numbering a copy is named by passes over the graveyard,
+   * so copies left there until all were made would every one of them take the same number.
    */
   private spawn(action: SwitchSpawn, context: PressContext): void {
     const grid = this.grid();
@@ -341,7 +345,11 @@ export class SwitchPressService {
     if (!grid || !table || !template) return;
     const start = this.spawnStart(grid, action, context);
     if (start < 0) return;
-    const copies = Array.from({ length: clampSwitchSpawn(action.count) }, () => template.clone());
+    const copies = Array.from({ length: clampSwitchSpawn(action.count) }, () => {
+      const copy = template.clone();
+      copy.location = { name: 'table', x: copy.location.x, y: copy.location.y };
+      return copy;
+    });
     const spots = gatherSpotsAround(grid, grid.sizePx, start, copies, occupiedCells(grid, characters, ''));
     const placed = new Set<GameCharacter>();
     for (const spot of spots) {
