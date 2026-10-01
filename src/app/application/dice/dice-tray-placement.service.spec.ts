@@ -8,8 +8,6 @@ import { VisionService } from '@axe/application/tabletop/vision.service';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
-const GRID = 50;
-
 /** A view of the table turned some way on the screen, about the page's origin. */
 function viewTurnedBy(degrees: number) {
   const [c, s] = [Math.cos((degrees * Math.PI) / 180), Math.sin((degrees * Math.PI) / 180)];
@@ -25,6 +23,8 @@ describe('DiceTrayPlacementService', () => {
   let visible = true;
   let concealed = false;
   let origin: HTMLElement;
+  /** The cell of the table on show, which the setup of every test gives. */
+  let grid: number;
   const made: { destroy(): void }[] = [];
 
   function speaker(x: number, y: number, z = 0): GameCharacter {
@@ -68,12 +68,12 @@ describe('DiceTrayPlacementService', () => {
             convertToLocal: (p: PointerCoordinate) => view.toTable(p),
           },
         },
-        { provide: TabletopService, useValue: { currentTable: { gridSize: GRID } } },
         { provide: VisionService, useValue: { isTokenVisible: () => visible } },
         { provide: ConcealmentService, useValue: { isConcealed: () => concealed } },
       ],
     });
     service = TestBed.inject(DiceTrayPlacementService);
+    grid = TestBed.inject(TabletopService).currentTable.gridSize;
   });
 
   afterEach(() => {
@@ -87,8 +87,8 @@ describe('DiceTrayPlacementService', () => {
     const placement = service.placementFor(lineFrom(piece), 2)!;
 
     const { centre, up } = laid(placement.model);
-    expect(centre.x).toBeCloseTo(225, 6);
-    expect(centre.y).toBeCloseTo(325 + IN_FRONT_CELLS * GRID, 6);
+    expect(centre.x).toBeCloseTo(200 + grid / 2, 6);
+    expect(centre.y).toBeCloseTo(300 + grid / 2 + IN_FRONT_CELLS * grid, 6);
     expect(centre.z).toBe(40);
     expect(up.x).toBeCloseTo(0, 6);
     expect(up.y).toBeCloseTo(-1, 6);
@@ -103,10 +103,10 @@ describe('DiceTrayPlacementService', () => {
     const { centre, up } = laid(placement.model);
     expect(up.x).toBeCloseTo(0, 6);
     expect(up.y).toBeCloseTo(-1, 6);
-    const foot = view.toPage({ x: 225, y: 325, z: 0 });
+    const foot = view.toPage({ x: 200 + grid / 2, y: 300 + grid / 2, z: 0 });
     const landed = view.toPage(centre);
     expect(landed.x).toBeCloseTo(foot.x, 6);
-    expect(landed.y).toBeCloseTo(foot.y + IN_FRONT_CELLS * GRID, 6);
+    expect(landed.y).toBeCloseTo(foot.y + IN_FRONT_CELLS * grid, 6);
   });
 
   it('keeps the tray’s width across the screen and its height off the table, the dice half a cell large', () => {
@@ -117,7 +117,7 @@ describe('DiceTrayPlacementService', () => {
     expect(rx).toBeGreaterThan(0);
     expect(up).toBeCloseTo(Math.hypot(rx, ry), 9);
     const d6Edge = (2 * 0.92) / Math.sqrt(3);
-    expect(d6Edge * up).toBeCloseTo(DIE_CELLS * GRID, 6);
+    expect(d6Edge * up).toBeCloseTo(DIE_CELLS * grid, 6);
   });
 
   it('throws the dice in the middle of the screen for a piece out of sight, hidden away, or for no piece', () => {
@@ -136,6 +136,20 @@ describe('DiceTrayPlacementService', () => {
     concealed = true;
     const { centre } = laid(service.placementFor(lineFrom(speaker(500, 500)), 1)!.model);
     expect(centre.x).toBeCloseTo(middle.x, 6);
+  });
+
+  it('keeps the tray on the board when the piece that rolled stands at its edge', () => {
+    const table = TestBed.inject(TabletopService).currentTable;
+    const [width, depth] = [table.width * table.gridSize, table.height * table.gridSize];
+    const piece = speaker(width - table.gridSize, depth - table.gridSize);
+
+    const { model, tray } = service.placementFor(lineFrom(piece), 2)!;
+
+    const scale = model[10];
+    const { centre } = laid(model);
+    expect(centre.x + tray.halfWidth * scale).toBeLessThanOrEqual(width + 1e-6);
+    expect(centre.y + tray.halfDepth * scale).toBeLessThanOrEqual(depth + 1e-6);
+    expect(centre.x - tray.halfWidth * scale).toBeGreaterThanOrEqual(-1e-6);
   });
 
   it('gives more dice more room', () => {

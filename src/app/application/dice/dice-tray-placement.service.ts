@@ -51,7 +51,8 @@ export class DiceTrayPlacementService {
   placementFor(speakerIdentifier: string, count: number): TablePlacement | null {
     const origin = this.coordinates.tabletopOriginElement;
     if (!origin || origin === document.body || !origin.isConnected) return null;
-    const grid = this.tabletop.currentTable.gridSize;
+    const table = this.tabletop.currentTable;
+    const grid = table.gridSize;
     if (!(grid > 0)) return null;
 
     const scale = (grid * DIE_CELLS) / D6_EDGE;
@@ -61,9 +62,16 @@ export class DiceTrayPlacementService {
     const speaker = this.speakerOf(speakerIdentifier);
     const ground = speaker ? this.footOf(speaker, grid) : this.middleOfScreen();
     const [ax, ay] = this.upTheScreenAt(ground);
-    const [x, y] = speaker ? [ground[0] - ax * IN_FRONT_CELLS * grid, ground[1] - ay * IN_FRONT_CELLS * grid] : ground;
     // Across the screen is up the screen turned a quarter clockwise on the table.
     const [rx, ry] = [-ay, ax];
+    const wanted: [number, number] = speaker
+      ? [ground[0] - ax * IN_FRONT_CELLS * grid, ground[1] - ay * IN_FRONT_CELLS * grid]
+      : [ground[0], ground[1]];
+    const reach: [number, number] = [
+      (Math.abs(rx) * tray.halfWidth + Math.abs(ax) * tray.halfDepth) * scale,
+      (Math.abs(ry) * tray.halfWidth + Math.abs(ay) * tray.halfDepth) * scale,
+    ];
+    const [x, y] = onTheBoard(wanted, reach, [table.width * grid, table.height * grid]);
     return {
       tray,
       model: [rx * scale, ry * scale, 0, 0, ax * scale, ay * scale, 0, 0, 0, 0, scale, 0, x, y, ground[2], 1],
@@ -103,4 +111,21 @@ export class DiceTrayPlacementService {
     const length = Math.hypot(dx, dy);
     return length > 1e-6 && Number.isFinite(length) ? [dx / length, dy / length] : [0, -1];
   }
+}
+
+/**
+ * Where a tray reaching so far each way from its middle lies when it is moved no more than it must
+ * be to stay on the board; one larger than the board is set in its middle.
+ */
+function onTheBoard(
+  [x, y]: readonly [number, number],
+  reach: readonly [number, number],
+  size: readonly [number, number]
+): [number, number] {
+  const fit = (at: number, half: number, length: number) => {
+    if (!(length > 0)) return at;
+    if (half * 2 >= length) return length / 2;
+    return Math.min(length - half, Math.max(half, at));
+  };
+  return [fit(x, reach[0], size[0]), fit(y, reach[1], size[1])];
 }
