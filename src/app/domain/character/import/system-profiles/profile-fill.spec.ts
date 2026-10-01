@@ -24,6 +24,23 @@ describe('reading a warehouse sheet the same way whichever way it came in', () =
     expect(fromUrl.params).toEqual(fromJson.params);
   });
 
+  it('counts life by its boxes and still brings the rest, where the sheet keeps both', () => {
+    const boxed = {
+      ...SHINOBIGAMI,
+      skills: { ...SHINOBIGAMI.skills, damage: { check0: '0', check1: null, check2: null, check3: null } },
+    };
+
+    const fromUrl = parseAppspotCharacterForSystem(boxed, 'shinobigami')!;
+
+    expect(fromUrl.statuses).toEqual([
+      { label: '生命力', value: 5, max: 6 },
+      { label: '兵糧丸', value: 2, max: 2 },
+    ]);
+    expect(fromUrl.statuses.map((status) => status.label)).toEqual(
+      parseAppspotCharacterForSystem(boxed)!.statuses.map((status) => status.label)
+    );
+  });
+
   it('still says everything only the profile could say', () => {
     const fromUrl = parseAppspotCharacterForSystem(SHINOBIGAMI, 'shinobigami')!;
 

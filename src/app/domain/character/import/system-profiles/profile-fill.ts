@@ -18,3 +18,17 @@ export function fillFromGeneral(profile: ImportedCharacter, general: ImportedCha
   if (profile.dicebot.trim() === '') profile.dicebot = general.dicebot;
   return profile;
 }
+
+/**
+ * Puts the resources the general reading found after the ones a profile counted itself.
+ *
+ * For a profile that counts one resource its own way, such as life kept as boxes to cross off,
+ * and has nothing to say about the rest: filling only an empty list would lose every other
+ * resource the sheet keeps. A resource both name is the profile's.
+ */
+export function addGeneralStatuses(profile: ImportedCharacter, general: ImportedCharacter | null): ImportedCharacter {
+  if (!general) return profile;
+  const named = new Set(profile.statuses.map((status) => status.label));
+  profile.statuses = [...profile.statuses, ...general.statuses.filter((status) => !named.has(status.label))];
+  return profile;
+}
