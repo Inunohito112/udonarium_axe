@@ -18,7 +18,7 @@ import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { DiceStage } from '@axe/domain/dice/dice-3d/dice-stage';
 import { Quat, quatRotate } from '@axe/domain/dice/dice-3d/rotation';
-import { encodeDiceRollDetail } from '@axe/domain/dice/dice-roll-detail';
+import { DiceRollOutcome, encodeDiceRollDetail } from '@axe/domain/dice/dice-roll-detail';
 import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
@@ -52,6 +52,7 @@ describe('DiceThrowService', () => {
     to?: string;
     timestamp?: number;
     color?: string;
+    outcome?: DiceRollOutcome;
   }
 
   /** The dice bot's answer to a roll, put in the tab. */
@@ -69,7 +70,7 @@ describe('DiceThrowService', () => {
       messColor: options.color ?? '#3b5bdb',
       dicebot: encodeDiceRollDetail({
         system: 'DiceBot',
-        outcome: '',
+        outcome: options.outcome ?? '',
         faces: (options.faces ?? [{ sides: 20, value: 17 }]).map((face) => ({ ...face, kind: 'normal' })),
       }),
     });
@@ -149,6 +150,15 @@ describe('DiceThrowService', () => {
     await vi.waitFor(() => expect(thrown(line)?.phase).toBe('settled'), {
       timeout: (result.frameCount / 60) * 1000 + 2000,
     });
+  });
+
+  it('carries whether the roll was a critical or a fumble, for the dice to flash', async () => {
+    const line = answer({ outcome: 'critical' });
+
+    callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+
+    await vi.waitFor(() => expect(thrown(line)?.phase).toBe('rolling'));
+    expect(thrown(line)?.outcome).toBe('critical');
   });
 
   it('comes to rest as long after it began to play on the screen as its dice take, not after it was worked out', async () => {

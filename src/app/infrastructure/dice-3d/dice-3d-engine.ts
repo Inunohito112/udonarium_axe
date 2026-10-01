@@ -6,6 +6,7 @@ import { DiceThrowResult, FRAME_STRIDE, FRAMES_PER_SECOND } from '@axe/infrastru
 import { diceStudio } from '@axe/infrastructure/dice-3d/dice-studio';
 import { DiceLook, drawDiceAtlas, lookFor } from '@axe/infrastructure/dice-3d/dice-textures';
 import {
+  AdditiveBlending,
   AgXToneMapping,
   BufferAttribute,
   BufferGeometry,
@@ -45,6 +46,8 @@ export interface ThrowToDraw {
   readonly dice: readonly DieOfThrow[];
   /** The colour of the dice, which their numbers are inked to stand out from. */
   readonly color: string;
+  /** A critical or a fumble, which the dice flash gold or red as they come to rest; empty for neither. */
+  readonly accent?: 'critical' | 'fumble' | '';
   readonly tray: Tray;
   readonly result: DiceThrowResult;
 }
@@ -90,6 +93,10 @@ export interface PreparedThrow {
   readonly restSeconds: number;
   /** How long the recording runs, in seconds. */
   readonly totalSeconds: number;
+  /** How long the throw has something to show, the flash of a critical or a fumble included, in seconds. */
+  readonly endSeconds: number;
+  /** The ring of light under each die that a critical or a fumble flashes. */
+  readonly halos: readonly Mesh<PlaneGeometry, MeshBasicMaterial>[];
 }
 
 /**
@@ -102,6 +109,13 @@ const CONTACT_SPREAD = 2.3;
 const CONTACT_FADE_HEIGHT = 3;
 /** How far above the floor the patch lies, so it is drawn over the floor and not into it. */
 const CONTACT_LIFT = 0.02;
+/**
+ * The ring of light a critical or a fumble flashes under each die as it comes to rest: its colour,
+ * how wide beside the die, and how long it swells and fades, in seconds.
+ */
+const ACCENT_COLORS = { critical: 0xffc53d, fumble: 0xff3344 } as const;
+const HALO_SPREAD = 3.4;
+const ACCENT_SECONDS = 1.1;
 /** The colour of the felt the dice land on in a frame. */
 const FELT = '#2b2f36';
 const TEXTURE_CACHE_SIZE = 24;
@@ -140,6 +154,7 @@ export class Dice3dEngine {
   private readonly geometries = new Map<DieShape, BufferGeometry>();
   private readonly contactGeometry = new PlaneGeometry(1, 1);
   private readonly contactTexture = contactTexture();
+  private readonly haloTexture = haloTexture();
   private readonly materials = new Map<string, MeshPhysicalMaterial>();
   private lost = false;
 
@@ -241,16 +256,38 @@ export class Dice3dEngine {
       root.add(contact);
       return contact;
     });
+    const accent = draw.accent ? ACCENT_COLORS[draw.accent] : null;
+    const halos = accent
+      ? draw.dice.map(() => {
+          const halo = new Mesh(
+            this.contactGeometry,
+            new MeshBasicMaterial({
+              color: accent,
+              map: this.haloTexture,
+              transparent: true,
+              depthWrite: false,
+              blending: AdditiveBlending,
+              opacity: 0,
+            })
+          );
+          root.add(halo);
+          return halo;
+        })
+      : [];
+    const restSeconds = draw.result.restFrame / FRAMES_PER_SECOND;
+    const totalSeconds = (draw.result.frameCount - 1) / FRAMES_PER_SECOND;
     return {
       root,
       bodies,
+      halos,
+      endSeconds: accent ? Math.max(totalSeconds, restSeconds + ACCENT_SECONDS) : totalSeconds,
       contacts,
       radii: draw.dice.map((die) => dieRadiusOf(die.shape)),
       restHeights: draw.dice.map((die) => polyhedronOf(die.shape).inradius * dieRadiusOf(die.shape)),
       result: draw.result,
       tray: draw.tray,
-      restSeconds: draw.result.restFrame / FRAMES_PER_SECOND,
-      totalSeconds: (draw.result.frameCount - 1) / FRAMES_PER_SECOND,
+      restSeconds,
+      totalSeconds,
     };
   }
 
@@ -278,6 +315,7 @@ export class Dice3dEngine {
     this.materials.forEach(disposeMaterial);
     this.contactGeometry.dispose();
     this.contactTexture.dispose();
+    this.haloTexture.dispose();
     this.renderer.dispose();
   }
 
@@ -422,6 +460,16 @@ function pose(prepared: PreparedThrow, seconds: number): void {
     contact.position.set(body.position.x, body.position.y, CONTACT_LIFT);
     contact.scale.setScalar(prepared.radii[index] * CONTACT_SPREAD * (1 + lift * 0.12));
     contact.material.opacity = CONTACT_OPACITY * Math.max(0, 1 - lift / CONTACT_FADE_HEIGHT);
+
+    // A critical or a fumble swells a ring of light under the die as it stops, and lets it go.
+    const halo = prepared.halos[index];
+    if (halo) {
+      const since = (seconds - prepared.restSeconds) / ACCENT_SECONDS;
+      const swell = since > 0 && since < 1 ? Math.sin(Math.PI * since) : 0;
+      halo.position.set(body.position.x, body.position.y, CONTACT_LIFT * 2);
+      halo.scale.setScalar(prepared.radii[index] * HALO_SPREAD * (0.85 + 0.25 * since));
+      halo.material.opacity = swell;
+    }
   });
 }
 
@@ -458,6 +506,22 @@ function fitFrameCamera(camera: PerspectiveCamera, tray: Tray, aspect: number): 
   camera.far = far * 3;
   camera.updateMatrixWorld();
   camera.updateProjectionMatrix();
+}
+
+/** A ring, bright a little in from its edge and fading softly to nothing inside and out. */
+function haloTexture(): CanvasTexture {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  gradient.addColorStop(0, 'rgba(255,255,255,0)');
+  gradient.addColorStop(0.42, 'rgba(255,255,255,0.08)');
+  gradient.addColorStop(0.72, 'rgba(255,255,255,1)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  return new CanvasTexture(canvas);
 }
 
 /** A round patch, darkest in the middle and fading out softly to nothing at its edge. */

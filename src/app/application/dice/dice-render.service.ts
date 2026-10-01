@@ -187,8 +187,8 @@ export class DiceRenderService {
       const diceThrow = throws.get(id);
       if (!diceThrow?.result || diceThrow.phase === 'failed' || diceThrow.stage !== 'frame') continue;
       const prepared = this.preparedFor(engine, diceThrow);
-      const seconds = diceThrow.still ? prepared.totalSeconds : (now - this.playedFrom(diceThrow, now)) / 1000;
-      const tumbling = seconds < prepared.totalSeconds;
+      const seconds = diceThrow.still ? prepared.endSeconds : (now - this.playedFrom(diceThrow, now)) / 1000;
+      const tumbling = seconds < prepared.endSeconds;
       moving ||= tumbling;
       const due = stages.filter((stage) => (tumbling || !stage.drawn) && stage.width > 0);
       if (due.length < 1) continue;
@@ -197,7 +197,7 @@ export class DiceRenderService {
       const height = Math.max(...due.map((stage) => stage.height));
       const region = engine.render(
         prepared,
-        Math.min(seconds, prepared.totalSeconds),
+        Math.min(seconds, prepared.endSeconds),
         { kind: 'frame' },
         { width, height, pixelRatio }
       );
@@ -227,13 +227,13 @@ export class DiceRenderService {
     for (const diceThrow of showing) {
       const prepared = this.preparedFor(engine, diceThrow);
       const seconds = (now - this.playedFrom(diceThrow, now)) / 1000;
-      const total = diceThrow.still ? 0 : prepared.totalSeconds;
+      const total = diceThrow.still ? 0 : prepared.endSeconds;
       const fadeFrom = total + TABLE_HOLD_SECONDS;
       const shot = this.shotOf(diceThrow.placement!.model, diceThrow.tray, host, now);
       if (!shot) continue;
       const region = engine.render(
         prepared,
-        diceThrow.still ? prepared.totalSeconds : Math.min(seconds, total),
+        diceThrow.still ? prepared.endSeconds : Math.min(seconds, total),
         { kind: 'table', projection: shot.clip, eye: shot.eye },
         { width: shot.width, height: shot.height, pixelRatio }
       );
@@ -258,7 +258,7 @@ export class DiceRenderService {
   private isOnTable(engine: DiceEngine, diceThrow: DiceThrow, now: number): boolean {
     if (diceThrow.stage !== 'table' || !diceThrow.result || !diceThrow.placement) return false;
     if (diceThrow.phase === 'failed') return false;
-    const total = diceThrow.still ? 0 : this.preparedFor(engine, diceThrow).totalSeconds;
+    const total = diceThrow.still ? 0 : this.preparedFor(engine, diceThrow).endSeconds;
     return (now - this.playedFrom(diceThrow, now)) / 1000 < total + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS;
   }
 
@@ -366,6 +366,7 @@ export class DiceRenderService {
     const prepared = engine.prepare({
       dice: diceThrow.dice,
       color: diceThrow.color,
+      accent: diceThrow.outcome === 'critical' || diceThrow.outcome === 'fumble' ? diceThrow.outcome : '',
       tray: diceThrow.tray,
       result: diceThrow.result!,
     });

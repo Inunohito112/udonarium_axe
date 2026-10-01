@@ -23,6 +23,7 @@ function throwOf(id: string, change: Partial<DiceThrow> = {}): DiceThrow {
     startedAt: 0,
     still: false,
     shown: ['17', '2'],
+    outcome: '',
     ...change,
   };
 }

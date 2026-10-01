@@ -24,8 +24,16 @@ class StandInEngine {
   readonly drawn: { id: string; seconds: number; width: number; kind: string }[] = [];
   disposed = false;
 
-  prepare(draw: { color: string }): PreparedThrow {
-    return { totalSeconds: ROLL_SECONDS, restSeconds: ROLL_SECONDS, id: draw.color } as unknown as PreparedThrow;
+  readonly accents: string[] = [];
+
+  prepare(draw: { color: string; accent?: string }): PreparedThrow {
+    this.accents.push(draw.accent ?? '');
+    return {
+      totalSeconds: ROLL_SECONDS,
+      restSeconds: ROLL_SECONDS,
+      endSeconds: ROLL_SECONDS,
+      id: draw.color,
+    } as unknown as PreparedThrow;
   }
 
   render(prepared: PreparedThrow, seconds: number, view: { kind: string }, size: { width: number; height: number }) {
@@ -61,6 +69,7 @@ function throwOf(id: string, change: Partial<DiceThrow> = {}): DiceThrow {
     startedAt: 0,
     still: false,
     shown: ['1'],
+    outcome: '',
     ...change,
   };
 }
@@ -182,6 +191,21 @@ describe('DiceRenderService', () => {
     await nextFrame(2600);
 
     expect(played).toEqual([['a', 2500]]);
+  });
+
+  it('flashes the dice of a critical or a fumble, and no other roll', async () => {
+    throws.set(
+      new Map([
+        ['a', throwOf('a', { outcome: 'critical' })],
+        ['b', throwOf('b', { outcome: 'fumble' })],
+        ['c', throwOf('c', { outcome: 'success' })],
+      ])
+    );
+    for (const id of ['a', 'b', 'c']) service.register(document.createElement('canvas'), id).resize(300, 90);
+    await nextFrame(0);
+    await nextFrame(16);
+
+    expect(engine.accents).toEqual(['critical', 'fumble', '']);
   });
 
   it('shows a throw first drawn long after it was worked out at rest, without throwing it again', async () => {

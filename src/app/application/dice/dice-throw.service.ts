@@ -15,6 +15,7 @@ import { Quat, quatFromAxisAngle, quatMultiply, quatRotate, UP } from '@axe/doma
 import { throwSeedOf } from '@axe/domain/dice/dice-3d/throw-seed';
 import { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
 import { FRAME_TRAY_AREA, frameAspectFor, trayFor } from '@axe/domain/dice/dice-3d/tray-size';
+import { DiceRollOutcome } from '@axe/domain/dice/dice-roll-detail';
 import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { faceFramesOf } from '@axe/infrastructure/dice-3d/dice-geometry';
@@ -63,6 +64,8 @@ export interface DiceThrow {
   readonly still: boolean;
   /** What each drawn die shows once at rest, read off how it is turned. */
   readonly shown: readonly string[];
+  /** Whether the roll was a critical or a fumble, which the dice flash as they come to rest. */
+  readonly outcome: DiceRollOutcome;
 }
 
 const BLANK_COLOR = '#202024';
@@ -146,6 +149,7 @@ export class DiceThrowService {
       startedAt: 0,
       still,
       shown: [],
+      outcome: message.rollDetail?.outcome ?? '',
     });
 
     const result = still
