@@ -172,6 +172,19 @@ describe('CompassComponent under a magnetic anomaly', () => {
     expect(((roseAngle() % 360) + 360) % 360).toBeCloseTo(10, 6);
   });
 
+  it('keeps nothing ticking over for a needle nobody can see', () => {
+    TestBed.inject(WidgetVisibilityService).compass.set(false);
+    setAnomaly(true);
+    TestBed.tick();
+
+    expect(vi.getTimerCount()).toBe(0);
+
+    TestBed.inject(WidgetVisibilityService).compass.set(true);
+    TestBed.tick();
+
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+  });
+
   it('leaves the needle where north is for a seat that asked for less movement', () => {
     motion.setting.set('off');
     fixture.detectChanges();

@@ -78,19 +78,27 @@ export class CompassComponent {
 
   private swing: NeedleSwing = { angle: this.drawnAngle, rate: 0 };
 
+  /**
+   * Whether the needle is swinging under the field just now.
+   *
+   * Only while the compass is out: nothing is drawn while it is put away, so there is nothing for
+   * the needle to be shoved round for. A needle that never settles is exactly the sort of thing
+   * somebody asking for less movement wants none of, so for them it is told where north is and
+   * left there.
+   */
+  private readonly swinging = computed(() => this.widgets.compass() && this.anomalous() && this.motion.enabled());
+
   constructor() {
     effect(() => {
       // Under an anomaly the needle answers to the field rather than to the table, and comes back
       // round to north by the short way the moment the table is left behind.
-      if (this.anomalous() && this.motion.enabled()) return;
+      if (this.swinging()) return;
       this.drawnAngle = nearestTurnTo(northNeedleAngle(this.uiSignal.tableViewRotationZ()), this.drawnAngle);
       this.roseAngle.set(this.drawnAngle);
     });
 
     effect((onCleanup) => {
-      // A needle that never settles is exactly the sort of thing somebody asking for less movement
-      // wants none of, so it is told where north is and left there.
-      if (!this.anomalous() || !this.motion.enabled()) return;
+      if (!this.swinging()) return;
       this.swing = { angle: this.drawnAngle, rate: 0 };
       const timer = setInterval(() => {
         this.swing = swingNeedle(this.swing, SWING_SECONDS, Math.random() * 2 - 1);
