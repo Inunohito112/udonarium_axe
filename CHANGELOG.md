@@ -1,3 +1,52 @@
+## [1.59.0](https://github.com/Xelltis/udonarium_axe/compare/v1.58.0...v1.59.0) (2026-10-01)
+
+### ✨ Features
+
+* **map-editor:** paint ground that is pressed rather than walked on ([d06de70](https://github.com/Xelltis/udonarium_axe/commit/d06de70a1fac64f0adb2b51cf9787b9c91af7225))
+* **tabletop:** let a switch be held to reach, sight and a count ([faf4ca3](https://github.com/Xelltis/udonarium_axe/commit/faf4ca3e793b77cf72935302c5bed276af5a3637))
+* **tabletop:** let a switch bring hidden things out and put things away ([a9e5221](https://github.com/Xelltis/udonarium_axe/commit/a9e5221c7c9275c038dc385d4f90a21fe0fd711a))
+* **tabletop:** let a switch call up copies of a piece ([6720bb9](https://github.com/Xelltis/udonarium_axe/commit/6720bb9b096eb8d08d9d0aa4f71465a1f99f8e96))
+* **tabletop:** let a switch change the scene, carry a piece and set the table ([ac717c1](https://github.com/Xelltis/udonarium_axe/commit/ac717c165a1e50b9110b73c2bbe18414702ebabf))
+* **tabletop:** let a table have a field a compass cannot read ([b3a92c5](https://github.com/Xelltis/udonarium_axe/commit/b3a92c51b7f32a5b5f75ff913d64507108d7caef))
+* **tabletop:** let the master clear the presses on painted ground ([646278c](https://github.com/Xelltis/udonarium_axe/commit/646278c8e5795aead7ae79a48f9086cb02e64516))
+* **tabletop:** let the master make a block into a switch ([f022f5a](https://github.com/Xelltis/udonarium_axe/commit/f022f5a5feeee82d610595e1548bf6cf55414d2b))
+* **ui:** have every button say what it is at once ([5a6d9e2](https://github.com/Xelltis/udonarium_axe/commit/5a6d9e25d87d2ac83283a7c32775cb38f1df8387))
+* **ui:** put the inventory on both toolbars from the start ([7cea371](https://github.com/Xelltis/udonarium_axe/commit/7cea371ddd2e61b17597e65e45cd3d2805b779ba))
+* **widgets:** give the compass a face to be drawn with ([24c84e7](https://github.com/Xelltis/udonarium_axe/commit/24c84e7e24127410f196b195414809f68a05fa49))
+* **widgets:** show which way the table is facing ([63d3370](https://github.com/Xelltis/udonarium_axe/commit/63d3370b902f67435bf631f83fa9189f3f1e41ff))
+
+### 🐛 Bug Fixes
+
+* **character:** bring a sheet's resources in from its address as well ([4259f16](https://github.com/Xelltis/udonarium_axe/commit/4259f169b1c98e9e39f0f217a54837589d42eeb1))
+* **character:** keep a sheet's other resources beside life counted in boxes ([3804861](https://github.com/Xelltis/udonarium_axe/commit/3804861c12349d545a2d908219306c6669232e25))
+* **character:** read what a warehouse piece has left, however it is kept ([1cbf92a](https://github.com/Xelltis/udonarium_axe/commit/1cbf92a833975cafcfd059a7f9e97d066226faa8))
+* **map-editor:** keep blocks put out of sight in the painting ([d4919d9](https://github.com/Xelltis/udonarium_axe/commit/d4919d952f5bc399f810abe8996211fcd37ed744))
+* **tabletop:** list hidden things in the reader's own brackets ([9de34cf](https://github.com/Xelltis/udonarium_axe/commit/9de34cf5c6b4a0aba709ac624208ff665b14e65d))
+* **tabletop:** number each copy a switch calls up after the last ([0aabb39](https://github.com/Xelltis/udonarium_axe/commit/0aabb39646f1fcf132fc53c20d90011d022bcfa3))
+* **tabletop:** open the switch panel wide enough for its actions ([cd7b53c](https://github.com/Xelltis/udonarium_axe/commit/cd7b53cee64524405b79697973de01dbdba2061c))
+* **ui:** keep a way into the menus that no arrangement can take away ([5cb4c72](https://github.com/Xelltis/udonarium_axe/commit/5cb4c72e076d6b6d9c528d09f8da3b190f89a8b3))
+* **widgets:** let the compass take its ground from the theme ([05060d5](https://github.com/Xelltis/udonarium_axe/commit/05060d5bf9e02b492cce7b4de363b9e978d8bd1c))
+* **widgets:** stop the compass whipping round as the table crosses north ([b188e2f](https://github.com/Xelltis/udonarium_axe/commit/b188e2fd9eb73e8d93295c843bac11d3b232665f))
+
+### ⚡ Performance
+
+* **compass:** leave the needle still while the compass is put away ([cae16f4](https://github.com/Xelltis/udonarium_axe/commit/cae16f46bd59141e4ba545cd198a9aaa01878fde))
+* **tabletop:** look the room over once per change for the switch panel's pickers ([92fb8f7](https://github.com/Xelltis/udonarium_axe/commit/92fb8f7f01892071c013fe29e4a16755b741442a))
+
+### 📝 Documentation
+
+* **website:** add a manual page for switches ([91b64f7](https://github.com/Xelltis/udonarium_axe/commit/91b64f76a059dcfa9e29a098f10c5c598d247c5d))
+* **website:** say how to clear the presses on painted ground ([3ddd4c1](https://github.com/Xelltis/udonarium_axe/commit/3ddd4c11ba91db1daa848558f07fba47113cce65))
+* **website:** say how to see every button's name at once ([e45123a](https://github.com/Xelltis/udonarium_axe/commit/e45123a857d6c253ba909aaaae66ad2ca064404b))
+* **website:** say what the compass shows ([47df86a](https://github.com/Xelltis/udonarium_axe/commit/47df86a870f3801669f435a3e638d9fbf0b9f6c5))
+* **website:** say what the magnetic anomaly does ([b82cddf](https://github.com/Xelltis/udonarium_axe/commit/b82cddfcf9196212c84c83631c8a423f224db808))
+* **website:** write the release notes for v1.59.0 ([0bf77da](https://github.com/Xelltis/udonarium_axe/commit/0bf77dabc419887f8fe0982517be4b7a87d959f5))
+
+### ♻️ Refactor
+
+* **tabletop:** play named effects, sounds and cut-ins from one place ([6b6910d](https://github.com/Xelltis/udonarium_axe/commit/6b6910d645d08c3806c2094bf982ff60fa184c23))
+* **tabletop:** tidy the switch helpers ([ab2ac72](https://github.com/Xelltis/udonarium_axe/commit/ab2ac72f7eb2c55268b1216c6d1b3c4a926a5c6b))
+
 ## [1.58.0](https://github.com/Xelltis/udonarium_axe/compare/v1.57.1...v1.58.0) (2026-09-29)
 
 ### ✨ Features
