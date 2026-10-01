@@ -5,6 +5,7 @@ import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { ChatTabList } from '@axe/domain/chat/chat-tab-list';
+import { DiceBot } from '@axe/domain/dice/dice-bot';
 import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
@@ -36,6 +37,10 @@ describe('CharacterMacroService', () => {
     ChatTabList.instance.addChatTab(tab);
 
     sendMessage = vi.spyOn(chatMessageService, 'sendMessage').mockReturnValue(null as never);
+    // Which system a line goes out under is what is asked here, not whether the dice code can be
+    // fetched. The first real fetch in a worker pays for starting the whole loader, which under a
+    // full run can take longer than a test is given.
+    vi.spyOn(DiceBot, 'loadGameSystemAsync').mockImplementation(async (gameType) => ({ ID: gameType }) as never);
   });
 
   afterEach(() => {
