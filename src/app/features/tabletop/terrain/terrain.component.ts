@@ -23,6 +23,7 @@ import { SwitchPressService } from '@axe/application/tabletop/switch-press.servi
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TerrainFogCover, VisionService } from '@axe/application/tabletop/vision.service';
 import { ButtonGuideService } from '@axe/application/ui/button-guide.service';
+import { SWITCH_NOTICE_MS } from '@axe/application/ui/switch-notice.service';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { imageFileEqual } from '@axe/core/storage/image-file';
 import { ImageFile } from '@axe/core/storage/image-file';
@@ -94,9 +95,6 @@ interface TerrainGridViewport extends TerrainGridBounds {
 
 /** How far a pointer may wander between pressing a switch and letting go, and still press it. */
 const PRESS_SLOP_PX = 6;
-
-/** How long a switch that could not be pressed says why, over the block. */
-const NOTICE_MS = 1800;
 
 /** The same list, or two empty ones: an empty @for renders nothing either way. */
 function sameOrBothEmpty<T>(a: readonly T[], b: readonly T[]): boolean {
@@ -476,7 +474,7 @@ export class TerrainComponent {
     this.noticeTimer = setTimeout(() => {
       this.noticeTimer = null;
       this.switchNotice.set('');
-    }, NOTICE_MS);
+    }, SWITCH_NOTICE_MS);
   }
 
   protected onDoorClick(): void {

@@ -308,7 +308,6 @@ function hexFootprintOf(
   };
 }
 
-/** What one piece of trigger ground looks like to the editor, which is everything but its state. */
 /**
  * Writes pressed ground down as a trap already spent, for the versions that have never heard of
  * pressing.
@@ -323,6 +322,7 @@ function guardPressedGround(trigger: TableTrigger): void {
   trigger.spent = true;
 }
 
+/** What one piece of trigger ground looks like to the editor, which is everything but its state. */
 function triggerSpecOf(trigger: TableTrigger): TriggerPaintSpec {
   return {
     name: trigger.name,

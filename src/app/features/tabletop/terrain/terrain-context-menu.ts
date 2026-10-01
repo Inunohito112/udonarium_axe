@@ -51,7 +51,8 @@ export function buildTerrainContextMenu(
  * It covers altitude and shadow, lock, slope, walls, climbing, doors, turning the block to glass,
  * texture tiling, shading, sight and light, edit, copy, delete and creating an object. Entries
  * for other pieces under the pointer lead the list, the master's entries for the block's switch
- * come just before editing it, and entries that move the terrain to another surface close it. A copy is placed one cell down and to the right, unlocked.
+ * come just before editing it, and entries that move the terrain to another surface close it. A
+ * copy is placed one cell down and to the right, unlocked.
  */
 export function buildTerrainContextMenuModel(
   terrain: Terrain,

@@ -250,6 +250,7 @@ const SPAWN_KEYS = ['kind', 'delayMs', 'target', 'count', 'place'];
 const SHOW_TABLE_KEYS = ['kind', 'delayMs', 'table'];
 const CARRY_KEYS = ['kind', 'delayMs', 'col', 'row', 'table'];
 const TABLE_SETTING_KEYS = ['kind', 'delayMs', 'darkness', 'fog', 'image', 'bgm', 'bgmStop'];
+const CUE_KEYS = ['kind', 'delayMs', 'name'];
 
 function readToggle(value: unknown): SwitchToggle {
   return value === 'on' || value === 'off' ? value : 'keep';
@@ -259,7 +260,6 @@ function readCell(value: unknown): number {
   const held = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(held) && held > 0 ? Math.min(999, Math.round(held)) : 0;
 }
-const CUE_KEYS = ['kind', 'delayMs', 'name'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -533,9 +533,7 @@ function names(ref: SwitchTargetRef): boolean {
 export function switchDoesAnything(definition: SwitchDefinition): boolean {
   return definition.actions.some((action) => {
     if (action.kind === 'say' || action.kind === 'secret') return action.text.trim().length > 0;
-    if (action.kind === 'reveal' || action.kind === 'conceal' || action.kind === 'spawn') {
-      return action.target.identifier.length > 0 || action.target.name.trim().length > 0;
-    }
+    if (action.kind === 'reveal' || action.kind === 'conceal' || action.kind === 'spawn') return names(action.target);
     if (action.kind === 'removeSelf' || action.kind === 'carry') return true;
     if (action.kind === 'showTable') return names(action.table);
     if (action.kind === 'tableSetting') {
