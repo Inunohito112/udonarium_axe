@@ -91,6 +91,29 @@ describe('RoomSettingsPanelComponent', () => {
     expect(component.defaultDiceBot).not.toBe('Cthulhu7th');
   });
 
+  it('lets the master choose where the room has its rolls tumble, and shows a player only what was chosen', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('[data-testid="dice-stage"]');
+    expect(select.value).toBe('off');
+    expect(select.disabled).toBe(false);
+
+    select.value = 'frame';
+    select.dispatchEvent(new Event('change'));
+    expect(Config.instance.diceStage).toBe('frame');
+
+    PeerCursor.myCursor.role = PeerRole.Player;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    component.diceStage = 'off';
+    // A model-bound control takes its disabled state a turn after the binding changes.
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(Config.instance.diceStage).toBe('frame');
+    expect(select.disabled).toBe(true);
+  });
+
   it('writes nothing for a reader who may not edit the table', () => {
     PeerCursor.myCursor.role = PeerRole.Guest;
     table.zocMode = 'stop';

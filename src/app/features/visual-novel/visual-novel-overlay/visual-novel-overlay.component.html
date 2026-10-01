@@ -465,6 +465,11 @@
           @if (!isTyping() && !isLatest()) {
             <span class="ml-1 inline-block animate-bounce text-gray-400">▼</span>
           }
+          @if (system.kind === 'dice') {
+            <div class="w-[min(26rem,80vw)] text-left">
+              <dice-roll-stage [messageIdentifier]="message.identifier" />
+            </div>
+          }
         </div>
       </div>
     }

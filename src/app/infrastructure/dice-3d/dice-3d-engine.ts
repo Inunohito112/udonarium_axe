@@ -4,7 +4,7 @@ import { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
 import { diceMeshOf } from '@axe/infrastructure/dice-3d/dice-geometry';
 import { DiceThrowResult, FRAME_STRIDE, FRAMES_PER_SECOND } from '@axe/infrastructure/dice-3d/dice-physics-message';
 import { diceStudio } from '@axe/infrastructure/dice-3d/dice-studio';
-import { DiceLook, drawDiceAtlas } from '@axe/infrastructure/dice-3d/dice-textures';
+import { DiceLook, drawDiceAtlas, lookFor } from '@axe/infrastructure/dice-3d/dice-textures';
 import {
   AgXToneMapping,
   BufferAttribute,
@@ -42,7 +42,8 @@ export interface DieOfThrow {
  */
 export interface ThrowToDraw {
   readonly dice: readonly DieOfThrow[];
-  readonly look: DiceLook;
+  /** The colour of the dice, which their numbers are inked to stand out from. */
+  readonly color: string;
   readonly tray: Tray;
   readonly result: DiceThrowResult;
 }
@@ -155,7 +156,7 @@ export class Dice3dEngine {
     const engine = new Dice3dEngine();
     const warm = engine.prepare({
       dice: [{ shape: 'd6', labels: 'standard' }],
-      look: { body: '#202024', ink: '#f6f3ec', accent: '#c8102e' },
+      color: '#202024',
       tray: { halfWidth: 4, halfDepth: 2 },
       result: {
         frameCount: 1,
@@ -182,9 +183,10 @@ export class Dice3dEngine {
   /** Sets up the meshes of a throw: each die a body moved by the recording, its mesh turned to show the rolled number. */
   prepare(draw: ThrowToDraw): PreparedThrow {
     const root = new Group();
+    const look = lookFor(draw.color);
     const bodies = draw.dice.map((die, index) => {
       const body = new Group();
-      const mesh = new Mesh(this.geometryOf(die.shape), this.materialOf(die.shape, die.labels, draw.look));
+      const mesh = new Mesh(this.geometryOf(die.shape), this.materialOf(die.shape, die.labels, look));
       mesh.castShadow = true;
       mesh.scale.setScalar(dieRadiusOf(die.shape));
       const [x, y, z, w] = draw.result.corrections[index];

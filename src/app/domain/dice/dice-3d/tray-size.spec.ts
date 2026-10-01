@@ -1,4 +1,4 @@
-import { MIN_TRAY_AREA, trayFor } from '@axe/domain/dice/dice-3d/tray-size';
+import { frameAspectFor, MIN_TRAY_AREA, trayFor } from '@axe/domain/dice/dice-3d/tray-size';
 
 const areaOf = (tray: { halfWidth: number; halfDepth: number }) => tray.halfWidth * 2 * tray.halfDepth * 2;
 
@@ -22,5 +22,14 @@ describe('trayFor', () => {
     expect(areaOf(trayFor(1, 4 / 3, 192))).toBeCloseTo(192, 9);
     expect(areaOf(trayFor(2, 4 / 3, 40))).toBeCloseTo(40, 9);
     expect(areaOf(trayFor(4, 4 / 3, 40))).toBeGreaterThan(40);
+  });
+});
+
+describe('frameAspectFor', () => {
+  it('gives a few dice a wide strip and more dice a deeper frame', () => {
+    expect(frameAspectFor(1)).toBe(4);
+    expect(frameAspectFor(4)).toBe(4);
+    expect(frameAspectFor(5)).toBeLessThan(frameAspectFor(4));
+    expect(frameAspectFor(20)).toBeLessThan(frameAspectFor(10));
   });
 });

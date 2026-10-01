@@ -1,0 +1,14 @@
+@if (diceThrow(); as diceThrow) {
+  <div
+    class="rounded-ui-sm relative mt-1.5 block w-full max-w-104 overflow-hidden bg-[#3d4048] shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]"
+    data-testid="dice-roll-stage"
+    [style.aspect-ratio]="diceThrow.aspect"
+    [attr.data-state]="diceThrow.phase"
+    [attr.data-shown]="diceThrow.shown.join(' ')"
+  >
+    <canvas #canvas class="block size-full"></canvas>
+    @if (diceThrow.overflow > 0) {
+      <span class="absolute right-1.5 bottom-1 text-[11px] font-semibold text-white/75">+{{ diceThrow.overflow }}</span>
+    }
+  </div>
+}
