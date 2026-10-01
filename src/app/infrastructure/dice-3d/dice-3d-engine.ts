@@ -1,0 +1,402 @@
+import { DieLabels } from '@axe/domain/dice/dice-3d/dice-throw-plan';
+import { dieRadiusOf, DieShape } from '@axe/domain/dice/dice-3d/polyhedra';
+import { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
+import { diceMeshOf } from '@axe/infrastructure/dice-3d/dice-geometry';
+import { DiceThrowResult, FRAME_STRIDE, FRAMES_PER_SECOND } from '@axe/infrastructure/dice-3d/dice-physics-message';
+import { diceStudio } from '@axe/infrastructure/dice-3d/dice-studio';
+import { DiceLook, drawDiceAtlas } from '@axe/infrastructure/dice-3d/dice-textures';
+import {
+  AgXToneMapping,
+  BufferAttribute,
+  BufferGeometry,
+  CanvasTexture,
+  DirectionalLight,
+  Group,
+  Mesh,
+  MeshPhysicalMaterial,
+  MeshStandardMaterial,
+  NoColorSpace,
+  PCFShadowMap,
+  PerspectiveCamera,
+  PlaneGeometry,
+  PMREMGenerator,
+  Quaternion,
+  RepeatWrapping,
+  Scene,
+  ShadowMaterial,
+  SRGBColorSpace,
+  Vector2,
+  Vector3,
+  WebGLRenderer,
+} from 'three';
+
+/** One die of a throw: its shape and the numbers it wears. */
+export interface DieOfThrow {
+  readonly shape: DieShape;
+  readonly labels: DieLabels;
+}
+
+/**
+ * A throw to draw: its dice, their colours, the tray, and how the physics moved them and turned
+ * each to show its number.
+ */
+export interface ThrowToDraw {
+  readonly dice: readonly DieOfThrow[];
+  readonly look: DiceLook;
+  readonly tray: Tray;
+  readonly result: DiceThrowResult;
+}
+
+/** How a throw is looked at: from above and in front of its tray in a frame, or by the table's own camera. */
+export type ThrowView =
+  | { readonly kind: 'frame' }
+  | {
+      readonly kind: 'table';
+      /** From the tray's world to the clip space of the screen, as sixteen numbers in column order. */
+      readonly projection: ArrayLike<number>;
+    };
+
+/** The size of what is drawn, in CSS pixels, and how many device pixels each takes. */
+export interface DrawSize {
+  readonly width: number;
+  readonly height: number;
+  readonly pixelRatio: number;
+}
+
+/** A throw set up to be drawn, frame after frame. */
+export interface PreparedThrow {
+  readonly root: Group;
+  readonly bodies: readonly Group[];
+  readonly result: DiceThrowResult;
+  readonly tray: Tray;
+  /** How long the dice take to stop, in seconds. */
+  readonly restSeconds: number;
+  /** How long the recording runs, in seconds. */
+  readonly totalSeconds: number;
+}
+
+/** The colour of the felt the dice land on in a frame. */
+const FELT = '#2b2f36';
+const TEXTURE_CACHE_SIZE = 24;
+const SHADOW_MAP_PX = 1024;
+/** How the frame's camera looks at the tray: its field of view, and how high above the floor it stands. */
+const FRAME_FOV = 18;
+const FRAME_ELEVATION = (72 * Math.PI) / 180;
+/** How high the tallest die stands as it rests, so one against the far wall keeps its top in the frame. */
+const TALLEST_DIE = 1.7;
+/** How wide the soft edge of a die's shadow is, in the units of the tray. */
+const PENUMBRA = 0.22;
+/** How far the felt runs past the tray, so it fills the frame however the camera stands. */
+const FELT_REACH = 60;
+/** How many tray units one tile of the felt's weave covers. */
+const WEAVE_TILE = 3;
+
+/**
+ * Draws the dice of chat rolls in 3D: one renderer for every throw on the page, drawing off screen,
+ * whose picture is copied wherever the throw is shown.
+ */
+export class Dice3dEngine {
+  readonly canvas: HTMLCanvasElement;
+  private readonly renderer: WebGLRenderer;
+  private readonly scene = new Scene();
+  private readonly frameCamera = new PerspectiveCamera(30, 2, 0.5, 400);
+  private readonly tableCamera = new PerspectiveCamera();
+  private readonly light = new DirectionalLight(0xffffff, 2.4);
+  private readonly felt: Mesh;
+  private readonly shadowCatcher: Mesh;
+  private readonly geometries = new Map<DieShape, BufferGeometry>();
+  private readonly materials = new Map<string, MeshPhysicalMaterial>();
+  private lost = false;
+
+  private constructor() {
+    this.canvas = document.createElement('canvas');
+    this.renderer = new WebGLRenderer({
+      canvas: this.canvas,
+      antialias: true,
+      alpha: true,
+      premultipliedAlpha: true,
+      powerPreference: 'high-performance',
+    });
+    this.renderer.outputColorSpace = SRGBColorSpace;
+    this.renderer.toneMapping = AgXToneMapping;
+    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = PCFShadowMap;
+    this.renderer.setClearColor(0x000000, 0);
+    this.canvas.addEventListener('webglcontextlost', (event) => {
+      event.preventDefault();
+      this.lost = true;
+    });
+
+    const pmrem = new PMREMGenerator(this.renderer);
+    this.scene.environment = pmrem.fromScene(diceStudio(), 0.02).texture;
+    pmrem.dispose();
+
+    this.light.castShadow = true;
+    this.light.shadow.mapSize.set(SHADOW_MAP_PX, SHADOW_MAP_PX);
+    this.light.shadow.bias = -0.0004;
+    this.light.shadow.normalBias = 0.02;
+    this.scene.add(this.light, this.light.target);
+
+    this.felt = new Mesh(
+      new PlaneGeometry(1, 1),
+      new MeshStandardMaterial({ color: FELT, roughness: 0.96, metalness: 0, map: feltTexture() })
+    );
+    this.felt.receiveShadow = true;
+    this.shadowCatcher = new Mesh(new PlaneGeometry(1, 1), new ShadowMaterial({ opacity: 0.38 }));
+    this.shadowCatcher.receiveShadow = true;
+    this.scene.add(this.felt, this.shadowCatcher);
+
+    this.frameCamera.up.set(0, 0, 1);
+  }
+
+  /** Starts the renderer and readies its shaders, so the first throw does not stall while they build. */
+  static async create(): Promise<Dice3dEngine> {
+    const engine = new Dice3dEngine();
+    const warm = engine.prepare({
+      dice: [{ shape: 'd6', labels: 'standard' }],
+      look: { body: '#202024', ink: '#f6f3ec', accent: '#c8102e' },
+      tray: { halfWidth: 4, halfDepth: 2 },
+      result: {
+        frameCount: 1,
+        restFrame: 0,
+        frames: new Float32Array([0, 0, 1, 0, 0, 0, 1]),
+        landed: [0],
+        corrections: [[0, 0, 0, 1]],
+        attempt: 0,
+        fault: null,
+      },
+    });
+    engine.scene.add(warm.root);
+    engine.layOut(warm.tray, { kind: 'frame' }, { width: 64, height: 32, pixelRatio: 1 });
+    await engine.renderer.compileAsync(engine.scene, engine.frameCamera);
+    engine.scene.remove(warm.root);
+    return engine;
+  }
+
+  /** Whether the graphics context was lost, after which nothing more is drawn. */
+  get isLost(): boolean {
+    return this.lost;
+  }
+
+  /** Sets up the meshes of a throw: each die a body moved by the recording, its mesh turned to show the rolled number. */
+  prepare(draw: ThrowToDraw): PreparedThrow {
+    const root = new Group();
+    const bodies = draw.dice.map((die, index) => {
+      const body = new Group();
+      const mesh = new Mesh(this.geometryOf(die.shape), this.materialOf(die.shape, die.labels, draw.look));
+      mesh.castShadow = true;
+      mesh.scale.setScalar(dieRadiusOf(die.shape));
+      const [x, y, z, w] = draw.result.corrections[index];
+      mesh.quaternion.set(x, y, z, w);
+      body.add(mesh);
+      root.add(body);
+      return body;
+    });
+    return {
+      root,
+      bodies,
+      result: draw.result,
+      tray: draw.tray,
+      restSeconds: draw.result.restFrame / FRAMES_PER_SECOND,
+      totalSeconds: (draw.result.frameCount - 1) / FRAMES_PER_SECOND,
+    };
+  }
+
+  /** Draws a throw as it stands some seconds after it was thrown, into the engine's canvas. */
+  render(prepared: PreparedThrow, seconds: number, view: ThrowView, size: DrawSize): void {
+    if (this.lost) return;
+    pose(prepared, seconds);
+    this.scene.add(prepared.root);
+    const camera = this.layOut(prepared.tray, view, size);
+    this.renderer.render(this.scene, camera);
+    this.scene.remove(prepared.root);
+  }
+
+  /** Lets the renderer and everything it holds go. */
+  dispose(): void {
+    this.geometries.forEach((geometry) => geometry.dispose());
+    this.materials.forEach(disposeMaterial);
+    this.renderer.dispose();
+  }
+
+  private layOut(tray: Tray, view: ThrowView, size: DrawSize) {
+    const width = Math.max(1, Math.round(size.width));
+    const height = Math.max(1, Math.round(size.height));
+    if (this.renderer.getPixelRatio() !== size.pixelRatio) this.renderer.setPixelRatio(size.pixelRatio);
+    const current = this.renderer.getSize(new Vector2());
+    if (current.x !== width || current.y !== height) this.renderer.setSize(width, height, false);
+
+    const inFrame = view.kind === 'frame';
+    this.felt.visible = inFrame;
+    this.shadowCatcher.visible = !inFrame;
+    if (inFrame) {
+      this.felt.scale.set(FELT_REACH * 2, FELT_REACH * 2, 1);
+    } else {
+      this.shadowCatcher.scale.set(tray.halfWidth * 2 + 4, tray.halfDepth * 2 + 4, 1);
+    }
+
+    // A key light high to the left and a little behind, the side the left softbox lights from, so
+    // every die throws its shadow off to the right and a little toward the viewer.
+    const span = Math.max(tray.halfWidth, tray.halfDepth);
+    this.light.position.set(-span * 1.6, span * 0.5, span * 1.9);
+    this.light.target.position.set(0, 0, 0);
+    const shadow = this.light.shadow.camera;
+    shadow.left = -tray.halfWidth - 3;
+    shadow.right = tray.halfWidth + 3;
+    shadow.top = tray.halfDepth + 3;
+    shadow.bottom = -tray.halfDepth - 3;
+    shadow.near = 1;
+    shadow.far = span * 6;
+    shadow.updateProjectionMatrix();
+    this.light.shadow.radius = (PENUMBRA * SHADOW_MAP_PX) / (shadow.right - shadow.left);
+
+    if (view.kind === 'table') {
+      this.tableCamera.projectionMatrix.fromArray(Array.from(view.projection));
+      this.tableCamera.projectionMatrixInverse.copy(this.tableCamera.projectionMatrix).invert();
+      this.tableCamera.matrixWorld.identity();
+      this.tableCamera.matrixWorldInverse.identity();
+      this.tableCamera.matrixAutoUpdate = false;
+      return this.tableCamera;
+    }
+    fitFrameCamera(this.frameCamera, tray, width / height);
+    return this.frameCamera;
+  }
+
+  private geometryOf(shape: DieShape): BufferGeometry {
+    let geometry = this.geometries.get(shape);
+    if (!geometry) {
+      const mesh = diceMeshOf(shape);
+      geometry = new BufferGeometry();
+      geometry.setAttribute('position', new BufferAttribute(mesh.positions, 3));
+      geometry.setAttribute('normal', new BufferAttribute(mesh.normals, 3));
+      geometry.setAttribute('uv', new BufferAttribute(mesh.uvs, 2));
+      geometry.setAttribute('tangent', new BufferAttribute(mesh.tangents, 4));
+      geometry.setIndex(new BufferAttribute(mesh.indices, 1));
+      this.geometries.set(shape, geometry);
+    }
+    return geometry;
+  }
+
+  private materialOf(shape: DieShape, labels: DieLabels, look: DiceLook): MeshPhysicalMaterial {
+    const key = `${shape}|${labels}|${look.body}|${look.ink}|${look.accent}`;
+    let material = this.materials.get(key);
+    if (material) {
+      // Most recently used last, so the oldest is the one let go.
+      this.materials.delete(key);
+      this.materials.set(key, material);
+      return material;
+    }
+    const atlas = drawDiceAtlas(shape, labels, look);
+    const map = new CanvasTexture(atlas.color);
+    map.colorSpace = SRGBColorSpace;
+    map.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+    const normalMap = new CanvasTexture(atlas.normal);
+    normalMap.colorSpace = NoColorSpace;
+    material = new MeshPhysicalMaterial({
+      map,
+      normalMap,
+      normalScale: new Vector2(1, 1),
+      roughness: 0.32,
+      metalness: 0,
+      clearcoat: 1,
+      clearcoatRoughness: 0.08,
+      ior: 1.5,
+    });
+    this.materials.set(key, material);
+    if (this.materials.size > TEXTURE_CACHE_SIZE) {
+      const [oldest, dropped] = this.materials.entries().next().value!;
+      this.materials.delete(oldest);
+      disposeMaterial(dropped);
+    }
+    return material;
+  }
+}
+
+/** Sets every die where the recording has it some seconds in, between the two frames about that moment. */
+function pose(prepared: PreparedThrow, seconds: number): void {
+  const { result, bodies } = prepared;
+  const count = bodies.length;
+  const at = Math.min(Math.max(seconds * FRAMES_PER_SECOND, 0), result.frameCount - 1);
+  const before = Math.floor(at);
+  const after = Math.min(before + 1, result.frameCount - 1);
+  const t = at - before;
+  const q0 = new Quaternion();
+  const q1 = new Quaternion();
+  bodies.forEach((body, index) => {
+    const a = (before * count + index) * FRAME_STRIDE;
+    const b = (after * count + index) * FRAME_STRIDE;
+    const f = result.frames;
+    body.position.set(
+      f[a] + (f[b] - f[a]) * t,
+      f[a + 1] + (f[b + 1] - f[a + 1]) * t,
+      f[a + 2] + (f[b + 2] - f[a + 2]) * t
+    );
+    q0.set(f[a + 3], f[a + 4], f[a + 5], f[a + 6]);
+    q1.set(f[b + 3], f[b + 4], f[b + 5], f[b + 6]);
+    body.quaternion.slerpQuaternions(q0, q1, t);
+  });
+}
+
+/**
+ * Sets the frame's camera high above the tray and a little in front of it, looking down at it, as
+ * far back as it needs to be for the whole floor and the dice resting against its walls to fit the frame.
+ * The tray is the frame's own shape, so its walls stand about at the frame's edges.
+ */
+function fitFrameCamera(camera: PerspectiveCamera, tray: Tray, aspect: number): void {
+  camera.aspect = aspect;
+  camera.fov = FRAME_FOV;
+  const direction = new Vector3(0, -Math.cos(FRAME_ELEVATION), Math.sin(FRAME_ELEVATION));
+  const corners = [-1, 1].flatMap((sx) =>
+    [-1, 1].flatMap((sy) => [0, TALLEST_DIE].map((z) => new Vector3(sx * tray.halfWidth, sy * tray.halfDepth, z)))
+  );
+  let near = 1;
+  let far = 400;
+  for (let i = 0; i < 40; i++) {
+    const distance = (near + far) / 2;
+    camera.position.copy(direction).multiplyScalar(distance);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+    camera.updateProjectionMatrix();
+    const fits = corners.every((corner) => {
+      const p = corner.clone().project(camera);
+      return Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1;
+    });
+    if (fits) far = distance;
+    else near = distance;
+  }
+  camera.position.copy(direction).multiplyScalar(far);
+  camera.lookAt(0, 0, 0);
+  camera.near = Math.max(0.5, far * 0.2);
+  camera.far = far * 3;
+  camera.updateMatrixWorld();
+  camera.updateProjectionMatrix();
+}
+
+/** A faint weave for the felt, so it reads as cloth rather than a flat colour. */
+function feltTexture(): CanvasTexture {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const image = ctx.createImageData(size, size);
+  let seed = 7;
+  const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  for (let i = 0; i < size * size; i++) {
+    const v = 236 + Math.floor(random() * 20);
+    image.data[i * 4] = image.data[i * 4 + 1] = image.data[i * 4 + 2] = v;
+    image.data[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(image, 0, 0);
+  const texture = new CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = RepeatWrapping;
+  texture.repeat.set((FELT_REACH * 2) / WEAVE_TILE, (FELT_REACH * 2) / WEAVE_TILE);
+  texture.colorSpace = SRGBColorSpace;
+  return texture;
+}
+
+function disposeMaterial(material: MeshPhysicalMaterial): void {
+  material.map?.dispose();
+  material.normalMap?.dispose();
+  material.dispose();
+}
