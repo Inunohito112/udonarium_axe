@@ -4281,6 +4281,8 @@
       "removeSelfHint": "ほかの動作を終えてから、スイッチの地形を卓から消します。塗りの場合は片付けて GM だけに見える状態にします。試し押しでは消えません。",
       "unnamedThing": "名前なし",
       "listed": "{{name}}（{{note}}）",
+      "groundPressed": "押された塗り",
+      "groundRetired": "片付けた塗り",
       "thing": {
         "terrain": "地形",
         "table-mask": "マップマスク",

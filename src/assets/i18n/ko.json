@@ -4529,6 +4529,8 @@
       "removeSelfHint": "다른 동작을 모두 마친 뒤 스위치의 지형을 테이블에서 지웁니다. 칠한 칸이면 정리해서 GM만 보이게 합니다. 시험 누르기로는 지워지지 않습니다.",
       "unnamedThing": "이름 없음",
       "listed": "{{name}} ({{note}})",
+      "groundPressed": "누른 칸",
+      "groundRetired": "치운 칸",
       "thing": {
         "terrain": "지형",
         "table-mask": "맵 마스크",

@@ -179,6 +179,17 @@ describe('BoardSwitch', () => {
       expect(switchWasPressed(made)).toBe(false);
       expect(switchHasGoFor(made, 'hero', 1)).toBe(true);
     });
+
+    it('counts one a press put away as pressed, and sets it back out when set again', () => {
+      const made = counting('always');
+      made.retired = true;
+      expect(switchWasPressed(made)).toBe(true);
+
+      resetSwitch(made);
+
+      expect(made.retired).toBe(false);
+      expect(switchWasPressed(made)).toBe(false);
+    });
   });
 
   it('reads a saved block that carries something this version has never heard of as the block it is', () => {

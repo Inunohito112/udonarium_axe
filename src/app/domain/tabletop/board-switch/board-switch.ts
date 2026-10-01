@@ -83,16 +83,23 @@ export function spendSwitch(target: BoardSwitch, presser: string, round: number)
   if (repeats === 'oncePerRound' && target.lastRound !== round) target.spentRound = round;
 }
 
-/** Whether anything has been written down about it being pressed. */
+/** Whether anything has been written down about it being pressed, or it was put away by a press. */
 export function switchWasPressed(target: BoardSwitch): boolean {
-  return Boolean(target.spent) || target.spentBy.trim().length > 0 || target.lastRound >= 0;
+  return Boolean(target.spent) || Boolean(target.retired) || target.spentBy.trim().length > 0 || target.lastRound >= 0;
 }
 
-/** Forgets that it was ever pressed, so the master can set it again. */
+/**
+ * Forgets that it was ever pressed, so the master can set it again.
+ *
+ * Painted ground a press put away is set back out as well: it is kept rather than destroyed so
+ * that this is possible, and a master trying out a switch for real would otherwise have no way
+ * back but to paint it again.
+ */
 export function resetSwitch(target: BoardSwitch): void {
   if (target.spent) target.spent = false;
   if (target.spentBy.length > 0) target.spentBy = '';
   if (target.lastRound !== -1) target.spentRound = -1;
+  if (target.retired) target.retired = false;
 }
 
 /** The switch hung under something, or null where it has none. */

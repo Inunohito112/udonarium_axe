@@ -79,6 +79,7 @@ import { TableEffectOverlayComponent } from '@axe/features/effect/table-effect-o
 import { PeerCursorComponent } from '@axe/features/lobby/peer-cursor/peer-cursor.component';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { ReplayRouteOverlayComponent } from '@axe/features/replay/replay-route-overlay/replay-route-overlay.component';
+import { buildPressedGroundMenu } from '@axe/features/tabletop/board-switch/board-switch-context-menu';
 import { buildRevealMenu, listedThingLabel } from '@axe/features/tabletop/board-switch/concealment-context-menu';
 import { TableFogAirOverlayComponent } from '@axe/features/tabletop/fog-of-war/table-fog-air-overlay.component';
 import { beamTopGridGeometry, beamWallFaceGrid } from '@axe/features/tabletop/game-table/beam-top-grid';
@@ -957,6 +958,20 @@ export class GameTableComponent {
       })),
       this.t
     );
+    const pressedActions = buildPressedGroundMenu(
+      this.boardSwitches.canEdit(),
+      this.boardSwitches.pressedGround().map((ground) => ({
+        label: listedThingLabel(
+          ground.pressSwitch?.def.label.trim() || ground.name,
+          this.t(
+            ground.pressSwitch?.retired ? 'feature.boardSwitch.groundRetired' : 'feature.boardSwitch.groundPressed'
+          ),
+          this.t
+        ),
+        reset: () => this.boardSwitches.reset(ground),
+      })),
+      this.t
+    );
     const partyGroups =
       partyActions.length > 0
         ? [{ name: this.t('feature.gmTools.party.title'), icon: 'group', actions: partyActions }]
@@ -969,6 +984,7 @@ export class GameTableComponent {
         ContextMenuSeparator,
         ...(partyActions.length > 0 ? [...partyActions, ContextMenuSeparator] : []),
         ...(revealActions.length > 0 ? [...revealActions, ContextMenuSeparator] : []),
+        ...(pressedActions.length > 0 ? [...pressedActions, ContextMenuSeparator] : []),
         ...tableSettingActions,
       ],
       rotatingGroups: [
@@ -985,6 +1001,9 @@ export class GameTableComponent {
         ...partyGroups,
         ...(revealActions.length > 0
           ? [{ name: this.t('feature.boardSwitch.menu.concealed'), icon: 'visibility', actions: revealActions }]
+          : []),
+        ...(pressedActions.length > 0
+          ? [{ name: this.t('feature.boardSwitch.menu.reset'), icon: 'restart_alt', actions: pressedActions }]
           : []),
         {
           name: this.t('feature.tabletop.tableSetting.title'),

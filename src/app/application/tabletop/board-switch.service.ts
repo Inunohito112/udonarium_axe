@@ -1,10 +1,12 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
+import { TableTriggerService } from '@axe/application/tabletop/table-trigger.service';
 import { ObjectNode } from '@axe/core/sync/object-node';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
-import { BoardSwitch, resetSwitch, switchOf } from '@axe/domain/tabletop/board-switch/board-switch';
+import { BoardSwitch, resetSwitch, switchOf, switchWasPressed } from '@axe/domain/tabletop/board-switch/board-switch';
 import { SwitchDefinition } from '@axe/domain/tabletop/board-switch/switch-definition';
+import { TableTrigger } from '@axe/domain/tabletop/table-trigger';
 
 /**
  * Makes things on the table into switches and takes them back out, for the master.
@@ -17,6 +19,7 @@ import { SwitchDefinition } from '@axe/domain/tabletop/board-switch/switch-defin
 @Injectable({ providedIn: 'root' })
 export class BoardSwitchService {
   private readonly objectChange = inject(ObjectChangeService);
+  private readonly triggers = inject(TableTriggerService);
 
   /** Whether this seat writes and reads switches, which only the master does. */
   readonly canEdit = computed(() => {
@@ -40,11 +43,30 @@ export class BoardSwitchService {
     target.write(definition);
   }
 
-  /** Forgets that the switch on something was ever pressed, so it can be pressed again. */
+  /**
+   * Forgets that the switch on something was ever pressed, so it can be pressed again.
+   *
+   * Painted ground goes back to how it was painted: set back out where a press put it away, and
+   * hidden again where a press gave it away.
+   */
   reset(host: ObjectNode): void {
     if (!this.canEdit()) return;
     const held = switchOf(host);
-    if (held) resetSwitch(held);
+    if (!held) return;
+    resetSwitch(held);
+    if (host instanceof TableTrigger && host.found) host.found = false;
+  }
+
+  /**
+   * The painted ground on the table being looked at whose switch has been pressed, for the master
+   * to set again. Ground has no menu of its own to do it from, the way a block does.
+   */
+  pressedGround(): TableTrigger[] {
+    if (!this.canEdit()) return [];
+    return this.triggers.all().filter((trigger) => {
+      const held = trigger.pressSwitch;
+      return held !== null && switchWasPressed(held);
+    });
   }
 
   /** Takes the switch off something, leaving it the plain thing it was. */

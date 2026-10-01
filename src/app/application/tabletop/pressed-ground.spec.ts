@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { CharacterMacroService } from '@axe/application/chat/character-macro.service';
+import { BoardSwitchService } from '@axe/application/tabletop/board-switch.service';
 import { FunctionalPaintService } from '@axe/application/tabletop/functional-paint.service';
 import { SwitchPressService } from '@axe/application/tabletop/switch-press.service';
 import { TriggerFireService } from '@axe/application/tabletop/trigger-fire.service';
@@ -148,5 +149,38 @@ describe('pressed ground', () => {
     hidden.pressSwitch!.retired = true;
     expect(await presses.pressGroundAt(5.5 * GRID, 5.5 * GRID)).toBeNull();
     expect(said).toEqual([]);
+  });
+
+  it('is listed for the master once pressed, and set back as it was painted when its presses are cleared', async () => {
+    const ground = lay(pressBrush({ shownTo: 'master', reveals: true }));
+    ground.pressSwitch!.write({
+      ...ground.pressSwitch!.def,
+      actions: [...ground.pressSwitch!.def.actions, { kind: 'removeSelf', delayMs: 0, extra: {} }],
+    });
+    PeerCursor.myCursor.role = PeerRole.GameMaster;
+    const switches = TestBed.inject(BoardSwitchService);
+    expect(switches.pressedGround()).toEqual([]);
+
+    await TestBed.inject(SwitchPressService).pressGroundAt(5.5 * GRID, 5.5 * GRID);
+    expect(ground.pressSwitch!.retired).toBe(true);
+    expect(ground.found).toBe(true);
+    expect(switches.pressedGround()).toEqual([ground]);
+
+    switches.reset(ground);
+
+    expect(ground.pressSwitch!.retired).toBe(false);
+    expect(ground.found).toBe(false);
+    expect(ground.isArmed).toBe(true);
+    expect(switches.pressedGround()).toEqual([]);
+  });
+
+  it('lists no pressed ground for a player, who cannot clear it either', async () => {
+    const ground = lay(pressBrush());
+    ground.pressSwitch!.retired = true;
+    const switches = TestBed.inject(BoardSwitchService);
+
+    expect(switches.pressedGround()).toEqual([]);
+    switches.reset(ground);
+    expect(ground.pressSwitch!.retired).toBe(true);
   });
 });

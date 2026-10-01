@@ -42,3 +42,29 @@ export function buildBoardSwitchMenu(
     { name: t('feature.boardSwitch.menu.remove'), action: callbacks.remove },
   ];
 }
+
+export interface PressedGroundEntry {
+  /** What the ground is listed as. */
+  label: string;
+  reset: () => void;
+}
+
+/**
+ * The master's list of painted ground that has been pressed, each set back as it was painted by
+ * choosing it. Ground has no menu of its own, so the table's carries it. Left out for anybody else,
+ * and while nothing has been pressed.
+ */
+export function buildPressedGroundMenu(
+  canEdit: boolean,
+  pressed: readonly PressedGroundEntry[],
+  t: TranslateFn
+): ContextMenuAction[] {
+  if (!canEdit || pressed.length < 1) return [];
+  return [
+    {
+      name: t('feature.boardSwitch.menu.reset'),
+      action: undefined,
+      subActions: pressed.map((entry) => ({ name: entry.label, action: entry.reset })),
+    },
+  ];
+}

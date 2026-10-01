@@ -4281,6 +4281,8 @@
       "removeSelfHint": "After everything else, removes the switch's terrain from the table. Painted ground is put away so only the GM sees it. Trying it out does not remove it.",
       "unnamedThing": "Unnamed",
       "listed": "{{name}} ({{note}})",
+      "groundPressed": "pressed ground",
+      "groundRetired": "ground put away",
       "thing": {
         "terrain": "Terrain",
         "table-mask": "Map mask",

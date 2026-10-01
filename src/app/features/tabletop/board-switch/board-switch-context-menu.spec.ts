@@ -1,6 +1,7 @@
 import {
   BoardSwitchMenuState,
   buildBoardSwitchMenu,
+  buildPressedGroundMenu,
 } from '@axe/features/tabletop/board-switch/board-switch-context-menu';
 import { createSyncTranslate } from '@axe/testing/transloco-testing';
 
@@ -52,5 +53,21 @@ describe('buildBoardSwitchMenu', () => {
     expect(callbacks.edit).toHaveBeenCalledTimes(1);
     expect(callbacks.press).toHaveBeenCalledTimes(1);
     expect(callbacks.remove).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('buildPressedGroundMenu', () => {
+  it('lists pressed ground for the master to set again, and nothing for anybody else', () => {
+    const reset = vi.fn();
+    const pressed = [{ label: 'レバー（片付けた塗り）', reset }];
+
+    expect(buildPressedGroundMenu(false, pressed, t)).toEqual([]);
+    expect(buildPressedGroundMenu(true, [], t)).toEqual([]);
+
+    const [menu] = buildPressedGroundMenu(true, pressed, t);
+    expect(menu.name).toBe('押された記録を消す');
+    expect(menu.subActions?.map((entry) => entry.name)).toEqual(['レバー（片付けた塗り）']);
+    menu.subActions?.[0].action?.();
+    expect(reset).toHaveBeenCalled();
   });
 });
