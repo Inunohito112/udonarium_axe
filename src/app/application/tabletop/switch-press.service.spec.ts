@@ -7,6 +7,7 @@ import { ConcealmentService } from '@axe/application/tabletop/concealment.servic
 import { SWITCH_COOLDOWN_MS, SwitchPressService } from '@axe/application/tabletop/switch-press.service';
 import { VisionService } from '@axe/application/tabletop/vision.service';
 import { Network } from '@axe/core/network/network';
+import { IPeerContext } from '@axe/core/network/peer-context';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
@@ -503,6 +504,7 @@ describe('SwitchPressService', () => {
       const secret = vi
         .spyOn(TestBed.inject(ChatMessageService), 'sendSecretSystemMessageToTab')
         .mockReturnValue(null!);
+      vi.spyOn(Network.instance, 'peerContext', 'get').mockReturnValue({ userId: 'the-presser' } as IPeerContext);
       const hero = speakAs(0, 0);
       hero.chatPalette!.setPalette('//目星=60');
 
@@ -512,13 +514,14 @@ describe('SwitchPressService', () => {
         })
       );
 
-      expect(secret).toHaveBeenCalledWith(tab, '目星 60 で見つけた', Network.peerContext.userId);
+      expect(secret).toHaveBeenCalledWith(tab, '目星 60 で見つけた', 'the-presser');
     });
 
     it('keeps a line for the master alone, sent from nobody in particular', async () => {
       const secret = vi
         .spyOn(TestBed.inject(ChatMessageService), 'sendSecretSystemMessageToTab')
         .mockReturnValue(null!);
+      vi.spyOn(Network.instance, 'peerContext', 'get').mockReturnValue({ userId: 'the-presser' } as IPeerContext);
 
       await presses.press(
         switchWith({ actions: [{ kind: 'secret', text: 'the wire is crossed', to: 'master', delayMs: 0, extra: {} }] })
