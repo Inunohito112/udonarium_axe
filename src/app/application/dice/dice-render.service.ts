@@ -1,10 +1,13 @@
-import { DestroyRef, effect, inject, Injectable, InjectionToken } from '@angular/core';
+import { DestroyRef, effect, inject, Injectable, InjectionToken, untracked } from '@angular/core';
 import { DiceThrow, DiceThrowService } from '@axe/application/dice/dice-throw.service';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
+import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { RenderLiteService } from '@axe/application/ui/render-lite.service';
 import { Logger } from '@axe/core/logging/logger';
+import { ObjectStore } from '@axe/core/sync/object-store';
 import { clipMatrixOf, columnsOf, eyeOf, multiply, Point3, transform } from '@axe/core/transform/css-clip-matrix';
 import type { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
+import { Config } from '@axe/domain/peer/config';
 import type { Dice3dEngine, DrawnRegion, PreparedThrow } from '@axe/infrastructure/dice-3d/dice-3d-engine';
 
 /** What the dice are drawn with: the part of the 3D engine the page uses. */
@@ -30,6 +33,13 @@ export const TABLE_FADE_SECONDS = 0.6;
 const TABLE_REACH_UP = 6;
 const TABLE_REACH_IN = 3;
 const TABLE_REACH_SHADOW = 6;
+/**
+ * How long after a throw is worked out it may still begin to play when it is first drawn, in
+ * milliseconds; longer than the drawing library takes to load on a slow device.
+ */
+export const LATE_START_MS = 12_000;
+/** How long the engine waits for a quiet moment to be readied in, at most, in milliseconds. */
+const WARM_UP_WITHIN_MS = 3000;
 /** How often the table's view is read again while it seems to stand still, in milliseconds. */
 const STILL_VIEW_MS = 1000;
 
@@ -70,6 +80,8 @@ export class DiceRenderService {
   private readonly throws = inject(DiceThrowService);
   private readonly renderLite = inject(RenderLiteService);
   private readonly coordinates = inject(CoordinateService);
+  private readonly objectChange = inject(ObjectChangeService);
+  private readonly objectStore = inject(ObjectStore);
   private readonly loadEngine = inject(DICE_ENGINE_LOADER);
   private readonly stages = new Set<Stage>();
   private table: TableStage | null = null;
@@ -79,6 +91,8 @@ export class DiceRenderService {
   private broken = false;
   private frame = 0;
   private view: { key: string; columns: number[] } | null = null;
+  /** When each throw began to play here, on the clock frames are drawn by. */
+  private readonly playFrom = new Map<string, number>();
 
   constructor() {
     // A throw worked out, come to rest or dropped is drawn afresh wherever it is on show.
@@ -86,6 +100,14 @@ export class DiceRenderService {
       this.throws.throws();
       for (const stage of this.stages) stage.drawn = false;
       this.wake();
+    });
+    // A room that shows its rolls' dice has the engine readied in a quiet moment, so the first roll
+    // does not wait while the drawing library loads and its shaders are built.
+    effect(() => {
+      this.objectChange.versionOf('Config')();
+      const config = this.objectStore.get<Config>('Config');
+      if (!config || config.diceStage === 'off') return;
+      untracked(() => this.warmUp());
     });
     // So is the table's sheet when the table is turned or moved under it.
     effect(() => {
@@ -157,6 +179,7 @@ export class DiceRenderService {
     }
 
     for (const id of this.prepared.keys()) if (!throws.has(id)) this.prepared.delete(id);
+    for (const id of this.playFrom.keys()) if (!throws.has(id)) this.playFrom.delete(id);
     const pixelRatio = Math.min(devicePixelRatio || 1, this.renderLite.active() ? LITE_PIXEL_RATIO : MAX_PIXEL_RATIO);
 
     let moving = false;
@@ -164,7 +187,7 @@ export class DiceRenderService {
       const diceThrow = throws.get(id);
       if (!diceThrow?.result || diceThrow.phase === 'failed' || diceThrow.stage !== 'frame') continue;
       const prepared = this.preparedFor(engine, diceThrow);
-      const seconds = diceThrow.still ? prepared.totalSeconds : (now - diceThrow.startedAt) / 1000;
+      const seconds = diceThrow.still ? prepared.totalSeconds : (now - this.playedFrom(diceThrow, now)) / 1000;
       const tumbling = seconds < prepared.totalSeconds;
       moving ||= tumbling;
       const due = stages.filter((stage) => (tumbling || !stage.drawn) && stage.width > 0);
@@ -203,7 +226,7 @@ export class DiceRenderService {
     const host = table.canvas.getBoundingClientRect();
     for (const diceThrow of showing) {
       const prepared = this.preparedFor(engine, diceThrow);
-      const seconds = (now - diceThrow.startedAt) / 1000;
+      const seconds = (now - this.playedFrom(diceThrow, now)) / 1000;
       const total = diceThrow.still ? 0 : prepared.totalSeconds;
       const fadeFrom = total + TABLE_HOLD_SECONDS;
       const shot = this.shotOf(diceThrow.placement!.model, diceThrow.tray, host, now);
@@ -236,7 +259,21 @@ export class DiceRenderService {
     if (diceThrow.stage !== 'table' || !diceThrow.result || !diceThrow.placement) return false;
     if (diceThrow.phase === 'failed') return false;
     const total = diceThrow.still ? 0 : this.preparedFor(engine, diceThrow).totalSeconds;
-    return (now - diceThrow.startedAt) / 1000 < total + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS;
+    return (now - this.playedFrom(diceThrow, now)) / 1000 < total + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS;
+  }
+
+  /**
+   * When a throw begins to play: the first frame it is drawn in, so one worked out while the drawing
+   * library was still loading is not half over by the time it is seen. One first drawn long after it
+   * was worked out, such as a line scrolled back into view, is not thrown again but shown at rest.
+   */
+  private playedFrom(diceThrow: DiceThrow, now: number): number {
+    let from = this.playFrom.get(diceThrow.messageIdentifier);
+    if (from === undefined) {
+      from = now - diceThrow.startedAt <= LATE_START_MS ? now : diceThrow.startedAt - LATE_START_MS;
+      this.playFrom.set(diceThrow.messageIdentifier, from);
+    }
+    return from;
   }
 
   /**
@@ -291,6 +328,13 @@ export class DiceRenderService {
     const key = `${this.coordinates.tabletopTransformVersion()}:${Math.floor(now / STILL_VIEW_MS)}`;
     if (this.view?.key !== key) this.view = { key, columns: columnsOf(this.coordinates.tabletopSceneMatrix()) };
     return this.view.columns;
+  }
+
+  private warmUp(): void {
+    if (this.engine || this.starting || this.broken) return;
+    const idle = globalThis.requestIdleCallback;
+    if (typeof idle === 'function') idle(() => void this.start(), { timeout: WARM_UP_WITHIN_MS });
+    else setTimeout(() => void this.start(), 0);
   }
 
   private start(): Promise<DiceEngine | null> {

@@ -4,12 +4,14 @@ import {
   DICE_ENGINE_LOADER,
   DiceEngine,
   DiceRenderService,
+  LATE_START_MS,
   TABLE_FADE_SECONDS,
   TABLE_HOLD_SECONDS,
 } from '@axe/application/dice/dice-render.service';
 import { DiceThrow, DiceThrowService } from '@axe/application/dice/dice-throw.service';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { Matrix3D } from '@axe/core/transform/matrix-3d';
+import { Config } from '@axe/domain/peer/config';
 import type { PreparedThrow } from '@axe/infrastructure/dice-3d/dice-3d-engine';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
@@ -123,6 +125,22 @@ describe('DiceRenderService', () => {
     expect(loads).toBe(1);
   });
 
+  it('readies the engine in a quiet moment once the room shows its dice, before any roll', async () => {
+    const before = Config.instance.diceStage;
+    try {
+      TestBed.tick();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(loads).toBe(0);
+
+      Config.instance.diceStage = 'frame';
+      TestBed.tick();
+
+      await vi.waitFor(() => expect(loads).toBe(1));
+    } finally {
+      Config.instance.diceStage = before;
+    }
+  });
+
   it('draws a tumbling throw frame after frame, from when it began, and stops once it is at rest', async () => {
     throws.set(new Map([['a', throwOf('a', { startedAt: 1000 })]]));
     service.register(document.createElement('canvas'), 'a').resize(300, 90);
@@ -134,6 +152,26 @@ describe('DiceRenderService', () => {
     await nextFrame(3000);
 
     expect(engine.drawn.map((d) => d.seconds)).toEqual([0, 0.5, ROLL_SECONDS]);
+    expect(frames).toHaveLength(0);
+  });
+
+  it('plays a throw from the first frame it is drawn in, though the engine was still loading when it was worked out', async () => {
+    throws.set(new Map([['a', throwOf('a', { startedAt: 0 })]]));
+    service.register(document.createElement('canvas'), 'a').resize(300, 90);
+    await nextFrame(0);
+    await nextFrame(3000);
+    await nextFrame(3400);
+
+    expect(engine.drawn.map((d) => d.seconds)).toEqual([0, 0.4]);
+  });
+
+  it('shows a throw first drawn long after it was worked out at rest, without throwing it again', async () => {
+    throws.set(new Map([['a', throwOf('a', { startedAt: 0 })]]));
+    service.register(document.createElement('canvas'), 'a').resize(300, 90);
+    await nextFrame(0);
+    await nextFrame(LATE_START_MS + 500);
+
+    expect(engine.drawn.map((d) => d.seconds)).toEqual([ROLL_SECONDS]);
     expect(frames).toHaveLength(0);
   });
 
@@ -242,7 +280,8 @@ describe('DiceRenderService', () => {
       throws.set(new Map([['a', onTable('a', { startedAt: 0, phase: 'settled' })]]));
       await nextFrame(0);
       await nextFrame(100);
-      const end = (ROLL_SECONDS + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS) * 1000;
+      // It began to play in the first frame it was drawn in.
+      const end = 100 + (ROLL_SECONDS + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS) * 1000;
 
       await nextFrame(end - 100);
       const drawnBefore = engine.drawn.length;
