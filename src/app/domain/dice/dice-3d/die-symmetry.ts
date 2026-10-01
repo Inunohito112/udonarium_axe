@@ -63,11 +63,19 @@ export function upAlignment(poly: Polyhedron, rotation: Quat): number {
  * numbers move. A d4 is turned by its corners, the others by their faces.
  */
 export function correctionFor(poly: Polyhedron, landed: number, target: number): Quat {
+  return correctionsFor(poly, landed, target)[0];
+}
+
+/**
+ * Every turn that would do for {@link correctionFor}: they differ in how far the number shown is
+ * turned about the middle of its face, so one can be picked that sets it upright to the viewer.
+ */
+export function correctionsFor(poly: Polyhedron, landed: number, target: number): Quat[] {
   const from = poly.readsCorners ? poly.vertices[target] : poly.normals[target];
   const to = poly.readsCorners ? poly.vertices[landed] : poly.normals[landed];
-  const fit = rotationGroupOf(poly.shape).find((q) => dot(quatRotate(q, from), to) > 1 - EPSILON);
-  if (!fit) throw new Error(`No turn of a ${poly.shape} carries ${target} to ${landed}`);
-  return fit;
+  const fits = rotationGroupOf(poly.shape).filter((q) => dot(quatRotate(q, from), to) > 1 - EPSILON);
+  if (fits.length === 0) throw new Error(`No turn of a ${poly.shape} carries ${target} to ${landed}`);
+  return fits;
 }
 
 /** The face pointing most nearly up, or most nearly down. */

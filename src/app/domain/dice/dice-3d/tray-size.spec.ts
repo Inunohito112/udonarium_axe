@@ -18,7 +18,9 @@ describe('trayFor', () => {
     expect(areaOf(trayFor(10, 2))).toBeGreaterThan(areaOf(trayFor(2, 2)));
   });
 
-  it('never gives less floor than asked for', () => {
+  it('gives the floor asked for, and more for every die past two', () => {
     expect(areaOf(trayFor(1, 4 / 3, 192))).toBeCloseTo(192, 9);
+    expect(areaOf(trayFor(2, 4 / 3, 40))).toBeCloseTo(40, 9);
+    expect(areaOf(trayFor(4, 4 / 3, 40))).toBeGreaterThan(40);
   });
 });

@@ -11,6 +11,7 @@ import {
   FRAMES_PER_SECOND,
   ThrowEdge,
 } from '@axe/infrastructure/dice-3d/dice-physics-message';
+import { faceTheReader } from '@axe/infrastructure/dice-3d/reader-facing';
 import {
   Body,
   ContactMaterial,
@@ -45,28 +46,37 @@ export const MAX_ATTEMPTS = 8;
 const FAULT_ORDER: readonly (ThrowFault | null)[] = [null, 'cocked', 'stacked', 'unsettled', 'outside'];
 
 /**
- * Works out a throw of the dice onto the tray: how each die moves frame by frame and which face it
- * comes to rest on.
+ * Works out a throw of the dice onto the tray: how each die moves frame by frame, which face it
+ * comes to rest on, and the turn inside it that shows its target instead.
  *
  * The throw is seeded from what every peer shares about the roll, so all of them work out the same
  * throw. A throw whose dice do not settle, leave the tray, rest on one another or lean is thrown
- * again with the next seed; when every attempt is spoiled, the least spoiled is kept.
+ * again with the next seed, and so, last of all, is one that leaves a number upside down to the
+ * viewer; when every attempt is spoiled, the least spoiled is kept.
  */
 export function simulateThrow(request: DiceThrowRequest): DiceThrowResult {
-  let kept: DiceThrowResult | null = null;
+  let kept: { result: DiceThrowResult; rank: number } | null = null;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const result = throwOnce(request, attempt);
-    if (result.fault === null) return result;
-    if (!kept || FAULT_ORDER.indexOf(result.fault) < FAULT_ORDER.indexOf(kept.fault)) kept = result;
+    const thrown = throwOnce(request, attempt);
+    const faced = faceTheReader(request.shapes, thrown.landed, request.targets, thrown, request.tray, request.away);
+    const result = { ...thrown, frames: faced.frames, corrections: faced.corrections };
+    // Every die left upside down counts for less than any fault, so a clean throw that reads badly
+    // still beats a spoiled one.
+    const rank = thrown.fault === null ? faced.askew / (request.shapes.length + 1) : FAULT_ORDER.indexOf(thrown.fault);
+    if (rank === 0) return result;
+    if (!kept || rank < kept.rank) kept = { result, rank };
   }
-  return kept!;
+  return kept!.result;
 }
 
-function throwOnce(request: DiceThrowRequest, attempt: number): DiceThrowResult {
+function throwOnce(request: DiceThrowRequest, attempt: number): Omit<DiceThrowResult, 'corrections'> {
   const random = seededRandom(throwSeedOf(request.key, attempt));
-  const { world, diceMaterial } = buildWorld(request.tray);
+  const { world, diceMaterial, walls } = buildWorld(request.tray);
   const bodies = request.shapes.map((shape) => addDie(world, shape, diceMaterial));
   launch(bodies, request.shapes, request.tray, request.edge, random);
+  // The dice fly in over the edge they are thrown from, which closes behind them once they are all in.
+  const doorway = walls[request.edge];
+  doorway.collisionResponse = false;
 
   const count = bodies.length;
   const frames = new Float32Array(MAX_FRAMES * count * FRAME_STRIDE);
@@ -76,7 +86,15 @@ function throwOnce(request: DiceThrowRequest, attempt: number): DiceThrowResult 
   const step = 1 / (FRAMES_PER_SECOND * SUBSTEPS);
 
   for (let frame = 0; frame < MAX_FRAMES; frame++) {
-    for (let substep = 0; substep < SUBSTEPS; substep++) world.step(step);
+    for (let substep = 0; substep < SUBSTEPS; substep++) {
+      world.step(step);
+      if (
+        !doorway.collisionResponse &&
+        bodies.every((body, index) => isInside(body, request.shapes[index], request.tray))
+      ) {
+        doorway.collisionResponse = true;
+      }
+    }
     bodies.forEach((body, index) => {
       const at = (frame * count + index) * FRAME_STRIDE;
       frames[at] = body.position.x;
@@ -114,7 +132,7 @@ function throwOnce(request: DiceThrowRequest, attempt: number): DiceThrowResult 
   };
 }
 
-function buildWorld(tray: Tray): { world: World; diceMaterial: Material } {
+function buildWorld(tray: Tray): { world: World; diceMaterial: Material; walls: Record<ThrowEdge | 'far', Body> } {
   const world = new World({ gravity: new Vec3(0, 0, -GRAVITY), allowSleep: true });
   world.broadphase = new NaiveBroadphase();
   (world.solver as unknown as { iterations: number }).iterations = 16;
@@ -129,31 +147,26 @@ function buildWorld(tray: Tray): { world: World; diceMaterial: Material } {
   world.addBody(new Body({ mass: 0, material: floorMaterial, shape: new Plane() }));
   // Each wall is a half-space facing into the tray, so a die moving however fast never ends up
   // behind one.
-  const walls: [Point, Point][] = [
-    [
-      [tray.halfWidth, 0, 0],
-      [0, -Math.PI / 2, 0],
-    ],
-    [
-      [-tray.halfWidth, 0, 0],
-      [0, Math.PI / 2, 0],
-    ],
-    [
-      [0, tray.halfDepth, 0],
-      [Math.PI / 2, 0, 0],
-    ],
-    [
-      [0, -tray.halfDepth, 0],
-      [-Math.PI / 2, 0, 0],
-    ],
-  ];
-  for (const [[x, y, z], [rx, ry, rz]] of walls) {
+  const wallAt = (x: number, y: number, rx: number, ry: number): Body => {
     const wall = new Body({ mass: 0, material: wallMaterial, shape: new Plane() });
-    wall.position.set(x, y, z);
-    wall.quaternion.setFromEuler(rx, ry, rz);
+    wall.position.set(x, y, 0);
+    wall.quaternion.setFromEuler(rx, ry, 0);
     world.addBody(wall);
-  }
-  return { world, diceMaterial };
+    return wall;
+  };
+  const walls = {
+    right: wallAt(tray.halfWidth, 0, 0, -Math.PI / 2),
+    left: wallAt(-tray.halfWidth, 0, 0, Math.PI / 2),
+    far: wallAt(0, tray.halfDepth, Math.PI / 2, 0),
+    near: wallAt(0, -tray.halfDepth, -Math.PI / 2, 0),
+  };
+  return { world, diceMaterial, walls };
+}
+
+/** Whether a die is wholly within the walls of the tray. */
+function isInside(body: Body, shape: DieShape, tray: Tray): boolean {
+  const radius = dieRadiusOf(shape);
+  return Math.abs(body.position.x) < tray.halfWidth - radius && Math.abs(body.position.y) < tray.halfDepth - radius;
 }
 
 function addDie(world: World, shape: DieShape, material: Material): Body {
@@ -178,37 +191,61 @@ function addDie(world: World, shape: DieShape, material: Material): Body {
 }
 
 /**
- * Sets the dice off from just inside one edge of the tray, a little above the floor and apart from
- * each other, each turned and spun its own way and flung toward somewhere about the middle.
+ * Sets the dice off from outside one edge of the tray, a little above the floor and apart from each
+ * other, each turned its own way and flung in, rolling forward as it goes, to come down a quarter
+ * to a half of the way across and tumble on from there.
  */
 function launch(bodies: Body[], shapes: readonly DieShape[], tray: Tray, edge: ThrowEdge, random: () => number) {
-  const along = edge === 'near' ? 'y' : 'x';
-  const sign = edge === 'right' ? -1 : 1;
-  const depthOf = along === 'x' ? tray.halfWidth : tray.halfDepth;
-  const spanOf = along === 'x' ? tray.halfDepth : tray.halfWidth;
-  const perRow = Math.max(1, Math.floor((spanOf * 2 - 1) / 2.4));
+  const alongX = edge !== 'near';
+  const inward = edge === 'right' ? -1 : 1;
+  const depth = alongX ? tray.halfWidth : tray.halfDepth;
+  const span = alongX ? tray.halfDepth : tray.halfWidth;
+  const perRow = Math.max(1, Math.floor((span * 2 - 0.6) / 2.2));
   bodies.forEach((body, index) => {
     const radius = dieRadiusOf(shapes[index]);
     const row = Math.floor(index / perRow);
     const column = index % perRow;
     const inRow = Math.min(perRow, bodies.length - row * perRow);
-    const across = (column - (inRow - 1) / 2) * 2.4 + (random() - 0.5) * 0.6;
-    const start = -sign * (depthOf - radius - 0.6 - row * 2.4);
-    const height = 6 + radius + random() * 4 + row * 0.6;
-    const position = along === 'x' ? new Vec3(start, across, height) : new Vec3(across, start, height);
-    body.position.copy(position);
+    const room = Math.max(0, span - radius - 0.3);
+    const across = clamp((column - (inRow - 1) / 2) * 2.2 + (random() - 0.5) * 0.8, -room, room);
+    const start = depth + radius + 0.5 + row * 2.2;
+    const height = radius + 2 + random() * 2.5 + row * 0.4;
+    const rise = 4 + random() * 6;
 
-    const target = new Vec3((random() - 0.5) * tray.halfWidth * 0.8, (random() - 0.5) * tray.halfDepth * 0.8, 0);
-    const toward = target.vsub(new Vec3(position.x, position.y, 0));
-    toward.normalize();
-    const speed = 60 + random() * 35;
-    body.velocity.set(toward.x * speed, toward.y * speed, 4 + random() * 10);
+    // Where it first comes down, and how fast it has to go to get there in the time it falls.
+    const landing = -depth + depth * 2 * (0.12 + random() * 0.24);
+    const landingAcross = clamp(across + (random() - 0.5) * span * 0.8, -room, room);
+    const fall = (rise + Math.sqrt(rise * rise + 2 * GRAVITY * (height - radius))) / GRAVITY;
+    const reach = landing + start;
+    const sideways = landingAcross - across;
+
+    const position = alongX ? new Vec3(-inward * start, across, height) : new Vec3(across, -start, height);
+    const velocity = alongX
+      ? new Vec3((inward * reach) / fall, sideways / fall, rise)
+      : new Vec3(sideways / fall, reach / fall, rise);
+    body.position.copy(position);
+    body.velocity.copy(velocity);
     body.quaternion.copy(randomRotation(random));
-    const axis = new Vec3(random() - 0.5, random() - 0.5, random() - 0.5);
-    axis.normalize();
-    const spin = 22 + random() * 22;
-    body.angularVelocity.set(axis.x * spin, axis.y * spin, axis.z * spin);
+
+    // Spinning forward about the axis it would roll on, with a twist of its own thrown in.
+    const ground = new Vec3(velocity.x, velocity.y, 0);
+    const speed = ground.length();
+    const rollAxis = new Vec3(0, 0, 1).cross(ground);
+    rollAxis.normalize();
+    const twist = new Vec3(random() - 0.5, random() - 0.5, random() - 0.5);
+    twist.normalize();
+    const roll = (speed / radius) * (0.5 + random() * 0.6);
+    const spin = 8 + random() * 14;
+    body.angularVelocity.set(
+      rollAxis.x * roll + twist.x * spin,
+      rollAxis.y * roll + twist.y * spin,
+      rollAxis.z * roll + twist.z * spin
+    );
   });
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 /** A rotation drawn evenly from all of them. */

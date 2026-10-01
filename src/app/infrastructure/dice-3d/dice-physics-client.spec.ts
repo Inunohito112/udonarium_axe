@@ -3,7 +3,14 @@ import { simulateThrow } from '@axe/infrastructure/dice-3d/dice-physics';
 import { releaseWorker, throwDice, useDicePhysicsWorkerFactory } from '@axe/infrastructure/dice-3d/dice-physics-client';
 import type { DicePhysicsJob, DiceThrowRequest } from '@axe/infrastructure/dice-3d/dice-physics-message';
 
-const request: DiceThrowRequest = { key: 'client-roll', shapes: ['d6', 'd6'], tray: trayFor(2, 2), edge: 'left' };
+const request: DiceThrowRequest = {
+  key: 'client-roll',
+  shapes: ['d6', 'd6'],
+  targets: [2, 5],
+  tray: trayFor(2, 2),
+  edge: 'left',
+  away: [0, 1, 0],
+};
 
 /** A worker that answers on the page, the way the real one does in its own thread. */
 class StandInWorker extends EventTarget {

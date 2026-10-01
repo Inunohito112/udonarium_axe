@@ -1,4 +1,10 @@
-import { correctionFor, rotationGroupOf, upAlignment, upFace } from '@axe/domain/dice/dice-3d/die-symmetry';
+import {
+  correctionFor,
+  correctionsFor,
+  rotationGroupOf,
+  upAlignment,
+  upFace,
+} from '@axe/domain/dice/dice-3d/die-symmetry';
 import { DIE_SHAPES, polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
 import {
   dot,
@@ -61,6 +67,13 @@ describe('the turns of a die onto itself', () => {
             expect(upFace(poly, shown)).toBe(target);
           }
         }
+      });
+
+      it('offer one turn for each way the shown number can sit about the middle of its face', () => {
+        const turns = correctionsFor(poly, 0, 1);
+        expect(turns).toHaveLength(rotationGroupOf(shape).length / (poly.readsCorners ? 4 : poly.faces.length));
+        const body = restingOn(shape, 0, 0.4);
+        turns.forEach((turn) => expect(upFace(poly, quatMultiply(body, turn))).toBe(1));
       });
     });
   }

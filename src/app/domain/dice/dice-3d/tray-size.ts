@@ -6,12 +6,12 @@ export const MIN_TRAY_AREA = 98;
 const AREA_PER_DIE = 6;
 
 /**
- * The tray a number of dice are thrown onto, in the shape of the stage it is drawn in: wide enough
- * that they roll before they settle and land apart, larger for more dice, and never smaller than
- * the floor asked for.
+ * The tray a number of dice are thrown onto, in the shape of the stage it is drawn in: the floor
+ * asked for, which a stage sets by how large it wants the dice to look, and more of it for every
+ * die past two, so a large roll still lands apart.
  */
 export function trayFor(count: number, aspect: number, minArea = MIN_TRAY_AREA): Tray {
-  const area = Math.max(minArea, MIN_TRAY_AREA + AREA_PER_DIE * Math.max(0, count - 2));
+  const area = minArea + AREA_PER_DIE * Math.max(0, count - 2);
   const halfDepth = Math.sqrt(area / aspect) / 2;
   return { halfWidth: halfDepth * aspect, halfDepth };
 }
