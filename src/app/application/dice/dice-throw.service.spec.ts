@@ -6,6 +6,7 @@ import {
   LINE_WAIT_MS,
   MAX_TUMBLING,
 } from '@axe/application/dice/dice-throw.service';
+import { DiceTrayPlacementService, TablePlacement } from '@axe/application/dice/dice-tray-placement.service';
 import { MotionService } from '@axe/application/ui/motion.service';
 import { callDiceThrow, emitMessageAdded } from '@axe/core/event/domain-events';
 import { setNetworkIsolated } from '@axe/core/network/network-isolation';
@@ -30,6 +31,8 @@ describe('DiceThrowService', () => {
   let tab: ChatTab;
   let service: DiceThrowService;
   let stageBefore: DiceStage;
+  let placement: TablePlacement | null;
+  let placedFor: string[];
 
   function fixPeerContext(): void {
     const self = {
@@ -82,7 +85,25 @@ describe('DiceThrowService', () => {
     stageBefore = Config.instance.diceStage;
     Config.instance.diceStage = 'frame';
     useDicePhysicsWorkerFactory(() => null);
-    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    placedFor = [];
+    placement = {
+      model: [20, 0, 0, 0, 0, -20, 0, 0, 0, 0, 20, 0, 400, 300, 0, 1],
+      tray: { halfWidth: 4, halfDepth: 3 },
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        ...TEST_PROVIDERS,
+        {
+          provide: DiceTrayPlacementService,
+          useValue: {
+            placementFor: (speaker: string) => {
+              placedFor.push(speaker);
+              return placement;
+            },
+          },
+        },
+      ],
+    });
     service = TestBed.inject(DiceThrowService);
     TestBed.inject(MotionService).setting.set('on');
 
@@ -286,5 +307,44 @@ describe('DiceThrowService', () => {
     service.fail(line.identifier);
 
     expect(thrown(line)?.phase).toBe('failed');
+  });
+
+  describe('on the table', () => {
+    beforeEach(() => {
+      Config.instance.diceStage = 'table';
+    });
+
+    it('throws the dice on the tray the table gives them, before the piece that spoke', async () => {
+      const line = answer({ faces: [{ sides: 6, value: 4 }] });
+
+      callDiceThrow({ messageIdentifier: line.identifier, speakerIdentifier: 'goblin' }, 'here');
+
+      await vi.waitFor(() => expect(thrown(line)?.phase).toBe('rolling'));
+      expect(thrown(line)?.stage).toBe('table');
+      expect(thrown(line)?.placement).toBe(placement);
+      expect(thrown(line)?.tray).toEqual(placement!.tray);
+      expect(thrown(line)?.shown).toEqual(['4']);
+      expect(placedFor).toEqual(['goblin']);
+    });
+
+    it('puts nothing on the table for a reader who keeps the screen still', async () => {
+      TestBed.inject(MotionService).setting.set('off');
+      const line = answer();
+
+      callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      expect(thrown(line)).toBeUndefined();
+    });
+
+    it('throws nothing when no table is on show', async () => {
+      placement = null;
+      const line = answer();
+
+      callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      expect(thrown(line)).toBeUndefined();
+    });
   });
 });

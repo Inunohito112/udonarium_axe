@@ -102,6 +102,8 @@ export interface DiceRolledEvent {
 export interface DiceThrowEvent {
   /** The dice bot's answer whose dice are thrown. */
   messageIdentifier: string;
+  /** The piece that said the line the answer answers, which the dice are thrown before on the table; blank for none. */
+  speakerIdentifier?: string;
 }
 
 export interface DiceBotUnreachableEvent {
@@ -361,8 +363,10 @@ networkMessage$.subscribe((msg) => {
       resourceChange$.emit(msg.data as ResourceChangeEvent);
       break;
     case 'DICE_THROW': {
-      const identifier = (msg.data as Partial<DiceThrowEvent> | null)?.messageIdentifier;
-      if (typeof identifier === 'string') diceThrow$.emit({ messageIdentifier: identifier });
+      const data = msg.data as Partial<DiceThrowEvent> | null;
+      if (typeof data?.messageIdentifier !== 'string') break;
+      const speaker = typeof data.speakerIdentifier === 'string' ? data.speakerIdentifier : '';
+      diceThrow$.emit({ messageIdentifier: data.messageIdentifier, speakerIdentifier: speaker });
       break;
     }
   }

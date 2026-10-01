@@ -124,9 +124,13 @@ describe('domain-events emit→subscribe wiring', () => {
   it('throws the dice of a roll on this device alone when asked to keep it here', () => {
     const received: unknown[] = [];
     const unsub = diceThrow$.subscribe((e) => received.push(e));
-    callDiceThrow({ messageIdentifier: 'answer-1' }, 'here');
+    callDiceThrow({ messageIdentifier: 'answer-1', speakerIdentifier: 'goblin' }, 'here');
+    callDiceThrow({ messageIdentifier: 'answer-2' }, 'here');
     unsub();
-    expect(received).toEqual([{ messageIdentifier: 'answer-1' }]);
+    expect(received).toEqual([
+      { messageIdentifier: 'answer-1', speakerIdentifier: 'goblin' },
+      { messageIdentifier: 'answer-2', speakerIdentifier: '' },
+    ]);
   });
 
   it('passes over a dice throw that names no line', () => {

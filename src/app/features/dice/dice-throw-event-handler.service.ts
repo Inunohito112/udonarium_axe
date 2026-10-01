@@ -24,7 +24,13 @@ export class DiceThrowEventHandlerService {
       const config = this.objectStore.get<Config>('Config') ?? Config.instance;
       if (config.diceStage === 'off') return;
       if (throwPlanOf(answer.rollDetail).dice.length < 1) return;
-      callDiceThrow({ messageIdentifier: answer.identifier }, answer.isSecret ? 'here' : 'everywhere');
+      // The answer does not say which piece spoke; the line it answers does.
+      const line = this.objectStore.get<ChatMessage>(event.sourceMessageIdentifier);
+      const speakerIdentifier = line instanceof ChatMessage ? line.sendFrom : '';
+      callDiceThrow(
+        { messageIdentifier: answer.identifier, speakerIdentifier },
+        answer.isSecret ? 'here' : 'everywhere'
+      );
     }, this.destroyRef);
   }
 }

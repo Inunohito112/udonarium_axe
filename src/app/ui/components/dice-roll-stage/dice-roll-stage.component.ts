@@ -40,7 +40,7 @@ export class DiceRollStageComponent {
   /** The throw on show here, or null when there is none to show. */
   protected readonly diceThrow = computed(() => {
     const diceThrow = this.throws.throws().get(this.messageIdentifier());
-    return diceThrow && diceThrow.phase !== 'failed' ? diceThrow : null;
+    return diceThrow && diceThrow.stage === 'frame' && diceThrow.phase !== 'failed' ? diceThrow : null;
   });
 
   constructor() {

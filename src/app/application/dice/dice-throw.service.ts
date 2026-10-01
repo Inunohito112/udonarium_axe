@@ -1,4 +1,5 @@
 import { computed, DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
+import { DiceTrayPlacementService, TablePlacement } from '@axe/application/dice/dice-tray-placement.service';
 import { MotionService } from '@axe/application/ui/motion.service';
 import { diceThrow$, messageAdded$ } from '@axe/core/event/domain-events';
 import { isNetworkIsolated } from '@axe/core/network/network-isolation';
@@ -37,16 +38,20 @@ export const KEPT_THROWS = 30;
  */
 export type DiceThrowPhase = 'working' | 'rolling' | 'settled' | 'failed';
 
-/** A chat roll's dice, thrown in the frame of the line that answered it. */
+/** A chat roll's dice, thrown in the frame of the line that answered it or on the table. */
 export interface DiceThrow {
   readonly messageIdentifier: string;
+  /** Where they are thrown. */
+  readonly stage: 'frame' | 'table';
+  /** Where on the table, for a throw there. */
+  readonly placement: TablePlacement | null;
   readonly dice: readonly DieToThrow[];
   /** How many more dice the roll had than are thrown. */
   readonly overflow: number;
   /** The colour of the dice: the colour the roll was said in. */
   readonly color: string;
   readonly tray: Tray;
-  /** The frame's width over its height, which is the tray's. */
+  /** The tray's width over its depth, which is the frame's for a throw in one. */
   readonly aspect: number;
   readonly phase: DiceThrowPhase;
   /** How the dice move and the turns that show their numbers, once worked out. */
@@ -78,6 +83,7 @@ export class DiceThrowService {
   private readonly destroyRef = inject(DestroyRef);
   private readonly objectStore = inject(ObjectStore);
   private readonly motion = inject(MotionService);
+  private readonly placements = inject(DiceTrayPlacementService);
   private readonly state = signal<ReadonlyMap<string, DiceThrow>>(new Map());
   /** The lines already called to be thrown, kept beyond the throws themselves so none is thrown twice. */
   private readonly called = new Set<string>();
@@ -92,7 +98,10 @@ export class DiceThrowService {
   );
 
   constructor() {
-    diceThrow$.subscribe((event) => void this.receive(event.messageIdentifier), this.destroyRef);
+    diceThrow$.subscribe(
+      (event) => void this.receive(event.messageIdentifier, event.speakerIdentifier ?? ''),
+      this.destroyRef
+    );
     this.destroyRef.onDestroy(() => this.timers.forEach((timer) => clearTimeout(timer)));
   }
 
@@ -101,28 +110,34 @@ export class DiceThrowService {
     this.update(messageIdentifier, { phase: 'failed' });
   }
 
-  private async receive(messageIdentifier: string): Promise<void> {
+  private async receive(messageIdentifier: string, speakerIdentifier: string): Promise<void> {
     if (isNetworkIsolated() || this.called.has(messageIdentifier)) return;
     this.called.add(messageIdentifier);
     if (this.called.size > KEPT_THROWS * 4) this.called.delete(this.called.values().next().value!);
 
-    if (this.config.diceStage !== 'frame') return;
+    const stage = this.config.diceStage;
+    if (stage === 'off') return;
     const message = await this.arrivalOf(messageIdentifier);
     if (!message || !this.mayThrow(message)) return;
     const plan = throwPlanOf(message.rollDetail);
     if (plan.dice.length < 1) return;
 
-    const aspect = frameAspectFor(plan.dice.length);
-    const tray = trayFor(plan.dice.length, aspect, FRAME_TRAY_AREA);
+    // A reader who keeps the screen still has nothing put on the table, which they are moving about on.
+    if (stage === 'table' && !this.motion.enabled()) return;
+    const placement = stage === 'table' ? this.placements.placementFor(speakerIdentifier, plan.dice.length) : null;
+    if (stage === 'table' && !placement) return;
+    const tray = placement?.tray ?? trayFor(plan.dice.length, frameAspectFor(plan.dice.length), FRAME_TRAY_AREA);
     const still = !this.motion.enabled() || this.busy() >= MAX_TUMBLING;
     const color = message.messColor?.length ? message.messColor : BLANK_COLOR;
     this.add({
       messageIdentifier,
+      stage,
+      placement,
       dice: plan.dice,
       overflow: plan.overflow,
       color,
       tray,
-      aspect,
+      aspect: tray.halfWidth / tray.halfDepth,
       phase: 'working',
       result: null,
       startedAt: 0,

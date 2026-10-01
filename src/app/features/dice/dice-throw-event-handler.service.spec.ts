@@ -31,10 +31,11 @@ describe('DiceThrowEventHandlerService', () => {
     setPeerContextProvider({ peerContext: self, peerContexts: [self], peerIds: [self.peerId], peerId: self.peerId });
   }
 
-  function roll(options: { from?: string; secret?: boolean; sides?: number } = {}): ChatMessage {
+  function roll(options: { from?: string; secret?: boolean; sides?: number; speaker?: string } = {}): ChatMessage {
     const from = options.from ?? ME;
     const source = tab.addMessage({
       from,
+      sendFrom: options.speaker ?? '',
       text: '1d20',
       timestamp: Date.now(),
       imageIdentifier: '',
@@ -89,7 +90,9 @@ describe('DiceThrowEventHandlerService', () => {
   it('tells the room to throw the dice of a roll made here', () => {
     const answer = roll();
 
-    expect(sent).toEqual([{ eventName: 'DICE_THROW', data: { messageIdentifier: answer.identifier } }]);
+    expect(sent).toEqual([
+      { eventName: 'DICE_THROW', data: { messageIdentifier: answer.identifier, speakerIdentifier: '' } },
+    ]);
     expect(here).toEqual([]);
   });
 
@@ -97,7 +100,15 @@ describe('DiceThrowEventHandlerService', () => {
     const answer = roll({ secret: true });
 
     expect(sent).toEqual([]);
-    expect(here).toEqual([{ messageIdentifier: answer.identifier }]);
+    expect(here).toEqual([{ messageIdentifier: answer.identifier, speakerIdentifier: '' }]);
+  });
+
+  it('names the piece that spoke the roll, so the dice can be thrown before it', () => {
+    const answer = roll({ speaker: 'goblin-piece' });
+
+    expect(sent).toEqual([
+      { eventName: 'DICE_THROW', data: { messageIdentifier: answer.identifier, speakerIdentifier: 'goblin-piece' } },
+    ]);
   });
 
   it('says nothing while the room shows no dice', () => {

@@ -8,6 +8,8 @@ import { DiceRollStageComponent } from '@axe/ui/components/dice-roll-stage/dice-
 function throwOf(id: string, change: Partial<DiceThrow> = {}): DiceThrow {
   return {
     messageIdentifier: id,
+    stage: 'frame',
+    placement: null,
     dice: [
       { shape: 'd20', labels: 'standard', target: 0, shows: '17' },
       { shape: 'd6', labels: 'standard', target: 0, shows: '2' },

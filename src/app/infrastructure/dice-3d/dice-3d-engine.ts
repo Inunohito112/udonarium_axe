@@ -55,7 +55,17 @@ export type ThrowView =
       readonly kind: 'table';
       /** From the tray's world to the clip space of the screen, as sixteen numbers in column order. */
       readonly projection: ArrayLike<number>;
+      /** Where the eye stands in the tray's world, which the dice's shine is seen from; null from infinitely far. */
+      readonly eye: readonly [number, number, number] | null;
     };
+
+/** Where on the engine's canvas a throw was drawn, in its device pixels from the top left. */
+export interface DrawnRegion {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
 
 /** The size of what is drawn, in CSS pixels, and how many device pixels each takes. */
 export interface DrawSize {
@@ -85,6 +95,12 @@ const FRAME_FOV = 18;
 const FRAME_ELEVATION = (72 * Math.PI) / 180;
 /** How high the tallest die stands as it rests, so one against the far wall keeps its top in the frame. */
 const TALLEST_DIE = 1.7;
+/**
+ * How far past the tray shadows are cast: a little in a frame, whose edges are the tray's walls, and
+ * further on the table, where a die flying in from outside the tray throws its shadow on the board.
+ */
+const FRAME_SHADOW_REACH = 3;
+const TABLE_SHADOW_REACH = 8;
 /** How wide the soft edge of a die's shadow is, in the units of the tray. */
 const PENUMBRA = 0.22;
 /** How far the felt runs past the tray, so it fills the frame however the camera stands. */
@@ -149,6 +165,9 @@ export class Dice3dEngine {
     this.scene.add(this.felt, this.shadowCatcher);
 
     this.frameCamera.up.set(0, 0, 1);
+    // The table's camera is set by hand each time; left to itself it would put itself back at the origin.
+    this.tableCamera.matrixAutoUpdate = false;
+    this.tableCamera.matrixWorldAutoUpdate = false;
   }
 
   /** Starts the renderer and readies its shaders, so the first throw does not stall while they build. */
@@ -169,7 +188,8 @@ export class Dice3dEngine {
       },
     });
     engine.scene.add(warm.root);
-    engine.layOut(warm.tray, { kind: 'frame' }, { width: 64, height: 32, pixelRatio: 1 });
+    engine.fit({ width: 64, height: 32, pixelRatio: 1 });
+    engine.layOut(warm.tray, { kind: 'frame' }, 2);
     await engine.renderer.compileAsync(engine.scene, engine.frameCamera);
     engine.scene.remove(warm.root);
     return engine;
@@ -205,14 +225,22 @@ export class Dice3dEngine {
     };
   }
 
-  /** Draws a throw as it stands some seconds after it was thrown, into the engine's canvas. */
-  render(prepared: PreparedThrow, seconds: number, view: ThrowView, size: DrawSize): void {
-    if (this.lost) return;
+  /**
+   * Draws a throw as it stands some seconds after it was thrown, into a corner of the engine's
+   * canvas, and says where.
+   *
+   * The canvas only ever grows, so a frame and the table drawn in turn do not have it remade each
+   * time; each picture takes the corner it needs.
+   */
+  render(prepared: PreparedThrow, seconds: number, view: ThrowView, size: DrawSize): DrawnRegion {
+    const region = this.fit(size);
+    if (this.lost) return region;
     pose(prepared, seconds);
     this.scene.add(prepared.root);
-    const camera = this.layOut(prepared.tray, view, size);
+    const camera = this.layOut(prepared.tray, view, size.width / size.height);
     this.renderer.render(this.scene, camera);
     this.scene.remove(prepared.root);
+    return region;
   }
 
   /** Lets the renderer and everything it holds go. */
@@ -222,20 +250,35 @@ export class Dice3dEngine {
     this.renderer.dispose();
   }
 
-  private layOut(tray: Tray, view: ThrowView, size: DrawSize) {
+  /** Grows the canvas to hold a picture of a size, and points the drawing at its top left corner. */
+  private fit(size: DrawSize): DrawnRegion {
     const width = Math.max(1, Math.round(size.width));
     const height = Math.max(1, Math.round(size.height));
     if (this.renderer.getPixelRatio() !== size.pixelRatio) this.renderer.setPixelRatio(size.pixelRatio);
     const current = this.renderer.getSize(new Vector2());
-    if (current.x !== width || current.y !== height) this.renderer.setSize(width, height, false);
+    if (current.x < width || current.y < height) {
+      this.renderer.setSize(Math.max(current.x, width), Math.max(current.y, height), false);
+    }
+    const canvasHeight = this.renderer.getSize(new Vector2()).y;
+    // WebGL counts up from the foot of the canvas, so the top left corner is the canvas's height
+    // less the picture's above its foot.
+    this.renderer.setViewport(0, canvasHeight - height, width, height);
+    const ratio = this.renderer.getPixelRatio();
+    return { x: 0, y: 0, width: Math.round(width * ratio), height: Math.round(height * ratio) };
+  }
 
+  private layOut(tray: Tray, view: ThrowView, aspect: number) {
     const inFrame = view.kind === 'frame';
     this.felt.visible = inFrame;
     this.shadowCatcher.visible = !inFrame;
     if (inFrame) {
       this.felt.scale.set(FELT_REACH * 2, FELT_REACH * 2, 1);
     } else {
-      this.shadowCatcher.scale.set(tray.halfWidth * 2 + 4, tray.halfDepth * 2 + 4, 1);
+      this.shadowCatcher.scale.set(
+        (tray.halfWidth + TABLE_SHADOW_REACH) * 2,
+        (tray.halfDepth + TABLE_SHADOW_REACH) * 2,
+        1
+      );
     }
 
     // A key light high to the left and a little behind, the side the left softbox lights from, so
@@ -244,24 +287,28 @@ export class Dice3dEngine {
     this.light.position.set(-span * 1.6, span * 0.5, span * 1.9);
     this.light.target.position.set(0, 0, 0);
     const shadow = this.light.shadow.camera;
-    shadow.left = -tray.halfWidth - 3;
-    shadow.right = tray.halfWidth + 3;
-    shadow.top = tray.halfDepth + 3;
-    shadow.bottom = -tray.halfDepth - 3;
+    const reach = inFrame ? FRAME_SHADOW_REACH : TABLE_SHADOW_REACH;
+    shadow.left = -tray.halfWidth - reach;
+    shadow.right = tray.halfWidth + reach;
+    shadow.top = tray.halfDepth + reach;
+    shadow.bottom = -tray.halfDepth - reach;
     shadow.near = 1;
     shadow.far = span * 6;
     shadow.updateProjectionMatrix();
     this.light.shadow.radius = (PENUMBRA * SHADOW_MAP_PX) / (shadow.right - shadow.left);
 
     if (view.kind === 'table') {
-      this.tableCamera.projectionMatrix.fromArray(Array.from(view.projection));
-      this.tableCamera.projectionMatrixInverse.copy(this.tableCamera.projectionMatrix).invert();
-      this.tableCamera.matrixWorld.identity();
-      this.tableCamera.matrixWorldInverse.identity();
-      this.tableCamera.matrixAutoUpdate = false;
-      return this.tableCamera;
+      // The eye stands where the table is seen from, so the light shines off the dice toward it;
+      // the projection is the page's own, taken from there.
+      const camera = this.tableCamera;
+      const [ex, ey, ez] = view.eye ?? [0, 0, 0];
+      camera.matrixWorld.makeTranslation(ex, ey, ez);
+      camera.matrixWorldInverse.makeTranslation(-ex, -ey, -ez);
+      camera.projectionMatrix.fromArray(Array.from(view.projection)).multiply(camera.matrixWorld);
+      camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+      return camera;
     }
-    fitFrameCamera(this.frameCamera, tray, width / height);
+    fitFrameCamera(this.frameCamera, tray, aspect);
     return this.frameCamera;
   }
 
