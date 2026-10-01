@@ -31,6 +31,7 @@
     "@skyway-sdk/core": "^2.4.6",
     "base-x": "^5.0.1",
     "bcdice": "4.10.0",
+    "cannon-es": "^0.20.0",
     "entities": "^8.1.0",
     "eventemitter3": "^5.0.4",
     "fflate": "^0.8.3",
@@ -38,6 +39,7 @@
     "linkifyjs": "^4.3.2",
     "mp4-muxer": "^5.2.2",
     "rxjs": "^7.5.5",
+    "three": "0.186.1",
     "tslib": "^2.3.1"
   },
   "devDependencies": {
@@ -61,6 +63,7 @@
     "@semantic-release/github": "^12.0.10",
     "@tailwindcss/postcss": "^4.2.4",
     "@types/node": "^25.9.8",
+    "@types/three": "0.186.0",
     "@typescript-eslint/eslint-plugin": "^8.70.1",
     "@typescript-eslint/parser": "^8.70.1",
     "@vitest/coverage-v8": "^4.1.11",

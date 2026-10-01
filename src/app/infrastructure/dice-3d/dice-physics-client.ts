@@ -1,0 +1,101 @@
+import { Logger } from '@axe/core/logging/logger';
+import type {
+  DicePhysicsJob,
+  DicePhysicsReply,
+  DiceThrowRequest,
+  DiceThrowResult,
+} from '@axe/infrastructure/dice-3d/dice-physics-message';
+
+/** How long the worker is kept with nothing to do before it is let go, in milliseconds. */
+export const DICE_WORKER_IDLE_MS = 60_000;
+
+let makeWorker: (() => Worker | null) | null = null;
+let worker: Worker | null = null;
+let idleTimer: ReturnType<typeof setTimeout> | null = null;
+let nextId = 1;
+const pending = new Map<number, (result: DiceThrowResult | null) => void>();
+
+/**
+ * Hands in how the worker is made, or null to go back to the real one. A test hands in a stand-in,
+ * or one that makes none so the page works the throw out itself.
+ */
+export function useDicePhysicsWorkerFactory(factory: (() => Worker | null) | null): void {
+  makeWorker = factory;
+  releaseWorker();
+}
+
+/**
+ * Works out a throw away from the page, so a handful of dice tumbling for two seconds never
+ * stutters the screen while they are worked out.
+ *
+ * The page works it out itself when no worker can be started or the worker fails, so a throw is
+ * always answered.
+ */
+export async function throwDice(request: DiceThrowRequest): Promise<DiceThrowResult> {
+  const fromWorker = await askWorker(request);
+  if (fromWorker) return fromWorker;
+  const { simulateThrow } = await import('@axe/infrastructure/dice-3d/dice-physics');
+  return simulateThrow(request);
+}
+
+/** Lets the worker go and drops any throw still waiting on it, which the page then works out. */
+export function releaseWorker(): void {
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = null;
+  worker?.terminate();
+  worker = null;
+  for (const resolve of pending.values()) resolve(null);
+  pending.clear();
+}
+
+function askWorker(request: DiceThrowRequest): Promise<DiceThrowResult | null> {
+  const running = ensureWorker();
+  if (!running) return Promise.resolve(null);
+  const id = nextId++;
+  return new Promise((resolve) => {
+    pending.set(id, (result) => {
+      pending.delete(id);
+      scheduleIdle();
+      resolve(result);
+    });
+    try {
+      running.postMessage({ id, request } satisfies DicePhysicsJob);
+    } catch (reason) {
+      Logger.warn('[Dice3D] 物理のワーカーに投げられないためページで計算します', reason);
+      pending.get(id)?.(null);
+    }
+  });
+}
+
+function ensureWorker(): Worker | null {
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = null;
+  if (worker) return worker;
+  try {
+    worker = startWorker();
+  } catch (reason) {
+    Logger.warn('[Dice3D] 物理のワーカーを起動できないためページで計算します', reason);
+    worker = null;
+  }
+  if (!worker) return null;
+  worker.addEventListener('message', (event: MessageEvent<DicePhysicsReply>) => {
+    pending.get(event.data.id)?.(event.data.result);
+  });
+  worker.addEventListener('error', (event) => {
+    Logger.warn('[Dice3D] 物理のワーカーが止まったためページで計算します', event);
+    releaseWorker();
+  });
+  return worker;
+}
+
+function startWorker(): Worker | null {
+  if (makeWorker) return makeWorker();
+  if (typeof Worker === 'undefined') return null;
+  return new Worker(new URL('./dice-physics.worker', import.meta.url), { type: 'module' });
+}
+
+function scheduleIdle(): void {
+  if (idleTimer) clearTimeout(idleTimer);
+  if (pending.size > 0) return;
+  idleTimer = setTimeout(releaseWorker, DICE_WORKER_IDLE_MS);
+}
