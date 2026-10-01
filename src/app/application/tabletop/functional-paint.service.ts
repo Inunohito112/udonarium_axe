@@ -1,7 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { GameObject } from '@axe/core/sync/game-object';
+import { ObjectNode } from '@axe/core/sync/object-node';
 import { ambienceKindOf } from '@axe/domain/effect/ambience/ambience-kind';
 import { BoardSwitch } from '@axe/domain/tabletop/board-switch/board-switch';
+import { stashOf } from '@axe/domain/tabletop/board-switch/concealment';
 import { parseCellKey } from '@axe/domain/tabletop/cell-key';
 import { cellKeyOf, CellRect } from '@axe/domain/tabletop/cell-rectangles';
 import { CellBits } from '@axe/domain/tabletop/fog/cell-bits';
@@ -35,12 +37,24 @@ import { Terrain, TERRAIN_FACES } from '@axe/domain/tabletop/terrain';
 import { encodeSlopeSides, parseSlopeSides } from '@axe/domain/tabletop/terrain-slope';
 import { isPressMoment } from '@axe/domain/tabletop/trigger-event';
 
+/**
+ * What hangs under a table, together with what the master has put out of sight on it.
+ *
+ * A block put out of sight is still part of the map: an editor that could not see it would lay it
+ * again, in plain view, the next time the painting was put on the table, and would never take it
+ * away when the painting stopped holding it.
+ */
+function laidOn(table: GameTable): readonly ObjectNode[] {
+  const stash = stashOf(table);
+  return stash ? [...table.children, ...stash.children] : table.children;
+}
+
 function terrainsOn(table: GameTable): Terrain[] {
-  return table.children.filter((child): child is Terrain => child instanceof Terrain);
+  return laidOn(table).filter((child): child is Terrain => child instanceof Terrain);
 }
 
 function masksOn(table: GameTable): GameTableMask[] {
-  return table.children.filter((child): child is GameTableMask => child instanceof GameTableMask);
+  return laidOn(table).filter((child): child is GameTableMask => child instanceof GameTableMask);
 }
 
 /** Lays one block of terrain wearing everything the block carries. */
