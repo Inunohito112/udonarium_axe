@@ -69,6 +69,7 @@ describe('DiceRenderService', () => {
   let frames: FrameRequestCallback[];
   let throws: ReturnType<typeof signal<ReadonlyMap<string, DiceThrow>>>;
   let failed: string[];
+  let played: [string, number][];
   let engine: StandInEngine;
   let loads: number;
   let service: DiceRenderService;
@@ -87,12 +88,20 @@ describe('DiceRenderService', () => {
     vi.stubGlobal('cancelAnimationFrame', () => undefined);
     throws = signal<ReadonlyMap<string, DiceThrow>>(new Map());
     failed = [];
+    played = [];
     engine = new StandInEngine();
     loads = 0;
     TestBed.configureTestingModule({
       providers: [
         ...TEST_PROVIDERS,
-        { provide: DiceThrowService, useValue: { throws, fail: (id: string) => failed.push(id) } },
+        {
+          provide: DiceThrowService,
+          useValue: {
+            throws,
+            fail: (id: string) => failed.push(id),
+            played: (id: string, at: number) => played.push([id, at]),
+          },
+        },
         {
           provide: CoordinateService,
           useValue: { tabletopTransformVersion: signal(0), tabletopSceneMatrix: () => new Matrix3D() },
@@ -163,6 +172,16 @@ describe('DiceRenderService', () => {
     await nextFrame(3400);
 
     expect(engine.drawn.map((d) => d.seconds)).toEqual([0, 0.4]);
+  });
+
+  it('tells the throws when one began to play, so it comes to rest when its dice do on the screen', async () => {
+    throws.set(new Map([['a', throwOf('a', { startedAt: 0 })]]));
+    service.register(document.createElement('canvas'), 'a').resize(300, 90);
+    await nextFrame(0);
+    await nextFrame(2500);
+    await nextFrame(2600);
+
+    expect(played).toEqual([['a', 2500]]);
   });
 
   it('shows a throw first drawn long after it was worked out at rest, without throwing it again', async () => {

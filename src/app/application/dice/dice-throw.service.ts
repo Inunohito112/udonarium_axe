@@ -158,16 +158,29 @@ export class DiceThrowService {
       startedAt: performance.now(),
       shown: shownBy(plan.dice, result),
     });
-    if (!still) {
-      const seconds = (result.frameCount - 1) / FRAMES_PER_SECOND;
-      this.timers.set(
-        messageIdentifier,
-        setTimeout(() => {
-          this.timers.delete(messageIdentifier);
-          this.update(messageIdentifier, { phase: 'settled' });
-        }, seconds * 1000)
-      );
-    }
+    if (!still) this.settleAfter(messageIdentifier, ((result.frameCount - 1) / FRAMES_PER_SECOND) * 1000);
+  }
+
+  /**
+   * Has a throw come to rest as long after a moment as its dice take to stop, the moment it began
+   * to play where it is drawn, which can be later than when it was worked out.
+   */
+  played(messageIdentifier: string, at: number): void {
+    const diceThrow = this.state().get(messageIdentifier);
+    if (diceThrow?.phase !== 'rolling' || !diceThrow.result) return;
+    const total = ((diceThrow.result.frameCount - 1) / FRAMES_PER_SECOND) * 1000;
+    this.settleAfter(messageIdentifier, Math.max(0, at + total - performance.now()));
+  }
+
+  private settleAfter(messageIdentifier: string, ms: number): void {
+    clearTimeout(this.timers.get(messageIdentifier));
+    this.timers.set(
+      messageIdentifier,
+      setTimeout(() => {
+        this.timers.delete(messageIdentifier);
+        this.update(messageIdentifier, { phase: 'settled' });
+      }, ms)
+    );
   }
 
   private get config(): Config {

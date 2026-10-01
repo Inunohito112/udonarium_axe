@@ -272,6 +272,7 @@ export class DiceRenderService {
     if (from === undefined) {
       from = now - diceThrow.startedAt <= LATE_START_MS ? now : diceThrow.startedAt - LATE_START_MS;
       this.playFrom.set(diceThrow.messageIdentifier, from);
+      if (from === now) this.throws.played(diceThrow.messageIdentifier, now);
     }
     return from;
   }

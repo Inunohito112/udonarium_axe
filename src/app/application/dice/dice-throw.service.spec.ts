@@ -151,6 +151,19 @@ describe('DiceThrowService', () => {
     });
   });
 
+  it('comes to rest as long after it began to play on the screen as its dice take, not after it was worked out', async () => {
+    const line = answer();
+    callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+    await vi.waitFor(() => expect(thrown(line)?.phase).toBe('rolling'));
+    const total = ((thrown(line)!.result!.frameCount - 1) / 60) * 1000;
+
+    service.played(line.identifier, performance.now() + 1500);
+    await new Promise((resolve) => setTimeout(resolve, total + 300));
+    expect(thrown(line)?.phase).toBe('rolling');
+
+    await vi.waitFor(() => expect(thrown(line)?.phase).toBe('settled'), { timeout: 3000 });
+  });
+
   it('throws nothing while the room shows no dice', async () => {
     Config.instance.diceStage = 'off';
     const line = answer();
