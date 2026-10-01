@@ -52,14 +52,20 @@
           [style.height.px]="depth() * gridSize"
           [style.transform]="'translateZ(' + (hasWall() ? height() * gridSize : 0) + 'px)'"
         ></div>
-        <!-- A block of glass is picked up by its footprint, not by its top, so the master is
-             shown where the ground is as well as how high it stands. -->
+        <!-- The master is shown where the ground is as well as how high it stands. -->
         @if (hasWall()) {
           <div
             class="pointer-events-none absolute top-0 left-0 box-border border-2 border-dotted border-sky-300/40 backface-hidden"
             data-testid="terrain-blank-base"
             [style.width.px]="width() * gridSize"
             [style.height.px]="depth() * gridSize"
+          ></div>
+        }
+        @for (face of glassFaces(); track $index) {
+          <div
+            class="pointer-events-auto absolute origin-top-left transition-colors group-hover:bg-sky-300/10"
+            data-testid="terrain-glass-face"
+            [ngStyle]="face"
           ></div>
         }
       }

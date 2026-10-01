@@ -96,6 +96,9 @@ interface TerrainGridViewport extends TerrainGridBounds {
 /** How far a pointer may wander between pressing a switch and letting go, and still press it. */
 const PRESS_SLOP_PX = 6;
 
+/** How far a block of glass's faces stand off the ground, so the table, lying at the same depth, never takes a press from them. */
+const GLASS_FACE_LIFT_PX = 0.5;
+
 /** The same list, or two empty ones: an empty @for renders nothing either way. */
 function sameOrBothEmpty<T>(a: readonly T[], b: readonly T[]): boolean {
   return a === b || (a.length === 0 && b.length === 0);
@@ -313,6 +316,59 @@ export class TerrainComponent {
   readonly showsBlankOutline = computed(() => {
     this.objectChange.trackMyCursor();
     return this.isBlank() && this.rolePermission.canSeeHidden;
+  });
+
+  /**
+   * Faces nobody sees, standing where a block of glass would have its top and walls, for the master
+   * to take hold of it by.
+   *
+   * Its outlines answer no pointer, and its footprint lies level with the table, which takes the
+   * press. The top sits at the dashed outline and the walls stand round it, so the block is picked
+   * up anywhere it seems to be. A block with no wall has only its top, at the outline on the ground.
+   */
+  readonly glassFaces = computed<Record<string, string>[]>(() => {
+    if (!this.showsBlankOutline()) return [];
+    const grid = this.gridSize;
+    const width = this.width() * grid;
+    const depth = this.depth() * grid;
+    const height = this.height() * grid;
+    const walled = this.hasWall() && height > 0;
+    const top: Record<string, string> = {
+      width: `${width}px`,
+      height: `${depth}px`,
+      left: '0px',
+      top: '0px',
+      ...this.hexFloorDimStyle(),
+      transform: `translateZ(${(walled ? height : 0) + GLASS_FACE_LIFT_PX}px)`,
+    };
+    const hexClip = this.hexFloorClipPath();
+    if (hexClip) top['clip-path'] = hexClip;
+    if (!walled) return [top];
+    const standing = (length: number, transform: string): Record<string, string> => ({
+      width: `${length}px`,
+      height: `${height}px`,
+      left: '0px',
+      top: '0px',
+      transform,
+    });
+    if (this.isHex()) {
+      return [
+        top,
+        ...this.hexWalls().map((wall) =>
+          standing(
+            wall.edgeLength,
+            `translate(${wall.px}px, ${wall.py}px) rotateZ(${wall.angle}rad) rotateX(-90deg) translateY(-100%)`
+          )
+        ),
+      ];
+    }
+    return [
+      top,
+      standing(width, 'rotateX(90deg)'),
+      standing(width, `translateY(${depth}px) rotateX(90deg)`),
+      standing(depth, 'rotateZ(90deg) rotateX(90deg)'),
+      standing(depth, `translateX(${width}px) rotateZ(90deg) rotateX(90deg)`),
+    ];
   });
 
   private faceImageOf(face: TerrainFace) {
