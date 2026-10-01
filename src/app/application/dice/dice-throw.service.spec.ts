@@ -17,10 +17,12 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { DiceStage } from '@axe/domain/dice/dice-3d/dice-stage';
+import { Quat, quatRotate } from '@axe/domain/dice/dice-3d/rotation';
 import { encodeDiceRollDetail } from '@axe/domain/dice/dice-roll-detail';
 import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
+import { faceFramesOf } from '@axe/infrastructure/dice-3d/dice-geometry';
 import { useDicePhysicsWorkerFactory } from '@axe/infrastructure/dice-3d/dice-physics-client';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
@@ -277,6 +279,22 @@ describe('DiceThrowService', () => {
     await vi.waitFor(() => expect(thrown(line)?.phase).toBe('settled'));
     expect(thrown(line)?.still).toBe(true);
     expect(thrown(line)?.shown).toEqual(['5', '0']);
+  });
+
+  it('lays each die down with its number near enough upright to the reader', async () => {
+    TestBed.inject(MotionService).setting.set('off');
+    const line = answer({ faces: [6, 8, 10, 12, 20].map((sides) => ({ sides, value: 3 })) });
+
+    callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+
+    await vi.waitFor(() => expect(thrown(line)?.phase).toBe('settled'));
+    const { dice, result } = thrown(line)!;
+    dice.forEach((die, index) => {
+      const at = index * 7 + 3;
+      const rest: Quat = [result!.frames[at], result!.frames[at + 1], result!.frames[at + 2], result!.frames[at + 3]];
+      const [x, y] = quatRotate(rest, faceFramesOf(die.shape)[die.target].up);
+      expect(Math.abs(Math.atan2(-x, y))).toBeLessThan(0.2);
+    });
   });
 
   it(`tumbles no more than ${MAX_TUMBLING} rolls at once and lays the rest down still`, async () => {

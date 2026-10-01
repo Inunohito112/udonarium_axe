@@ -10,7 +10,7 @@ const IMPORT = /^(?:import|export)\s+(type\s+)?([^'";]*?)\s*from\s*'([^']+)'/gms
  * The modules of the folder the page may load straight away. None of them loads the libraries, which
  * reach the page only through `import(`, so the first screen never waits for them.
  */
-const ENTRIES = new Set(['dice-physics-client', 'dice-physics-message']);
+const ENTRIES = new Set(['dice-physics-client', 'dice-physics-message', 'dice-geometry']);
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

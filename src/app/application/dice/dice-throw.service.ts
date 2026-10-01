@@ -11,12 +11,13 @@ import { DieToThrow, labelOf, throwPlanOf } from '@axe/domain/dice/dice-3d/dice-
 import { upFace } from '@axe/domain/dice/dice-3d/die-symmetry';
 import { polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
 import { restingLayout } from '@axe/domain/dice/dice-3d/resting-pose';
-import { Quat, quatMultiply } from '@axe/domain/dice/dice-3d/rotation';
+import { Quat, quatFromAxisAngle, quatMultiply, quatRotate, UP } from '@axe/domain/dice/dice-3d/rotation';
 import { throwSeedOf } from '@axe/domain/dice/dice-3d/throw-seed';
 import { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
 import { FRAME_TRAY_AREA, frameAspectFor, trayFor } from '@axe/domain/dice/dice-3d/tray-size';
 import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { faceFramesOf } from '@axe/infrastructure/dice-3d/dice-geometry';
 import { throwDice } from '@axe/infrastructure/dice-3d/dice-physics-client';
 import { DiceThrowResult, FRAME_STRIDE, FRAMES_PER_SECOND } from '@axe/infrastructure/dice-3d/dice-physics-message';
 
@@ -65,6 +66,8 @@ export interface DiceThrow {
 }
 
 const BLANK_COLOR = '#202024';
+/** The most a die laid down leans once its number is turned upright, in radians. */
+const MAX_LEAN_KEPT = 0.15;
 const NO_TURN: Quat = [0, 0, 0, 1];
 
 /**
@@ -240,7 +243,9 @@ export class DiceThrowService {
 function laidDown(dice: readonly DieToThrow[], tray: Tray, key: string): DiceThrowResult {
   const poses = restingLayout(dice, tray, throwSeedOf(key));
   const frames = new Float32Array(dice.length * FRAME_STRIDE);
-  poses.forEach((pose, index) => frames.set([...pose.position, ...pose.rotation], index * FRAME_STRIDE));
+  poses.forEach((pose, index) =>
+    frames.set([...pose.position, ...readable(dice[index], pose.rotation)], index * FRAME_STRIDE)
+  );
   return {
     frameCount: 1,
     restFrame: 0,
@@ -250,6 +255,18 @@ function laidDown(dice: readonly DieToThrow[], tray: Tray, key: string): DiceThr
     attempt: 0,
     fault: null,
   };
+}
+
+/**
+ * A die laid down turned about the upright so its number reads the right way up to the reader,
+ * keeping a little of the lean it was laid with so a row of dice does not look stamped out.
+ */
+function readable(die: DieToThrow, rotation: Quat): Quat {
+  if (polyhedronOf(die.shape).readsCorners) return rotation;
+  const [x, y] = quatRotate(rotation, faceFramesOf(die.shape)[die.target].up);
+  const lean = Math.atan2(-x, y);
+  const kept = Math.sign(lean) * Math.min(Math.abs(lean), MAX_LEAN_KEPT);
+  return quatMultiply(quatFromAxisAngle(UP, kept - lean), rotation);
 }
 
 /** What each die shows at the end of its recording, turned as it is drawn. */
