@@ -98,8 +98,15 @@ export class ConcealmentService {
     return stash;
   }
 
+  /**
+   * Everything that stands where it stands, each followed: being put out of sight or brought back
+   * moves a thing rather than adding or removing it, so a list built from these hears it only
+   * from the thing itself.
+   */
   private placed(): TabletopObject[] {
-    return PLACED_KINDS.flatMap((kind) => this.objectStore.getObjects<TabletopObject>(kind));
+    const placed = PLACED_KINDS.flatMap((kind) => this.objectStore.getObjects<TabletopObject>(kind));
+    for (const object of placed) this.objectChange.versionOf(object.identifier)();
+    return placed;
   }
 
   private track(): void {

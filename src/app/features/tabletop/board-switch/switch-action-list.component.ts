@@ -107,11 +107,10 @@ export class SwitchActionListComponent {
   protected targetsFor(action: SwitchShowHide | SwitchSpawn): NameChoice[] {
     const choices =
       action.kind === 'spawn'
-        ? this.templates().map((piece) => ({ value: piece.identifier, name: this.templateLabelOf(piece) }))
-        : (action.kind === 'reveal' ? this.concealment.concealed() : this.concealment.concealable()).map((object) => ({
-            value: object.identifier,
-            name: this.labelOf(object),
-          }));
+        ? this.templateChoices()
+        : action.kind === 'reveal'
+          ? this.concealedChoices()
+          : this.concealableChoices();
     const held = action.target;
     if (held.identifier.length < 1 || choices.some((choice) => choice.value === held.identifier)) return choices;
     return [{ value: held.identifier, name: this.t('feature.boardSwitch.missing', { name: held.name }) }, ...choices];
@@ -190,10 +189,26 @@ export class SwitchActionListComponent {
     if (held?.kind === 'spawn') this.replace(index, { ...held, place: place === 'presser' ? 'presser' : 'host' });
   }
 
-  /** The pieces a spawn can copy: every piece in the room, wherever it is kept. */
-  private readonly templates = computed<GameCharacter[]>(() => {
+  /** What the master has put out of sight, each with the kind of thing it is. */
+  private readonly concealedChoices = computed<NameChoice[]>(() =>
+    this.concealment.concealed().map((object) => ({ value: object.identifier, name: this.labelOf(object) }))
+  );
+
+  /** What stands on the table being looked at, each with the kind of thing it is. */
+  private readonly concealableChoices = computed<NameChoice[]>(() =>
+    this.concealment.concealable().map((object) => ({ value: object.identifier, name: this.labelOf(object) }))
+  );
+
+  /**
+   * The pieces a spawn can copy: every piece in the room, wherever it is kept, each with where that
+   * is. Each piece is followed, since moving one to the graveyard changes what it is listed as.
+   */
+  private readonly templateChoices = computed<NameChoice[]>(() => {
     this.objectChange.collectionOf(GameCharacter.aliasName)();
-    return this.objectStore.getObjects<GameCharacter>(GameCharacter);
+    return this.objectStore.getObjects<GameCharacter>(GameCharacter).map((piece) => {
+      this.objectChange.versionOf(piece.identifier)();
+      return { value: piece.identifier, name: this.templateLabelOf(piece) };
+    });
   });
 
   private templateLabelOf(piece: GameCharacter): string {
