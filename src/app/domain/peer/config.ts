@@ -8,6 +8,7 @@ import {
   readControllerResourcePick,
   writeControllerResourcePick,
 } from '@axe/domain/character/controller-resource-pick';
+import { asDiceStage, DiceStage } from '@axe/domain/dice/dice-3d/dice-stage';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { allowsDiagonal, asDiagonalMove, DiagonalMove } from '@axe/domain/tabletop/move/diagonal-move';
 import {
@@ -73,6 +74,21 @@ export class Config extends ObjectNode implements InnerXml {
   @SyncVar('_engagementCountsSize') private _engagementCountsSize: string = '';
   @SyncVar('_facingMark') private _facingMark: string = '';
   @SyncVar('_pieceImageInCell') private _pieceImageInCell: string = '';
+  @SyncVar('_diceStage') private _diceStage: string = '';
+
+  /**
+   * Where the room shows the dice of a chat roll tumbling: in the frame of the line that gives the
+   * result, on the table, or nowhere.
+   *
+   * Nowhere unless the room chose otherwise, so a room saved before the setting was there, or sent
+   * by an older version that knows nothing of it, stays as it was.
+   */
+  get diceStage(): DiceStage {
+    return asDiceStage(this._diceStage);
+  }
+  set diceStage(stage: DiceStage) {
+    this._diceStage = stage === 'off' ? '' : stage;
+  }
 
   /** The game system the room rolls dice with by default; blank reads as the generic `DiceBot`. */
   get defaultDiceBot(): string {

@@ -391,7 +391,7 @@ describe('TerrainComponent', () => {
       terrain.destroy();
     });
 
-    it('shows the master the ground it stands on, which is where it is picked up', async () => {
+    it('shows the master the ground it stands on as well as how high it stands', async () => {
       PeerCursor.createMyCursor();
       PeerCursor.myCursor.role = PeerRole.GameMaster;
       const terrain = blankWall();
@@ -439,6 +439,67 @@ describe('TerrainComponent', () => {
       await fixture.whenStable();
 
       expect(fixture.nativeElement.querySelector('[data-testid="terrain-blank-outline"]')).toBeNull();
+      expect(glassFaces()).toHaveLength(0);
+
+      terrain.destroy();
+    });
+
+    function glassFaces(): HTMLElement[] {
+      return Array.from(fixture.nativeElement.querySelectorAll('[data-testid="terrain-glass-face"]'));
+    }
+
+    async function asMaster(terrain: Terrain): Promise<void> {
+      PeerCursor.createMyCursor();
+      PeerCursor.myCursor.role = PeerRole.GameMaster;
+      fixture.componentRef.setInput('terrain', terrain);
+      fixture.detectChanges();
+      await fixture.whenStable();
+    }
+
+    it('gives the master a face to take hold of at its top and at each wall, above the table', async () => {
+      const terrain = blankWall();
+      await asMaster(terrain);
+
+      const faces = glassFaces();
+      expect(faces).toHaveLength(5);
+      expect(faces[0].style.transform).toBe(`translateZ(${2 * component.gridSize + 0.5}px)`);
+      expect(faces.every((face) => face.classList.contains('pointer-events-auto'))).toBe(true);
+
+      terrain.destroy();
+    });
+
+    it('lifts the top of a block with no wall just off the table, where its outline is', async () => {
+      const terrain = blankWall();
+      terrain.mode = TerrainViewState.FLOOR;
+      await asMaster(terrain);
+
+      const faces = glassFaces();
+      expect(faces).toHaveLength(1);
+      expect(faces[0].style.transform).toBe('translateZ(0.5px)');
+
+      terrain.destroy();
+    });
+
+    it('gives a hex block a face for each of its sides, and a top cut to its hex', async () => {
+      const table = TestBed.inject(TabletopService).currentTable;
+      table.gridType = GridType.HEX_VERTICAL;
+      const terrain = Terrain.create('hex glass', 3, 3, 1, '', '');
+      await asMaster(terrain);
+
+      const faces = glassFaces();
+      expect(component.hexWalls().length).toBeGreaterThan(0);
+      expect(faces).toHaveLength(1 + component.hexWalls().length);
+      expect(faces[0].style.clipPath).toBe(component.hexFloorClipPath());
+
+      terrain.destroy();
+      table.gridType = GridType.SQUARE;
+    });
+
+    it('leaves a block with a picture to the faces it has', async () => {
+      const terrain = Terrain.create('wall', 1, 1, 2, 'wall-image', 'floor-image');
+      await asMaster(terrain);
+
+      expect(glassFaces()).toHaveLength(0);
 
       terrain.destroy();
     });

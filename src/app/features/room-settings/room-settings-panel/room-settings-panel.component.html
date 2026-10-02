@@ -52,6 +52,25 @@
               {{ 'feature.roomSettings.diceBotHint' | transloco }}
             </p>
           </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-ui-text flex items-center gap-1.5 text-[13px] select-none">
+              <span class="flex-1">{{ 'feature.roomSettings.diceStage' | transloco }}</span>
+              <select
+                class="rounded-ui-sm border-ui-border-panel bg-ui-input text-ui-text border border-solid px-1 py-0.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-50"
+                [(ngModel)]="diceStage"
+                name="diceStage"
+                data-testid="dice-stage"
+                [disabled]="isSharedReadOnly()"
+              >
+                @for (stage of diceStages; track stage) {
+                  <option [value]="stage">{{ 'feature.roomSettings.diceStage_' + stage | transloco }}</option>
+                }
+              </select>
+            </label>
+            <p class="text-ui-muted m-0 text-[11px] leading-relaxed">
+              {{ 'feature.roomSettings.diceStageHint' | transloco }}
+            </p>
+          </div>
         </div>
 
         <div

@@ -23,6 +23,7 @@ import {
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { type ResourceCatalogEntry, resourceCatalogOf } from '@axe/domain/character/resource-catalog';
 import { DataSummarySetting } from '@axe/domain/data/data-summary-setting';
+import { asDiceStage, DICE_STAGES, DiceStage } from '@axe/domain/dice/dice-3d/dice-stage';
 import { DiceBot } from '@axe/domain/dice/dice-bot';
 import { Party } from '@axe/domain/party/party';
 import { Config } from '@axe/domain/peer/config';
@@ -623,6 +624,22 @@ export class RoomSettingsPanelComponent {
   }
   set defaultDiceBot(gameType: string) {
     if (!this.isSharedReadOnly()) this.config.defaultDiceBot = gameType;
+  }
+
+  /** Where the room can have its rolls' dice tumble. */
+  readonly diceStages: readonly DiceStage[] = DICE_STAGES;
+
+  /**
+   * Where the room has its rolls' dice tumble, read from its config.
+   *
+   * Only a user allowed to change the shared settings can set it.
+   */
+  get diceStage(): DiceStage {
+    this.objectChange.versionOf('Config')();
+    return this.config.diceStage;
+  }
+  set diceStage(stage: DiceStage) {
+    if (!this.isSharedReadOnly()) this.config.diceStage = asDiceStage(stage);
   }
 
   /**

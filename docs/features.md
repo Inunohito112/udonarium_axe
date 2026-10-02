@@ -98,7 +98,7 @@ Udonarium Axe が **追加** または **大きく拡張・再設計** した機
 
 ## 機能塗り（マップエディター）
 
-- **地形塗りは地形と同等** — `TerrainPaintSpec`（`domain/tabletop/function-paint`）が名前・高さ・見せ方(`TerrainViewState`)・6 面＋wall/floor＋コマ自身のテクスチャ・高度と高度表示・視線/光の遮り・タイル/グリッド/影/陰影を持ち、`Terrain` にそのまま載る。マスク側の `MaskPaintSpec` も同様に、色・濃さ・所有者・ロック表示に加えて**削った跡と削りかけの跡**（`scratchedGrids` / `scratchingGrids`）まで持つ。テクスチャ未指定の地形は**透明な壁**（`Terrain.hasFaceImage` が false → 面を描かず、GM にだけ足元の枠を出す）。判定は**解決した画像ではなく識別子の有無**で行う（未同期の画像で壁が消えるのを防ぐ）。置いたあとに透明化する導線は右クリックの `terrainToGlass`＝`Terrain.clearFaceImages()` で、`TERRAIN_IMAGE_SLOTS` を空文字で埋める（**要素は destroy しない** — 識別子が `面名_親ID` なので消すと二度と着せ替えられなくなる）。GM 向けの枠は**壁の高さと足元の 2 つ**を出す。掴める当たり判定は足元の箱なので、天面の枠だけだと斜め視点で掴みどころがずれる
+- **地形塗りは地形と同等** — `TerrainPaintSpec`（`domain/tabletop/function-paint`）が名前・高さ・見せ方(`TerrainViewState`)・6 面＋wall/floor＋コマ自身のテクスチャ・高度と高度表示・視線/光の遮り・タイル/グリッド/影/陰影を持ち、`Terrain` にそのまま載る。マスク側の `MaskPaintSpec` も同様に、色・濃さ・所有者・ロック表示に加えて**削った跡と削りかけの跡**（`scratchedGrids` / `scratchingGrids`）まで持つ。テクスチャ未指定の地形は**透明な壁**（`Terrain.hasFaceImage` が false → 面を描かず、GM にだけ足元の枠を出す）。判定は**解決した画像ではなく識別子の有無**で行う（未同期の画像で壁が消えるのを防ぐ）。置いたあとに透明化する導線は右クリックの `terrainToGlass`＝`Terrain.clearFaceImages()` で、`TERRAIN_IMAGE_SLOTS` を空文字で埋める（**要素は destroy しない** — 識別子が `面名_親ID` なので消すと二度と着せ替えられなくなる）。GM 向けの枠は**壁の高さと足元の 2 つ**を出す。足元の箱は卓と同じ深さにあって押下を卓に取られるので、GM には天面と壁の位置に見えない当たり面（`TerrainComponent.glassFaces`、卓から 0.5px 浮かせる。ヘクスは辺ごと）を置き、枠の中ならどこでも掴めるようにする
 - **塗りは最大矩形にまとめる** — `domain/tabletop/cell-rectangles` の `largestRectangles()` が左上から貪欲に最大矩形を取る。**決定的**であることが要件（揺れると反映のたびに壁が建て直される）。矩形の起点はオブジェクトの `location`、実寸は自身の width/depth が持つ
 - **既存オブジェクトを例外なく取り込む** — 卓上の `Terrain`/`GameTableMask` はすべて `TableSnapshot` に入り、以後エディター管理。回転・非整数位置・扉・スロープ・光も対象で、`TerrainPaintSpec` が**そのオブジェクトの全属性**を持つ（`blockFootprintOf()` がセル矩形＋`BlockPlacement`（実座標・実寸・回転）を返し、マス目に揃っているものだけ placement が null）。触られていないブロックは差分に出ないので作り直されず、identifier も保たれる。ブロックは各々 spec を持ち、`sceneFromTable` が**見た目ごとに別レイヤー**へ分ける（1 枚に混ぜると次の反映で片方の見た目に揃ってしまう）
 - **面の着せ替えはテクスチャが主** — 面を押すと開くのは画像ライブラリではなくパレットで、`WALL_TEXTURE_IDS` / `TEXTURE_IDS`（`domain/media/texture-catalog`）＋`TEXTURE_IMAGE_TAG` の付いた自前テクスチャ＋追加タイル、の順に並ぶ。同梱テクスチャは `DungeonBuildService.registerAsset()` が URL 単位で `ImageStorage` に一度だけ登録して identifier を返す（ランダムダンジョンと同じ経路なので画像が二重にならない）。追加は `TextureIntakeService.takeIn()`（切り抜き→保存→タグ付け）で、塗りつぶしツールのテクスチャピッカーと同じ入口を共有する。画像ライブラリ全体はパレット末尾の導線に残す
@@ -198,6 +198,7 @@ Udonarium Axe が **追加** または **大きく拡張・再設計** した機
 - **コマに持たせて連動** — ダイスシンボルの `ownerCharacterIdentifier` でコマの持ち物にできる（「自分だけ見る」の `owner` とは別）。チャットに `dice:コマ名` を書き添えると、そのロールの出目が卓上のダイスに乗る（`domain/dice/dice-chat-token` + `dice-link`、`features/dice/dice-chat-event-handler`）。面の数が合うダイスから順に埋め、その目を出せないダイスは動かさない。適用するのは送信者の端末だけ（面は SyncVar なので二重に当てない）
 - **キャラが持つダイス** — ダイスをキャラクターシートへ預けられる（`domain/character/character-dice`）。保存先はシートの「所持ダイス」節で、個数と面ごとの絵柄を持つ普通の DataElement なので、部屋データにもキャラの持ち出しにも一緒に乗り、詳細画面から手で直せる。盤の右クリック **コマにしまう** で預け（複数選択なら選択メニューから預け先を選んでまとめて）、キャラの右クリック **ダイスを展開する** でコマの隣へ並べ直す（`application/dice/character-dice.service`）。**しまったときの出目も 1 個ずつ残る**ので、展開するとその目のまま並ぶ。展開はシートから取り出す操作（`takeHeldDice`）で、1 個のダイスは盤の上かシートの中のどちらかにしか無い。取り出さないと押すたびに増える。詳細画面では viewMode=table の 1 行として出る（個数・出目・面の絵柄）。面の絵柄は `type="image"` なので保存 zip の画像収集にそのまま乗る。展開したダイスは最初からそのコマの持ち物なので `dice:コマ名` の連動がそのまま効く
 - **転がる演出** — 振ると卓の上を転がって止まり、出目が浮かび上がって消える（`styles.css` の `diceTumbleA/B/C` と `dicePop`）。転がり方は 3 通りを順に使うので、まとめて振っても同じ動きにならない。振った本人の画面でも回るよう、ネットワーク送信とは別にローカルへも通知する（送信は返ってこない。コインと同じ作り）。伏せられているダイスは出目を出さない
+- **チャットのロールを 3D で転がす** — 部屋設定の「ダイスの演出」（`Config._diceStage`。`''`＝出さない / `frame` / `table` / `both`、未知の値も出さない。`both` は枠と卓で別々に物理を解き、同じ目で止める）。振った端末が `DICE_THROW`（回答の識別子と、元の行の話し手のコマ）を送り、シークレットは `localDispatch` で自分にだけ流す。受けた端末は発言が届くのを待ち、見てよい行か・30 秒以内か・リプレイ中でないかを確かめてから、発言の識別子を種に自分で物理を解く（`application/dice/dice-throw.service`）。three.js と cannon-es は `infrastructure/dice-3d` に閉じ込めて遅延読み込みし、物理は Worker で回す。出目は、物理が着地させた面を形の対称回転で目標の面に回して合わせる。数字は読む人に向けて正立させ、選べる回転が 1 通りしかない d10 は転がる間の鉛直軸ひねりと投げ直しで合わせる。描画は WebGLRenderer 1 つで描いて各キャンバスへ写し（`application/dice/dice-render.service`）、再生は最初に描いたフレームから数える。卓の上は `#gameObjects` の scene 行列からクリップ行列を作って重ね（`core/transform/css-clip-matrix`）、トレイは読む人の画面に揃え、話したコマの手前（見えなければ画面中央）に置く（`application/dice/dice-tray-placement.service`）。重ね絵は DOM のコマより手前に描く。部屋に `diceStage` が入ると、手の空いたときにエンジンを先に用意する
 - **まとめて作成** — 卓の右クリック「ダイスを作成」の末尾の **個数を指定して作成…** で種類と個数を選び、一度に置く（`features/dice/dice-symbol-create-dialog` ＋ `TabletopActionService.createDiceSymbols`）。配置は純関数 `getDicePlacements`（55px 刻み・5 個で折り返し）に切り出してあり、1 個だけ作る従来の経路も同じ関数を通る。ダイアログのクラスは `ConfirmService` と同じ流儀で composition root（`app.component.ts`）から静的に渡す（application 層から features を import しないため）
 - **ダイスシンボルシート** — 面ごとの画像設定、保存 / 複製
 - bcdice `StaticLoader` の遅延ロードで初期バンドルを削減
@@ -205,7 +206,7 @@ Udonarium Axe が **追加** または **大きく拡張・再設計** した機
 
 ## メディア / 音楽
 
-- **ジュークボックス再設計** — プレイリスト、シークバー、リピートモード、アートワーク表示
+- **ジュークボックス再設計** — 複数の再生リスト（流す先は `Jukebox.playlistIdentifier` で同期、曲の移動・コピー）、シャッフル（シードと曲の識別子だけで順が決まるので、曲が終わったとき全ピアが同じ次の曲を選ぶ）、位置を残す一時停止、シークバー、リピートモード、アートワーク表示
 - **オーディオのタグ付け** — BGM / SE のプリセットカテゴリ、SE 専用の音量コントロール
 - **ミニジュークボックス** — フローティング・ミニプレイヤー（最小化モード、シークバーロック）
 - **BGM 同期** — シーク同期時のクロスフェード（遅延ペア向け）、シークバーロック状態を `Jukebox` SyncVar で peer 間共有

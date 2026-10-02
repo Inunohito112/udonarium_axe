@@ -13,6 +13,7 @@ import {
   ViewContainerRef,
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
+import { DiceThrowService } from '@axe/application/dice/dice-throw.service';
 import { SaveDataService } from '@axe/application/file/save-data.service';
 import { LanguageService } from '@axe/application/i18n/language.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
@@ -60,6 +61,7 @@ import { ChatSoundEventHandlerService } from '@axe/features/chat/chat-sound-even
 import { ChatTickerComponent } from '@axe/features/chat/chat-ticker/chat-ticker.component';
 import { DiceChatEventHandlerService } from '@axe/features/dice/dice-chat-event-handler.service';
 import { DiceSymbolCreateDialogComponent } from '@axe/features/dice/dice-symbol-create-dialog/dice-symbol-create-dialog.component';
+import { DiceThrowEventHandlerService } from '@axe/features/dice/dice-throw-event-handler.service';
 import { EffectChatEventHandlerService } from '@axe/features/effect/effect-chat-event-handler.service';
 import { GmToolbarComponent } from '@axe/features/gm-tools/gm-toolbar/gm-toolbar.component';
 import { NpcDragGhostComponent } from '@axe/features/gm-tools/npc-bar/npc-drag-ghost.component';
@@ -413,6 +415,8 @@ export class AppComponent {
     inject(AlarmEventHandlerService);
     inject(ButtonGuideEventHandlerService);
     inject(DiceChatEventHandlerService);
+    inject(DiceThrowEventHandlerService);
+    inject(DiceThrowService);
     inject(ChatSettingsEventHandlerService);
     inject(ChatSoundEventHandlerService);
     inject(EffectChatEventHandlerService);
