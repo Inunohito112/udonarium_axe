@@ -1,3 +1,60 @@
+## [1.60.0](https://github.com/Xelltis/udonarium_axe/compare/v1.59.0...v1.60.0) (2026-10-02)
+
+### ✨ Features
+
+* **character:** let a resource be moved with a slider in its sheet and popup ([1b3c1c8](https://github.com/Xelltis/udonarium_axe/commit/1b3c1c8f829478765f29349e76eceb4709d88d90))
+* **dice:** draw the thrown dice in 3D ([df7774f](https://github.com/Xelltis/udonarium_axe/commit/df7774f908546f20ffd73485e50d12b11532c4dc))
+* **dice:** flash the dice of a critical gold and of a fumble red ([964a152](https://github.com/Xelltis/udonarium_axe/commit/964a152cb99e2b21c7042c477959ad7a2afe7bf8))
+* **dice:** ground each die with a soft patch where it meets the floor ([4d76e15](https://github.com/Xelltis/udonarium_axe/commit/4d76e1581b7f4670c85a6c1abbda7d39ec8f9d7b))
+* **dice:** lay out the rounded dice and the numbers on their faces ([b49eeaa](https://github.com/Xelltis/udonarium_axe/commit/b49eeaabf0befb6d5572ccfb6e502290b4f7a89f))
+* **dice:** lay still dice down with their numbers upright ([0285a05](https://github.com/Xelltis/udonarium_axe/commit/0285a05a29390830e4a773ec8834259fb7031e09))
+* **dice:** throw the dice in over the tray's edge and turn each number to the viewer ([4240a52](https://github.com/Xelltis/udonarium_axe/commit/4240a52415adf7a5ac3acbceeea0495b4aeaf67e))
+* **dice:** throw up to fifty dice of a roll ([d77a100](https://github.com/Xelltis/udonarium_axe/commit/d77a10013838ef61f0322a3bde5179254b2a6798))
+* **dice:** tumble a roll's dice in its frame and on the table at once ([9db6df8](https://github.com/Xelltis/udonarium_axe/commit/9db6df8793033fcb2657f1dc3d9040a624581076))
+* **dice:** tumble the dice of a chat roll in the frame of its answer ([853db0c](https://github.com/Xelltis/udonarium_axe/commit/853db0cb23f306c40d053c1ff7e0d0e1d05266e5))
+* **dice:** tumble the dice of a chat roll on the table ([d968eaf](https://github.com/Xelltis/udonarium_axe/commit/d968eafaa18c7cb96ff2d651b15c534407b2eac9))
+* **dice:** work out how the dice of a chat roll land on the faces rolled ([7b6c7f1](https://github.com/Xelltis/udonarium_axe/commit/7b6c7f1ebb892b5d38099b2a154a30c9ce565e3e))
+* **dice:** work out how the dice of a chat roll tumble, away from the page ([6364d74](https://github.com/Xelltis/udonarium_axe/commit/6364d74a546df4810cc5e191722466b05c025f7c))
+* **jukebox:** keep several playlists and play them like a music player ([f2a417c](https://github.com/Xelltis/udonarium_axe/commit/f2a417c86cf22c047ef4e4e0a6904d2bab647849))
+
+### 🐛 Bug Fixes
+
+* **character:** stand the tilt handles beside the picture on a phone ([b327867](https://github.com/Xelltis/udonarium_axe/commit/b32786737375b2863ee1b1acc184b5a1663d4362))
+* **dice:** come to rest when the dice do on the screen ([ef18f4e](https://github.com/Xelltis/udonarium_axe/commit/ef18f4ea8df215baa281b238c36c6a9222a68d41))
+* **dice:** keep a throw on the table on the board ([d59f81d](https://github.com/Xelltis/udonarium_axe/commit/d59f81db45b31816db99fd595763ae8b03648c14))
+* **dice:** keep a throw put away when its dice are worked out after ([4cc24d5](https://github.com/Xelltis/udonarium_axe/commit/4cc24d5ea294008524f9da1b60d03c8ffdf9681f))
+* **dice:** keep the dice the colour the roll was said in ([a09e6f7](https://github.com/Xelltis/udonarium_axe/commit/a09e6f73bdaa46bdef458e5e6b9d5e8fd271211c))
+* **dice:** let a crowd of dice come to rest ([157fda4](https://github.com/Xelltis/udonarium_axe/commit/157fda4c21cb9a0913944a0766d321a2bda0bdcb))
+* **dice:** make every shape of die look one size ([846131b](https://github.com/Xelltis/udonarium_axe/commit/846131b170896f546e22396d3626001a85951b19))
+* **dice:** play a throw from the first frame it is drawn in ([3e6ebe0](https://github.com/Xelltis/udonarium_axe/commit/3e6ebe0e18d6f413aced920a20df2ae53b1a4934))
+* **dice:** put away the throws that come after the dice could not be drawn ([e9a39c1](https://github.com/Xelltis/udonarium_axe/commit/e9a39c1ce079fa8aa7aea8ea0e24fbcd4a76b2dc))
+* **jukebox:** hold the panel's seek bar where it is dragged ([1b7d99d](https://github.com/Xelltis/udonarium_axe/commit/1b7d99d02a23632603911b4434431344e6a3fc77))
+* **tabletop:** let a block of glass be taken hold of wherever it seems to be ([e02e973](https://github.com/Xelltis/udonarium_axe/commit/e02e973da993df47bbaa06d1fd4a33ce1f0271d4))
+
+### ⚡ Performance
+
+* **dice:** cut each shape's engraving once, ahead of the first roll ([b3d2399](https://github.com/Xelltis/udonarium_axe/commit/b3d2399868b201ba2d3c35916d067fb857801c0e))
+* **dice:** draw a frame again only when its own throw has changed ([2ba8a3f](https://github.com/Xelltis/udonarium_axe/commit/2ba8a3f5ca4a1210a5837f94cebae392b732ec6d))
+* **dice:** let a large roll's dice heap up instead of throwing it again ([3c3ea61](https://github.com/Xelltis/udonarium_axe/commit/3c3ea61a97ddcbd6e9d1590a6ec231a210acf1d0))
+* **dice:** start the physics worker before the first roll ([5a01ed5](https://github.com/Xelltis/udonarium_axe/commit/5a01ed5c9873e72f260a3c9a2bfa04bbb290b36f))
+* **dice:** step the physics finely only while the dice move fast ([bd5886b](https://github.com/Xelltis/udonarium_axe/commit/bd5886bdd548bef2b1b4fded3646d3b651202c80))
+* **dice:** warm the physics worker with a throw of its own ([cd27432](https://github.com/Xelltis/udonarium_axe/commit/cd274326de9cd236b9961aa65508a487b3197c83))
+
+### 📝 Documentation
+
+* say a room can show its rolls' dice in both places ([d3fd944](https://github.com/Xelltis/udonarium_axe/commit/d3fd944a17cfda7d158fa33c1563bb85d05065d6))
+* **website:** say a block of glass is taken hold of anywhere inside its outlines ([c752f72](https://github.com/Xelltis/udonarium_axe/commit/c752f72e531691f49fbb6391b55ba425dd8c8f46))
+* **website:** say where the tilt handles stand on a phone ([fd628c4](https://github.com/Xelltis/udonarium_axe/commit/fd628c4fd1ef3d040b0f7f5e30e97f763afb7778))
+* **website:** write the release notes for v1.60.0 ([61f7262](https://github.com/Xelltis/udonarium_axe/commit/61f7262dc93b71006e55eb50bfab4d8b8d133bee))
+* **website:** write up several playlists, shuffle and pause in the jukebox ([8190d6c](https://github.com/Xelltis/udonarium_axe/commit/8190d6c061df6fa740a40f4b602cd6f34eb16d75))
+* **website:** write up the slider on a resource ([6591a2a](https://github.com/Xelltis/udonarium_axe/commit/6591a2a795f4d2f68cd067f55853e64d0be4c033))
+* write up the 3D dice of chat rolls ([4793979](https://github.com/Xelltis/udonarium_axe/commit/4793979753495a7666320a453ee593cddbff4e59))
+
+### ♻️ Refactor
+
+* **inventory:** let the overview's slider ask the edit permission itself ([ebc3443](https://github.com/Xelltis/udonarium_axe/commit/ebc3443c101716cc2cba08bd3be3cffa4b2dbe63))
+* **jukebox:** read out a track's time the same way in the panel and the mini player ([536c37e](https://github.com/Xelltis/udonarium_axe/commit/536c37ea72b3d711eb73f12d170ccd8288c85c89))
+
 ## [1.59.0](https://github.com/Xelltis/udonarium_axe/compare/v1.58.0...v1.59.0) (2026-10-01)
 
 ### ✨ Features
