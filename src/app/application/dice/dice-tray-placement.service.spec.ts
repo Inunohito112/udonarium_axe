@@ -85,7 +85,7 @@ describe('DiceTrayPlacementService', () => {
   it('throws the dice in front of the piece that rolled, on the floor it stands on', () => {
     const piece = speaker(200, 300, 40);
 
-    const placement = service.placementFor(lineFrom(piece), 2)!;
+    const placement = service.placementsFor(lineFrom(piece), [2])![0];
 
     const { centre, up } = laid(placement.model);
     expect(centre.x).toBeCloseTo(200 + grid / 2, 6);
@@ -99,7 +99,7 @@ describe('DiceTrayPlacementService', () => {
     view = viewTurnedBy(70);
     const piece = speaker(200, 300);
 
-    const placement = service.placementFor(lineFrom(piece), 2)!;
+    const placement = service.placementsFor(lineFrom(piece), [2])![0];
 
     const { centre, up } = laid(placement.model);
     expect(up.x).toBeCloseTo(0, 6);
@@ -111,7 +111,7 @@ describe('DiceTrayPlacementService', () => {
   });
 
   it('keeps the tray’s width across the screen and its height off the table, the dice half a cell large', () => {
-    const placement = service.placementFor(lineFrom(speaker(0, 0)), 2)!;
+    const placement = service.placementsFor(lineFrom(speaker(0, 0)), [2])![0];
     const [rx, ry, , , ax, ay, , , , , up] = placement.model;
 
     expect(rx * ax + ry * ay).toBeCloseTo(0, 9);
@@ -128,14 +128,14 @@ describe('DiceTrayPlacementService', () => {
     lines.push(lineFrom(speaker(500, 500)));
 
     for (const line of lines) {
-      const { centre } = laid(service.placementFor(line, 1)!.model);
+      const { centre } = laid(service.placementsFor(line, [1])![0].model);
       expect(centre.x).toBeCloseTo(middle.x, 6);
       expect(centre.y).toBeCloseTo(middle.y, 6);
     }
 
     visible = true;
     concealed = true;
-    const { centre } = laid(service.placementFor(lineFrom(speaker(500, 500)), 1)!.model);
+    const { centre } = laid(service.placementsFor(lineFrom(speaker(500, 500)), [1])![0].model);
     expect(centre.x).toBeCloseTo(middle.x, 6);
   });
 
@@ -144,7 +144,7 @@ describe('DiceTrayPlacementService', () => {
     const [width, depth] = [table.width * table.gridSize, table.height * table.gridSize];
     const piece = speaker(width - table.gridSize, depth - table.gridSize);
 
-    const { model, tray } = service.placementFor(lineFrom(piece), 2)!;
+    const { model, tray } = service.placementsFor(lineFrom(piece), [2])![0];
 
     const scale = model[10];
     const { centre } = laid(model);
@@ -154,15 +154,44 @@ describe('DiceTrayPlacementService', () => {
   });
 
   it('gives more dice more room', () => {
-    const few = service.placementFor(lineFrom(null), 2)!.tray;
-    const many = service.placementFor(lineFrom(null), 12)!.tray;
+    const few = service.placementsFor(lineFrom(null), [2])![0].tray;
+    const many = service.placementsFor(lineFrom(null), [12])![0].tray;
 
     expect(many.halfWidth * many.halfDepth).toBeGreaterThan(few.halfWidth * few.halfDepth);
+  });
+
+  it('lays the trays of a large roll side by side across the screen, the row centred where one tray would lie', () => {
+    const piece = speaker(500, 500);
+    const [one] = service.placementsFor(lineFrom(piece), [4])!;
+    const row = service.placementsFor(lineFrom(piece), [4, 4, 4])!;
+
+    const centres = row.map((placement) => laid(placement.model).centre);
+    expect(centres[1].x).toBeCloseTo(laid(one.model).centre.x);
+    expect(centres.map((centre) => centre.y)).toEqual(Array(3).fill(laid(one.model).centre.y));
+    const scale = row[0].model[10];
+    for (let i = 1; i < row.length; i++) {
+      const apart = centres[i].x - centres[i - 1].x;
+      expect(apart).toBeGreaterThan((row[i - 1].tray.halfWidth + row[i].tray.halfWidth) * scale);
+    }
+  });
+
+  it('keeps the whole row of trays on the board when the piece that rolled stands at its edge', () => {
+    const table = TestBed.inject(TabletopService).currentTable;
+    const width = table.width * table.gridSize;
+    const piece = speaker(width - table.gridSize, 500);
+
+    const row = service.placementsFor(lineFrom(piece), [4, 4, 4])!;
+
+    const scale = row[0].model[10];
+    const last = row[row.length - 1];
+    const first = row[0];
+    expect(laid(last.model).centre.x + last.tray.halfWidth * scale).toBeLessThanOrEqual(width + 1e-6);
+    expect(laid(first.model).centre.x - first.tray.halfWidth * scale).toBeGreaterThanOrEqual(-1e-6);
   });
 
   it('places nothing while no table is on show', () => {
     origin.remove();
 
-    expect(service.placementFor(lineFrom(null), 2)).toBeNull();
+    expect(service.placementsFor(lineFrom(null), [2])).toBeNull();
   });
 });

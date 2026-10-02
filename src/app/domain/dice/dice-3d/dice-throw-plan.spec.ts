@@ -1,4 +1,11 @@
-import { labelOf, MAX_THROWN_DICE, throwPlanOf, wantsUnderline } from '@axe/domain/dice/dice-3d/dice-throw-plan';
+import {
+  labelOf,
+  MAX_DICE_PER_TRAY,
+  MAX_THROWN_DICE,
+  throwPlanOf,
+  traysOf,
+  wantsUnderline,
+} from '@axe/domain/dice/dice-3d/dice-throw-plan';
 import { DiceRollDetail, DiceRollFace } from '@axe/domain/dice/dice-roll-detail';
 
 function rolled(...faces: [number, number, string?][]): DiceRollDetail {
@@ -64,17 +71,43 @@ describe('throwPlanOf', () => {
     expect(throwPlanOf({ system: 'DiceBot', outcome: 'success', faces: [] }).dice).toEqual([]);
   });
 
-  it('throws no more than fifty dice and counts the rest', () => {
-    const plan = throwPlanOf(rolled(...Array.from({ length: 55 }, () => [6, 3] as [number, number])));
-    expect(MAX_THROWN_DICE).toBe(50);
-    expect(plan.dice).toHaveLength(50);
+  it('throws no more than two hundred dice and counts the rest', () => {
+    const plan = throwPlanOf(rolled(...Array.from({ length: 205 }, () => [6, 3] as [number, number])));
+    expect(MAX_THROWN_DICE).toBe(200);
+    expect(plan.dice).toHaveLength(200);
     expect(plan.overflow).toBe(5);
   });
 
   it('counts a d100 as the two dice it is thrown as', () => {
-    const plan = throwPlanOf(rolled(...Array.from({ length: 26 }, () => [100, 55] as [number, number])));
-    expect(plan.dice).toHaveLength(50);
+    const plan = throwPlanOf(rolled(...Array.from({ length: 101 }, () => [100, 55] as [number, number])));
+    expect(plan.dice).toHaveLength(200);
     expect(plan.overflow).toBe(2);
+  });
+
+  describe('shared out over trays', () => {
+    const dice = (count: number) =>
+      throwPlanOf(rolled(...Array.from({ length: count }, (_, i) => [6, (i % 6) + 1] as [number, number]))).dice;
+
+    it('throws a roll of no more than fifty dice on one tray', () => {
+      expect(MAX_DICE_PER_TRAY).toBe(50);
+      expect(traysOf(dice(1)).map((tray) => tray.length)).toEqual([1]);
+      expect(traysOf(dice(50)).map((tray) => tray.length)).toEqual([50]);
+    });
+
+    it('shares a larger roll out as evenly as it goes, never more than fifty to a tray', () => {
+      expect(traysOf(dice(51)).map((tray) => tray.length)).toEqual([26, 25]);
+      expect(traysOf(dice(120)).map((tray) => tray.length)).toEqual([40, 40, 40]);
+      expect(traysOf(dice(200)).map((tray) => tray.length)).toEqual([50, 50, 50, 50]);
+    });
+
+    it('keeps the dice in the order they were rolled', () => {
+      const all = dice(120);
+      expect(traysOf(all).flat()).toEqual(all);
+    });
+
+    it('throws nothing on no tray for a roll with no dice', () => {
+      expect(traysOf([])).toEqual([]);
+    });
   });
 });
 

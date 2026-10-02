@@ -26,6 +26,8 @@ const TRAY_CELLS_ACROSS = 4;
 const TRAY_CELLS_UP = 3;
 /** How far in front of the piece that rolled, toward the reader, the dice come down, in cells. */
 export const IN_FRONT_CELLS = 1.5;
+/** The gap between trays laid side by side, in cells. */
+const TRAY_GAP_CELLS = 0.5;
 /** How far up the screen the way up the screen is measured, in CSS pixels. */
 const UP_PROBE_PX = 40;
 
@@ -47,8 +49,11 @@ export class DiceTrayPlacementService {
   private readonly concealment = inject(ConcealmentService);
   private readonly objectStore = inject(ObjectStore);
 
-  /** Where a roll with so many dice, said by a piece, is thrown, or null when no table is on show. */
-  placementFor(speakerIdentifier: string, count: number): TablePlacement | null {
+  /**
+   * Where a roll's trays, each with so many dice, said by a piece, are thrown: side by side across
+   * the screen, the row kept whole on the board. Null when no table is on show.
+   */
+  placementsFor(speakerIdentifier: string, counts: readonly number[]): TablePlacement[] | null {
     const origin = this.coordinates.tabletopOriginElement;
     if (!origin || origin === document.body || !origin.isConnected) return null;
     const table = this.tabletop.currentTable;
@@ -57,7 +62,11 @@ export class DiceTrayPlacementService {
 
     const scale = (grid * DIE_CELLS) / D6_EDGE;
     const cell = grid / scale;
-    const tray = trayFor(count, TRAY_CELLS_ACROSS / TRAY_CELLS_UP, TRAY_CELLS_ACROSS * TRAY_CELLS_UP * cell * cell);
+    const area = TRAY_CELLS_ACROSS * TRAY_CELLS_UP * cell * cell;
+    const trays = counts.map((count) => trayFor(count, TRAY_CELLS_ACROSS / TRAY_CELLS_UP, area));
+    const gap = TRAY_GAP_CELLS * cell;
+    const across = trays.reduce((sum, tray) => sum + tray.halfWidth * 2, 0) + gap * Math.max(0, trays.length - 1);
+    const deep = Math.max(0, ...trays.map((tray) => tray.halfDepth));
 
     const speaker = this.speakerOf(speakerIdentifier);
     const ground = speaker ? this.footOf(speaker, grid) : this.middleOfScreen();
@@ -68,14 +77,37 @@ export class DiceTrayPlacementService {
       ? [ground[0] - ax * IN_FRONT_CELLS * grid, ground[1] - ay * IN_FRONT_CELLS * grid]
       : [ground[0], ground[1]];
     const reach: [number, number] = [
-      (Math.abs(rx) * tray.halfWidth + Math.abs(ax) * tray.halfDepth) * scale,
-      (Math.abs(ry) * tray.halfWidth + Math.abs(ay) * tray.halfDepth) * scale,
+      (Math.abs(rx) * (across / 2) + Math.abs(ax) * deep) * scale,
+      (Math.abs(ry) * (across / 2) + Math.abs(ay) * deep) * scale,
     ];
     const [x, y] = onTheBoard(wanted, reach, [table.width * grid, table.height * grid]);
-    return {
-      tray,
-      model: [rx * scale, ry * scale, 0, 0, ax * scale, ay * scale, 0, 0, 0, 0, scale, 0, x, y, ground[2], 1],
-    };
+
+    let from = -across / 2;
+    return trays.map((tray) => {
+      const along = (from + tray.halfWidth) * scale;
+      from += tray.halfWidth * 2 + gap;
+      return {
+        tray,
+        model: [
+          rx * scale,
+          ry * scale,
+          0,
+          0,
+          ax * scale,
+          ay * scale,
+          0,
+          0,
+          0,
+          0,
+          scale,
+          0,
+          x + rx * along,
+          y + ry * along,
+          ground[2],
+          1,
+        ],
+      };
+    });
   }
 
   /** The piece that said the line, when it is on the table for this reader to see. */

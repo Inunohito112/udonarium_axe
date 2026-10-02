@@ -9,6 +9,7 @@ function throwOf(id: string, change: Partial<DiceThrow> = {}): DiceThrow {
   return {
     key: id,
     messageIdentifier: id,
+    part: 0,
     stage: 'frame',
     placement: null,
     dice: [
@@ -61,13 +62,20 @@ describe('DiceRollStageComponent', () => {
   let view: { IntersectionObserver: unknown };
   let observerBefore: unknown;
 
-  function frameOf(id: string): DiceFrame | null {
-    const diceThrow = throws().get(id);
-    if (diceThrow)
-      return diceThrow.phase === 'failed'
-        ? null
-        : { aspect: diceThrow.aspect, overflow: diceThrow.overflow, diceThrow };
-    return waiting().has(id) ? { aspect: 4, overflow: 0, diceThrow: null } : null;
+  /** The frames of a line: the throws kept for it, one for each tray, or one waiting where none is kept yet. */
+  function framesOf(id: string): DiceFrame[] {
+    const kept = [...throws().values()].filter((diceThrow) => diceThrow.messageIdentifier === id);
+    if (kept.length > 0) {
+      return kept
+        .filter((diceThrow) => diceThrow.phase !== 'failed')
+        .map((diceThrow) => ({
+          key: diceThrow.key,
+          aspect: diceThrow.aspect,
+          overflow: diceThrow.overflow,
+          diceThrow,
+        }));
+    }
+    return waiting().has(id) ? [{ key: id, aspect: 4, overflow: 0, diceThrow: null }] : [];
   }
 
   function mount(id: string) {
@@ -87,6 +95,10 @@ describe('DiceRollStageComponent', () => {
     return fixture.nativeElement.querySelector('[data-testid="dice-roll-stage"]');
   }
 
+  function stagesOf(fixture: ComponentFixture<DiceRollStageComponent>): HTMLElement[] {
+    return [...fixture.nativeElement.querySelectorAll('[data-testid="dice-roll-stage"]')];
+  }
+
   beforeEach(() => {
     throws = signal<ReadonlyMap<string, DiceThrow>>(new Map());
     waiting = signal<ReadonlySet<string>>(new Set());
@@ -100,7 +112,7 @@ describe('DiceRollStageComponent', () => {
       imports: [DiceRollStageComponent],
       providers: [
         ...TEST_PROVIDERS,
-        { provide: DiceThrowService, useValue: { throws, frameOf, showStill: (id: string) => stills.push(id) } },
+        { provide: DiceThrowService, useValue: { throws, framesOf, showStill: (id: string) => stills.push(id) } },
         {
           provide: DiceRenderService,
           useValue: {
@@ -184,6 +196,38 @@ describe('DiceRollStageComponent', () => {
     await scrolled(fixture, true);
 
     expect(stills).toEqual([]);
+  });
+
+  it('shows a frame for each tray of a large roll, one under another, each on the stage by its own key', async () => {
+    throws.set(
+      new Map([
+        ['line', throwOf('line')],
+        ['line#1', throwOf('line', { key: 'line#1', part: 1 })],
+        ['line#2', throwOf('line', { key: 'line#2', part: 2, overflow: 12 })],
+      ])
+    );
+    const fixture = mount('line');
+    await scrolled(fixture, true);
+
+    const stages = stagesOf(fixture);
+    expect(stages).toHaveLength(3);
+    expect(registered.map((entry) => entry.id)).toEqual(['line', 'line#1', 'line#2']);
+    expect(registered.map((entry) => entry.canvas)).toEqual(stages.map((stage) => stage.querySelector('canvas')));
+    expect(stages.map((stage) => stage.textContent?.trim())).toEqual(['', '', '+12']);
+  });
+
+  it('keeps each frame on the stage as its throw moves on, without taking it off and putting it back', async () => {
+    throws.set(new Map([['line', throwOf('line')]]));
+    const fixture = mount('line');
+    await scrolled(fixture, true);
+
+    for (const phase of ['rolling', 'settled'] as const) {
+      throws.set(new Map([['line', throwOf('line', { phase, shown: ['3', '4'] })]]));
+      await fixture.whenStable();
+    }
+
+    expect(registered).toHaveLength(1);
+    expect(registered[0].released).toBe(false);
   });
 
   it('counts the dice of a roll too large to throw them all', async () => {

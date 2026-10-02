@@ -53,7 +53,8 @@ export interface DiceStageHandle {
 
 interface Stage {
   readonly canvas: HTMLCanvasElement;
-  readonly messageIdentifier: string;
+  /** The key of the throw it shows. */
+  readonly key: string;
   width: number;
   height: number;
   /** Whether the canvas holds a picture of the throw as it stands now. */
@@ -108,7 +109,7 @@ export class DiceRenderService {
         return;
       }
       for (const stage of this.stages) {
-        if (throws.get(stage.messageIdentifier) !== this.seen.get(stage.messageIdentifier)) stage.drawn = false;
+        if (throws.get(stage.key) !== this.seen.get(stage.key)) stage.drawn = false;
       }
       this.seen = throws;
       this.wake();
@@ -132,9 +133,9 @@ export class DiceRenderService {
     });
   }
 
-  /** Shows a throw on a canvas until the handle is released. */
-  register(canvas: HTMLCanvasElement, messageIdentifier: string): DiceStageHandle {
-    const stage: Stage = { canvas, messageIdentifier, width: 0, height: 0, drawn: false };
+  /** Shows a throw, by its key, on a canvas until the handle is released. */
+  register(canvas: HTMLCanvasElement, key: string): DiceStageHandle {
+    const stage: Stage = { canvas, key, width: 0, height: 0, drawn: false };
     this.stages.add(stage);
     this.wake();
     return {
@@ -148,9 +149,7 @@ export class DiceRenderService {
       release: () => {
         this.stages.delete(stage);
         // A throw no longer on show anywhere lets its meshes go; it is set up again if it comes back into view.
-        if (![...this.stages].some((other) => other.messageIdentifier === stage.messageIdentifier)) {
-          this.drop(stage.messageIdentifier);
-        }
+        if (![...this.stages].some((other) => other.key === stage.key)) this.drop(stage.key);
       },
     };
   }
@@ -238,7 +237,8 @@ export class DiceRenderService {
   ): boolean {
     const table = this.table;
     if (!table) return false;
-    const showing = [...throws.values()].filter((diceThrow) => this.isOnTable(engine, diceThrow, now));
+    const rests = this.restsOnTable(engine, throws, now);
+    const showing = [...throws.values()].filter((diceThrow) => this.isOnTable(diceThrow, rests, now));
     const context = this.clearTable(showing.length > 0 ? pixelRatio : 0);
     if (!context || showing.length < 1) return false;
 
@@ -247,7 +247,6 @@ export class DiceRenderService {
       const prepared = this.preparedFor(engine, diceThrow);
       const seconds = (now - this.playedFrom(diceThrow, now)) / 1000;
       const total = diceThrow.still ? 0 : prepared.endSeconds;
-      const fadeFrom = total + TABLE_HOLD_SECONDS;
       const shot = this.shotOf(diceThrow.placement!.model, diceThrow.tray, host, now);
       if (!shot) continue;
       const region = engine.render(
@@ -256,7 +255,9 @@ export class DiceRenderService {
         { kind: 'table', projection: shot.clip, eye: shot.eye },
         { width: shot.width, height: shot.height, pixelRatio }
       );
-      context.globalAlpha = seconds <= fadeFrom ? 1 : Math.max(0, 1 - (seconds - fadeFrom) / TABLE_FADE_SECONDS);
+      const sinceRest = (now - rests.get(diceThrow.messageIdentifier)!) / 1000;
+      context.globalAlpha =
+        sinceRest <= TABLE_HOLD_SECONDS ? 1 : Math.max(0, 1 - (sinceRest - TABLE_HOLD_SECONDS) / TABLE_FADE_SECONDS);
       context.drawImage(
         engine.canvas,
         region.x,
@@ -273,12 +274,31 @@ export class DiceRenderService {
     return true;
   }
 
-  /** Whether a throw is on the table and still to be seen there: tumbling, at rest a while, or fading. */
-  private isOnTable(engine: DiceEngine, diceThrow: DiceThrow, now: number): boolean {
+  /**
+   * When the dice of each roll on the table have all come to rest, by the roll: the trays of a large
+   * roll stay and fade together, from when the last of them stops. A roll with a tray still being
+   * worked out has not come to rest.
+   */
+  private restsOnTable(engine: DiceEngine, throws: ReadonlyMap<string, DiceThrow>, now: number): Map<string, number> {
+    const rests = new Map<string, number>();
+    for (const diceThrow of throws.values()) {
+      if (diceThrow.stage !== 'table' || !diceThrow.placement || diceThrow.phase === 'failed') continue;
+      if (this.offTable.has(diceThrow.key)) continue;
+      const rest = diceThrow.result
+        ? this.playedFrom(diceThrow, now) +
+          (diceThrow.still ? 0 : this.preparedFor(engine, diceThrow).endSeconds) * 1000
+        : Infinity;
+      rests.set(diceThrow.messageIdentifier, Math.max(rests.get(diceThrow.messageIdentifier) ?? -Infinity, rest));
+    }
+    return rests;
+  }
+
+  /** Whether a throw is on the table and still to be seen there: tumbling, at rest a while with its roll, or fading. */
+  private isOnTable(diceThrow: DiceThrow, rests: ReadonlyMap<string, number>, now: number): boolean {
     if (diceThrow.stage !== 'table' || !diceThrow.result || !diceThrow.placement) return false;
     if (diceThrow.phase === 'failed' || this.offTable.has(diceThrow.key)) return false;
-    const total = diceThrow.still ? 0 : this.preparedFor(engine, diceThrow).endSeconds;
-    const on = (now - this.playedFrom(diceThrow, now)) / 1000 < total + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS;
+    const rest = rests.get(diceThrow.messageIdentifier) ?? Infinity;
+    const on = (now - rest) / 1000 < TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS;
     if (!on) {
       this.offTable.add(diceThrow.key);
       this.drop(diceThrow.key);
@@ -414,9 +434,9 @@ export class DiceRenderService {
   private byThrow(): Map<string, Stage[]> {
     const grouped = new Map<string, Stage[]>();
     for (const stage of this.stages) {
-      const list = grouped.get(stage.messageIdentifier) ?? [];
+      const list = grouped.get(stage.key) ?? [];
       list.push(stage);
-      grouped.set(stage.messageIdentifier, list);
+      grouped.set(stage.key, list);
     }
     return grouped;
   }

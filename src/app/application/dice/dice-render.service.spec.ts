@@ -58,6 +58,7 @@ function throwOf(id: string, change: Partial<DiceThrow> = {}): DiceThrow {
   return {
     key: id,
     messageIdentifier: id,
+    part: 0,
     stage: 'frame',
     placement: null,
     dice: [{ shape: 'd6', labels: 'standard', target: 0, shows: '1' }],
@@ -394,6 +395,36 @@ describe('DiceRenderService', () => {
 
       expect(engine.drawn).toHaveLength(drawnBefore);
       expect(frames).toHaveLength(0);
+    });
+
+    it('keeps the trays of one roll on the table together, fading them from when the last comes to rest', async () => {
+      sheet();
+      const first = onTable('a', { messageIdentifier: 'roll', startedAt: 0, phase: 'settled' });
+      throws.set(new Map([['a', first]]));
+      await nextFrame(0);
+      await nextFrame(100);
+      const later = onTable('b', { messageIdentifier: 'roll', part: 1, startedAt: 1500, phase: 'settled' });
+      throws.set(
+        new Map([
+          ['a', first],
+          ['b', later],
+        ])
+      );
+      await nextFrame(1500);
+      // The first tray alone would have gone by now; the second came to rest at 2.5 seconds.
+      const gone = 100 + (ROLL_SECONDS + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS) * 1000 + 10;
+      engine.drawn.length = 0;
+
+      await nextFrame(gone);
+
+      expect(engine.drawn.map((d) => d.id)).toEqual(['a', 'b']);
+
+      const end = 1500 + (ROLL_SECONDS + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS) * 1000;
+      await nextFrame(end - 50);
+      engine.drawn.length = 0;
+      await nextFrame(end + 10);
+      expect(engine.drawn).toEqual([]);
+      expect(engine.released).toEqual(['a', 'b']);
     });
 
     it('lets the set-up of a throw gone from the table go, and does not set it up again', async () => {

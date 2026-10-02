@@ -113,6 +113,38 @@ test.describe('チャットのダイスを 3D で転がす', () => {
       .toBeGreaterThan(1);
   });
 
+  test('51個以上のロールは50個以下の枠に均等に分けて転がり、出目の合計が合うこと', async ({ page }) => {
+    test.setTimeout(90000);
+    await chooseStage(page, 'frame');
+
+    const { answer, total } = await roll(page, '120d6');
+
+    const stages = answer.getByTestId('dice-roll-stage');
+    await expect(stages).toHaveCount(3);
+    for (let i = 0; i < 3; i++) {
+      await expect(stages.nth(i)).toHaveAttribute('data-state', 'settled', { timeout: 40000 });
+    }
+    const shown = await stages.evaluateAll((elements) =>
+      elements.map((element) => (element.getAttribute('data-shown') ?? '').split(' ').map(Number))
+    );
+    expect(shown.map((dice) => dice.length)).toEqual([40, 40, 40]);
+    expect(shown.flat().reduce((sum, value) => sum + value, 0)).toBe(total);
+    await expect(answer).not.toContainText(/\+\d+$/);
+  });
+
+  test('200個を超えるロールは4枠で転がり、残りの個数を最後の枠に出すこと', async ({ page }) => {
+    test.setTimeout(90000);
+    await chooseStage(page, 'frame');
+
+    // The dice bot rolls no more than two hundred dice to a term, so the roll takes two.
+    const { answer } = await roll(page, '150d6+100d6');
+
+    const stages = answer.getByTestId('dice-roll-stage');
+    await expect(stages).toHaveCount(4);
+    await expect(stages.last()).toContainText('+50');
+    await expect(stages.first()).not.toContainText('+');
+  });
+
   test('出さない設定のときに振った行も、枠に出す設定に替えると出目どおりに止まった姿で出ること', async ({ page }) => {
     await chooseStage(page, 'off');
     const { answer, total } = await roll(page, '1d20');

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  DiceThrow,
   DiceThrowService,
   JUST_ROLLED_MS,
   KEPT_IN_FULL,
@@ -18,6 +19,7 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { DiceStage } from '@axe/domain/dice/dice-3d/dice-stage';
+import { MAX_THROWN_DICE } from '@axe/domain/dice/dice-3d/dice-throw-plan';
 import { Quat, quatRotate } from '@axe/domain/dice/dice-3d/rotation';
 import { DiceRollOutcome, encodeDiceRollDetail } from '@axe/domain/dice/dice-roll-detail';
 import { Config } from '@axe/domain/peer/config';
@@ -38,6 +40,7 @@ describe('DiceThrowService', () => {
   let stageBefore: DiceStage;
   let placement: TablePlacement | null;
   let placedFor: string[];
+  let placedCounts: number[][];
 
   function fixPeerContext(): void {
     const self = {
@@ -87,6 +90,18 @@ describe('DiceThrowService', () => {
     return service.throws().get(`${message.identifier}:table`);
   }
 
+  /** A roll's throws in one place, a tray after another. */
+  function thrownOn(message: ChatMessage, stage: 'frame' | 'table'): DiceThrow[] {
+    return [...service.throws().values()]
+      .filter((diceThrow) => diceThrow.messageIdentifier === message.identifier && diceThrow.stage === stage)
+      .sort((a, b) => a.part - b.part);
+  }
+
+  /** Faces of so many d6, each showing 1 to 6 in turn. */
+  function d6s(count: number) {
+    return Array.from({ length: count }, (_, i) => ({ sides: 6, value: (i % 6) + 1 }));
+  }
+
   beforeEach(() => {
     fixPeerContext();
     PeerCursor.createMyCursor();
@@ -96,6 +111,7 @@ describe('DiceThrowService', () => {
     Config.instance.diceStage = 'frame';
     useDicePhysicsWorkerFactory(() => null);
     placedFor = [];
+    placedCounts = [];
     placement = {
       model: [20, 0, 0, 0, 0, -20, 0, 0, 0, 0, 20, 0, 400, 300, 0, 1],
       tray: { halfWidth: 4, halfDepth: 3 },
@@ -106,9 +122,10 @@ describe('DiceThrowService', () => {
         {
           provide: DiceTrayPlacementService,
           useValue: {
-            placementFor: (speaker: string) => {
+            placementsFor: (speaker: string, counts: number[]) => {
               placedFor.push(speaker);
-              return placement;
+              placedCounts.push(counts);
+              return placement && counts.map(() => placement!);
             },
           },
         },
@@ -309,6 +326,23 @@ describe('DiceThrowService', () => {
     hiddenTab.destroy();
   });
 
+  it('throws a large roll on as many trays as hold it, each landing its share of the numbers', async () => {
+    const faces = d6s(120);
+    const line = answer({ faces });
+
+    callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+
+    await vi.waitFor(() => expect(thrownOn(line, 'frame').map((t) => t.phase)).toEqual(Array(3).fill('rolling')), {
+      timeout: 15000,
+    });
+    const trays = thrownOn(line, 'frame');
+    expect(trays.map((t) => t.key)).toEqual([line.identifier, `${line.identifier}#1`, `${line.identifier}#2`]);
+    expect(trays.map((t) => t.dice.length)).toEqual([40, 40, 40]);
+    expect(trays.flatMap((t) => t.shown)).toEqual(faces.map((face) => String(face.value)));
+    expect(new Set(trays.map((t) => t.tray.halfWidth)).size).toBe(1);
+    expect(trays[1].result?.frames).not.toEqual(trays[0].result?.frames);
+  }, 20000);
+
   it('throws nothing for a roll with no dice it can draw', async () => {
     const line = answer({ faces: [{ sides: 7, value: 3 }] });
 
@@ -439,10 +473,12 @@ describe('DiceThrowService', () => {
     it('keeps a frame of the shape of its dice for a line in a room that shows dice in frames', () => {
       const line = answer({ timestamp: LONG_AGO(), faces: [{ sides: 6, value: 4 }] });
 
-      const frame = service.frameOf(line.identifier);
+      const frames = service.framesOf(line.identifier);
 
-      expect(frame?.diceThrow).toBeNull();
-      expect(frame?.aspect).toBe(4);
+      expect(frames).toHaveLength(1);
+      expect(frames[0].key).toBe(line.identifier);
+      expect(frames[0].diceThrow).toBeNull();
+      expect(frames[0].aspect).toBe(4);
     });
 
     it('keeps no frame where the room shows no dice in frames, or in a replay', () => {
@@ -450,20 +486,20 @@ describe('DiceThrowService', () => {
 
       Config.instance.diceStage = 'table';
       TestBed.tick();
-      expect(service.frameOf(line.identifier)).toBeNull();
+      expect(service.framesOf(line.identifier)).toEqual([]);
 
       Config.instance.diceStage = 'frame';
       TestBed.tick();
       setNetworkIsolated(true);
-      expect(service.frameOf(line.identifier)).toBeNull();
+      expect(service.framesOf(line.identifier)).toEqual([]);
     });
 
     it('keeps no frame for a secret roll that was someone else’s, nor for a roll with no dice it can draw', () => {
       const theirs = answer({ timestamp: LONG_AGO(), secret: true, from: SOMEONE });
       const odd = answer({ timestamp: LONG_AGO(), faces: [{ sides: 7, value: 3 }] });
 
-      expect(service.frameOf(theirs.identifier)).toBeNull();
-      expect(service.frameOf(odd.identifier)).toBeNull();
+      expect(service.framesOf(theirs.identifier)).toEqual([]);
+      expect(service.framesOf(odd.identifier)).toEqual([]);
     });
 
     it('lays its dice down at rest, showing the numbers it came to', () => {
@@ -484,7 +520,33 @@ describe('DiceThrowService', () => {
       expect(thrown(line)?.shown).toEqual(['5', '0']);
       expect(thrown(line)?.color).toBe('#2b8a3e');
       expect(thrown(line)?.outcome).toBe('fumble');
-      expect(service.frameOf(line.identifier)?.diceThrow).toBe(thrown(line));
+      expect(service.framesOf(line.identifier)[0].diceThrow).toBe(thrown(line));
+    });
+
+    it('keeps a frame for each tray of a large roll, the dice it could not hold told on the last', () => {
+      const line = answer({ timestamp: LONG_AGO(), faces: d6s(MAX_THROWN_DICE + 7) });
+
+      const frames = service.framesOf(line.identifier);
+
+      expect(frames.map((frame) => frame.key)).toEqual([
+        line.identifier,
+        `${line.identifier}#1`,
+        `${line.identifier}#2`,
+        `${line.identifier}#3`,
+      ]);
+      expect(frames.map((frame) => frame.overflow)).toEqual([0, 0, 0, 7]);
+    });
+
+    it('lays the dice of a large roll down on all its trays, each showing its share of the numbers', () => {
+      const faces = d6s(120);
+      const line = answer({ timestamp: LONG_AGO(), faces });
+
+      service.showStill(line.identifier);
+
+      const trays = thrownOn(line, 'frame');
+      expect(trays.map((diceThrow) => diceThrow.dice.length)).toEqual([40, 40, 40]);
+      expect(trays.every((diceThrow) => diceThrow.still && diceThrow.phase === 'settled')).toBe(true);
+      expect(trays.flatMap((diceThrow) => diceThrow.shown)).toEqual(faces.map((face) => String(face.value)));
     });
 
     it('lays down nothing for a secret roll that was someone else’s', () => {
@@ -549,6 +611,20 @@ describe('DiceThrowService', () => {
       expect(thrownOnTable(line)?.shown).toEqual(['4']);
       expect(thrown(line)).toBeUndefined();
       expect(placedFor).toEqual(['goblin']);
+    });
+
+    it('lays the trays of a large roll on the table where the table puts them, all at once', async () => {
+      TestBed.inject(MotionService).setting.set('on');
+      const line = answer({ faces: d6s(60) });
+
+      callDiceThrow({ messageIdentifier: line.identifier, speakerIdentifier: 'goblin' }, 'here');
+
+      await vi.waitFor(() => expect(thrownOn(line, 'table')).toHaveLength(2));
+      expect(placedCounts).toEqual([[30, 30]]);
+      expect(thrownOn(line, 'table').map((t) => t.key)).toEqual([
+        `${line.identifier}:table`,
+        `${line.identifier}#1:table`,
+      ]);
     });
 
     it('puts nothing on the table for a reader who keeps the screen still', async () => {

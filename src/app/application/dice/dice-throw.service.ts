@@ -9,7 +9,7 @@ import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { canRoleViewTab } from '@axe/domain/chat/chat-tab-permission';
 import { DiceStage, showsInFrame, showsOnTable } from '@axe/domain/dice/dice-3d/dice-stage';
-import { DieToThrow, labelOf, ThrowPlan, throwPlanOf } from '@axe/domain/dice/dice-3d/dice-throw-plan';
+import { DieToThrow, labelOf, ThrowPlan, throwPlanOf, traysOf } from '@axe/domain/dice/dice-3d/dice-throw-plan';
 import { upFace } from '@axe/domain/dice/dice-3d/die-symmetry';
 import { polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
 import { restingLayout } from '@axe/domain/dice/dice-3d/resting-pose';
@@ -44,17 +44,22 @@ export const KEPT_IN_FULL = 30;
  */
 export type DiceThrowPhase = 'working' | 'rolling' | 'settled' | 'failed';
 
-/** A chat roll's dice, thrown in the frame of the line that answered it or on the table. */
+/**
+ * A chat roll's dice on one tray, thrown in the frame of the line that answered it or on the table.
+ * A roll of more dice than one tray holds is thrown on several, each its own throw.
+ */
 export interface DiceThrow {
-  /** What the throw is kept by: the line's identifier for its frame, and that marked for the table. */
+  /** What the throw is kept by, from the line's identifier: see `throwKeyOf`. */
   readonly key: string;
   readonly messageIdentifier: string;
+  /** Which of the roll's trays it is thrown on, from 0. */
+  readonly part: number;
   /** Where they are thrown. */
   readonly stage: 'frame' | 'table';
   /** Where on the table, for a throw there. */
   readonly placement: TablePlacement | null;
   readonly dice: readonly DieToThrow[];
-  /** How many more dice the roll had than are thrown. */
+  /** How many more dice the roll had than are thrown, told on its last tray alone. */
   readonly overflow: number;
   /** The colour of the dice: the colour the roll was said in. */
   readonly color: string;
@@ -74,8 +79,10 @@ export interface DiceThrow {
   readonly outcome: DiceRollOutcome;
 }
 
-/** A line's frame as this reader sees it: its shape, the dice it could not hold, and its throw once there is one. */
+/** One of a line's frames as this reader sees it: its shape, the dice it could not hold, and its throw once there is one. */
 export interface DiceFrame {
+  /** The key its throw is kept by. */
+  readonly key: string;
   readonly aspect: number;
   readonly overflow: number;
   readonly diceThrow: DiceThrow | null;
@@ -89,6 +96,17 @@ const ON_THE_TABLE = ':table';
 /** The most a die laid down leans once its number is turned upright, in radians. */
 const MAX_LEAN_KEPT = 0.15;
 const NO_TURN: Quat = [0, 0, 0, 1];
+const NO_FRAMES: readonly DiceFrame[] = [];
+
+/**
+ * What a roll's throw on one of its trays is kept by: the line's identifier for its first tray, the
+ * identifier numbered for the rest, and either marked for one on the table. A roll on one tray is
+ * kept as it was before rolls were shared out, so every version throws it from the same seed.
+ */
+export function throwKeyOf(messageIdentifier: string, part: number, stage: 'frame' | 'table'): string {
+  const tray = part === 0 ? messageIdentifier : `${messageIdentifier}#${part}`;
+  return stage === 'frame' ? tray : `${tray}${ON_THE_TABLE}`;
+}
 
 /**
  * Throws the dice of a chat roll the room is told to throw.
@@ -114,6 +132,8 @@ export class DiceThrowService {
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   /** The lines just said that are waiting a moment for their call to throw before being laid down still. */
   private readonly waits = new Map<string, ReturnType<typeof setTimeout>>();
+  /** What each line read lately throws, which is read afresh from its words otherwise. */
+  private readonly plans = new Map<string, ThrowPlan>();
   /** Where the room shows its rolls' dice; a room not yet set up shows none, and is not set up from here. */
   private readonly diceStage = computed<DiceStage>(() => {
     this.objectChange.versionOf('Config')();
@@ -142,25 +162,27 @@ export class DiceThrowService {
   }
 
   /**
-   * The frame a line's dice are shown in, for this reader: the one they were thrown in, or one
-   * waiting for them where the room shows dice in frames and the line has dice to show. Null where
-   * there is nothing to show.
+   * The frames a line's dice are shown in, for this reader: one for each tray the roll is thrown on,
+   * with its throw once there is one. None where the room shows no dice in frames, this reader may
+   * not see the roll, or it has no dice to show.
    *
    * A frame waiting for its dice already has its shape, so a line keeps its height from the start
    * and the log does not jump when they come.
    */
-  frameOf(messageIdentifier: string): DiceFrame | null {
-    const diceThrow = this.state().get(messageIdentifier);
-    if (diceThrow) {
-      if (diceThrow.stage !== 'frame' || diceThrow.phase === 'failed') return null;
-      return { aspect: diceThrow.aspect, overflow: diceThrow.overflow, diceThrow };
-    }
-    if (!showsInFrame(this.diceStage()) || isNetworkIsolated()) return null;
+  framesOf(messageIdentifier: string): readonly DiceFrame[] {
+    if (!showsInFrame(this.diceStage()) || isNetworkIsolated()) return NO_FRAMES;
     const message = this.objectStore.get<ChatMessage>(messageIdentifier);
-    if (!(message instanceof ChatMessage) || !this.mayShow(message)) return null;
-    const plan = throwPlanOf(message.rollDetail);
-    if (plan.dice.length < 1) return null;
-    return { aspect: frameAspectFor(plan.dice.length), overflow: plan.overflow, diceThrow: null };
+    if (!(message instanceof ChatMessage) || !this.mayShow(message)) return NO_FRAMES;
+    const plan = this.planOf(message);
+    const trays = traysOf(plan.dice);
+    const state = this.state();
+    return trays.flatMap((dice, part) => {
+      const key = throwKeyOf(messageIdentifier, part, 'frame');
+      const diceThrow = state.get(key) ?? null;
+      if (diceThrow?.phase === 'failed') return [];
+      const aspect = diceThrow?.aspect ?? frameAspectFor(dice.length);
+      return [{ key, aspect, overflow: overflowOn(part, trays.length, plan), diceThrow }];
+    });
   }
 
   /**
@@ -171,7 +193,8 @@ export class DiceThrowService {
    * a moment for that before its dice are laid down.
    */
   showStill(messageIdentifier: string): void {
-    if (this.state().has(messageIdentifier) || this.waits.has(messageIdentifier)) return;
+    const first = throwKeyOf(messageIdentifier, 0, 'frame');
+    if (this.state().has(first) || this.waits.has(messageIdentifier)) return;
     const message = this.objectStore.get<ChatMessage>(messageIdentifier);
     if (!(message instanceof ChatMessage)) return;
     if (Date.now() - message.timestamp > JUST_ROLLED_MS) {
@@ -201,7 +224,7 @@ export class DiceThrowService {
     if (stage === 'off') return;
     const message = await this.arrivalOf(messageIdentifier);
     if (!message || !this.mayThrow(message)) return;
-    const plan = throwPlanOf(message.rollDetail);
+    const plan = this.planOf(message);
     if (plan.dice.length < 1) return;
 
     const throws: Promise<void>[] = [];
@@ -213,7 +236,11 @@ export class DiceThrowService {
     await Promise.all(throws);
   }
 
-  /** Throws a roll's dice in one place, each place its own tray and its own tumble, to the same numbers. */
+  /**
+   * Throws a roll's dice in one place, each place its own trays and its own tumble, to the same
+   * numbers. The trays of a large roll are worked out one after another, and each starts to tumble
+   * as soon as it is.
+   */
   private async throwIn(
     where: 'frame' | 'table',
     message: ChatMessage,
@@ -221,43 +248,69 @@ export class DiceThrowService {
     speakerIdentifier: string
   ): Promise<void> {
     const messageIdentifier = message.identifier;
-    const key = where === 'frame' ? messageIdentifier : `${messageIdentifier}${ON_THE_TABLE}`;
     // A line already laid down still, its call to throw coming late, is left as it lies.
-    if (this.state().has(key)) return;
-    const placement = where === 'table' ? this.placements.placementFor(speakerIdentifier, plan.dice.length) : null;
-    if (where === 'table' && !placement) return;
-    const tray = placement?.tray ?? frameTrayFor(plan.dice.length);
+    if (this.state().has(throwKeyOf(messageIdentifier, 0, where))) return;
+    const trays = traysOf(plan.dice);
+    const placements =
+      where === 'table'
+        ? this.placements.placementsFor(
+            speakerIdentifier,
+            trays.map((dice) => dice.length)
+          )
+        : null;
+    if (where === 'table' && !placements) return;
     const others = this.rollsTumbling();
     others.delete(messageIdentifier);
     const still = !this.motion.enabled() || others.size >= MAX_TUMBLING;
-    const color = message.messColor?.length ? message.messColor : BLANK_COLOR;
-    this.add({
-      key,
-      messageIdentifier,
-      stage: where,
-      placement,
-      dice: plan.dice,
-      overflow: plan.overflow,
-      color,
-      tray,
-      aspect: tray.halfWidth / tray.halfDepth,
-      phase: 'working',
-      result: null,
-      startedAt: 0,
-      still,
-      shown: [],
-      outcome: message.rollDetail?.outcome ?? '',
-    });
+    const parts = this.throwsOf(message, where, plan, placements, still);
+    this.add(...parts);
 
-    const result = still ? laidDown(plan.dice, tray, key) : await this.worked(key, plan.dice, tray);
-    if (!result || this.state().get(key)?.phase !== 'working') return;
-    this.update(key, {
-      phase: still ? 'settled' : 'rolling',
-      result,
-      startedAt: performance.now(),
-      shown: shownBy(plan.dice, result),
+    await Promise.all(
+      parts.map(async ({ key, dice, tray }) => {
+        const result = still ? laidDown(dice, tray, key) : await this.worked(key, dice, tray);
+        if (!result || this.state().get(key)?.phase !== 'working') return;
+        this.update(key, {
+          phase: still ? 'settled' : 'rolling',
+          result,
+          startedAt: performance.now(),
+          shown: shownBy(dice, result),
+        });
+        if (!still) this.settleAfter(key, ((result.frameCount - 1) / FRAMES_PER_SECOND) * 1000);
+      })
+    );
+  }
+
+  /** A roll's throws on its trays in one place, before their dice are worked out. */
+  private throwsOf(
+    message: ChatMessage,
+    where: 'frame' | 'table',
+    plan: ThrowPlan,
+    placements: readonly TablePlacement[] | null,
+    still: boolean
+  ): DiceThrow[] {
+    const trays = traysOf(plan.dice);
+    return trays.map((dice, part) => {
+      const placement = placements?.[part] ?? null;
+      const tray = placement?.tray ?? frameTrayFor(dice.length);
+      return {
+        key: throwKeyOf(message.identifier, part, where),
+        messageIdentifier: message.identifier,
+        part,
+        stage: where,
+        placement,
+        dice,
+        overflow: overflowOn(part, trays.length, plan),
+        color: message.messColor?.length ? message.messColor : BLANK_COLOR,
+        tray,
+        aspect: tray.halfWidth / tray.halfDepth,
+        phase: 'working',
+        result: null,
+        startedAt: 0,
+        still,
+        shown: [],
+        outcome: message.rollDetail?.outcome ?? '',
+      };
     });
-    if (!still) this.settleAfter(key, ((result.frameCount - 1) / FRAMES_PER_SECOND) * 1000);
   }
 
   /** The rolls that have a throw being worked out or tumbling. */
@@ -314,32 +367,29 @@ export class DiceThrowService {
     });
   }
 
-  /** Lays a line's dice down in its frame, showing their numbers, where this reader may see them there. */
+  /** Lays a line's dice down in its frames, showing their numbers, where this reader may see them there. */
   private layStill(message: ChatMessage): void {
-    const key = message.identifier;
-    if (this.state().has(key) || isNetworkIsolated() || !showsInFrame(this.config.diceStage)) return;
-    if (!this.mayShow(message)) return;
-    const plan = throwPlanOf(message.rollDetail);
+    if (this.state().has(throwKeyOf(message.identifier, 0, 'frame'))) return;
+    if (isNetworkIsolated() || !showsInFrame(this.config.diceStage) || !this.mayShow(message)) return;
+    const plan = this.planOf(message);
     if (plan.dice.length < 1) return;
-    const tray = frameTrayFor(plan.dice.length);
-    const result = laidDown(plan.dice, tray, key);
-    this.add({
-      key,
-      messageIdentifier: key,
-      stage: 'frame',
-      placement: null,
-      dice: plan.dice,
-      overflow: plan.overflow,
-      color: message.messColor?.length ? message.messColor : BLANK_COLOR,
-      tray,
-      aspect: tray.halfWidth / tray.halfDepth,
-      phase: 'settled',
-      result,
-      startedAt: performance.now(),
-      still: true,
-      shown: shownBy(plan.dice, result),
-      outcome: message.rollDetail?.outcome ?? '',
-    });
+    const startedAt = performance.now();
+    this.add(
+      ...this.throwsOf(message, 'frame', plan, null, true).map((diceThrow): DiceThrow => {
+        const result = laidDown(diceThrow.dice, diceThrow.tray, diceThrow.key);
+        return { ...diceThrow, phase: 'settled', result, startedAt, shown: shownBy(diceThrow.dice, result) };
+      })
+    );
+  }
+
+  /** What a line throws, read once from its words while it is read often. */
+  private planOf(message: ChatMessage): ThrowPlan {
+    const kept = this.plans.get(message.identifier);
+    if (kept) return kept;
+    const plan = throwPlanOf(message.rollDetail);
+    this.plans.set(message.identifier, plan);
+    if (this.plans.size > KEPT_THROWS * 4) this.plans.delete(this.plans.keys().next().value!);
+    return plan;
   }
 
   /** Whether a line was just said, and this reader may see its dice. */
@@ -372,9 +422,9 @@ export class DiceThrowService {
     }
   }
 
-  private add(diceThrow: DiceThrow): void {
+  private add(...diceThrows: DiceThrow[]): void {
     const next = new Map(this.state());
-    next.set(diceThrow.key, diceThrow);
+    for (const diceThrow of diceThrows) next.set(diceThrow.key, diceThrow);
     // Whole rolls are let go, the oldest first, so a roll shown in both places keeps both; and those
     // past the latest few keep only where their dice came to rest, which is all a line at rest draws.
     const rolls = [...new Set([...next.values()].map((t) => t.messageIdentifier))];
@@ -412,6 +462,11 @@ function whenIdle(work: () => void): void {
   const idle = globalThis.requestIdleCallback;
   if (typeof idle === 'function') idle(() => work(), { timeout: WARM_UP_WITHIN_MS });
   else setTimeout(work, 0);
+}
+
+/** How many dice a roll's tray tells it could not hold: the last tells them all, the rest none. */
+function overflowOn(part: number, trays: number, plan: ThrowPlan): number {
+  return part === trays - 1 ? plan.overflow : 0;
 }
 
 /** The tray a roll's dice are thrown onto in the frame of its line. */
