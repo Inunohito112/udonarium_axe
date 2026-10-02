@@ -11,6 +11,7 @@ import {
 import { DiceThrow, DiceThrowService } from '@axe/application/dice/dice-throw.service';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { Matrix3D } from '@axe/core/transform/matrix-3d';
+import { PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
 import { Config } from '@axe/domain/peer/config';
 import type { PreparedThrow } from '@axe/infrastructure/dice-3d/dice-3d-engine';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
@@ -25,12 +26,14 @@ class StandInEngine {
   disposed = false;
 
   readonly accents: string[] = [];
+  readonly inks: string[] = [];
   /** What each set-up was made for, in the order made, and those let go. */
   readonly made: string[] = [];
   readonly released: string[] = [];
 
-  prepare(draw: { color: string; accent?: string }): PreparedThrow {
+  prepare(draw: { color: string; accent?: string; ink?: string }): PreparedThrow {
     this.accents.push(draw.accent ?? '');
+    this.inks.push(draw.ink ?? '');
     this.made.push(draw.color);
     return {
       totalSeconds: ROLL_SECONDS,
@@ -63,6 +66,7 @@ function throwOf(id: string, change: Partial<DiceThrow> = {}): DiceThrow {
     placement: null,
     dice: [{ shape: 'd6', labels: 'standard', target: 0, shows: '1' }],
     overflow: 0,
+    look: PLAIN_DICE_LOOK,
     color: id,
     tray: { halfWidth: 8, halfDepth: 2.4 },
     aspect: 10 / 3,
@@ -216,6 +220,20 @@ describe('DiceRenderService', () => {
     await nextFrame(16);
 
     expect(engine.accents).toEqual(['critical', 'fumble', '']);
+  });
+
+  it('inks the numbers in the colour the one who rolled chose', async () => {
+    throws.set(
+      new Map([
+        ['a', throwOf('a', { look: { material: 'resin', body: '', ink: '#e8c547' } })],
+        ['b', throwOf('b')],
+      ])
+    );
+    for (const id of ['a', 'b']) service.register(document.createElement('canvas'), id).resize(300, 90);
+    await nextFrame(0);
+    await nextFrame(16);
+
+    expect(engine.inks).toEqual(['#e8c547', '']);
   });
 
   it('shows a throw first drawn long after it was worked out at rest, without throwing it again', async () => {

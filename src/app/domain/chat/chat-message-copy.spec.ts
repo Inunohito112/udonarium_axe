@@ -34,6 +34,7 @@ describe('copiedMessageContext()', () => {
     message.messBubbleDark = '#000';
     message.sendFrom = 'character-1';
     message.vnEmote = 'shape:shout bubble:shake';
+    message.diceLook = '{"material":"metal"}';
 
     expect(copiedMessageContext(message, 4200)).toEqual({
       originFrom: 'user-1',
@@ -52,6 +53,7 @@ describe('copiedMessageContext()', () => {
       messBubbleLight: '#fff',
       messBubbleDark: '#000',
       sendFrom: 'character-1',
+      diceLook: '{"material":"metal"}',
     });
   });
 

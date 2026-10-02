@@ -21,6 +21,7 @@ import { PeerSessionGrade } from '@axe/core/network/peer-session-state';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
+import { PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
 import { DiceStage } from '@axe/domain/dice/dice-3d/dice-stage';
 import { MAX_THROWN_DICE } from '@axe/domain/dice/dice-3d/dice-throw-plan';
 import { Quat, quatRotate } from '@axe/domain/dice/dice-3d/rotation';
@@ -62,6 +63,7 @@ describe('DiceThrowService', () => {
     timestamp?: number;
     color?: string;
     outcome?: DiceRollOutcome;
+    diceLook?: string;
   }
 
   /** The dice bot's answer to a roll, put in the tab. */
@@ -77,6 +79,7 @@ describe('DiceThrowService', () => {
       name: '<BCDice>',
       to: options.to,
       messColor: options.color ?? '#3b5bdb',
+      diceLook: options.diceLook,
       dicebot: encodeDiceRollDetail({
         system: 'DiceBot',
         outcome: options.outcome ?? '',
@@ -166,6 +169,49 @@ describe('DiceThrowService', () => {
     expect(thrown(line)?.shown).toEqual(['17', '2']);
     expect(thrown(line)?.dice.map((die) => die.shape)).toEqual(['d20', 'd6']);
     expect(thrown(line)?.color).toBe('#3b5bdb');
+  });
+
+  describe('in the look the one who rolled chose', () => {
+    it('throws the dice in the body colour and material the line carries', async () => {
+      const line = answer({ diceLook: '{"material":"marble","body":"#1e6b52","ink":"#f6f3ec"}' });
+
+      callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+
+      await vi.waitFor(() => expect(thrown(line)?.phase).toBe('rolling'));
+      expect(thrown(line)?.look).toEqual({ material: 'marble', body: '#1e6b52', ink: '#f6f3ec' });
+      expect(thrown(line)?.color).toBe('#1e6b52');
+    });
+
+    it('throws the dice in the colour of the roll where the look leaves the body to it', async () => {
+      const line = answer({ color: '#c92a2a', diceLook: '{"material":"metal"}' });
+
+      callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+
+      await vi.waitFor(() => expect(thrown(line)?.phase).toBe('rolling'));
+      expect(thrown(line)?.look.material).toBe('metal');
+      expect(thrown(line)?.color).toBe('#c92a2a');
+    });
+
+    it('lays the dice of a line said before looks were offered down plain, in the colour of the roll', () => {
+      const line = answer({ timestamp: Date.now() - JUST_ROLLED_MS - 1000, color: '#2b8a3e' });
+
+      service.showStill(line.identifier);
+
+      expect(thrown(line)?.look).toEqual(PLAIN_DICE_LOOK);
+      expect(thrown(line)?.color).toBe('#2b8a3e');
+    });
+
+    it('lays the dice of a line from a later version down in resin, keeping the colours it can read', () => {
+      const line = answer({
+        timestamp: Date.now() - JUST_ROLLED_MS - 1000,
+        diceLook: '{"material":"stardust","body":"#5f3dc4","glow":3}',
+      });
+
+      service.showStill(line.identifier);
+
+      expect(thrown(line)?.look).toEqual({ material: 'resin', body: '#5f3dc4', ink: '' });
+      expect(thrown(line)?.color).toBe('#5f3dc4');
+    });
   });
 
   it('lets the dice come to rest once their recording has played', async () => {

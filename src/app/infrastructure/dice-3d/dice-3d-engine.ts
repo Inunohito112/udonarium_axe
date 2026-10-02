@@ -4,7 +4,7 @@ import { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
 import { diceMeshOf } from '@axe/infrastructure/dice-3d/dice-geometry';
 import { DiceThrowResult, FRAME_STRIDE, FRAMES_PER_SECOND } from '@axe/infrastructure/dice-3d/dice-physics-message';
 import { diceStudio } from '@axe/infrastructure/dice-3d/dice-studio';
-import { DiceLook, drawDiceEngraving, drawDiceFaces, lookFor } from '@axe/infrastructure/dice-3d/dice-textures';
+import { DiceColors, drawDiceEngraving, drawDiceFaces, lookFor } from '@axe/infrastructure/dice-3d/dice-textures';
 import {
   AdditiveBlending,
   BufferAttribute,
@@ -46,6 +46,8 @@ export interface ThrowToDraw {
   readonly dice: readonly DieOfThrow[];
   /** The colour of the dice, which their numbers are inked to stand out from. */
   readonly color: string;
+  /** The colour of their numbers, as the one who rolled asked; empty for one that stands out from the body. */
+  readonly ink?: string;
   /** A critical or a fumble, which the dice flash gold or red as they come to rest; empty for neither. */
   readonly accent?: 'critical' | 'fumble' | '';
   readonly tray: Tray;
@@ -258,7 +260,7 @@ export class Dice3dEngine {
   /** Sets up the meshes of a throw: each die a body moved by the recording, its mesh turned to show the rolled number. */
   prepare(draw: ThrowToDraw): PreparedThrow {
     const root = new Group();
-    const look = lookFor(draw.color);
+    const look = lookFor(draw.color, draw.ink);
     const bodies = draw.dice.map((die, index) => {
       const body = new Group();
       const mesh = new Mesh(this.geometryOf(die.shape), this.materialOf(die.shape, die.labels, look));
@@ -470,7 +472,7 @@ export class Dice3dEngine {
     });
   }
 
-  private materialOf(shape: DieShape, labels: DieLabels, look: DiceLook): MeshPhysicalMaterial {
+  private materialOf(shape: DieShape, labels: DieLabels, look: DiceColors): MeshPhysicalMaterial {
     const key = `${shape}|${labels}|${look.body}|${look.ink}|${look.accent}`;
     let material = this.materials.get(key);
     if (material) {

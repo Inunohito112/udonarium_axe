@@ -1,5 +1,6 @@
 import { inject, TestBed } from '@angular/core/testing';
 import { ChatMessageService } from '@axe/application/chat/chat-message.service';
+import { MyDiceService } from '@axe/application/dice/my-dice.service';
 import { Network } from '@axe/core/network/network';
 import { IPeerContext } from '@axe/core/network/peer-context';
 import { ImageStorage } from '@axe/core/storage/image-storage';
@@ -10,6 +11,7 @@ import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { ChatTabList } from '@axe/domain/chat/chat-tab-list';
 import { DataElement } from '@axe/domain/data/data-element';
+import { decodeDiceLook } from '@axe/domain/dice/dice-3d/dice-look';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { beMyself } from '@axe/testing/peer-context-stub';
@@ -221,6 +223,29 @@ describe('ChatMessageService', () => {
       const message = service.sendMessage(chatTab, 'では、判定を', null, PeerCursor.myCursor.identifier);
 
       expect(message.senderRole).toBe(PeerRole.GameMaster);
+    });
+  });
+
+  describe('how the speaker’s dice look', () => {
+    function said(): ChatMessage {
+      const service = TestBed.inject(ChatMessageService);
+      PeerCursor.createMyCursor();
+      const chatTab = new ChatTab();
+      chatTab.initialize();
+      ObjectStore.instance.add(chatTab);
+      return service.sendMessage(chatTab, '2d6', null, PeerCursor.myCursor.identifier);
+    }
+
+    afterEach(() => localStorage.removeItem('my-dice'));
+
+    it('carries the look this seat chose, for the dice bot’s answer to throw the dice in', () => {
+      TestBed.inject(MyDiceService).set({ material: 'marble', body: '#1e6b52', ink: '' });
+
+      expect(decodeDiceLook(said().diceLook)).toEqual({ material: 'marble', body: '#1e6b52', ink: '' });
+    });
+
+    it('carries nothing for the plain look', () => {
+      expect(said().diceLook ?? '').toBe('');
     });
   });
 

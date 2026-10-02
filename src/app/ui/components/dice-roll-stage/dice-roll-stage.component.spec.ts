@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DiceRenderService } from '@axe/application/dice/dice-render.service';
 import { DiceFrame, DiceThrow, DiceThrowService } from '@axe/application/dice/dice-throw.service';
+import { PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 import { DiceRollStageComponent } from '@axe/ui/components/dice-roll-stage/dice-roll-stage.component';
 
@@ -17,6 +18,7 @@ function throwOf(id: string, change: Partial<DiceThrow> = {}): DiceThrow {
       { shape: 'd6', labels: 'standard', target: 0, shows: '2' },
     ],
     overflow: 0,
+    look: PLAIN_DICE_LOOK,
     color: '#3b5bdb',
     tray: { halfWidth: 8, halfDepth: 2.4 },
     aspect: 10 / 3,

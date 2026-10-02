@@ -417,6 +417,7 @@ export class DiceRenderService {
     const prepared = engine.prepare({
       dice: diceThrow.dice,
       color: diceThrow.color,
+      ink: diceThrow.look.ink,
       accent: diceThrow.outcome === 'critical' || diceThrow.outcome === 'fumble' ? diceThrow.outcome : '',
       tray: diceThrow.tray,
       result: diceThrow.result!,

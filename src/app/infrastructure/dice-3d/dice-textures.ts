@@ -5,7 +5,7 @@ import { FaceGlyph, faceGlyphsOf } from '@axe/infrastructure/dice-3d/dice-glyphs
 import { NUMERAL_GAP, NUMERAL_HEIGHT, NUMERALS } from '@axe/infrastructure/dice-3d/dice-numerals';
 
 /** The colours of a die: its body, the ink in its numbers, and the accent of a d6's one pip. */
-export interface DiceLook {
+export interface DiceColors {
   readonly body: string;
   readonly ink: string;
   readonly accent: string;
@@ -27,20 +27,22 @@ const ENGRAVE_STRENGTH = 2.6 * ENGRAVING_SCALE;
 const BLUR_RADIUS = 1;
 
 /**
- * The colours of a die of a given body colour: ink that stands out from it, light on a dark body and
- * dark on a light one, and a red one pip unless the body is red itself.
+ * The colours of a die of a given body colour: the ink asked for, or else ink that stands out from
+ * the body, light on a dark body and dark on a light one; and a red one pip unless the body is red
+ * itself.
  */
-export function lookFor(body: string): DiceLook {
+export function lookFor(body: string, inkAskedFor = ''): DiceColors {
   const rgb = parseColor(body) ?? [32, 32, 36];
   const lightness = (0.2126 * linear(rgb[0]) + 0.7152 * linear(rgb[1]) + 0.0722 * linear(rgb[2])) ** (1 / 2.2);
-  const ink = lightness > 0.55 ? DARK_INK : LIGHT_INK;
+  const asked = parseColor(inkAskedFor);
+  const ink = asked ? rgbText(asked) : lightness > 0.55 ? DARK_INK : LIGHT_INK;
   const [r, g, b] = rgb;
   const reddish = r > 140 && r > g * 1.6 && r > b * 1.6;
   return { body: rgbText(rgb), ink, accent: reddish ? ink : ACCENT };
 }
 
 /** Draws the faces of a die: every face's cell in the body's colour, with its marks in the ink. */
-export function drawDiceFaces(shape: DieShape, labels: DieLabels, look: DiceLook): HTMLCanvasElement {
+export function drawDiceFaces(shape: DieShape, labels: DieLabels, look: DiceColors): HTMLCanvasElement {
   const atlas = atlasOf(shape);
   const canvas = canvasOf(atlas.columns * CELL_PX, atlas.rows * CELL_PX);
   const paint = canvas.getContext('2d')!;

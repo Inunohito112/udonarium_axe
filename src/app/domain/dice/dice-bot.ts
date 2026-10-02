@@ -595,6 +595,7 @@ export class DiceBot extends GameObject {
       name: isSecret ? `<Secret-BCDice：${originalMessage.name}>` : `<BCDice：${originalMessage.name}>`,
       text: multiTargetOption ? `${result}${multiTargetOption}` : result,
       ...answerColorsOf(originalMessage),
+      diceLook: originalMessage.diceLook,
     };
 
     if (originalMessage.to != null && 0 < originalMessage.to.length) {

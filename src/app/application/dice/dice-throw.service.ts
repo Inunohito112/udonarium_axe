@@ -9,6 +9,7 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { canRoleViewTab } from '@axe/domain/chat/chat-tab-permission';
+import { decodeDiceLook, DiceLook } from '@axe/domain/dice/dice-3d/dice-look';
 import { DiceStage, showsInFrame, showsOnTable } from '@axe/domain/dice/dice-3d/dice-stage';
 import { DieToThrow, labelOf, ThrowPlan, throwPlanOf, traysOf } from '@axe/domain/dice/dice-3d/dice-throw-plan';
 import { upFace } from '@axe/domain/dice/dice-3d/die-symmetry';
@@ -69,8 +70,10 @@ export interface DiceThrow {
   readonly dice: readonly DieToThrow[];
   /** How many more dice the roll had than are thrown, told on its last tray alone. */
   readonly overflow: number;
-  /** The colour of the dice: the colour the roll was said in. */
+  /** The colour of the dice: the one the roller chose, or else the colour the roll was said in. */
   readonly color: string;
+  /** How the one who rolled wants their dice to look. */
+  readonly look: DiceLook;
   readonly tray: Tray;
   /** The tray's width over its depth, which is the frame's for a throw in one. */
   readonly aspect: number;
@@ -296,6 +299,8 @@ export class DiceThrowService {
     still: boolean
   ): DiceThrow[] {
     const trays = traysOf(plan.dice);
+    const look = decodeDiceLook(message.diceLook);
+    const color = look.body || (message.messColor?.length ? message.messColor : BLANK_COLOR);
     return trays.map((dice, part) => {
       const placement = placements?.[part] ?? null;
       const tray = placement?.tray ?? frameTrayFor(dice.length);
@@ -307,7 +312,8 @@ export class DiceThrowService {
         placement,
         dice,
         overflow: overflowOn(part, trays.length, plan),
-        color: message.messColor?.length ? message.messColor : BLANK_COLOR,
+        color,
+        look,
         tray,
         aspect: tray.halfWidth / tray.halfDepth,
         phase: 'working',
