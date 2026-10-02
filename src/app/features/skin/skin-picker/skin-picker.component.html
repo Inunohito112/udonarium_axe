@@ -201,12 +201,13 @@
               {{ 'feature.skin.fit' | transloco }}
               <select
                 class="rounded-ui-sm border-ui-border-input bg-ui-input text-ui-text border border-solid px-1 py-0.5 text-[11px]"
-                [value]="layer.fit"
+                [name]="'skin-layer-fit-' + index"
+                [ngModel]="layer.fit"
                 [attr.data-testid]="'skin-layer-fit-' + index"
-                (change)="setFit(layer.id, $any($event.target).value)"
+                (ngModelChange)="setFit(layer.id, $event)"
               >
                 @for (fit of fits; track fit) {
-                  <option [value]="fit">{{ 'feature.skin.fit_' + fit | transloco }}</option>
+                  <option [ngValue]="fit">{{ 'feature.skin.fit_' + fit | transloco }}</option>
                 }
               </select>
             </label>
@@ -214,12 +215,13 @@
               {{ 'feature.skin.anchor' | transloco }}
               <select
                 class="rounded-ui-sm border-ui-border-input bg-ui-input text-ui-text border border-solid px-1 py-0.5 text-[11px]"
-                [value]="layer.anchor"
+                [name]="'skin-layer-anchor-' + index"
+                [ngModel]="layer.anchor"
                 [attr.data-testid]="'skin-layer-anchor-' + index"
-                (change)="setAnchor(layer.id, $any($event.target).value)"
+                (ngModelChange)="setAnchor(layer.id, $event)"
               >
                 @for (anchor of anchors; track anchor) {
-                  <option [value]="anchor">{{ 'feature.skin.anchor_' + anchor | transloco }}</option>
+                  <option [ngValue]="anchor">{{ 'feature.skin.anchor_' + anchor | transloco }}</option>
                 }
               </select>
             </label>
@@ -311,14 +313,13 @@
               {{ 'feature.skin.fit' | transloco }}
               <select
                 class="rounded-ui-sm border-ui-border-input bg-ui-input text-ui-text border border-solid px-1 py-0.5 text-[11px]"
-                [value]="layer.fit"
+                name="skin-mat-fit"
+                [ngModel]="layer.fit"
                 data-testid="skin-mat-fit"
-                (change)="setMatFit($any($event.target).value)"
+                (ngModelChange)="setMatFit($event)"
               >
                 @for (fit of fits; track fit) {
-                  <option [value]="fit" [selected]="fit === layer.fit">
-                    {{ 'feature.skin.fit_' + fit | transloco }}
-                  </option>
+                  <option [ngValue]="fit">{{ 'feature.skin.fit_' + fit | transloco }}</option>
                 }
               </select>
             </label>
@@ -326,14 +327,13 @@
               {{ 'feature.skin.anchor' | transloco }}
               <select
                 class="rounded-ui-sm border-ui-border-input bg-ui-input text-ui-text border border-solid px-1 py-0.5 text-[11px]"
-                [value]="layer.anchor"
+                name="skin-mat-anchor"
+                [ngModel]="layer.anchor"
                 data-testid="skin-mat-anchor"
-                (change)="setMatAnchor($any($event.target).value)"
+                (ngModelChange)="setMatAnchor($event)"
               >
                 @for (anchor of anchors; track anchor) {
-                  <option [value]="anchor" [selected]="anchor === layer.anchor">
-                    {{ 'feature.skin.anchor_' + anchor | transloco }}
-                  </option>
+                  <option [ngValue]="anchor">{{ 'feature.skin.anchor_' + anchor | transloco }}</option>
                 }
               </select>
             </label>

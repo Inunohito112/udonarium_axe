@@ -4,6 +4,7 @@ import { ThemeService } from '@axe/application/ui/theme.service';
 import { SkinImageStore } from '@axe/core/storage/skin-image-store';
 import { AttachedDocuments } from '@axe/domain/ui/attached-documents';
 import { CUSTOM_SKIN, STANDARD_SKIN } from '@axe/domain/ui/skin';
+import { LAYER_ANCHORS, LAYER_FITS } from '@axe/domain/ui/skin-layer';
 import { MAT_COLORS, SkinPickerComponent } from '@axe/features/skin/skin-picker/skin-picker.component';
 import { stubUnloadableImages } from '@axe/testing/unloadable-image';
 
@@ -19,6 +20,8 @@ const KEYS = [
   'ui-skin-dark',
   'ui-skin-recipe-light',
   'ui-skin-recipe-dark',
+  'ui-skin-layers-light',
+  'ui-skin-layers-dark',
   'ui-skin-mat-light',
   'ui-skin-mat-dark',
 ];
@@ -26,6 +29,12 @@ const KEYS = [
 describe('SkinPickerComponent', () => {
   let fixture: ComponentFixture<SkinPickerComponent>;
   let skins: SkinService;
+
+  /** Which of the choices offered a dropdown shows as chosen, read off the option the page has selected. */
+  function chosen<T>(testId: string, offered: readonly T[]): T | undefined {
+    const select = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as HTMLSelectElement;
+    return offered[select.selectedIndex];
+  }
 
   function click(testId: string): void {
     fixture.nativeElement.querySelector(`[data-testid="${testId}"]`).click();
@@ -171,10 +180,22 @@ describe('SkinPickerComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const select = (testId: string) =>
-      fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as HTMLSelectElement;
-    expect(select('skin-mat-anchor').value).toBe('center');
-    expect(select('skin-mat-fit').value).toBe('tile');
+    expect(chosen('skin-mat-anchor', LAYER_ANCHORS)).toBe('center');
+    expect(chosen('skin-mat-fit', LAYER_FITS)).toBe('tile');
+  });
+
+  it('shows the corner and fit a picture of the stack is laid with, not the first ones offered', async () => {
+    vi.spyOn(SkinImageStore.instance, 'put').mockResolvedValue(true);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:paper');
+    await skins.addLayer(picture(), 'paper.png');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    skins.tuneLayer(skins.stack()[0].id, { fit: 'tile' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(chosen('skin-layer-anchor-0', LAYER_ANCHORS)).toBe('center');
+    expect(chosen('skin-layer-fit-0', LAYER_FITS)).toBe('tile');
   });
 
   it('sets the edges harder when it is asked to', () => {

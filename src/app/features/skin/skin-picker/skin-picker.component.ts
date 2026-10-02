@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { SkinService } from '@axe/application/ui/skin.service';
 import { CUSTOM_SKIN, SkinGroup, skinsFor, STANDARD_SKIN } from '@axe/domain/ui/skin';
 import {
@@ -53,7 +54,7 @@ function swatchFrom(id: string, tokens: Readonly<Record<string, string>>): Swatc
 @Component({
   selector: 'app-skin-picker',
   templateUrl: './skin-picker.component.html',
-  imports: [TranslocoModule],
+  imports: [TranslocoModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SkinPickerComponent {
