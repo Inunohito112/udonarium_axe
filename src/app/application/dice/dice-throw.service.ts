@@ -1,4 +1,4 @@
-import { computed, DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
+import { DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
 import { DiceTrayPlacementService, TablePlacement } from '@axe/application/dice/dice-tray-placement.service';
 import { MotionService } from '@axe/application/ui/motion.service';
 import { diceThrow$, messageAdded$ } from '@axe/core/event/domain-events';
@@ -7,7 +7,8 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { canRoleViewTab } from '@axe/domain/chat/chat-tab-permission';
-import { DieToThrow, labelOf, throwPlanOf } from '@axe/domain/dice/dice-3d/dice-throw-plan';
+import { showsInFrame, showsOnTable } from '@axe/domain/dice/dice-3d/dice-stage';
+import { DieToThrow, labelOf, ThrowPlan, throwPlanOf } from '@axe/domain/dice/dice-3d/dice-throw-plan';
 import { upFace } from '@axe/domain/dice/dice-3d/die-symmetry';
 import { polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
 import { restingLayout } from '@axe/domain/dice/dice-3d/resting-pose';
@@ -42,6 +43,8 @@ export type DiceThrowPhase = 'working' | 'rolling' | 'settled' | 'failed';
 
 /** A chat roll's dice, thrown in the frame of the line that answered it or on the table. */
 export interface DiceThrow {
+  /** What the throw is kept by: the line's identifier for its frame, and that marked for the table. */
+  readonly key: string;
   readonly messageIdentifier: string;
   /** Where they are thrown. */
   readonly stage: 'frame' | 'table';
@@ -69,6 +72,8 @@ export interface DiceThrow {
 }
 
 const BLANK_COLOR = '#202024';
+/** What marks the key of a roll's throw on the table, beside the one in its frame. */
+const ON_THE_TABLE = ':table';
 /** The most a die laid down leans once its number is turned upright, in radians. */
 const MAX_LEAN_KEPT = 0.15;
 const NO_TURN: Quat = [0, 0, 0, 1];
@@ -95,13 +100,8 @@ export class DiceThrowService {
   private readonly called = new Set<string>();
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  /** Every throw kept, by the line whose dice it throws. */
+  /** Every throw kept, by its key: the line whose dice it throws, marked for one on the table. */
   readonly throws: Signal<ReadonlyMap<string, DiceThrow>> = this.state.asReadonly();
-
-  /** How many throws are being worked out or are tumbling. */
-  readonly busy = computed(
-    () => [...this.state().values()].filter((t) => t.phase === 'working' || t.phase === 'rolling').length
-  );
 
   constructor() {
     diceThrow$.subscribe(
@@ -112,8 +112,8 @@ export class DiceThrowService {
   }
 
   /** Gives up showing a throw, as when its dice cannot be drawn on this device. */
-  fail(messageIdentifier: string): void {
-    this.update(messageIdentifier, { phase: 'failed' });
+  fail(key: string): void {
+    this.update(key, { phase: 'failed' });
   }
 
   private async receive(messageIdentifier: string, speakerIdentifier: string): Promise<void> {
@@ -128,16 +128,35 @@ export class DiceThrowService {
     const plan = throwPlanOf(message.rollDetail);
     if (plan.dice.length < 1) return;
 
+    const throws: Promise<void>[] = [];
+    if (showsInFrame(stage)) throws.push(this.throwIn('frame', message, plan, speakerIdentifier));
     // A reader who keeps the screen still has nothing put on the table, which they are moving about on.
-    if (stage === 'table' && !this.motion.enabled()) return;
-    const placement = stage === 'table' ? this.placements.placementFor(speakerIdentifier, plan.dice.length) : null;
-    if (stage === 'table' && !placement) return;
+    if (showsOnTable(stage) && this.motion.enabled()) {
+      throws.push(this.throwIn('table', message, plan, speakerIdentifier));
+    }
+    await Promise.all(throws);
+  }
+
+  /** Throws a roll's dice in one place, each place its own tray and its own tumble, to the same numbers. */
+  private async throwIn(
+    where: 'frame' | 'table',
+    message: ChatMessage,
+    plan: ThrowPlan,
+    speakerIdentifier: string
+  ): Promise<void> {
+    const messageIdentifier = message.identifier;
+    const key = where === 'frame' ? messageIdentifier : `${messageIdentifier}${ON_THE_TABLE}`;
+    const placement = where === 'table' ? this.placements.placementFor(speakerIdentifier, plan.dice.length) : null;
+    if (where === 'table' && !placement) return;
     const tray = placement?.tray ?? trayFor(plan.dice.length, frameAspectFor(plan.dice.length), FRAME_TRAY_AREA);
-    const still = !this.motion.enabled() || this.busy() >= MAX_TUMBLING;
+    const others = this.rollsTumbling();
+    others.delete(messageIdentifier);
+    const still = !this.motion.enabled() || others.size >= MAX_TUMBLING;
     const color = message.messColor?.length ? message.messColor : BLANK_COLOR;
     this.add({
+      key,
       messageIdentifier,
-      stage,
+      stage: where,
       placement,
       dice: plan.dice,
       overflow: plan.overflow,
@@ -152,37 +171,44 @@ export class DiceThrowService {
       outcome: message.rollDetail?.outcome ?? '',
     });
 
-    const result = still
-      ? laidDown(plan.dice, tray, messageIdentifier)
-      : await this.worked(messageIdentifier, plan.dice, tray);
-    if (!result || !this.state().has(messageIdentifier)) return;
-    this.update(messageIdentifier, {
+    const result = still ? laidDown(plan.dice, tray, key) : await this.worked(key, plan.dice, tray);
+    if (!result || !this.state().has(key)) return;
+    this.update(key, {
       phase: still ? 'settled' : 'rolling',
       result,
       startedAt: performance.now(),
       shown: shownBy(plan.dice, result),
     });
-    if (!still) this.settleAfter(messageIdentifier, ((result.frameCount - 1) / FRAMES_PER_SECOND) * 1000);
+    if (!still) this.settleAfter(key, ((result.frameCount - 1) / FRAMES_PER_SECOND) * 1000);
+  }
+
+  /** The rolls that have a throw being worked out or tumbling. */
+  private rollsTumbling(): Set<string> {
+    return new Set(
+      [...this.state().values()]
+        .filter((t) => t.phase === 'working' || t.phase === 'rolling')
+        .map((t) => t.messageIdentifier)
+    );
   }
 
   /**
    * Has a throw come to rest as long after a moment as its dice take to stop, the moment it began
    * to play where it is drawn, which can be later than when it was worked out.
    */
-  played(messageIdentifier: string, at: number): void {
-    const diceThrow = this.state().get(messageIdentifier);
+  played(key: string, at: number): void {
+    const diceThrow = this.state().get(key);
     if (diceThrow?.phase !== 'rolling' || !diceThrow.result) return;
     const total = ((diceThrow.result.frameCount - 1) / FRAMES_PER_SECOND) * 1000;
-    this.settleAfter(messageIdentifier, Math.max(0, at + total - performance.now()));
+    this.settleAfter(key, Math.max(0, at + total - performance.now()));
   }
 
-  private settleAfter(messageIdentifier: string, ms: number): void {
-    clearTimeout(this.timers.get(messageIdentifier));
+  private settleAfter(key: string, ms: number): void {
+    clearTimeout(this.timers.get(key));
     this.timers.set(
-      messageIdentifier,
+      key,
       setTimeout(() => {
-        this.timers.delete(messageIdentifier);
-        this.update(messageIdentifier, { phase: 'settled' });
+        this.timers.delete(key);
+        this.update(key, { phase: 'settled' });
       }, ms)
     );
   }
@@ -237,21 +263,27 @@ export class DiceThrowService {
 
   private add(diceThrow: DiceThrow): void {
     const next = new Map(this.state());
-    next.set(diceThrow.messageIdentifier, diceThrow);
-    while (next.size > KEPT_THROWS) {
-      const oldest = next.keys().next().value!;
-      next.delete(oldest);
-      clearTimeout(this.timers.get(oldest));
-      this.timers.delete(oldest);
+    next.set(diceThrow.key, diceThrow);
+    // Whole rolls are let go, the oldest first, so a roll shown in both places keeps both.
+    let rolls = new Set([...next.values()].map((t) => t.messageIdentifier));
+    while (rolls.size > KEPT_THROWS) {
+      const oldest = next.values().next().value!.messageIdentifier;
+      for (const [key, kept] of next) {
+        if (kept.messageIdentifier !== oldest) continue;
+        next.delete(key);
+        clearTimeout(this.timers.get(key));
+        this.timers.delete(key);
+      }
+      rolls = new Set([...next.values()].map((t) => t.messageIdentifier));
     }
     this.state.set(next);
   }
 
-  private update(messageIdentifier: string, change: Partial<DiceThrow>): void {
-    const current = this.state().get(messageIdentifier);
+  private update(key: string, change: Partial<DiceThrow>): void {
+    const current = this.state().get(key);
     if (!current) return;
     const next = new Map(this.state());
-    next.set(messageIdentifier, { ...current, ...change });
+    next.set(key, { ...current, ...change });
     this.state.set(next);
   }
 }

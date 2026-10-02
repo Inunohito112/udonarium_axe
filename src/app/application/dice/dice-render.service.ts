@@ -268,11 +268,11 @@ export class DiceRenderService {
    * was worked out, such as a line scrolled back into view, is not thrown again but shown at rest.
    */
   private playedFrom(diceThrow: DiceThrow, now: number): number {
-    let from = this.playFrom.get(diceThrow.messageIdentifier);
+    let from = this.playFrom.get(diceThrow.key);
     if (from === undefined) {
       from = now - diceThrow.startedAt <= LATE_START_MS ? now : diceThrow.startedAt - LATE_START_MS;
-      this.playFrom.set(diceThrow.messageIdentifier, from);
-      if (from === now) this.throws.played(diceThrow.messageIdentifier, now);
+      this.playFrom.set(diceThrow.key, from);
+      if (from === now) this.throws.played(diceThrow.key, now);
     }
     return from;
   }
@@ -361,7 +361,7 @@ export class DiceRenderService {
   }
 
   private preparedFor(engine: DiceEngine, diceThrow: DiceThrow): PreparedThrow {
-    const kept = this.prepared.get(diceThrow.messageIdentifier);
+    const kept = this.prepared.get(diceThrow.key);
     if (kept && kept.result === diceThrow.result) return kept.prepared;
     const prepared = engine.prepare({
       dice: diceThrow.dice,
@@ -370,7 +370,7 @@ export class DiceRenderService {
       tray: diceThrow.tray,
       result: diceThrow.result!,
     });
-    this.prepared.set(diceThrow.messageIdentifier, { result: diceThrow.result, prepared });
+    this.prepared.set(diceThrow.key, { result: diceThrow.result, prepared });
     return prepared;
   }
 

@@ -16,7 +16,7 @@ test.describe('チャットのダイスを 3D で転がす', () => {
     await expect(page.locator('app-gm-toolbar [title^="暗闇"]')).toBeVisible({ timeout: 10000 });
   }
 
-  async function chooseStage(page: Page, stage: 'off' | 'frame' | 'table') {
+  async function chooseStage(page: Page, stage: 'off' | 'frame' | 'table' | 'both') {
     await openPanel(page, '部屋設定');
     await page.getByTestId('dice-stage').selectOption(stage);
     await expect(page.getByTestId('dice-stage')).toHaveValue(stage);
@@ -96,6 +96,20 @@ test.describe('チャットのダイスを 3D で転がす', () => {
       )
       .toBeGreaterThan(20);
     await expect(answer.getByTestId('dice-roll-stage')).toHaveCount(0);
+  });
+
+  test('両方の設定では、セリフの枠と卓の上の両方で同じ目に止まること', async ({ page }) => {
+    await chooseStage(page, 'both');
+
+    const { answer, total } = await roll(page, '1d20');
+
+    const stage = answer.getByTestId('dice-roll-stage');
+    await expect(stage).toHaveAttribute('data-state', 'settled', { timeout: 20000 });
+    await expect(stage).toHaveAttribute('data-shown', String(total));
+    const sheet = page.getByTestId('table-dice-overlay');
+    await expect
+      .poll(() => sheet.evaluate((canvas: HTMLCanvasElement) => canvas.width), { timeout: 20000 })
+      .toBeGreaterThan(1);
   });
 
   test('出さない設定では、ロールしても枠が出ないこと', async ({ page }) => {

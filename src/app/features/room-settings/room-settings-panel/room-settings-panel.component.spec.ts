@@ -96,7 +96,7 @@ describe('RoomSettingsPanelComponent', () => {
     await fixture.whenStable();
     const select: HTMLSelectElement = fixture.nativeElement.querySelector('[data-testid="dice-stage"]');
     expect(select.value).toBe('off');
-    expect([...select.options].map((option) => option.value)).toEqual(['off', 'frame', 'table']);
+    expect([...select.options].map((option) => option.value)).toEqual(['off', 'frame', 'table', 'both']);
     expect(select.disabled).toBe(false);
 
     select.value = 'frame';

@@ -7,6 +7,7 @@ import { DiceRollStageComponent } from '@axe/ui/components/dice-roll-stage/dice-
 
 function throwOf(id: string, change: Partial<DiceThrow> = {}): DiceThrow {
   return {
+    key: id,
     messageIdentifier: id,
     stage: 'frame',
     placement: null,

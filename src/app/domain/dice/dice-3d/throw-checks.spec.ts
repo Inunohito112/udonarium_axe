@@ -1,4 +1,4 @@
-import { asDiceStage } from '@axe/domain/dice/dice-3d/dice-stage';
+import { asDiceStage, showsInFrame, showsOnTable } from '@axe/domain/dice/dice-3d/dice-stage';
 import { upFace } from '@axe/domain/dice/dice-3d/die-symmetry';
 import { DIE_SHAPES, dieRadiusOf, polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
 import { restingLayout, restingRotation } from '@axe/domain/dice/dice-3d/resting-pose';
@@ -24,9 +24,25 @@ describe('throwSeedOf', () => {
 });
 
 describe('asDiceStage', () => {
-  it('reads the frame and the table as themselves', () => {
+  it('reads the frame, the table and both as themselves', () => {
     expect(asDiceStage('frame')).toBe('frame');
     expect(asDiceStage('table')).toBe('table');
+    expect(asDiceStage('both')).toBe('both');
+  });
+
+  it('shows the dice in the frame for the frame and for both, and on the table for the table and for both', () => {
+    expect(['off', 'frame', 'table', 'both'].map((stage) => showsInFrame(asDiceStage(stage)))).toEqual([
+      false,
+      true,
+      false,
+      true,
+    ]);
+    expect(['off', 'frame', 'table', 'both'].map((stage) => showsOnTable(asDiceStage(stage)))).toEqual([
+      false,
+      false,
+      true,
+      true,
+    ]);
   });
 
   it('reads anything else as nowhere', () => {

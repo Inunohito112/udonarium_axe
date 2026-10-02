@@ -2455,6 +2455,7 @@
       "diceStage_off": "표시 안 함",
       "diceStage_frame": "대사 칸",
       "diceStage_table": "테이블 위",
+      "diceStage_both": "둘 다",
       "diceStageHint": "채팅에서 굴린 다이스가 3D로 굴러가 나온 눈에서 멈춥니다. 시크릿 굴림은 굴린 사람의 화면에만 나옵니다",
       "sectionControllerResources": "리모컨에 표시할 수치와 리소스",
       "controllerResourcesShowAll": "모두 표시",

@@ -253,6 +253,9 @@ describe('Config', () => {
 
       Config.instance.diceStage = 'table';
       expect(Config.instance.diceStage).toBe('table');
+
+      Config.instance.diceStage = 'both';
+      expect(Config.instance.diceStage).toBe('both');
     });
 
     it('writes nowhere as empty, the same as a room that never chose', () => {

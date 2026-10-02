@@ -48,6 +48,7 @@ class StandInEngine {
 
 function throwOf(id: string, change: Partial<DiceThrow> = {}): DiceThrow {
   return {
+    key: id,
     messageIdentifier: id,
     stage: 'frame',
     placement: null,

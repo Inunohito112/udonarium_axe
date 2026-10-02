@@ -80,6 +80,10 @@ describe('DiceThrowService', () => {
     return service.throws().get(message.identifier);
   }
 
+  function thrownOnTable(message: ChatMessage) {
+    return service.throws().get(`${message.identifier}:table`);
+  }
+
   beforeEach(() => {
     fixPeerContext();
     PeerCursor.createMyCursor();
@@ -360,11 +364,12 @@ describe('DiceThrowService', () => {
 
       callDiceThrow({ messageIdentifier: line.identifier, speakerIdentifier: 'goblin' }, 'here');
 
-      await vi.waitFor(() => expect(thrown(line)?.phase).toBe('rolling'));
-      expect(thrown(line)?.stage).toBe('table');
-      expect(thrown(line)?.placement).toBe(placement);
-      expect(thrown(line)?.tray).toEqual(placement!.tray);
-      expect(thrown(line)?.shown).toEqual(['4']);
+      await vi.waitFor(() => expect(thrownOnTable(line)?.phase).toBe('rolling'));
+      expect(thrownOnTable(line)?.stage).toBe('table');
+      expect(thrownOnTable(line)?.placement).toBe(placement);
+      expect(thrownOnTable(line)?.tray).toEqual(placement!.tray);
+      expect(thrownOnTable(line)?.shown).toEqual(['4']);
+      expect(thrown(line)).toBeUndefined();
       expect(placedFor).toEqual(['goblin']);
     });
 
@@ -375,7 +380,7 @@ describe('DiceThrowService', () => {
       callDiceThrow({ messageIdentifier: line.identifier }, 'here');
       await new Promise((resolve) => setTimeout(resolve, 20));
 
-      expect(thrown(line)).toBeUndefined();
+      expect(service.throws().size).toBe(0);
     });
 
     it('throws nothing when no table is on show', async () => {
@@ -385,7 +390,51 @@ describe('DiceThrowService', () => {
       callDiceThrow({ messageIdentifier: line.identifier }, 'here');
       await new Promise((resolve) => setTimeout(resolve, 20));
 
-      expect(thrown(line)).toBeUndefined();
+      expect(service.throws().size).toBe(0);
+    });
+  });
+
+  describe('in both places', () => {
+    beforeEach(() => {
+      Config.instance.diceStage = 'both';
+    });
+
+    it('throws the dice in the frame and on the table, each its own way, to the same numbers', async () => {
+      const line = answer({
+        faces: [
+          { sides: 20, value: 17 },
+          { sides: 6, value: 2 },
+        ],
+      });
+
+      callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+
+      await vi.waitFor(() => expect(thrown(line)?.phase).toBe('rolling'));
+      await vi.waitFor(() => expect(thrownOnTable(line)?.phase).toBe('rolling'));
+      expect(thrown(line)?.stage).toBe('frame');
+      expect(thrownOnTable(line)?.stage).toBe('table');
+      expect(thrown(line)?.shown).toEqual(['17', '2']);
+      expect(thrownOnTable(line)?.shown).toEqual(['17', '2']);
+      expect(thrownOnTable(line)?.result?.frames).not.toEqual(thrown(line)?.result?.frames);
+    });
+
+    it('counts a roll shown in both places as one roll tumbling', async () => {
+      const lines = Array.from({ length: MAX_TUMBLING }, () => answer());
+
+      for (const line of lines) callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+
+      await vi.waitFor(() => expect(lines.every((line) => thrownOnTable(line)?.result)).toBe(true));
+      expect(lines.map((line) => thrownOnTable(line)?.still)).toEqual(Array(MAX_TUMBLING).fill(false));
+    });
+
+    it('lays the dice down in the frame alone for a reader who keeps the screen still', async () => {
+      TestBed.inject(MotionService).setting.set('off');
+      const line = answer();
+
+      callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+
+      await vi.waitFor(() => expect(thrown(line)?.phase).toBe('settled'));
+      expect(thrownOnTable(line)).toBeUndefined();
     });
   });
 });

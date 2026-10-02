@@ -2455,6 +2455,7 @@
       "diceStage_off": "Don't show",
       "diceStage_frame": "In the chat line",
       "diceStage_table": "On the table",
+      "diceStage_both": "Both",
       "diceStageHint": "Chat rolls tumble in 3D and land on the numbers rolled. A secret roll shows on the roller's screen alone",
       "sectionControllerResources": "Values and resources on the remote",
       "controllerResourcesShowAll": "Show all",
