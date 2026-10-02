@@ -1482,6 +1482,7 @@ input[type='range']::-moz-range-thumb {
 
 :root.motion-reduced
   :is(
+    .animate-bounce-in,
     .animate-sheet-up,
     .animate-fade-in,
     .animate-buff-swap,
