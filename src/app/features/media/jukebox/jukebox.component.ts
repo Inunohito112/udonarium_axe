@@ -153,13 +153,18 @@ export class JukeboxComponent {
     return held;
   });
 
+  /** Whether the seek bar is being dragged, and where to, from 0 to 1, so playback moving on does not pull it back. */
+  readonly isSeeking = signal(false);
+  readonly seekPreview = signal(0);
+
   /** The position and length of the room's track, read out as `1:23 / 4:56`; a dash while nothing is held. */
   readonly timeDisplay = computed(() => {
     this._tick();
     this.objectChange.versionOf('Jukebox')();
     if (!this.playback.isPlaying() && !this.playback.isPaused()) return '—';
     const duration = this.playback.duration();
-    return `${formatTrackTime(this.playback.position())} / ${duration > 0 ? formatTrackTime(duration) : '—'}`;
+    const at = this.isSeeking() ? this.seekPreview() * duration : this.playback.position();
+    return `${formatTrackTime(at)} / ${duration > 0 ? formatTrackTime(duration) : '—'}`;
   });
 
   /** How far through the room's track it is, from 0 to 1. */
@@ -169,6 +174,9 @@ export class JukeboxComponent {
     const duration = this.playback.duration();
     return duration > 0 ? Math.min(1, this.playback.position() / duration) : 0;
   });
+
+  /** Where the seek bar stands: where it is being dragged to, or how far through the track it is. */
+  readonly displayProgress = computed(() => (this.isSeeking() ? this.seekPreview() : this.progress()));
 
   /** Whether the seek bar is locked for the whole room. */
   readonly isSeekLocked = computed(() => {
@@ -457,10 +465,17 @@ export class JukeboxComponent {
     if (this.jukebox) this.jukebox.isSeekLocked = !this.jukebox.isSeekLocked;
   }
 
-  /** Moves the room's track to where the seek bar was let go, while its length is known. */
+  /** Shows where the seek bar is being dragged to without moving playback yet. */
+  onSeekInput(event: Event): void {
+    this.isSeeking.set(true);
+    this.seekPreview.set((event.target as HTMLInputElement).valueAsNumber / 100);
+  }
+
+  /** Moves the room's track to where the seek bar was let go, while its length is known, and ends the drag. */
   onSeekCommit(event: Event): void {
     const duration = this.playback.duration();
     if (duration > 0) this.playback.seek(((event.target as HTMLInputElement).valueAsNumber / 100) * duration);
+    this.isSeeking.set(false);
   }
 
   /** Opens the cut-in list panel beside the pointer. */

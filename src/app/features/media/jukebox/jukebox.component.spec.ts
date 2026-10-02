@@ -12,6 +12,7 @@ import { CutInLauncher } from '@axe/domain/media/cut-in-launcher';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { Playlist } from '@axe/domain/media/playlist';
 import { JukeboxComponent } from '@axe/features/media/jukebox/jukebox.component';
+import { JukeboxPlaybackService } from '@axe/features/media/jukebox-playback.service';
 import { expectPanelDragRecovery, PanelDragTestHostComponent } from '@axe/testing/panel-drag-recovery';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
@@ -68,6 +69,31 @@ describe('JukeboxComponent', () => {
       beforeOpen: () => {
         ensureJukeboxAndLauncher();
       },
+    });
+  });
+
+  describe('dragging the seek bar', () => {
+    function seekBarAt(value: number): Event {
+      const input = document.createElement('input');
+      input.type = 'range';
+      input.value = String(value);
+      return { target: input } as unknown as Event;
+    }
+
+    it('holds the bar where it is dragged to while the track plays on, and seeks there once it is let go', () => {
+      const playback = TestBed.inject(JukeboxPlaybackService);
+      vi.spyOn(playback, 'duration').mockReturnValue(200);
+      const position = vi.spyOn(playback, 'position').mockReturnValue(20);
+      const seek = vi.spyOn(playback, 'seek').mockImplementation(() => undefined);
+
+      component.onSeekInput(seekBarAt(75));
+      position.mockReturnValue(40);
+      expect(component.displayProgress()).toBe(0.75);
+
+      component.onSeekCommit(seekBarAt(75));
+
+      expect(seek).toHaveBeenCalledWith(150);
+      expect(component.isSeeking()).toBe(false);
     });
   });
 

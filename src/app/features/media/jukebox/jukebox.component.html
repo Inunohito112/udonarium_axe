@@ -99,8 +99,9 @@
         min="0"
         max="100"
         step="0.1"
-        [value]="progress() * 100"
+        [value]="displayProgress() * 100"
         [disabled]="!playback.isPlaying() || isSeekLocked()"
+        (input)="onSeekInput($event)"
         (change)="onSeekCommit($event)"
         [attr.aria-label]="'feature.media.jukebox.seek' | transloco"
       />
