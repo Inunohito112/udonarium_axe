@@ -1,5 +1,6 @@
-import { DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
+import { DestroyRef, effect, inject, Injectable, Signal, signal, untracked } from '@angular/core';
 import { DiceTrayPlacementService, TablePlacement } from '@axe/application/dice/dice-tray-placement.service';
+import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { MotionService } from '@axe/application/ui/motion.service';
 import { diceThrow$, messageAdded$ } from '@axe/core/event/domain-events';
 import { isNetworkIsolated } from '@axe/core/network/network-isolation';
@@ -20,7 +21,7 @@ import { DiceRollOutcome } from '@axe/domain/dice/dice-roll-detail';
 import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { faceFramesOf } from '@axe/infrastructure/dice-3d/dice-geometry';
-import { throwDice } from '@axe/infrastructure/dice-3d/dice-physics-client';
+import { readyDicePhysics, throwDice } from '@axe/infrastructure/dice-3d/dice-physics-client';
 import { DiceThrowResult, FRAME_STRIDE, FRAMES_PER_SECOND } from '@axe/infrastructure/dice-3d/dice-physics-message';
 
 /**
@@ -72,6 +73,8 @@ export interface DiceThrow {
 }
 
 const BLANK_COLOR = '#202024';
+/** How long the physics waits for a quiet moment to be started in, at most, in milliseconds. */
+const WARM_UP_WITHIN_MS = 3000;
 /** What marks the key of a roll's throw on the table, beside the one in its frame. */
 const ON_THE_TABLE = ':table';
 /** The most a die laid down leans once its number is turned upright, in radians. */
@@ -95,6 +98,7 @@ export class DiceThrowService {
   private readonly objectStore = inject(ObjectStore);
   private readonly motion = inject(MotionService);
   private readonly placements = inject(DiceTrayPlacementService);
+  private readonly objectChange = inject(ObjectChangeService);
   private readonly state = signal<ReadonlyMap<string, DiceThrow>>(new Map());
   /** The lines already called to be thrown, kept beyond the throws themselves so none is thrown twice. */
   private readonly called = new Set<string>();
@@ -104,6 +108,13 @@ export class DiceThrowService {
   readonly throws: Signal<ReadonlyMap<string, DiceThrow>> = this.state.asReadonly();
 
   constructor() {
+    // A room that shows its rolls' dice has the physics started in a quiet moment, ahead of the first roll.
+    effect(() => {
+      this.objectChange.versionOf('Config')();
+      const config = this.objectStore.get<Config>('Config');
+      if (!config || config.diceStage === 'off') return;
+      untracked(() => whenIdle(readyDicePhysics));
+    });
     diceThrow$.subscribe(
       (event) => void this.receive(event.messageIdentifier, event.speakerIdentifier ?? ''),
       this.destroyRef
@@ -286,6 +297,13 @@ export class DiceThrowService {
     next.set(key, { ...current, ...change });
     this.state.set(next);
   }
+}
+
+/** Runs some work in a quiet moment, or soon where the browser has no word for one. */
+function whenIdle(work: () => void): void {
+  const idle = globalThis.requestIdleCallback;
+  if (typeof idle === 'function') idle(() => work(), { timeout: WARM_UP_WITHIN_MS });
+  else setTimeout(work, 0);
 }
 
 /** A recording of a single frame, the dice laid down side by side showing their numbers. */

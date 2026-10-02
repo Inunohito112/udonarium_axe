@@ -1,6 +1,12 @@
 import { trayFor } from '@axe/domain/dice/dice-3d/tray-size';
 import { simulateThrow } from '@axe/infrastructure/dice-3d/dice-physics';
-import { releaseWorker, throwDice, useDicePhysicsWorkerFactory } from '@axe/infrastructure/dice-3d/dice-physics-client';
+import {
+  DICE_WORKER_IDLE_MS,
+  readyDicePhysics,
+  releaseWorker,
+  throwDice,
+  useDicePhysicsWorkerFactory,
+} from '@axe/infrastructure/dice-3d/dice-physics-client';
 import type { DicePhysicsJob, DiceThrowRequest } from '@axe/infrastructure/dice-3d/dice-physics-message';
 
 const request: DiceThrowRequest = {
@@ -31,6 +37,7 @@ class StandInWorker extends EventTarget {
 
 describe('throwDice', () => {
   afterEach(() => {
+    vi.useRealTimers();
     useDicePhysicsWorkerFactory(null);
     releaseWorker();
   });
@@ -58,6 +65,36 @@ describe('throwDice', () => {
 
     expect(started).toBe(1);
     expect(stand.posted).toHaveLength(2);
+  });
+
+  it('starts the worker ahead of the first throw, which then has it work the throw out', async () => {
+    let started = 0;
+    const stand = new StandInWorker();
+    useDicePhysicsWorkerFactory(() => {
+      started++;
+      return stand as unknown as Worker;
+    });
+
+    readyDicePhysics();
+    expect(started).toBe(1);
+    expect(stand.posted).toHaveLength(0);
+
+    await throwDice(request);
+    expect(started).toBe(1);
+    expect(stand.posted).toHaveLength(1);
+  });
+
+  it('lets a worker started ahead go once it has long had nothing to do', () => {
+    vi.useFakeTimers();
+    const stand = new StandInWorker();
+    useDicePhysicsWorkerFactory(() => stand as unknown as Worker);
+
+    readyDicePhysics();
+    vi.advanceTimersByTime(DICE_WORKER_IDLE_MS - 1);
+    expect(stand.terminated).toBe(false);
+
+    vi.advanceTimersByTime(1);
+    expect(stand.terminated).toBe(true);
   });
 
   it('works the throw out on the page when no worker can be started', async () => {

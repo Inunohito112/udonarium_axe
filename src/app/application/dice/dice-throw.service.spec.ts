@@ -23,7 +23,7 @@ import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { faceFramesOf } from '@axe/infrastructure/dice-3d/dice-geometry';
-import { useDicePhysicsWorkerFactory } from '@axe/infrastructure/dice-3d/dice-physics-client';
+import { releaseWorker, useDicePhysicsWorkerFactory } from '@axe/infrastructure/dice-3d/dice-physics-client';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 const ME = 'me';
@@ -176,6 +176,27 @@ describe('DiceThrowService', () => {
     expect(thrown(line)?.phase).toBe('rolling');
 
     await vi.waitFor(() => expect(thrown(line)?.phase).toBe('settled'), { timeout: 3000 });
+  });
+
+  it('starts the physics in a quiet moment once the room shows its dice, before any roll', async () => {
+    let started = 0;
+    useDicePhysicsWorkerFactory(() => {
+      started++;
+      return Object.assign(new EventTarget(), { terminate: () => undefined }) as unknown as Worker;
+    });
+    try {
+      Config.instance.diceStage = 'off';
+      TestBed.tick();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(started).toBe(0);
+
+      Config.instance.diceStage = 'table';
+      TestBed.tick();
+
+      await vi.waitFor(() => expect(started).toBe(1));
+    } finally {
+      releaseWorker();
+    }
   });
 
   it('throws nothing while the room shows no dice', async () => {

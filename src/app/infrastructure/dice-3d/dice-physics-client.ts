@@ -6,8 +6,11 @@ import type {
   DiceThrowResult,
 } from '@axe/infrastructure/dice-3d/dice-physics-message';
 
-/** How long the worker is kept with nothing to do before it is let go, in milliseconds. */
-export const DICE_WORKER_IDLE_MS = 60_000;
+/**
+ * How long the worker is kept with nothing to do before it is let go, in milliseconds: long enough
+ * to last between the rolls of a session, so a roll does not wait while the worker starts again.
+ */
+export const DICE_WORKER_IDLE_MS = 600_000;
 
 let makeWorker: (() => Worker | null) | null = null;
 let worker: Worker | null = null;
@@ -36,6 +39,11 @@ export async function throwDice(request: DiceThrowRequest): Promise<DiceThrowRes
   if (fromWorker) return fromWorker;
   const { simulateThrow } = await import('@axe/infrastructure/dice-3d/dice-physics');
   return simulateThrow(request);
+}
+
+/** Starts the worker ahead of the first throw, so that throw does not wait while it starts and loads the physics. */
+export function readyDicePhysics(): void {
+  if (ensureWorker()) scheduleIdle();
 }
 
 /** Lets the worker go and drops any throw still waiting on it, which the page then works out. */
