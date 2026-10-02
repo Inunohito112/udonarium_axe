@@ -64,15 +64,16 @@ describe('throwPlanOf', () => {
     expect(throwPlanOf({ system: 'DiceBot', outcome: 'success', faces: [] }).dice).toEqual([]);
   });
 
-  it('throws no more than twenty dice and counts the rest', () => {
-    const plan = throwPlanOf(rolled(...Array.from({ length: 25 }, () => [6, 3] as [number, number])));
-    expect(plan.dice).toHaveLength(MAX_THROWN_DICE);
+  it('throws no more than fifty dice and counts the rest', () => {
+    const plan = throwPlanOf(rolled(...Array.from({ length: 55 }, () => [6, 3] as [number, number])));
+    expect(MAX_THROWN_DICE).toBe(50);
+    expect(plan.dice).toHaveLength(50);
     expect(plan.overflow).toBe(5);
   });
 
   it('counts a d100 as the two dice it is thrown as', () => {
-    const plan = throwPlanOf(rolled(...Array.from({ length: 11 }, () => [100, 55] as [number, number])));
-    expect(plan.dice).toHaveLength(20);
+    const plan = throwPlanOf(rolled(...Array.from({ length: 26 }, () => [100, 55] as [number, number])));
+    expect(plan.dice).toHaveLength(50);
     expect(plan.overflow).toBe(2);
   });
 });

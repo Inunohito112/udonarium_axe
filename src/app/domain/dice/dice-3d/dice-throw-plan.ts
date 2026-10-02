@@ -21,7 +21,7 @@ export interface ThrowPlan {
 }
 
 /** The most dice one roll throws on screen; the rest are only counted. */
-export const MAX_THROWN_DICE = 20;
+export const MAX_THROWN_DICE = 50;
 
 const SHAPE_BY_SIDES: Readonly<Record<number, DieShape>> = {
   4: 'd4',
@@ -45,7 +45,7 @@ const EMPTY_PLAN: ThrowPlan = { dice: [], overflow: 0 };
  * - A d3 is a d6 numbered 1 to 3 twice.
  * - Anything else, such as a d2 or a choice among seven, is not thrown at all.
  *
- * No more than twenty dice are thrown; the rest are counted as overflow.
+ * No more than fifty dice are thrown; the rest are counted as overflow.
  */
 export function throwPlanOf(detail: DiceRollDetail | null): ThrowPlan {
   if (!detail || detail.faces.length < 1) return EMPTY_PLAN;
