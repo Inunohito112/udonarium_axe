@@ -248,7 +248,8 @@ export class DiceThrowService {
   /**
    * Throws a roll's dice in one place, each place its own trays and its own tumble, to the same
    * numbers. The trays of a large roll are worked out one after another, and each starts to tumble
-   * as soon as it is.
+   * as soon as it is. A line already laid down still, its call to throw coming late, is left as it
+   * lies.
    */
   private async throwIn(
     where: 'frame' | 'table',
@@ -257,7 +258,6 @@ export class DiceThrowService {
     speakerIdentifier: string
   ): Promise<void> {
     const messageIdentifier = message.identifier;
-    // A line already laid down still, its call to throw coming late, is left as it lies.
     if (this.state().has(throwKeyOf(messageIdentifier, 0, where))) return;
     const trays = traysOf(plan.dice);
     const placements =
@@ -435,11 +435,14 @@ export class DiceThrowService {
     }
   }
 
+  /**
+   * Keeps throws, letting the oldest rolls go past the most kept. Rolls past the latest few keep
+   * only where their dice came to rest, which is all a line at rest draws.
+   */
   private add(...diceThrows: DiceThrow[]): void {
     const next = new Map(this.state());
     for (const diceThrow of diceThrows) next.set(diceThrow.key, diceThrow);
-    // Whole rolls are let go, the oldest first, so a roll shown in both places keeps both; and those
-    // past the latest few keep only where their dice came to rest, which is all a line at rest draws.
+    // Whole rolls are let go, the oldest first, so a roll shown in both places keeps both.
     const rolls = [...new Set([...next.values()].map((t) => t.messageIdentifier))];
     const gone = new Set(rolls.slice(0, Math.max(0, rolls.length - KEPT_THROWS)));
     const folded = new Set(rolls.slice(0, Math.max(0, rolls.length - KEPT_IN_FULL)));

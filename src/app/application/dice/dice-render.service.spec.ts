@@ -411,7 +411,6 @@ describe('DiceRenderService', () => {
         ])
       );
       await nextFrame(1500);
-      // The first tray alone would have gone by now; the second came to rest at 2.5 seconds.
       const gone = 100 + (ROLL_SECONDS + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS) * 1000 + 10;
       engine.drawn.length = 0;
 

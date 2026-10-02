@@ -136,7 +136,6 @@ test.describe('チャットのダイスを 3D で転がす', () => {
     test.setTimeout(90000);
     await chooseStage(page, 'frame');
 
-    // The dice bot rolls no more than two hundred dice to a term, so the roll takes two.
     const { answer } = await roll(page, '150d6+100d6');
 
     const stages = answer.getByTestId('dice-roll-stage');

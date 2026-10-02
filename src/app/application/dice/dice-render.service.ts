@@ -133,7 +133,10 @@ export class DiceRenderService {
     });
   }
 
-  /** Shows a throw, by its key, on a canvas until the handle is released. */
+  /**
+   * Shows a throw, by its key, on a canvas until the handle is released. A throw no longer on show
+   * anywhere lets its meshes go, and is set up again if it comes back into view.
+   */
   register(canvas: HTMLCanvasElement, key: string): DiceStageHandle {
     const stage: Stage = { canvas, key, width: 0, height: 0, drawn: false };
     this.stages.add(stage);
@@ -148,7 +151,6 @@ export class DiceRenderService {
       },
       release: () => {
         this.stages.delete(stage);
-        // A throw no longer on show anywhere lets its meshes go; it is set up again if it comes back into view.
         if (![...this.stages].some((other) => other.key === stage.key)) this.drop(stage.key);
       },
     };
