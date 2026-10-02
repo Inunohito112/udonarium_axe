@@ -277,6 +277,23 @@ describe('DiceRenderService', () => {
     expect(failed).toContain('b');
   });
 
+  it('leaves a throw at rest alone while another changes', async () => {
+    const canvas = document.createElement('canvas');
+    // The test's document draws nothing on a canvas; this one takes the strokes and keeps none.
+    const context = { clearRect: () => undefined, drawImage: () => undefined };
+    canvas.getContext = (() => context) as unknown as HTMLCanvasElement['getContext'];
+    throws.set(new Map([['a', throwOf('a', { phase: 'settled', still: true })]]));
+    service.register(canvas, 'a').resize(300, 90);
+    await nextFrame(0);
+    await nextFrame(16);
+    expect(engine.drawn).toHaveLength(1);
+
+    throws.set(new Map([...throws(), ['b', throwOf('b', { phase: 'working', result: null })]]));
+    await nextFrame(32);
+
+    expect(engine.drawn).toHaveLength(1);
+  });
+
   it('puts every throw away when the engine loses its drawing context', async () => {
     throws.set(new Map([['a', throwOf('a')]]));
     service.register(document.createElement('canvas'), 'a').resize(300, 90);

@@ -91,6 +91,8 @@ export class DiceRenderService {
   private broken = false;
   private frame = 0;
   private view: { key: string; columns: number[] } | null = null;
+  /** The throws as they stood when the stages were last told what to draw again. */
+  private seen: ReadonlyMap<string, DiceThrow> = new Map();
   /** When each throw began to play here, on the clock frames are drawn by. */
   private readonly playFrom = new Map<string, number>();
 
@@ -103,7 +105,10 @@ export class DiceRenderService {
         untracked(() => this.failAll(throws));
         return;
       }
-      for (const stage of this.stages) stage.drawn = false;
+      for (const stage of this.stages) {
+        if (throws.get(stage.messageIdentifier) !== this.seen.get(stage.messageIdentifier)) stage.drawn = false;
+      }
+      this.seen = throws;
       this.wake();
     });
     // A room that shows its rolls' dice has the engine readied in a quiet moment, so the first roll
