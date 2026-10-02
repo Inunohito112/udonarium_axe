@@ -24,7 +24,7 @@ import {
   buildPlaylistTrackMenu,
   PlaylistTarget,
 } from '@axe/features/media/jukebox/playlist-context-menu';
-import { JukeboxPlaybackService, PlaylistView } from '@axe/features/media/jukebox-playback.service';
+import { formatTrackTime, JukeboxPlaybackService, PlaylistView } from '@axe/features/media/jukebox-playback.service';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { TranslocoModule } from '@jsverse/transloco';
 
@@ -159,7 +159,7 @@ export class JukeboxComponent {
     this.objectChange.versionOf('Jukebox')();
     if (!this.playback.isPlaying() && !this.playback.isPaused()) return '—';
     const duration = this.playback.duration();
-    return `${formatTime(this.playback.position())} / ${duration > 0 ? formatTime(duration) : '—'}`;
+    return `${formatTrackTime(this.playback.position())} / ${duration > 0 ? formatTrackTime(duration) : '—'}`;
   });
 
   /** How far through the room's track it is, from 0 to 1. */
@@ -469,11 +469,4 @@ export class JukeboxComponent {
     const option: PanelOption = { left: coordinate.x + 25, top: coordinate.y + 25, width: 980, height: 760 };
     this.roomPanels.open('cutInList', option);
   }
-}
-
-function formatTime(seconds: number): string {
-  if (!isFinite(seconds) || seconds < 0) return '0:00';
-  const minutes = Math.floor(seconds / 60);
-  const rest = Math.floor(seconds % 60);
-  return `${minutes}:${rest.toString().padStart(2, '0')}`;
 }

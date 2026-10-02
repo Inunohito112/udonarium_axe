@@ -9,6 +9,14 @@ import { CutInLauncher } from '@axe/domain/media/cut-in-launcher';
 import { Jukebox, RepeatMode } from '@axe/domain/media/jukebox';
 import { Playlist } from '@axe/domain/media/playlist';
 
+/** A point in a track or its length, read out as minutes and seconds such as `1:05`; `0:00` for nothing sensible. */
+export function formatTrackTime(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const minutes = Math.floor(seconds / 60);
+  const rest = Math.floor(seconds % 60);
+  return `${minutes}:${rest.toString().padStart(2, '0')}`;
+}
+
 /** A playlist as the jukebox's controls show it. */
 export interface PlaylistView {
   identifier: string;

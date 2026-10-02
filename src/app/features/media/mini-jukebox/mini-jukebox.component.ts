@@ -20,7 +20,7 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { AudioTag } from '@axe/domain/media/audio-tag';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { Config } from '@axe/domain/peer/config';
-import { JukeboxPlaybackService } from '@axe/features/media/jukebox-playback.service';
+import { formatTrackTime, JukeboxPlaybackService } from '@axe/features/media/jukebox-playback.service';
 import { DraggableDirective } from '@axe/ui/directives/draggable.directive';
 import { TranslocoModule } from '@jsverse/transloco';
 
@@ -155,7 +155,7 @@ export class MiniJukeboxComponent {
     if (!this.isPlaying() && !this.isPaused()) return '—';
     const dur = this.playback.duration();
     const ct = this.isSeeking() ? this.seekPreview() * dur : this.playback.position();
-    return `${this.formatTime(ct)} / ${dur > 0 ? this.formatTime(dur) : '—'}`;
+    return `${formatTrackTime(ct)} / ${dur > 0 ? formatTrackTime(dur) : '—'}`;
   });
 
   /** The tracks the room plays through, as listed. */
@@ -267,12 +267,5 @@ export class MiniJukeboxComponent {
   set volume(v: number) {
     if (this.jukebox) this.jukebox.volume = v;
     AudioPlayer.volume = v * (this.config?.roomVolume ?? 1);
-  }
-
-  private formatTime(seconds: number): string {
-    if (!isFinite(seconds) || seconds < 0) return '0:00';
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
   }
 }
