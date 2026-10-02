@@ -74,6 +74,7 @@ test('the dice of a chat roll come to rest in the frame of its answer', async ({
   const stages = page.locator('chat-tab [data-testid="dice-roll-stage"]');
   await roll(page, '1d6');
   await expect(stages.first()).toHaveAttribute('data-state', 'settled', { timeout: 30_000 });
+  await atRest(stages.first().locator('canvas'));
 
   await roll(page, '2d6+1d20');
 
