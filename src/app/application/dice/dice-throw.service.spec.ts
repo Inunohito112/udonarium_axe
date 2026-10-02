@@ -182,7 +182,10 @@ describe('DiceThrowService', () => {
     let started = 0;
     useDicePhysicsWorkerFactory(() => {
       started++;
-      return Object.assign(new EventTarget(), { terminate: () => undefined }) as unknown as Worker;
+      return Object.assign(new EventTarget(), {
+        postMessage: () => undefined,
+        terminate: () => undefined,
+      }) as unknown as Worker;
     });
     try {
       Config.instance.diceStage = 'off';

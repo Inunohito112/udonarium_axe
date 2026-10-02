@@ -6,6 +6,7 @@ import {
   releaseWorker,
   throwDice,
   useDicePhysicsWorkerFactory,
+  WARM_UP_THROW,
 } from '@axe/infrastructure/dice-3d/dice-physics-client';
 import type { DicePhysicsJob, DiceThrowRequest } from '@axe/infrastructure/dice-3d/dice-physics-message';
 
@@ -67,7 +68,7 @@ describe('throwDice', () => {
     expect(stand.posted).toHaveLength(2);
   });
 
-  it('starts the worker ahead of the first throw, which then has it work the throw out', async () => {
+  it('starts the worker ahead of the first throw, warmed by a throw of its own, and has it work the first throw out', async () => {
     let started = 0;
     const stand = new StandInWorker();
     useDicePhysicsWorkerFactory(() => {
@@ -77,10 +78,21 @@ describe('throwDice', () => {
 
     readyDicePhysics();
     expect(started).toBe(1);
-    expect(stand.posted).toHaveLength(0);
+    expect(stand.posted.map((job) => job.request)).toEqual([WARM_UP_THROW]);
 
-    await throwDice(request);
+    const result = await throwDice(request);
     expect(started).toBe(1);
+    expect(stand.posted.map((job) => job.request)).toEqual([WARM_UP_THROW, request]);
+    expect(result.landed).toEqual(simulateThrow(request).landed);
+  });
+
+  it('warms a worker once, however often it is readied', () => {
+    const stand = new StandInWorker();
+    useDicePhysicsWorkerFactory(() => stand as unknown as Worker);
+
+    readyDicePhysics();
+    readyDicePhysics();
+
     expect(stand.posted).toHaveLength(1);
   });
 

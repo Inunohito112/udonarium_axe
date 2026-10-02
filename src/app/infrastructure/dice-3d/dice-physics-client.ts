@@ -1,4 +1,5 @@
 import { Logger } from '@axe/core/logging/logger';
+import { trayFor } from '@axe/domain/dice/dice-3d/tray-size';
 import type {
   DicePhysicsJob,
   DicePhysicsReply,
@@ -11,6 +12,19 @@ import type {
  * to last between the rolls of a session, so a roll does not wait while the worker starts again.
  */
 export const DICE_WORKER_IDLE_MS = 600_000;
+
+/**
+ * A small throw of every shape, worked out as the worker is started ahead of the rolls, so the
+ * first roll finds the physics already run through once rather than still being readied to run.
+ */
+export const WARM_UP_THROW: DiceThrowRequest = {
+  key: 'warm-up',
+  shapes: ['d4', 'd6', 'd8', 'd10', 'd12', 'd20'],
+  targets: [0, 0, 0, 0, 0, 0],
+  tray: trayFor(6, 3),
+  edge: 'left',
+  away: [0, 1, 0],
+};
 
 let makeWorker: (() => Worker | null) | null = null;
 let worker: Worker | null = null;
@@ -41,9 +55,22 @@ export async function throwDice(request: DiceThrowRequest): Promise<DiceThrowRes
   return simulateThrow(request);
 }
 
-/** Starts the worker ahead of the first throw, so that throw does not wait while it starts and loads the physics. */
+/**
+ * Starts the worker ahead of the first throw and has it work out a throw of its own, so the first
+ * throw does not wait while the worker starts, loads the physics and first runs it.
+ */
 export function readyDicePhysics(): void {
-  if (ensureWorker()) scheduleIdle();
+  const started = !worker;
+  const running = ensureWorker();
+  if (!running) return;
+  if (started) {
+    try {
+      running.postMessage({ id: nextId++, request: WARM_UP_THROW } satisfies DicePhysicsJob);
+    } catch {
+      // Left cold, the worker still works out the throws it is handed.
+    }
+  }
+  scheduleIdle();
 }
 
 /** Lets the worker go and drops any throw still waiting on it, which the page then works out. */
