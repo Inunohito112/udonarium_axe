@@ -106,6 +106,22 @@ describe('the table of what a menu can do', () => {
       expect(offered).not.toContain('darkness');
     });
 
+    it('leaves a small menu open behind a switch of this seat, and closes it behind anything else', () => {
+      const stays = (key: string) => MENU_COMMANDS.find((command) => command.key === key)?.stays === true;
+
+      expect(['theme', 'language', 'motion', 'renderLite', 'viewMode'].every(stays)).toBe(true);
+      expect(['widgetClock', 'widgetMiniPlayer', 'widgetPlToolbar'].every(stays)).toBe(true);
+      expect(['skin', 'inventory', 'zipLoad', 'handRail', 'visualNovel', 'useMobileLayout'].some(stays)).toBe(false);
+    });
+
+    it('keeps the names the tests reached the drawer by before it was arranged', () => {
+      const testIdOf = (key: string) => MENU_COMMANDS.find((command) => command.key === key)?.testId;
+
+      expect(testIdOf('handRail')).toBe('fab-entry-hand');
+      expect(testIdOf('theme')).toBe('seat-theme');
+      expect(testIdOf('zipLoad')).toBe('save-load-load');
+    });
+
     it('offers every menu something', () => {
       for (const surface of MENU_SURFACES as readonly MenuSurface[]) {
         expect(menuCommandsFor(surface, PeerRole.GameMaster).length).toBeGreaterThan(0);

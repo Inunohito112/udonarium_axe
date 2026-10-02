@@ -128,6 +128,47 @@ describe('AppComponent', () => {
     });
   });
 
+  describe('a small menu of the drawer', () => {
+    let fixture: ComponentFixture<AppComponent>;
+
+    beforeEach(async () => {
+      await TestBed.configureTestingModule({
+        imports: [AppComponent],
+        providers: [...TEST_PROVIDERS],
+      }).compileComponents();
+      PeerCursor.createMyCursor().role = PeerRole.Player;
+      fixture = TestBed.createComponent(AppComponent);
+      fixture.detectChanges();
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    function press(testId: string): void {
+      (fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as HTMLElement).click();
+      fixture.detectChanges();
+    }
+
+    const display = () => fixture.nativeElement.querySelector('[data-testid="seat-display"]');
+
+    it('stays open while a setting of this seat is pressed in turn through its choices', () => {
+      press('fab-display');
+      for (let turn = 0; turn < 3; turn++) {
+        press('seat-theme');
+        expect(display()).toBeTruthy();
+      }
+    });
+
+    it('closes behind a panel opened from it', () => {
+      const open = vi.spyOn(TestBed.inject(RoomPanelService), 'open').mockImplementation(() => {});
+      press('fab-display');
+
+      press('seat-skin');
+
+      expect(open).toHaveBeenCalledWith('skin');
+      expect(display()).toBeNull();
+    });
+  });
+
   describe('the drawer while every name is written out', () => {
     let fixture: ComponentFixture<AppComponent>;
     let guide: ButtonGuideService;
