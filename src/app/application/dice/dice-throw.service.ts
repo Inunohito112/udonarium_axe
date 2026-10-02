@@ -108,6 +108,10 @@ const ON_THE_TABLE = ':table';
 const MAX_LEAN_KEPT = 0.15;
 const NO_TURN: Quat = [0, 0, 0, 1];
 const NO_FRAMES: readonly DiceFrame[] = [];
+/** What marks the key of a throw made to try a look out, which no line said. */
+const TRY_OUT = 'try-out:';
+/** One of each die a look is tried out on. */
+const TRY_OUT_SIDES = [4, 6, 8, 10, 12, 20] as const;
 
 /**
  * What a roll's throw on one of its trays is kept by: the line's identifier for its first tray, the
@@ -146,6 +150,7 @@ export class DiceThrowService {
   private readonly waits = new Map<string, ReturnType<typeof setTimeout>>();
   /** What each line read lately throws, which is read afresh from its words otherwise. */
   private readonly plans = new Map<string, ThrowPlan>();
+  private tries = 0;
   /** Where the room shows its rolls' dice; a room not yet set up shows none, and is not set up from here. */
   private readonly diceStage = computed<DiceStage>(() => {
     this.objectChange.versionOf('Config')();
@@ -222,6 +227,44 @@ export class DiceThrowService {
     );
   }
 
+  /**
+   * Throws one of each die in a look, to see it by before choosing it: in a frame of its own, kept by
+   * the key given back, and in place of the try before it. The dice land on numbers of their own,
+   * since no roll was made; a reader who keeps the screen still has them laid down.
+   */
+  tryOut(look: DiceLook, rollColor: string): string {
+    const key = `${TRY_OUT}${++this.tries}`;
+    const plan = throwPlanOf({
+      system: '',
+      outcome: '',
+      faces: TRY_OUT_SIDES.map((sides) => ({ sides, value: 1 + Math.floor(Math.random() * sides), kind: 'normal' })),
+    });
+    const still = !this.motion.enabled();
+    const tray = frameTrayFor(plan.dice.length);
+    this.forget((kept) => kept.messageIdentifier.startsWith(TRY_OUT));
+    this.add({
+      key,
+      messageIdentifier: key,
+      part: 0,
+      stage: 'frame',
+      placement: null,
+      dice: plan.dice,
+      overflow: 0,
+      color: look.body || rollColor || BLANK_COLOR,
+      look,
+      tray,
+      aspect: tray.halfWidth / tray.halfDepth,
+      phase: 'working',
+      result: null,
+      startedAt: 0,
+      still,
+      shown: [],
+      outcome: '',
+    });
+    void this.play([this.state().get(key)!], still);
+    return key;
+  }
+
   /** Gives up showing a throw, as when its dice cannot be drawn on this device. */
   fail(key: string): void {
     this.update(key, { phase: 'failed' });
@@ -274,7 +317,14 @@ export class DiceThrowService {
     const still = !this.motion.enabled() || !this.hasRoomToTumble(messageIdentifier, plan.dice.length);
     const parts = this.throwsOf(message, where, plan, placements, still);
     this.add(...parts);
+    await this.play(parts, still);
+  }
 
+  /**
+   * Works out throws kept as being worked out and has each tumble as soon as it is, or lays them
+   * down still; one put away meanwhile stays put away.
+   */
+  private async play(parts: readonly DiceThrow[], still: boolean): Promise<void> {
     await Promise.all(
       parts.map(async ({ key, dice, tray }) => {
         const result = still ? laidDown(dice, tray, key) : await this.worked(key, dice, tray);
@@ -465,6 +515,18 @@ export class DiceThrowService {
       ) {
         next.set(key, { ...kept, result: restOf(kept.result) });
       }
+    }
+    this.state.set(next);
+  }
+
+  /** Lets the throws that match go at once. */
+  private forget(matches: (diceThrow: DiceThrow) => boolean): void {
+    const next = new Map(this.state());
+    for (const [key, kept] of next) {
+      if (!matches(kept)) continue;
+      next.delete(key);
+      clearTimeout(this.timers.get(key));
+      this.timers.delete(key);
     }
     this.state.set(next);
   }

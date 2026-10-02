@@ -942,6 +942,23 @@
       "log": {
         "reveal": "{{name}}의 눈은 {{face}}입니다.",
         "revealNoName": "주사위 눈은 {{face}}입니다."
+      },
+      "myDice": {
+        "title": "마이 주사위",
+        "hint": "내가 굴리는 주사위의 재질과 색을 고릅니다.",
+        "rollAgain": "다시 굴리기",
+        "material": "재질",
+        "material_resin": "레진",
+        "material_marble": "마블",
+        "material_metal": "금속",
+        "material_glass": "반투명",
+        "glassDrawnLightly": "이 기기는 가벼운 표시를 쓰고 있어 반투명 주사위를 레진으로 그립니다. 다른 사람의 화면에서는 반투명으로 보입니다.",
+        "body": "주사위 색",
+        "bodyFollowsRoll": "채팅 색에 맞추기",
+        "ink": "숫자 색",
+        "inkAuto": "주사위 색에 맞춰 자동으로 정하기",
+        "pickColor": "색 고르기",
+        "seenByAll": "방에 있는 모두에게 이 모습으로 굴러갑니다. 설정은 이 브라우저에 저장됩니다."
       }
     },
     "effect": {
@@ -2826,7 +2843,8 @@
         "textareaPlaceholderShort": "메시지를 입력하세요",
         "sendToTicker": "티커",
         "sendToTickerHint": "이 발언을 화면 외곽에도 흘려보냅니다",
-        "tools": "입력 설정"
+        "tools": "입력 설정",
+        "myDice": "마이 주사위"
       },
       "tab": {
         "unnamedCharacter": "이름 없는 캐릭터",

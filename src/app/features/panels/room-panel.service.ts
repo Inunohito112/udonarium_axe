@@ -242,6 +242,14 @@ export class RoomPanelService {
             ),
           option: { width: 1180, height: 760, minWidth: 720, minHeight: 480 },
         };
+      case 'myDice':
+        return {
+          load: () =>
+            import('@axe/features/dice/my-dice-setting/my-dice-setting.component').then(
+              (m) => m.MyDiceSettingComponent
+            ),
+          option: { width: 440, height: 560, single: 'my-dice' },
+        };
       case 'diceTableSetting':
         return {
           load: () =>

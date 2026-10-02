@@ -157,6 +157,23 @@ test.describe('チャットのダイスを 3D で転がす', () => {
     await expect.poll(() => isDrawnOn(stage.locator('canvas')), { timeout: 10000 }).toBe(true);
   });
 
+  test('マイダイスで選んだ材質で、自分のロールが転がること', async ({ page }) => {
+    await chooseStage(page, 'frame');
+
+    await page.getByTestId('chat-my-dice').click();
+    await expect(page.getByTestId('my-dice-try-out')).toBeVisible({ timeout: 10000 });
+    await page.getByTestId('my-dice-material-metal').click();
+    await expect(page.getByTestId('my-dice-material-metal')).toHaveAttribute('aria-checked', 'true');
+
+    const { answer, total } = await roll(page, '1d20');
+
+    const stage = answer.getByTestId('dice-roll-stage');
+    await expect(stage).toHaveAttribute('data-state', 'settled', { timeout: 20000 });
+    await expect(stage).toHaveAttribute('data-material', 'metal');
+    await expect(stage).toHaveAttribute('data-shown', String(total));
+    expect(await isDrawnOn(stage.locator('canvas'))).toBe(true);
+  });
+
   test('出さない設定では、ロールしても枠が出ないこと', async ({ page }) => {
     await chooseStage(page, 'off');
 

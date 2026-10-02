@@ -942,6 +942,23 @@
       "log": {
         "reveal": "{{name}}'s die reads {{face}}.",
         "revealNoName": "The die reads {{face}}."
+      },
+      "myDice": {
+        "title": "My Dice",
+        "hint": "Choose what your dice are made of and their colours.",
+        "rollAgain": "Roll again",
+        "material": "Material",
+        "material_resin": "Resin",
+        "material_marble": "Marble",
+        "material_metal": "Metal",
+        "material_glass": "Translucent",
+        "glassDrawnLightly": "This device draws lightly, so translucent dice are shown as resin here. Others still see them translucent.",
+        "body": "Dice colour",
+        "bodyFollowsRoll": "Match the colour of my chat line",
+        "ink": "Number colour",
+        "inkAuto": "Pick one that stands out from the dice",
+        "pickColor": "Pick a colour",
+        "seenByAll": "Everyone in the room sees your rolls in this look. It is kept in this browser."
       }
     },
     "effect": {
@@ -2826,7 +2843,8 @@
         "textareaPlaceholderShort": "Type a message",
         "sendToTicker": "Ticker",
         "sendToTickerHint": "Also run this line around the edge of the screen",
-        "tools": "Input settings"
+        "tools": "Input settings",
+        "myDice": "My Dice"
       },
       "tab": {
         "unnamedCharacter": "Unnamed character",

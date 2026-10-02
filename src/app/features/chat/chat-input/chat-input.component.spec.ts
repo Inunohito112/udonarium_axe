@@ -7,10 +7,13 @@ import { ViewModePreferenceService } from '@axe/application/ui/view-mode-prefere
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { DataElement } from '@axe/domain/data/data-element';
+import { DiceStage } from '@axe/domain/dice/dice-3d/dice-stage';
 import { DiceBot } from '@axe/domain/dice/dice-bot';
+import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { ChatComposeService } from '@axe/features/chat/chat-compose.service';
 import { ChatInputComponent } from '@axe/features/chat/chat-input/chat-input.component';
+import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 type Outgoing = Parameters<Parameters<ChatInputComponent['chat']['subscribe']>[0]>[0];
@@ -248,6 +251,43 @@ describe('ChatInputComponent', () => {
       expect(asked).toHaveBeenCalled();
       expect(alone).not.toHaveBeenCalled();
       message.destroy();
+    });
+  });
+
+  describe('the button to choose how this seat’s dice look', () => {
+    const button = () =>
+      fixture.nativeElement.querySelector('[data-testid="chat-my-dice"]') as HTMLButtonElement | null;
+    let stageBefore: DiceStage;
+
+    beforeEach(() => {
+      stageBefore = Config.instance.diceStage;
+    });
+
+    afterEach(() => {
+      Config.instance.diceStage = stageBefore;
+    });
+
+    it('is offered only while the room shows its rolls’ dice', async () => {
+      Config.instance.diceStage = 'off';
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(button()).toBeNull();
+
+      Config.instance.diceStage = 'frame';
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(button()).not.toBeNull();
+    });
+
+    it('opens the panel for it', async () => {
+      const open = vi.spyOn(TestBed.inject(RoomPanelService), 'open').mockImplementation(() => undefined);
+      Config.instance.diceStage = 'both';
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      button()!.click();
+
+      expect(open).toHaveBeenCalledWith('myDice');
     });
   });
 

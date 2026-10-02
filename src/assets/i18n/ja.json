@@ -942,6 +942,23 @@
       "log": {
         "reveal": "{{name}} の出目は {{face}} です。",
         "revealNoName": "ダイスの出目は {{face}} です。"
+      },
+      "myDice": {
+        "title": "マイダイス",
+        "hint": "自分が振るダイスの材質と色を選びます。",
+        "rollAgain": "もう一度振る",
+        "material": "材質",
+        "material_resin": "樹脂",
+        "material_marble": "マーブル",
+        "material_metal": "金属",
+        "material_glass": "半透明",
+        "glassDrawnLightly": "この端末は軽量表示なので、半透明は樹脂で描いています。ほかの人の画面では半透明で見えます。",
+        "body": "ダイスの色",
+        "bodyFollowsRoll": "発言の色に合わせる",
+        "ink": "数字の色",
+        "inkAuto": "ダイスの色から自動で決める",
+        "pickColor": "色を選ぶ",
+        "seenByAll": "部屋の全員に、この見た目で転がって見えます。設定はこのブラウザに保存されます。"
       }
     },
     "effect": {
@@ -2826,7 +2843,8 @@
         "textareaPlaceholderShort": "メッセージを入力",
         "sendToTicker": "ティッカー",
         "sendToTickerHint": "この発言を画面の外周にも流します",
-        "tools": "入力の設定"
+        "tools": "入力の設定",
+        "myDice": "マイダイス"
       },
       "tab": {
         "unnamedCharacter": "無名のキャラクター",

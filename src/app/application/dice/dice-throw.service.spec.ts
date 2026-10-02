@@ -214,6 +214,25 @@ describe('DiceThrowService', () => {
     });
   });
 
+  it('throws one of each die to try a look out on, in place of the try before', async () => {
+    const first = service.tryOut({ material: 'marble', body: '#5f3dc4', ink: '' }, '#000000');
+
+    await vi.waitFor(() => expect(service.throws().get(first)?.phase).toBe('rolling'));
+    expect(
+      service
+        .throws()
+        .get(first)
+        ?.dice.map((die) => die.shape)
+    ).toEqual(['d4', 'd6', 'd8', 'd10', 'd12', 'd20']);
+    expect(service.throws().get(first)?.color).toBe('#5f3dc4');
+    expect(service.throws().get(first)?.look.material).toBe('marble');
+
+    const second = service.tryOut(PLAIN_DICE_LOOK, '#2b8a3e');
+
+    expect(service.throws().has(first)).toBe(false);
+    expect(service.throws().get(second)?.color).toBe('#2b8a3e');
+  });
+
   it('lets the dice come to rest once their recording has played', async () => {
     const line = answer();
     callDiceThrow({ messageIdentifier: line.identifier }, 'here');

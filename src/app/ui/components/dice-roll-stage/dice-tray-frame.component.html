@@ -4,6 +4,7 @@
   [style.aspect-ratio]="frame().aspect"
   [attr.data-state]="frame().diceThrow?.phase ?? 'waiting'"
   [attr.data-shown]="frame().diceThrow?.shown?.join(' ') ?? ''"
+  [attr.data-material]="frame().diceThrow?.look?.material ?? null"
 >
   <canvas #canvas class="block size-full"></canvas>
   @if (frame().overflow > 0) {

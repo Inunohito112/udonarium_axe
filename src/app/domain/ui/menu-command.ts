@@ -177,6 +177,7 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
   panel('buffManager', 'timeline', 'buffManager', 'feature.buffManager.title', { audience: 'playing' }),
   panel('statusAilment', 'list_alt', 'statusAilment', 'feature.statusAilment.title'),
   panel('diceTableSetting', 'casino', 'diceTableSetting', 'feature.dice.tableSetting.title'),
+  panel('myDice', 'format_paint', 'myDice', 'feature.dice.myDice.title', { audience: 'playing' }),
   panel('images', 'photo_library', 'fileStorage', 'app.fab.images'),
   panel('jukebox', 'queue_music', 'jukebox', 'app.fab.jukebox'),
   panel('cutIn', 'slideshow', 'cutInList', 'app.fab.cutIn'),
