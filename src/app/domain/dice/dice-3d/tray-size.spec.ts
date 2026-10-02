@@ -31,5 +31,6 @@ describe('frameAspectFor', () => {
     expect(frameAspectFor(4)).toBe(4);
     expect(frameAspectFor(5)).toBeLessThan(frameAspectFor(4));
     expect(frameAspectFor(20)).toBeLessThan(frameAspectFor(10));
+    expect(frameAspectFor(50)).toBeLessThan(frameAspectFor(20));
   });
 });

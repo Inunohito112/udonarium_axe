@@ -20,6 +20,7 @@ import {
   NaiveBroadphase,
   Plane,
   Quaternion,
+  SAPBroadphase,
   Vec3,
   World,
 } from 'cannon-es';
@@ -40,6 +41,18 @@ const STILL_FRAMES = 15;
 const TAIL_FRAMES = 12;
 const STILL_SPEED = 0.2;
 const STILL_SPIN = 0.35;
+const LINEAR_DAMPING = 0.03;
+const ANGULAR_DAMPING = 0.04;
+/**
+ * When dice still moving begin to tire, and how fast: a crowd of round dice nudge each other on and
+ * on, so past two seconds each frame takes a little more out of them until they lie still.
+ */
+const TIRE_FROM_FRAME = 120;
+const TIRE_PER_FRAME = 0.006;
+/** The most dice a throw is thrown again for when it leaves a number upside down. */
+const REREAD_UPRIGHT_UP_TO = 4;
+/** The most dice whose every pair is tried for a collision; more are swept for them. */
+const NAIVE_PAIRS_UP_TO = 12;
 /** How many times a spoiled throw is thrown again before the least spoiled is kept. */
 export const MAX_ATTEMPTS = 8;
 
@@ -62,16 +75,26 @@ export function simulateThrow(request: DiceThrowRequest): DiceThrowResult {
     const result = { ...thrown, frames: faced.frames, corrections: faced.corrections };
     // Every die left upside down counts for less than any fault, so a clean throw that reads badly
     // still beats a spoiled one.
-    const rank = thrown.fault === null ? faced.askew / (request.shapes.length + 1) : FAULT_ORDER.indexOf(thrown.fault);
+    const rank = spoilOf(thrown.fault, faced.askew, request.shapes.length);
     if (rank === 0) return result;
     if (!kept || rank < kept.rank) kept = { result, rank };
   }
   return kept!.result;
 }
 
+/**
+ * How spoiled a throw is: 0 for one to keep at once, more for worse. Every fault is worse than any
+ * number left upside down, which counts only in a roll of a few dice, where it is the one the eye
+ * goes to; in a large roll one or two always are, and none of them stands out.
+ */
+export function spoilOf(fault: ThrowFault | null, askew: number, dice: number): number {
+  if (fault !== null) return FAULT_ORDER.indexOf(fault);
+  return dice <= REREAD_UPRIGHT_UP_TO ? askew / (dice + 1) : 0;
+}
+
 function throwOnce(request: DiceThrowRequest, attempt: number): Omit<DiceThrowResult, 'corrections'> {
   const random = seededRandom(throwSeedOf(request.key, attempt));
-  const { world, diceMaterial, walls } = buildWorld(request.tray);
+  const { world, diceMaterial, walls } = buildWorld(request.tray, request.shapes.length);
   const bodies = request.shapes.map((shape) => addDie(world, shape, diceMaterial));
   launch(bodies, request.shapes, request.tray, request.edge, random);
   // The dice fly in over the edge they are thrown from, which closes behind them once they are all in.
@@ -86,6 +109,7 @@ function throwOnce(request: DiceThrowRequest, attempt: number): Omit<DiceThrowRe
   const step = 1 / (FRAMES_PER_SECOND * SUBSTEPS);
 
   for (let frame = 0; frame < MAX_FRAMES; frame++) {
+    if (frame >= TIRE_FROM_FRAME) tire(bodies, frame);
     for (let substep = 0; substep < SUBSTEPS; substep++) {
       world.step(step);
       if (
@@ -132,9 +156,22 @@ function throwOnce(request: DiceThrowRequest, attempt: number): Omit<DiceThrowRe
   };
 }
 
-function buildWorld(tray: Tray): { world: World; diceMaterial: Material; walls: Record<ThrowEdge | 'far', Body> } {
+/** Takes more out of every die's motion the longer the throw goes on. */
+function tire(bodies: readonly Body[], frame: number): void {
+  const extra = (frame - TIRE_FROM_FRAME) * TIRE_PER_FRAME;
+  for (const body of bodies) {
+    body.linearDamping = Math.min(0.95, LINEAR_DAMPING + extra);
+    body.angularDamping = Math.min(0.95, ANGULAR_DAMPING + extra);
+  }
+}
+
+function buildWorld(
+  tray: Tray,
+  dice: number
+): { world: World; diceMaterial: Material; walls: Record<ThrowEdge | 'far', Body> } {
   const world = new World({ gravity: new Vec3(0, 0, -GRAVITY), allowSleep: true });
-  world.broadphase = new NaiveBroadphase();
+  // Trying every pair is quickest for a few dice; sweeping along an axis wins once there are many.
+  world.broadphase = dice <= NAIVE_PAIRS_UP_TO ? new NaiveBroadphase() : new SAPBroadphase(world);
   (world.solver as unknown as { iterations: number }).iterations = 16;
 
   const floorMaterial = new Material('floor');
@@ -180,8 +217,8 @@ function addDie(world: World, shape: DieShape, material: Material): Body {
     mass: 1,
     material,
     shape: solid,
-    linearDamping: 0.03,
-    angularDamping: 0.04,
+    linearDamping: LINEAR_DAMPING,
+    angularDamping: ANGULAR_DAMPING,
     allowSleep: true,
     sleepSpeedLimit: 0.3,
     sleepTimeLimit: 0.25,

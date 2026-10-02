@@ -8,7 +8,7 @@ export const MIN_TRAY_AREA = 98;
  */
 export const FRAME_TRAY_AREA = 64;
 /** The floor each die adds, so a large roll still has room to land apart. */
-const AREA_PER_DIE = 6;
+const AREA_PER_DIE = 10;
 
 /**
  * The tray a number of dice are thrown onto, in the shape of the stage it is drawn in: the floor
@@ -28,5 +28,7 @@ export function trayFor(count: number, aspect: number, minArea = MIN_TRAY_AREA):
 export function frameAspectFor(count: number): number {
   if (count <= 4) return 4;
   if (count <= 10) return 3;
-  return 2.4;
+  if (count <= 20) return 2.4;
+  if (count <= 40) return 2;
+  return 1.6;
 }

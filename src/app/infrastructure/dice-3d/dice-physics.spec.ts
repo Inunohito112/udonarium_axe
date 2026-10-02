@@ -1,9 +1,9 @@
 import { upFace } from '@axe/domain/dice/dice-3d/die-symmetry';
 import { DIE_SHAPES, DieShape, polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
 import { cross, dot, Quat, quatMultiply, quatRotate, UP, Vec3 } from '@axe/domain/dice/dice-3d/rotation';
-import { trayFor } from '@axe/domain/dice/dice-3d/tray-size';
+import { FRAME_TRAY_AREA, frameAspectFor, trayFor } from '@axe/domain/dice/dice-3d/tray-size';
 import { faceFramesOf } from '@axe/infrastructure/dice-3d/dice-geometry';
-import { simulateThrow } from '@axe/infrastructure/dice-3d/dice-physics';
+import { simulateThrow, spoilOf } from '@axe/infrastructure/dice-3d/dice-physics';
 import { DiceThrowRequest, DiceThrowResult, FRAME_STRIDE } from '@axe/infrastructure/dice-3d/dice-physics-message';
 
 function lastRotation(result: DiceThrowResult, die: number, count: number): Quat {
@@ -70,6 +70,37 @@ describe('simulateThrow', () => {
 
     expect(result.fault).toBeNull();
     expect(result.landed).toHaveLength(20);
+  });
+
+  it('brings a crowd of round dice to rest, tiring them the longer they go on', () => {
+    const shapes = Array.from({ length: 20 }, (_, i): DieShape => (['d6', 'd10', 'd20', 'd8'] as DieShape[])[i % 4]);
+    const tray = trayFor(20, frameAspectFor(20), FRAME_TRAY_AREA);
+    for (const key of ['crowd-a', 'crowd-b']) {
+      const result = simulateThrow(requestFor(key, shapes, { tray }));
+
+      expect(result.fault).toBeNull();
+    }
+  });
+
+  it('lands fifty dice apart', () => {
+    const shapes = Array<DieShape>(50).fill('d6');
+    const result = simulateThrow(
+      requestFor('fifty', shapes, { tray: trayFor(50, frameAspectFor(50), FRAME_TRAY_AREA) })
+    );
+
+    expect(result.fault).toBeNull();
+    expect(result.landed).toHaveLength(50);
+  });
+
+  it('counts a number left upside down against a throw of a few dice, and never above a fault', () => {
+    expect(spoilOf(null, 0, 2)).toBe(0);
+    expect(spoilOf(null, 1, 2)).toBeGreaterThan(0);
+    expect(spoilOf(null, 2, 2)).toBeLessThan(spoilOf('cocked', 0, 2));
+    expect(spoilOf('outside', 0, 2)).toBeGreaterThan(spoilOf('cocked', 0, 2));
+  });
+
+  it('does not count a number upside down against a large roll, which one of so many always leaves', () => {
+    expect(spoilOf(null, 3, 10)).toBe(0);
   });
 
   it('records seven numbers for every die in every frame', () => {
