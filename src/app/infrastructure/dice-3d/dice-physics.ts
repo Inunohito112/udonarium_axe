@@ -33,7 +33,13 @@ import {
  * stop as small dice do.
  */
 const GRAVITY = 300;
-const SUBSTEPS = 4;
+/** The most steps a frame is cut into, which the dice need while they fly in and first land. */
+const MOST_SUBSTEPS = 4;
+/**
+ * The farthest any point of a die may move in one step: about as deep as a die sinks into the
+ * floor or another die in the step it lands, which is too little to see.
+ */
+const STEP_REACH = 0.25;
 /** The longest a throw is given to come to rest, about five and a half seconds. */
 const MAX_FRAMES = 330;
 /** How long the dice must stay still to count as settled, and how much of the stillness is kept. */
@@ -112,12 +118,12 @@ function throwOnce(request: DiceThrowRequest, attempt: number): Omit<DiceThrowRe
   let recorded = 0;
   let stillFor = 0;
   let settledAt = -1;
-  const step = 1 / (FRAMES_PER_SECOND * SUBSTEPS);
 
   for (let frame = 0; frame < MAX_FRAMES; frame++) {
     if (frame >= TIRE_FROM_FRAME) tire(bodies, frame);
-    for (let substep = 0; substep < SUBSTEPS; substep++) {
-      world.step(step);
+    const substeps = substepsFor(bodies, request.shapes);
+    for (let substep = 0; substep < substeps; substep++) {
+      world.step(1 / (FRAMES_PER_SECOND * substeps));
       if (
         !doorway.collisionResponse &&
         bodies.every((body, index) => isInside(body, request.shapes[index], request.tray))
@@ -162,6 +168,20 @@ function throwOnce(request: DiceThrowRequest, attempt: number): Omit<DiceThrowRe
   };
 }
 
+/**
+ * How many steps the next frame is cut into: as many as keep the fastest point of a die within a
+ * step's reach, so the dice flying in and landing are worked out finely, and the long rolling and
+ * rocking to rest that follows takes a step a frame.
+ */
+function substepsFor(bodies: readonly Body[], shapes: readonly DieShape[]): number {
+  let fastest = 0;
+  bodies.forEach((body, index) => {
+    if (body.sleepState === Body.SLEEPING) return;
+    fastest = Math.max(fastest, body.velocity.length() + body.angularVelocity.length() * dieRadiusOf(shapes[index]));
+  });
+  return Math.min(MOST_SUBSTEPS, Math.max(1, Math.ceil(fastest / (FRAMES_PER_SECOND * STEP_REACH))));
+}
+
 /** Takes more out of every die's motion the longer the throw goes on. */
 function tire(bodies: readonly Body[], frame: number): void {
   const extra = (frame - TIRE_FROM_FRAME) * TIRE_PER_FRAME;
@@ -178,6 +198,8 @@ function buildWorld(
   const world = new World({ gravity: new Vec3(0, 0, -GRAVITY), allowSleep: true });
   // Trying every pair is quickest for a few dice; sweeping along an axis wins once there are many.
   world.broadphase = dice <= NAIVE_PAIRS_UP_TO ? new NaiveBroadphase() : new SAPBroadphase(world);
+  // Pairs are tried by their boxes rather than their spheres, so that the walls' boxes count.
+  world.broadphase.useBoundingBoxes = true;
   (world.solver as unknown as { iterations: number }).iterations = 16;
 
   const floorMaterial = new Material('floor');
@@ -195,6 +217,7 @@ function buildWorld(
     wall.position.set(x, y, 0);
     wall.quaternion.setFromEuler(rx, ry, 0);
     world.addBody(wall);
+    boundBehind(wall);
     return wall;
   };
   const walls = {
@@ -204,6 +227,20 @@ function buildWorld(
     near: wallAt(0, -tray.halfDepth, -Math.PI / 2, 0),
   };
   return { world, diceMaterial, walls };
+}
+
+/**
+ * Bounds a wall by the space behind it, so a die is tried against the wall only once it reaches it.
+ * A plane stood upright is otherwise taken to reach everywhere, and every die would be tried
+ * against every wall on every step. A wall stands across the x or y axis from the middle of the
+ * tray, on the side its position lies.
+ */
+function boundBehind(wall: Body): void {
+  const far = Number.MAX_VALUE;
+  const { x, y } = wall.position;
+  wall.aabb.lowerBound.set(x > 0 ? x : -far, y > 0 ? y : -far, -far);
+  wall.aabb.upperBound.set(x < 0 ? x : far, y < 0 ? y : far, far);
+  wall.aabbNeedsUpdate = false;
 }
 
 /** Whether a die is wholly within the walls of the tray. */

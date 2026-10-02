@@ -1,5 +1,5 @@
 import { upFace } from '@axe/domain/dice/dice-3d/die-symmetry';
-import { DIE_SHAPES, DieShape, polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
+import { DIE_SHAPES, dieRadiusOf, DieShape, polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
 import { cross, dot, Quat, quatMultiply, quatRotate, UP, Vec3 } from '@axe/domain/dice/dice-3d/rotation';
 import { FRAME_TRAY_AREA, frameAspectFor, trayFor } from '@axe/domain/dice/dice-3d/tray-size';
 import { faceFramesOf } from '@axe/infrastructure/dice-3d/dice-geometry';
@@ -17,6 +17,30 @@ function lastPosition(result: DiceThrowResult, die: number, count: number): [num
 }
 
 const away: Vec3 = [0, 1, 0];
+
+/** How deep a die's corner may go into the felt unseen: a fifth of a die, lost in its shadow. */
+const UNSEEN_SINK = 0.4;
+
+/** How far below the floor the lowest corner of any die is drawn in any frame of a throw. */
+function deepestSinkOf(result: DiceThrowResult, shapes: readonly DieShape[]): number {
+  let deepest = 0;
+  for (let frame = 0; frame < result.frameCount; frame++) {
+    shapes.forEach((shape, die) => {
+      const at = (frame * shapes.length + die) * FRAME_STRIDE;
+      const rotation: Quat = [
+        result.frames[at + 3],
+        result.frames[at + 4],
+        result.frames[at + 5],
+        result.frames[at + 6],
+      ];
+      const radius = dieRadiusOf(shape);
+      for (const corner of polyhedronOf(shape).vertices) {
+        deepest = Math.max(deepest, -(result.frames[at + 2] + quatRotate(rotation, corner)[2] * radius));
+      }
+    });
+  }
+  return deepest;
+}
 
 function requestFor(key: string, shapes: DieShape[], extra: Partial<DiceThrowRequest> = {}): DiceThrowRequest {
   return { key, shapes, targets: shapes.map(() => 0), tray: trayFor(3, 2), edge: 'left', away, ...extra };
@@ -81,6 +105,16 @@ describe('simulateThrow', () => {
       // A heap's dice may lean on one another, as real ones do; they may not leave the tray or keep moving.
       expect([null, 'cocked', 'stacked']).toContain(result.fault);
       expect(result.restFrame).toBeLessThan(4 * 60);
+    }
+  });
+
+  it('works the dice out finely enough as they fly in and land that none is seen to sink into the floor', () => {
+    const shapes: DieShape[] = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20'];
+    const tray = trayFor(shapes.length, frameAspectFor(shapes.length), FRAME_TRAY_AREA);
+    for (const key of ['sink-a', 'sink-b', 'sink-c']) {
+      const result = simulateThrow(requestFor(key, shapes, { tray }));
+
+      expect(deepestSinkOf(result, shapes)).toBeLessThan(UNSEEN_SINK);
     }
   });
 
