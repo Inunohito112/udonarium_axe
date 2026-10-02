@@ -952,7 +952,7 @@
         "material_marble": "マーブル",
         "material_metal": "金属",
         "material_glass": "半透明",
-        "glassDrawnLightly": "この端末は軽量表示なので、半透明は樹脂で描いています。ほかの人の画面では半透明で見えます。",
+        "glassDrawnLightly": "この端末は描画を軽くしているので、半透明は樹脂で描いています。ほかの人の画面では半透明で見えます。",
         "body": "ダイスの色",
         "bodyFollowsRoll": "発言の色に合わせる",
         "ink": "数字の色",
