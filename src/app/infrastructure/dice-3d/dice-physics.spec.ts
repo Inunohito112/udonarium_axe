@@ -72,23 +72,25 @@ describe('simulateThrow', () => {
     expect(result.landed).toHaveLength(20);
   });
 
-  it('brings a crowd of round dice to rest, tiring them the longer they go on', () => {
+  it('brings a crowd of round dice to rest in the tray within four seconds, tiring them the longer they go on', () => {
     const shapes = Array.from({ length: 20 }, (_, i): DieShape => (['d6', 'd10', 'd20', 'd8'] as DieShape[])[i % 4]);
     const tray = trayFor(20, frameAspectFor(20), FRAME_TRAY_AREA);
-    for (const key of ['crowd-a', 'crowd-b']) {
+    for (const key of ['crowd-a', 'crowd-b', 'crowd-c', 'crowd-d']) {
       const result = simulateThrow(requestFor(key, shapes, { tray }));
 
-      expect(result.fault).toBeNull();
+      // A heap's dice may lean on one another, as real ones do; they may not leave the tray or keep moving.
+      expect([null, 'cocked', 'stacked']).toContain(result.fault);
+      expect(result.restFrame).toBeLessThan(4 * 60);
     }
   });
 
-  it('lands fifty dice apart', () => {
+  it('brings fifty dice to rest in the tray', () => {
     const shapes = Array<DieShape>(50).fill('d6');
     const result = simulateThrow(
       requestFor('fifty', shapes, { tray: trayFor(50, frameAspectFor(50), FRAME_TRAY_AREA) })
     );
 
-    expect(result.fault).toBeNull();
+    expect([null, 'cocked', 'stacked']).toContain(result.fault);
     expect(result.landed).toHaveLength(50);
   });
 
@@ -101,6 +103,14 @@ describe('simulateThrow', () => {
 
   it('does not count a number upside down against a large roll, which one of so many always leaves', () => {
     expect(spoilOf(null, 3, 10)).toBe(0);
+  });
+
+  it('lets the dice of a large roll lean on one another as a heap of real dice does, but not leave the tray', () => {
+    expect(spoilOf('stacked', 0, 20)).toBe(0);
+    expect(spoilOf('cocked', 0, 20)).toBe(0);
+    expect(spoilOf('outside', 0, 20)).toBeGreaterThan(0);
+    expect(spoilOf('unsettled', 0, 20)).toBeGreaterThan(0);
+    expect(spoilOf('stacked', 0, 4)).toBeGreaterThan(0);
   });
 
   it('records seven numbers for every die in every frame', () => {

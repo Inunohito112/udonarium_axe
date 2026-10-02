@@ -51,6 +51,8 @@ const TIRE_FROM_FRAME = 120;
 const TIRE_PER_FRAME = 0.006;
 /** The most dice a throw is thrown again for when it leaves a number upside down. */
 const REREAD_UPRIGHT_UP_TO = 4;
+/** How many dice make a heap, whose dice may come to rest leaning on one another. */
+const HEAPED_FROM = 8;
 /** The most dice whose every pair is tried for a collision; more are swept for them. */
 const NAIVE_PAIRS_UP_TO = 12;
 /** How many times a spoiled throw is thrown again before the least spoiled is kept. */
@@ -85,10 +87,14 @@ export function simulateThrow(request: DiceThrowRequest): DiceThrowResult {
 /**
  * How spoiled a throw is: 0 for one to keep at once, more for worse. Every fault is worse than any
  * number left upside down, which counts only in a roll of a few dice, where it is the one the eye
- * goes to; in a large roll one or two always are, and none of them stands out.
+ * goes to; in a large roll one or two always are, and none of them stands out. A large roll's dice
+ * leaning on one another, as a heap of real dice does, is no fault either: only dice that leave the
+ * tray or never come to rest send it to be thrown again.
  */
 export function spoilOf(fault: ThrowFault | null, askew: number, dice: number): number {
-  if (fault !== null) return FAULT_ORDER.indexOf(fault);
+  if (fault !== null && !(dice > HEAPED_FROM && (fault === 'cocked' || fault === 'stacked'))) {
+    return FAULT_ORDER.indexOf(fault);
+  }
   return dice <= REREAD_UPRIGHT_UP_TO ? askew / (dice + 1) : 0;
 }
 
