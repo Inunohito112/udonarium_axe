@@ -95,9 +95,14 @@ export class DiceRenderService {
   private readonly playFrom = new Map<string, number>();
 
   constructor() {
-    // A throw worked out, come to rest or dropped is drawn afresh wherever it is on show.
+    // A throw worked out, come to rest or dropped is drawn afresh wherever it is on show, and one
+    // that comes after the dice could not be drawn is put away at once.
     effect(() => {
-      this.throws.throws();
+      const throws = this.throws.throws();
+      if (this.broken) {
+        untracked(() => this.failAll(throws));
+        return;
+      }
       for (const stage of this.stages) stage.drawn = false;
       this.wake();
     });
@@ -357,7 +362,11 @@ export class DiceRenderService {
   private giveUp(): void {
     this.broken = true;
     this.clearTable();
-    for (const id of this.throws.throws().keys()) this.throws.fail(id);
+    this.failAll(this.throws.throws());
+  }
+
+  private failAll(throws: ReadonlyMap<string, DiceThrow>): void {
+    for (const [id, diceThrow] of throws) if (diceThrow.phase !== 'failed') this.throws.fail(id);
   }
 
   private preparedFor(engine: DiceEngine, diceThrow: DiceThrow): PreparedThrow {

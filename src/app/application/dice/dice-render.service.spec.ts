@@ -270,6 +270,11 @@ describe('DiceRenderService', () => {
 
     await nextFrame(0);
     await vi.waitFor(() => expect(failed).toEqual(['a']));
+
+    throws.set(new Map([...throws(), ['b', throwOf('b')]]));
+    await nextFrame(16);
+
+    expect(failed).toContain('b');
   });
 
   it('puts every throw away when the engine loses its drawing context', async () => {
