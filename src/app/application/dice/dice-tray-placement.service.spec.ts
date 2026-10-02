@@ -6,6 +6,7 @@ import { ConcealmentService } from '@axe/application/tabletop/concealment.servic
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { VisionService } from '@axe/application/tabletop/vision.service';
 import { GameCharacter } from '@axe/domain/character/game-character';
+import { dieRadiusOf } from '@axe/domain/dice/dice-3d/polyhedra';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 /** A view of the table turned some way on the screen, about the page's origin. */
@@ -116,7 +117,7 @@ describe('DiceTrayPlacementService', () => {
     expect(rx * ax + ry * ay).toBeCloseTo(0, 9);
     expect(rx).toBeGreaterThan(0);
     expect(up).toBeCloseTo(Math.hypot(rx, ry), 9);
-    const d6Edge = (2 * 0.92) / Math.sqrt(3);
+    const d6Edge = (2 * dieRadiusOf('d6')) / Math.sqrt(3);
     expect(d6Edge * up).toBeCloseTo(DIE_CELLS * grid, 6);
   });
 

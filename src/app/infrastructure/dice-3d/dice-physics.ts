@@ -26,7 +26,7 @@ import {
 } from 'cannon-es';
 
 /**
- * Gravity in the dice world, where a d6 is a little under one unit from its middle to a corner.
+ * Gravity in the dice world, where a die covers a patch of floor a little under two units across.
  *
  * Taken at the scale of a large, weighty die, about 30 mm along an edge, so the dice fly, bounce and
  * tumble at a pace the eye can follow and settle in one to two seconds, rather than skittering to a
@@ -237,15 +237,17 @@ function launch(bodies: Body[], shapes: readonly DieShape[], tray: Tray, edge: T
   const inward = edge === 'right' ? -1 : 1;
   const depth = alongX ? tray.halfWidth : tray.halfDepth;
   const span = alongX ? tray.halfDepth : tray.halfWidth;
-  const perRow = Math.max(1, Math.floor((span * 2 - 0.6) / 2.2));
+  // Far enough apart that the largest of them start clear of each other.
+  const pitch = 2 * Math.max(...shapes.map(dieRadiusOf)) + 0.2;
+  const perRow = Math.max(1, Math.floor((span * 2 - 0.6) / pitch));
   bodies.forEach((body, index) => {
     const radius = dieRadiusOf(shapes[index]);
     const row = Math.floor(index / perRow);
     const column = index % perRow;
     const inRow = Math.min(perRow, bodies.length - row * perRow);
     const room = Math.max(0, span - radius - 0.3);
-    const across = clamp((column - (inRow - 1) / 2) * 2.2 + (random() - 0.5) * 0.8, -room, room);
-    const start = depth + radius + 0.5 + row * 2.2;
+    const across = clamp((column - (inRow - 1) / 2) * pitch + (random() - 0.5) * 0.8, -room, room);
+    const start = depth + radius + 0.5 + row * pitch;
     const height = radius + 2 + random() * 2.5 + row * 0.4;
     const rise = 4 + random() * 6;
 

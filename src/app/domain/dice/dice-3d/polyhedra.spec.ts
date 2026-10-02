@@ -1,5 +1,6 @@
-import { DIE_SHAPES, oppositeFace, polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
-import { add, cross, dot, length, normalize, scale, sub, Vec3 } from '@axe/domain/dice/dice-3d/rotation';
+import { DIE_SHAPES, dieRadiusOf, DieShape, oppositeFace, polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
+import { restingRotation } from '@axe/domain/dice/dice-3d/resting-pose';
+import { add, cross, dot, length, normalize, quatRotate, scale, sub, Vec3 } from '@axe/domain/dice/dice-3d/rotation';
 
 const FACE_COUNTS = { d4: 4, d6: 6, d8: 8, d10: 10, d12: 12, d20: 20 } as const;
 const OPPOSITE_SUMS = { d6: 7, d8: 9, d10: 9, d12: 13, d20: 21 } as const;
@@ -86,5 +87,42 @@ describe('the dice solids', () => {
 
   it('numbers the corners of a d4 from 1 to 4', () => {
     expect([...polyhedronOf('d4').values].sort()).toEqual([1, 2, 3, 4]);
+  });
+});
+
+describe('dieRadiusOf', () => {
+  /** The area of the outline a die resting with a face up casts straight down. */
+  function footprintOf(shape: DieShape): number {
+    const poly = polyhedronOf(shape);
+    const rest = restingRotation(shape, 0, 0.3);
+    const points = poly.vertices
+      .map((v) => quatRotate(rest, v))
+      .map(([x, y]): [number, number] => [x * dieRadiusOf(shape), y * dieRadiusOf(shape)])
+      .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const turn = (o: number[], a: number[], b: number[]) =>
+      (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const half = (from: [number, number][]) => {
+      const hull: [number, number][] = [];
+      for (const p of from) {
+        while (hull.length >= 2 && turn(hull[hull.length - 2], hull[hull.length - 1], p) <= 0) hull.pop();
+        hull.push(p);
+      }
+      return hull.slice(0, -1);
+    };
+    const hull = [...half(points), ...half([...points].reverse())];
+    return (
+      Math.abs(
+        hull.reduce(
+          (sum, p, i) => sum + p[0] * hull[(i + 1) % hull.length][1] - hull[(i + 1) % hull.length][0] * p[1],
+          0
+        )
+      ) / 2
+    );
+  }
+
+  it('makes every shape cover about the same patch of floor as it rests, so a mixed roll looks one size', () => {
+    const across = DIE_SHAPES.map((shape) => 2 * Math.sqrt(footprintOf(shape) / Math.PI));
+    const mean = across.reduce((sum, d) => sum + d, 0) / across.length;
+    for (const d of across) expect(Math.abs(d - mean) / mean).toBeLessThan(0.06);
   });
 });

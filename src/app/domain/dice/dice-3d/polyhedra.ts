@@ -25,16 +25,17 @@ export interface Polyhedron {
 /**
  * How large each shape is thrown, as the reach of its farthest corner in the dice world's units.
  *
- * Real dice are not all one size: a d6 is a little smaller than the rest, and a d4, d12 or d20 a
- * little larger, so the same set laid side by side reads as a set rather than as copies.
+ * Each covers about the same patch of floor as it rests, so the dice of a mixed roll look one
+ * size: a cube reaches less far from its middle than a d20 does for the room it takes, so it is
+ * given the longer reach.
  */
 const DIE_RADII: Readonly<Record<DieShape, number>> = {
-  d4: 1.12,
-  d6: 0.92,
-  d8: 1,
-  d10: 1,
-  d12: 1.06,
-  d20: 1.08,
+  d4: 1.44,
+  d6: 1.34,
+  d8: 1.18,
+  d10: 1.09,
+  d12: 0.92,
+  d20: 0.98,
 };
 
 /** How far the farthest corner of a thrown die stands from its middle. */

@@ -8,7 +8,7 @@ export const MIN_TRAY_AREA = 98;
  */
 export const FRAME_TRAY_AREA = 64;
 /** The floor each die adds, so a large roll still has room to land apart. */
-const AREA_PER_DIE = 10;
+const AREA_PER_DIE = 16;
 
 /**
  * The tray a number of dice are thrown onto, in the shape of the stage it is drawn in: the floor

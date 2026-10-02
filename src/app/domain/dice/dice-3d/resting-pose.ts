@@ -37,7 +37,7 @@ export function restingLayout(
   seed: number
 ): RestingPose[] {
   const random = seededRandom(seed);
-  const pitch = 2.5;
+  const pitch = 2 * Math.max(...dice.map((die) => dieRadiusOf(die.shape))) + 0.2;
   const perRow = Math.max(1, Math.floor((tray.halfWidth * 2) / pitch));
   const rows = Math.ceil(dice.length / perRow);
   return dice.map((die, index) => {

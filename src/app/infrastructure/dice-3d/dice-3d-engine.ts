@@ -124,7 +124,7 @@ const SHADOW_MAP_PX = 1024;
 const FRAME_FOV = 18;
 const FRAME_ELEVATION = (72 * Math.PI) / 180;
 /** How high the tallest die stands as it rests, so one against the far wall keeps its top in the frame. */
-const TALLEST_DIE = 1.7;
+const TALLEST_DIE = 2;
 /**
  * How far past the tray shadows are cast: a little in a frame, whose edges are the tray's walls, and
  * further on the table, where a die flying in from outside the tray throws its shadow on the board.
