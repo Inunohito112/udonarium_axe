@@ -23,7 +23,9 @@ import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { faceFramesOf } from '@axe/infrastructure/dice-3d/dice-geometry';
+import { simulateThrow } from '@axe/infrastructure/dice-3d/dice-physics';
 import { releaseWorker, useDicePhysicsWorkerFactory } from '@axe/infrastructure/dice-3d/dice-physics-client';
+import { DicePhysicsJob } from '@axe/infrastructure/dice-3d/dice-physics-message';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 const ME = 'me';
@@ -366,6 +368,26 @@ describe('DiceThrowService', () => {
     await vi.waitFor(() => expect(thrown(lines[lines.length - 1])?.phase).toBe('settled'));
     expect(service.throws().size).toBe(KEPT_THROWS);
     expect(thrown(lines[0])).toBeUndefined();
+  });
+
+  it('keeps a throw put away while its dice are worked out, when they are worked out after', async () => {
+    const held: DicePhysicsJob[] = [];
+    const worker = Object.assign(new EventTarget(), {
+      postMessage: (job: DicePhysicsJob) => held.push(job),
+      terminate: () => undefined,
+    });
+    useDicePhysicsWorkerFactory(() => worker as unknown as Worker);
+    const line = answer();
+    callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+    await vi.waitFor(() => expect(held.some((job) => job.request.key === line.identifier)).toBe(true));
+
+    service.fail(line.identifier);
+    const job = held.find((held) => held.request.key === line.identifier)!;
+    worker.dispatchEvent(new MessageEvent('message', { data: { id: job.id, result: simulateThrow(job.request) } }));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(thrown(line)?.phase).toBe('failed');
+    expect(thrown(line)?.result).toBeNull();
   });
 
   it('puts a throw away when its dice cannot be drawn', async () => {

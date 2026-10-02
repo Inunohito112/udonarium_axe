@@ -183,7 +183,7 @@ export class DiceThrowService {
     });
 
     const result = still ? laidDown(plan.dice, tray, key) : await this.worked(key, plan.dice, tray);
-    if (!result || !this.state().has(key)) return;
+    if (!result || this.state().get(key)?.phase !== 'working') return;
     this.update(key, {
       phase: still ? 'settled' : 'rolling',
       result,
@@ -290,9 +290,10 @@ export class DiceThrowService {
     this.state.set(next);
   }
 
+  /** Changes a throw still kept; one given up stays given up, whatever comes in for it after. */
   private update(key: string, change: Partial<DiceThrow>): void {
     const current = this.state().get(key);
-    if (!current) return;
+    if (!current || current.phase === 'failed') return;
     const next = new Map(this.state());
     next.set(key, { ...current, ...change });
     this.state.set(next);
