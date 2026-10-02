@@ -34,13 +34,21 @@ const SOFTBOXES: readonly Softbox[] = [
   { bearing: 90, elevation: 10, width: 26, height: 2.4, brightness: 3.4 },
 ];
 
+/**
+ * A broad, soft panel high above the dice, for metal alone. A metal die shows nothing but what it
+ * mirrors, and its top face mirrors what is above it; its marks are paint, which stands out the more
+ * brightly the metal round it shines.
+ */
+const OVERHEAD: Softbox = { bearing: 100, elevation: 72, width: 30, height: 22, brightness: 1.1 };
+
 const DISTANCE = 20;
 
 /**
  * A studio to light the dice by, for the environment map: a dim room, darker underfoot, and the
- * softboxes in it. The floor of the tray is the plane z = 0, and the viewer stands toward −y.
+ * softboxes in it, with a panel overhead for metal. The floor of the tray is the plane z = 0, and the
+ * viewer stands toward −y.
  */
-export function diceStudio(): Scene {
+export function diceStudio(forMetal = false): Scene {
   const scene = new Scene();
   const room = new SphereGeometry(DISTANCE * 1.6, 32, 16);
   room.rotateX(Math.PI / 2);
@@ -55,7 +63,7 @@ export function diceStudio(): Scene {
   scene.add(new Mesh(room, new MeshBasicMaterial({ side: BackSide, vertexColors: true })));
 
   const panel = new BoxGeometry(1, 1, 1);
-  for (const box of SOFTBOXES) {
+  for (const box of forMetal ? [...SOFTBOXES, OVERHEAD] : SOFTBOXES) {
     const bearing = (box.bearing * Math.PI) / 180;
     const elevation = (box.elevation * Math.PI) / 180;
     const light = new Mesh(panel, new MeshBasicMaterial({ color: new Color().setScalar(box.brightness) }));

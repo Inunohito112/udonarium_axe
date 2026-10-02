@@ -9,9 +9,11 @@ import {
   TABLE_HOLD_SECONDS,
 } from '@axe/application/dice/dice-render.service';
 import { DiceThrow, DiceThrowService } from '@axe/application/dice/dice-throw.service';
+import { MyDiceService } from '@axe/application/dice/my-dice.service';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
+import { RenderLiteService } from '@axe/application/ui/render-lite.service';
 import { Matrix3D } from '@axe/core/transform/matrix-3d';
-import { PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
+import { DiceMaterial, PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
 import { Config } from '@axe/domain/peer/config';
 import type { PreparedThrow } from '@axe/infrastructure/dice-3d/dice-3d-engine';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
@@ -27,13 +29,16 @@ class StandInEngine {
 
   readonly accents: string[] = [];
   readonly inks: string[] = [];
+  readonly materials: string[] = [];
+  readonly warmed: string[] = [];
   /** What each set-up was made for, in the order made, and those let go. */
   readonly made: string[] = [];
   readonly released: string[] = [];
 
-  prepare(draw: { color: string; accent?: string; ink?: string }): PreparedThrow {
+  prepare(draw: { color: string; accent?: string; ink?: string; material?: string }): PreparedThrow {
     this.accents.push(draw.accent ?? '');
     this.inks.push(draw.ink ?? '');
+    this.materials.push(draw.material ?? 'resin');
     this.made.push(draw.color);
     return {
       totalSeconds: ROLL_SECONDS,
@@ -41,6 +46,11 @@ class StandInEngine {
       endSeconds: ROLL_SECONDS,
       id: draw.color,
     } as unknown as PreparedThrow;
+  }
+
+  warm(material: string): Promise<void> {
+    this.warmed.push(material);
+    return Promise.resolve();
   }
 
   release(prepared: PreparedThrow): void {
@@ -234,6 +244,64 @@ describe('DiceRenderService', () => {
     await nextFrame(16);
 
     expect(engine.inks).toEqual(['#e8c547', '']);
+  });
+
+  describe('in the material the one who rolled chose', () => {
+    const made = (material: DiceMaterial) => ({ material, body: '', ink: '' });
+
+    it('draws each throw in its own material', async () => {
+      throws.set(
+        new Map([
+          ['a', throwOf('a', { look: made('marble') })],
+          ['b', throwOf('b', { look: made('metal') })],
+          ['c', throwOf('c')],
+        ])
+      );
+      for (const id of ['a', 'b', 'c']) service.register(document.createElement('canvas'), id).resize(300, 90);
+      await nextFrame(0);
+      await nextFrame(16);
+
+      expect(engine.materials).toEqual(['marble', 'metal', 'resin']);
+    });
+
+    it('draws glass as resin on a device drawn lightly, which a second drawing of the scene would slow', async () => {
+      TestBed.inject(RenderLiteService).setting.set('on');
+      throws.set(new Map([['a', throwOf('a', { look: made('glass') })]]));
+      service.register(document.createElement('canvas'), 'a').resize(300, 90);
+      await nextFrame(0);
+      await nextFrame(16);
+
+      expect(engine.materials).toEqual(['resin']);
+    });
+
+    it('builds the shaders of a material while a throw that wears it is worked out', async () => {
+      throws.set(new Map([['a', throwOf('a', { phase: 'settled', still: true })]]));
+      service.register(document.createElement('canvas'), 'a').resize(300, 90);
+      await nextFrame(0);
+      await nextFrame(16);
+      expect(engine.warmed).toEqual([]);
+
+      throws.set(
+        new Map([
+          ['a', throwOf('a', { phase: 'settled', still: true })],
+          ['b', throwOf('b', { phase: 'working', result: null, look: made('metal') })],
+        ])
+      );
+      TestBed.tick();
+
+      expect(engine.warmed).toEqual(['metal']);
+    });
+
+    it('builds the shaders of this seat’s own material once the engine is here', async () => {
+      TestBed.inject(MyDiceService).set(made('marble'));
+      throws.set(new Map([['a', throwOf('a')]]));
+      service.register(document.createElement('canvas'), 'a').resize(300, 90);
+      await nextFrame(0);
+      await nextFrame(16);
+
+      expect(engine.warmed).toContain('marble');
+      localStorage.removeItem('my-dice');
+    });
   });
 
   it('shows a throw first drawn long after it was worked out at rest, without throwing it again', async () => {

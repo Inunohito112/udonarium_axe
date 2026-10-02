@@ -1,15 +1,24 @@
+import type { DiceMaterial } from '@axe/domain/dice/dice-3d/dice-look';
 import { DieLabels } from '@axe/domain/dice/dice-3d/dice-throw-plan';
 import { dieRadiusOf, DieShape, polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
 import { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
+import { DiceDressing, dressDie, faceColorsOf, FINISHES, veinOf } from '@axe/infrastructure/dice-3d/dice-finish';
 import { diceMeshOf } from '@axe/infrastructure/dice-3d/dice-geometry';
 import { DiceThrowResult, FRAME_STRIDE, FRAMES_PER_SECOND } from '@axe/infrastructure/dice-3d/dice-physics-message';
 import { diceStudio } from '@axe/infrastructure/dice-3d/dice-studio';
-import { DiceColors, drawDiceEngraving, drawDiceFaces, lookFor } from '@axe/infrastructure/dice-3d/dice-textures';
+import {
+  DiceColors,
+  drawDiceEngraving,
+  drawDiceFaces,
+  drawDiceMarks,
+  lookFor,
+} from '@axe/infrastructure/dice-3d/dice-textures';
 import {
   AdditiveBlending,
   BufferAttribute,
   BufferGeometry,
   CanvasTexture,
+  Color,
   DirectionalLight,
   Group,
   Mesh,
@@ -27,6 +36,7 @@ import {
   Scene,
   ShadowMaterial,
   SRGBColorSpace,
+  Texture,
   Vector2,
   Vector3,
   WebGLRenderer,
@@ -48,6 +58,8 @@ export interface ThrowToDraw {
   readonly color: string;
   /** The colour of their numbers, as the one who rolled asked; empty for one that stands out from the body. */
   readonly ink?: string;
+  /** What the dice are made of; resin unless the one who rolled asked otherwise. */
+  readonly material?: DiceMaterial;
   /** A critical or a fumble, which the dice flash gold or red as they come to rest; empty for neither. */
   readonly accent?: 'critical' | 'fumble' | '';
   readonly tray: Tray;
@@ -99,6 +111,8 @@ export interface PreparedThrow {
   readonly endSeconds: number;
   /** The ring of light under each die that a critical or a fumble flashes. */
   readonly halos: readonly Mesh<PlaneGeometry, MeshBasicMaterial>[];
+  /** The materials made for this throw's dice alone, as a marbled die's own swirl. */
+  readonly owned: readonly MeshPhysicalMaterial[];
 }
 
 /**
@@ -171,6 +185,11 @@ export class Dice3dEngine {
   private readonly materials = new Map<string, MeshPhysicalMaterial>();
   /** One engraving for every die of a shape numbered the same way, whatever its colours. */
   private readonly engravings = new Map<string, CanvasTexture>();
+  /** Where the marks lie on every die of a shape numbered the same way, for the dice not of resin. */
+  private readonly marks = new Map<string, CanvasTexture>();
+  private metalLight: Texture | null = null;
+  /** The materials whose shaders have been built ahead of the first die that wears them. */
+  private readonly warmed = new Set<DiceMaterial>(['resin']);
   /**
    * Engravings cut ahead, kept as pictures until a die first wears them: a texture draws on the
    * page's randomness for its name, which a quiet moment must leave as it found it.
@@ -233,15 +252,7 @@ export class Dice3dEngine {
       color: '#202024',
       accent: 'critical',
       tray: { halfWidth: 4, halfDepth: 2 },
-      result: {
-        frameCount: 1,
-        restFrame: 0,
-        frames: new Float32Array([0, 0, 1, 0, 0, 0, 1]),
-        landed: [0],
-        corrections: [[0, 0, 0, 1]],
-        attempt: 0,
-        fault: null,
-      },
+      result: STILL_D6,
     });
     engine.scene.add(warm.root);
     engine.fit({ width: 64, height: 32, pixelRatio: 1 });
@@ -252,6 +263,29 @@ export class Dice3dEngine {
     return engine;
   }
 
+  /**
+   * Builds the shaders of a material ahead of the first die that wears it, in the time the physics
+   * takes to work a throw out, so that die does not stall the frame it first appears in.
+   */
+  async warm(material: DiceMaterial): Promise<void> {
+    if (this.warmed.has(material) || this.lost) return;
+    this.warmed.add(material);
+    const warm = this.prepare({
+      dice: [{ shape: 'd6', labels: 'standard' }],
+      color: '#202024',
+      material,
+      tray: { halfWidth: 4, halfDepth: 2 },
+      result: STILL_D6,
+    });
+    this.scene.add(warm.root);
+    try {
+      await this.renderer.compileAsync(this.scene, this.frameCamera);
+    } finally {
+      this.scene.remove(warm.root);
+      this.release(warm);
+    }
+  }
+
   /** Whether the graphics context was lost, after which nothing more is drawn. */
   get isLost(): boolean {
     return this.lost;
@@ -260,10 +294,16 @@ export class Dice3dEngine {
   /** Sets up the meshes of a throw: each die a body moved by the recording, its mesh turned to show the rolled number. */
   prepare(draw: ThrowToDraw): PreparedThrow {
     const root = new Group();
+    const owned: MeshPhysicalMaterial[] = [];
     const look = lookFor(draw.color, draw.ink);
+    const material = draw.material ?? 'resin';
     const bodies = draw.dice.map((die, index) => {
       const body = new Group();
-      const mesh = new Mesh(this.geometryOf(die.shape), this.materialOf(die.shape, die.labels, look));
+      const shared = this.materialOf(die.shape, die.labels, look, material);
+      const worn =
+        material === 'marble' ? this.swirled(shared, die.shape, die.labels, look, seedOf(draw.result, index)) : shared;
+      if (worn !== shared) owned.push(worn);
+      const mesh = new Mesh(this.geometryOf(die.shape), worn);
       mesh.castShadow = true;
       mesh.scale.setScalar(dieRadiusOf(die.shape));
       const [x, y, z, w] = draw.result.corrections[index];
@@ -304,6 +344,7 @@ export class Dice3dEngine {
       root,
       bodies,
       halos,
+      owned,
       endSeconds: accent ? Math.max(totalSeconds, restSeconds + ACCENT_SECONDS) : totalSeconds,
       contacts,
       radii: draw.dice.map((die) => dieRadiusOf(die.shape)),
@@ -334,11 +375,12 @@ export class Dice3dEngine {
   }
 
   /**
-   * Lets a throw set up to be drawn go: the patches and rings made for its dice alone. Its dice's
-   * shapes and colours are shared with other throws and stay.
+   * Lets a throw set up to be drawn go: the patches, rings and materials made for its dice alone.
+   * Its dice's shapes and pictures are shared with other throws and stay.
    */
   release(prepared: PreparedThrow): void {
     for (const mesh of [...prepared.contacts, ...prepared.halos]) mesh.material.dispose();
+    for (const material of prepared.owned) material.dispose();
   }
 
   /** Lets the renderer and everything it holds go. */
@@ -346,6 +388,8 @@ export class Dice3dEngine {
     this.geometries.forEach((geometry) => geometry.dispose());
     this.materials.forEach(disposeMaterial);
     this.engravings.forEach((engraving) => engraving.dispose());
+    this.marks.forEach((marks) => marks.dispose());
+    this.metalLight?.dispose();
     this.carved.clear();
     this.contactGeometry.dispose();
     this.contactTexture.dispose();
@@ -472,8 +516,73 @@ export class Dice3dEngine {
     });
   }
 
-  private materialOf(shape: DieShape, labels: DieLabels, look: DiceColors): MeshPhysicalMaterial {
-    const key = `${shape}|${labels}|${look.body}|${look.ink}|${look.accent}`;
+  /** Has a material drawn as the material made of, its marks kept as paint. */
+  private dress(
+    material: MeshPhysicalMaterial,
+    made: DiceMaterial,
+    shape: DieShape,
+    labels: DieLabels,
+    look: DiceColors,
+    seed: number
+  ): void {
+    const dressing: DiceDressing = {
+      diceMarks: { value: this.marksOf(shape, labels) },
+      diceVein: { value: veinOf(look.body) },
+      diceSeed: { value: seed },
+    };
+    material.onBeforeCompile = dressDie(made, dressing);
+    material.customProgramCacheKey = () => `dice-${made}`;
+  }
+
+  /**
+   * A marbled die's own material, swirled its own way: the same pictures and shader as every die of
+   * its shape and colours, with a seed of its own.
+   */
+  private swirled(
+    shared: MeshPhysicalMaterial,
+    shape: DieShape,
+    labels: DieLabels,
+    look: DiceColors,
+    seed: number
+  ): MeshPhysicalMaterial {
+    const own = new MeshPhysicalMaterial({
+      ...FINISHES.marble,
+      map: shared.map,
+      normalMap: shared.normalMap,
+      normalScale: shared.normalScale,
+    });
+    this.dress(own, 'marble', shape, labels, look, seed);
+    return own;
+  }
+
+  /** The studio as metal mirrors it, with its panel overhead, made the first time a metal die is. */
+  private metalStudio(): Texture {
+    if (!this.metalLight) {
+      const pmrem = new PMREMGenerator(this.renderer);
+      this.metalLight = pmrem.fromScene(diceStudio(true), 0.02).texture;
+      pmrem.dispose();
+    }
+    return this.metalLight;
+  }
+
+  private marksOf(shape: DieShape, labels: DieLabels): CanvasTexture {
+    const key = `${shape}|${labels}`;
+    let marks = this.marks.get(key);
+    if (!marks) {
+      marks = new CanvasTexture(drawDiceMarks(shape, labels));
+      marks.colorSpace = NoColorSpace;
+      this.marks.set(key, marks);
+    }
+    return marks;
+  }
+
+  private materialOf(
+    shape: DieShape,
+    labels: DieLabels,
+    look: DiceColors,
+    made: DiceMaterial = 'resin'
+  ): MeshPhysicalMaterial {
+    const key = `${shape}|${labels}|${made}|${look.body}|${look.ink}|${look.accent}`;
     let material = this.materials.get(key);
     if (material) {
       // Most recently used last, so the oldest is the one let go.
@@ -481,19 +590,18 @@ export class Dice3dEngine {
       this.materials.set(key, material);
       return material;
     }
-    const map = new CanvasTexture(drawDiceFaces(shape, labels, look));
+    const map = new CanvasTexture(drawDiceFaces(shape, labels, faceColorsOf(made, look)));
     map.colorSpace = SRGBColorSpace;
     map.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
     material = new MeshPhysicalMaterial({
+      ...FINISHES[made],
       map,
       normalMap: this.engravingOf(shape, labels),
       normalScale: new Vector2(1, 1),
-      roughness: 0.32,
-      metalness: 0,
-      clearcoat: 1,
-      clearcoatRoughness: 0.08,
-      ior: 1.5,
     });
+    if (made === 'metal') material.envMap = this.metalStudio();
+    if (made === 'glass') material.attenuationColor = new Color(look.body);
+    if (made !== 'resin') this.dress(material, made, shape, labels, look, 0);
     this.materials.set(key, material);
     if (this.materials.size > TEXTURE_CACHE_SIZE) {
       const [oldest, dropped] = this.materials.entries().next().value!;
@@ -502,6 +610,27 @@ export class Dice3dEngine {
     }
     return material;
   }
+}
+
+/** A d6 lying still in the middle of a tray, which shaders are built ahead with. */
+const STILL_D6: DiceThrowResult = {
+  frameCount: 1,
+  restFrame: 0,
+  frames: new Float32Array([0, 0, 1, 0, 0, 0, 1]),
+  landed: [0],
+  corrections: [[0, 0, 0, 1]],
+  attempt: 0,
+  fault: null,
+};
+
+/**
+ * A seed for a die's swirl, from where the recording first has it: the same on every device that
+ * throws the roll, and different for every die and every throw.
+ */
+function seedOf(result: DiceThrowResult, index: number): number {
+  const at = index * FRAME_STRIDE;
+  const mixed = Math.sin(result.frames[at] * 12.9898 + result.frames[at + 1] * 78.233 + index * 37.719) * 43758.5453;
+  return (mixed - Math.floor(mixed)) * 50;
 }
 
 /** Sets every die where the recording has it some seconds in, between the two frames about that moment. */

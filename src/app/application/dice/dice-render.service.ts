@@ -1,17 +1,22 @@
 import { DestroyRef, effect, inject, Injectable, InjectionToken, untracked } from '@angular/core';
 import { DiceThrow, DiceThrowService } from '@axe/application/dice/dice-throw.service';
+import { MyDiceService } from '@axe/application/dice/my-dice.service';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { RenderLiteService } from '@axe/application/ui/render-lite.service';
 import { Logger } from '@axe/core/logging/logger';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { clipMatrixOf, columnsOf, eyeOf, multiply, Point3, transform } from '@axe/core/transform/css-clip-matrix';
+import type { DiceMaterial } from '@axe/domain/dice/dice-3d/dice-look';
 import type { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
 import { Config } from '@axe/domain/peer/config';
 import type { Dice3dEngine, DrawnRegion, PreparedThrow } from '@axe/infrastructure/dice-3d/dice-3d-engine';
 
 /** What the dice are drawn with: the part of the 3D engine the page uses. */
-export type DiceEngine = Pick<Dice3dEngine, 'canvas' | 'isLost' | 'prepare' | 'render' | 'release' | 'dispose'>;
+export type DiceEngine = Pick<
+  Dice3dEngine,
+  'canvas' | 'isLost' | 'prepare' | 'render' | 'release' | 'warm' | 'dispose'
+>;
 
 /** Starts the engine, loading it and the drawing library with it on first use. */
 export const DICE_ENGINE_LOADER = new InjectionToken<() => Promise<DiceEngine>>('DICE_ENGINE_LOADER', {
@@ -80,6 +85,7 @@ interface TableStage {
 export class DiceRenderService {
   private readonly throws = inject(DiceThrowService);
   private readonly renderLite = inject(RenderLiteService);
+  private readonly myDice = inject(MyDiceService);
   private readonly coordinates = inject(CoordinateService);
   private readonly objectChange = inject(ObjectChangeService);
   private readonly objectStore = inject(ObjectStore);
@@ -121,6 +127,14 @@ export class DiceRenderService {
       const config = this.objectStore.get<Config>('Config');
       if (!config || config.diceStage === 'off') return;
       untracked(() => this.warmUp());
+    });
+    // The shaders of a material are built ahead while a throw that wears it is worked out, and ahead
+    // of this seat's own first roll.
+    effect(() => {
+      const throws = this.throws.throws();
+      const wanted = [this.myDice.look().material];
+      for (const diceThrow of throws.values()) if (diceThrow.phase === 'working') wanted.push(diceThrow.look.material);
+      untracked(() => this.warm(wanted));
     });
     // So is the table's sheet when the table is turned or moved under it.
     effect(() => {
@@ -388,6 +402,7 @@ export class DiceRenderService {
     this.starting ??= this.loadEngine()
       .then((engine) => {
         this.engine = engine;
+        this.warm([this.myDice.look().material]);
         this.wake();
         return engine;
       })
@@ -418,12 +433,27 @@ export class DiceRenderService {
       dice: diceThrow.dice,
       color: diceThrow.color,
       ink: diceThrow.look.ink,
+      material: this.drawnAs(diceThrow.look.material),
       accent: diceThrow.outcome === 'critical' || diceThrow.outcome === 'fumble' ? diceThrow.outcome : '',
       tray: diceThrow.tray,
       result: diceThrow.result!,
     });
     this.prepared.set(diceThrow.key, { result: diceThrow.result, prepared });
     return prepared;
+  }
+
+  /** What a material is drawn as here: glass, which costs a second drawing of the scene, is resin on a device drawn lightly. */
+  private drawnAs(material: DiceMaterial): DiceMaterial {
+    return material === 'glass' && this.renderLite.active() ? 'resin' : material;
+  }
+
+  /** Builds the shaders of materials ahead of the first die that wears them, once the engine is here. */
+  private warm(materials: readonly DiceMaterial[]): void {
+    const engine = this.engine;
+    if (!engine || this.broken) return;
+    for (const material of new Set(materials.map((material) => this.drawnAs(material)))) {
+      if (material !== 'resin') void engine.warm(material);
+    }
   }
 
   /** Lets a throw's meshes go, once nothing draws it. */

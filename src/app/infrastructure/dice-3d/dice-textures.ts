@@ -60,18 +60,29 @@ export function drawDiceFaces(shape: DieShape, labels: DieLabels, look: DiceColo
  * die of a shape numbered the same way.
  */
 export function drawDiceEngraving(shape: DieShape, labels: DieLabels): HTMLCanvasElement {
-  const atlas = atlasOf(shape);
-  const cell = CELL_PX * ENGRAVING_SCALE;
-  const depth = canvasOf(atlas.columns * cell, atlas.rows * cell);
+  const depth = drawDiceMarks(shape, labels);
   const carve = depth.getContext('2d', { willReadFrequently: true })!;
-  carve.fillStyle = '#000';
-  carve.fillRect(0, 0, depth.width, depth.height);
-  eachGlyph(shape, labels, (glyph, left, top) =>
-    drawGlyph(carve, glyph, left * ENGRAVING_SCALE, top * ENGRAVING_SCALE, '#fff', cell)
-  );
   const normal = canvasOf(depth.width, depth.height);
   normalsFromDepth(carve.getImageData(0, 0, depth.width, depth.height), normal.getContext('2d')!);
   return normal;
+}
+
+/**
+ * Draws where a die's marks lie, white on black, at the engraving's size: what a die made of
+ * something other than plain resin is told by, so its marks stay paint while the rest of it is
+ * marble, metal or glass. One serves every die of a shape numbered the same way.
+ */
+export function drawDiceMarks(shape: DieShape, labels: DieLabels): HTMLCanvasElement {
+  const atlas = atlasOf(shape);
+  const cell = CELL_PX * ENGRAVING_SCALE;
+  const marks = canvasOf(atlas.columns * cell, atlas.rows * cell);
+  const paint = marks.getContext('2d', { willReadFrequently: true })!;
+  paint.fillStyle = '#000';
+  paint.fillRect(0, 0, marks.width, marks.height);
+  eachGlyph(shape, labels, (glyph, left, top) =>
+    drawGlyph(paint, glyph, left * ENGRAVING_SCALE, top * ENGRAVING_SCALE, '#fff', cell)
+  );
+  return marks;
 }
 
 /** Visits every mark of a die with the top left corner of its face's cell in the faces' picture. */
