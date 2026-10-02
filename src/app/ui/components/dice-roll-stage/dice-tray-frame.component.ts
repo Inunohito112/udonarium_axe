@@ -14,6 +14,8 @@ import {
 } from '@angular/core';
 import { DiceRenderService } from '@axe/application/dice/dice-render.service';
 import { DiceFrame, DiceThrowService } from '@axe/application/dice/dice-throw.service';
+import { SkinService } from '@axe/application/ui/skin.service';
+import { DiceMatComponent } from '@axe/ui/components/dice-roll-stage/dice-mat.component';
 
 /** How near the foot of a scrolling log counts as at it. */
 const AT_FOOT_PX = 24;
@@ -21,7 +23,8 @@ const AT_FOOT_PX = 24;
 const IN_VIEW_MARGIN = '200px';
 
 /**
- * One tray of a chat roll's dice, in the frame it is drawn in.
+ * One tray of a chat roll's dice, in the frame it is drawn in, on the mat the skin lays: the dice are
+ * drawn over it with their shadows, and it is laid by the page under them.
  *
  * It takes its height from the start, so a log that was at its foot when it opened is kept at its
  * foot. Its dice are drawn only while it is in view; one scrolled away gives its picture back, and
@@ -30,6 +33,7 @@ const IN_VIEW_MARGIN = '200px';
 @Component({
   selector: 'dice-tray-frame',
   templateUrl: './dice-tray-frame.component.html',
+  imports: [DiceMatComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
 })
@@ -42,6 +46,9 @@ export class DiceTrayFrameComponent {
   private readonly renderer = inject(DiceRenderService);
   private readonly injector = inject(Injector);
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
+
+  /** What the dice land on, which this reader's skin chooses. */
+  protected readonly mat = inject(SkinService).diceMat;
   private readonly inView = signal(false);
   private readonly key = computed(() => this.frame().key);
   private readonly thrown = computed(() => this.frame().diceThrow !== null);

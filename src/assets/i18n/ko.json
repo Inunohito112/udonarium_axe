@@ -2682,7 +2682,10 @@
       "name_grassland": "초원",
       "name_coast": "해안",
       "name_wasteland": "황야",
-      "name_academy": "학원×청춘"
+      "name_academy": "학원×청춘",
+      "mat": "주사위 매트",
+      "matColor": "매트 색",
+      "matHint": "채팅 틀에서 주사위가 구르는 면입니다. 이미지를 고르면 색 위에 깝니다. 매트는 이 화면에만 보이며 다른 사람의 화면은 바뀌지 않습니다."
     },
     "lobby": {
       "peerMenu": {

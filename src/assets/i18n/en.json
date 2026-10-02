@@ -2682,7 +2682,10 @@
       "name_grassland": "Grassland",
       "name_coast": "Coast",
       "name_wasteland": "Wasteland",
-      "name_academy": "Academy days"
+      "name_academy": "Academy days",
+      "mat": "Dice mat",
+      "matColor": "Mat colour",
+      "matHint": "What the dice roll on in a chat frame. A picture is laid over the colour. Only this screen sees the mat; nobody else’s changes."
     },
     "lobby": {
       "peerMenu": {

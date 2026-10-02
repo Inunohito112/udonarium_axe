@@ -24,7 +24,6 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshPhysicalMaterial,
-  MeshStandardMaterial,
   NeutralToneMapping,
   NoColorSpace,
   PCFShadowMap,
@@ -32,7 +31,6 @@ import {
   PlaneGeometry,
   PMREMGenerator,
   Quaternion,
-  RepeatWrapping,
   Scene,
   ShadowMaterial,
   SRGBColorSpace,
@@ -132,8 +130,6 @@ const CONTACT_LIFT = 0.02;
 const ACCENT_COLORS = { critical: 0xffc53d, fumble: 0xff3344 } as const;
 const HALO_SPREAD = 3.4;
 const ACCENT_SECONDS = 1.1;
-/** The colour of the felt the dice land on in a frame. */
-const FELT = '#53585f';
 const TEXTURE_CACHE_SIZE = 24;
 /** Every shape and way of numbering it a roll can throw, whose engravings are cut ahead. */
 const ENGRAVINGS: readonly (readonly [DieShape, DieLabels])[] = [
@@ -160,10 +156,17 @@ const FRAME_SHADOW_REACH = 3;
 const TABLE_SHADOW_REACH = 8;
 /** How wide the soft edge of a die's shadow is, in the units of the tray. */
 const PENUMBRA = 0.22;
-/** How far the felt runs past the tray, so it fills the frame however the camera stands. */
-const FELT_REACH = 60;
-/** How many tray units one tile of the felt's weave covers. */
-const WEAVE_TILE = 3;
+/**
+ * How far the floor that takes the dice's shadows runs past the tray in a frame, so it fills the
+ * frame however the camera stands. The mat itself is laid under the frame by the page.
+ */
+const FRAME_FLOOR_REACH = 60;
+/**
+ * How dark the dice's shadows fall: deeper on the mat of a frame, as on the felt it stands in for,
+ * and lighter over the table's own picture.
+ */
+const FRAME_SHADOW_OPACITY = 0.62;
+const TABLE_SHADOW_OPACITY = 0.5;
 
 /**
  * Draws the dice of chat rolls in 3D: one renderer for every throw on the page, drawing off screen,
@@ -176,7 +179,6 @@ export class Dice3dEngine {
   private readonly frameCamera = new PerspectiveCamera(30, 2, 0.5, 400);
   private readonly tableCamera = new PerspectiveCamera();
   private readonly light = new DirectionalLight(0xffffff, 2.4);
-  private readonly felt: Mesh;
   private readonly shadowCatcher: Mesh;
   private readonly geometries = new Map<DieShape, BufferGeometry>();
   private readonly contactGeometry = new PlaneGeometry(1, 1);
@@ -228,14 +230,9 @@ export class Dice3dEngine {
     this.light.shadow.normalBias = 0.02;
     this.scene.add(this.light, this.light.target);
 
-    this.felt = new Mesh(
-      new PlaneGeometry(1, 1),
-      new MeshStandardMaterial({ color: FELT, roughness: 0.96, metalness: 0, map: feltTexture() })
-    );
-    this.felt.receiveShadow = true;
-    this.shadowCatcher = new Mesh(new PlaneGeometry(1, 1), new ShadowMaterial({ opacity: 0.5 }));
+    this.shadowCatcher = new Mesh(new PlaneGeometry(1, 1), new ShadowMaterial({ opacity: TABLE_SHADOW_OPACITY }));
     this.shadowCatcher.receiveShadow = true;
-    this.scene.add(this.felt, this.shadowCatcher);
+    this.scene.add(this.shadowCatcher);
 
     this.frameCamera.up.set(0, 0, 1);
     // The table's camera is set by hand each time; left to itself it would put itself back at the origin.
@@ -416,10 +413,9 @@ export class Dice3dEngine {
 
   private layOut(tray: Tray, view: ThrowView, aspect: number) {
     const inFrame = view.kind === 'frame';
-    this.felt.visible = inFrame;
-    this.shadowCatcher.visible = !inFrame;
+    (this.shadowCatcher.material as ShadowMaterial).opacity = inFrame ? FRAME_SHADOW_OPACITY : TABLE_SHADOW_OPACITY;
     if (inFrame) {
-      this.felt.scale.set(FELT_REACH * 2, FELT_REACH * 2, 1);
+      this.shadowCatcher.scale.set(FRAME_FLOOR_REACH * 2, FRAME_FLOOR_REACH * 2, 1);
     } else {
       this.shadowCatcher.scale.set(
         (tray.halfWidth + TABLE_SHADOW_REACH) * 2,
@@ -740,28 +736,6 @@ function contactTexture(): CanvasTexture {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, size, size);
   return new CanvasTexture(canvas);
-}
-
-/** A faint weave for the felt, so it reads as cloth rather than a flat colour. */
-function feltTexture(): CanvasTexture {
-  const size = 256;
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-  const image = ctx.createImageData(size, size);
-  let seed = 7;
-  const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
-  for (let i = 0; i < size * size; i++) {
-    const v = 236 + Math.floor(random() * 20);
-    image.data[i * 4] = image.data[i * 4 + 1] = image.data[i * 4 + 2] = v;
-    image.data[i * 4 + 3] = 255;
-  }
-  ctx.putImageData(image, 0, 0);
-  const texture = new CanvasTexture(canvas);
-  texture.wrapS = texture.wrapT = RepeatWrapping;
-  texture.repeat.set((FELT_REACH * 2) / WEAVE_TILE, (FELT_REACH * 2) / WEAVE_TILE);
-  texture.colorSpace = SRGBColorSpace;
-  return texture;
 }
 
 /** Lets a die's material go with its faces' picture; its engraving is shared, and kept. */

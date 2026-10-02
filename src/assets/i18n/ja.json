@@ -2682,7 +2682,10 @@
       "name_grassland": "草原",
       "name_coast": "海岸",
       "name_wasteland": "荒野",
-      "name_academy": "学園×青春"
+      "name_academy": "学園×青春",
+      "mat": "ダイスのマット",
+      "matColor": "マットの色",
+      "matHint": "チャットの枠でダイスが転がる面です。画像を選ぶと色の上に敷きます。マットはこの画面にだけ見え、ほかの人の画面は変わりません。"
     },
     "lobby": {
       "peerMenu": {

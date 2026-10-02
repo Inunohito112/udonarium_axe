@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SkinService } from '@axe/application/ui/skin.service';
 import { ThemeService } from '@axe/application/ui/theme.service';
+import { SkinImageStore } from '@axe/core/storage/skin-image-store';
 import { AttachedDocuments } from '@axe/domain/ui/attached-documents';
 import { CUSTOM_SKIN, STANDARD_SKIN } from '@axe/domain/ui/skin';
-import { SkinPickerComponent } from '@axe/features/skin/skin-picker/skin-picker.component';
+import { MAT_COLORS, SkinPickerComponent } from '@axe/features/skin/skin-picker/skin-picker.component';
 import { stubUnloadableImages } from '@axe/testing/unloadable-image';
 
 const PNG_HEAD = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -12,7 +13,15 @@ function picture(): Blob {
   return new Blob([PNG_HEAD], { type: 'image/png' });
 }
 
-const KEYS = ['ui-theme', 'ui-skin-light', 'ui-skin-dark', 'ui-skin-recipe-light', 'ui-skin-recipe-dark'];
+const KEYS = [
+  'ui-theme',
+  'ui-skin-light',
+  'ui-skin-dark',
+  'ui-skin-recipe-light',
+  'ui-skin-recipe-dark',
+  'ui-skin-mat-light',
+  'ui-skin-mat-dark',
+];
 
 describe('SkinPickerComponent', () => {
   let fixture: ComponentFixture<SkinPickerComponent>;
@@ -133,6 +142,39 @@ describe('SkinPickerComponent', () => {
     // The top row is the top of the stack, so it cannot be raised any further.
     expect(fixture.nativeElement.querySelector('[data-testid="skin-layer-up-0"]').disabled).toBe(true);
     expect(fixture.nativeElement.querySelector('[data-testid="skin-layer-down-0"]').disabled).toBe(false);
+  });
+
+  it('dyes the mat of the ladder being dressed when a felt is pressed', () => {
+    click('skin-mat-color-1');
+
+    expect(skins.mat().color).toBe(MAT_COLORS[1]);
+  });
+
+  it('offers the mat picture’s strength, fit and corner once one is laid, and takes it off', async () => {
+    vi.spyOn(SkinImageStore.instance, 'put').mockResolvedValue(true);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mat');
+    await skins.setMatPicture(picture(), 'mat.png');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="skin-mat-fit"]')).toBeTruthy();
+    click('skin-mat-drop');
+
+    expect(skins.mat().layer).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="skin-mat-picture"]')).toBeTruthy();
+  });
+
+  it('shows the corner and fit the mat picture is laid with, not the first ones offered', async () => {
+    vi.spyOn(SkinImageStore.instance, 'put').mockResolvedValue(true);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mat');
+    await skins.setMatPicture(picture(), 'mat.png');
+    skins.tuneMat({ fit: 'tile' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const select = (testId: string) =>
+      fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as HTMLSelectElement;
+    expect(select('skin-mat-anchor').value).toBe('center');
+    expect(select('skin-mat-fit').value).toBe('tile');
   });
 
   it('sets the edges harder when it is asked to', () => {

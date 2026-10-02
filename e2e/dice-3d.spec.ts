@@ -1,6 +1,6 @@
 import { expect, Locator, Page, test } from '@playwright/test';
 
-import { openPanel, waitAppReady } from './helpers';
+import { openPanel, openSeatDisplay, waitAppReady } from './helpers';
 
 // The dice are drawn with WebGL, which headless Chromium gives through SwiftShader.
 test.use({ launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] } });
@@ -37,13 +37,17 @@ test.describe('チャットのダイスを 3D で転がす', () => {
     return { answer, total };
   }
 
-  /** Whether anything has been drawn on a canvas, read from the pixel in its middle. */
+  /**
+   * Whether dice have been drawn on a canvas: the mat is laid under it by the page, so anything not
+   * clear on it is a die or a shadow.
+   */
   function isDrawnOn(canvas: Locator): Promise<boolean> {
     return canvas.evaluate((element: HTMLCanvasElement) => {
       const context = element.getContext('2d');
       if (!context || element.width < 1) return false;
-      const [, , , alpha] = context.getImageData(element.width >> 1, element.height >> 1, 1, 1).data;
-      return alpha > 0;
+      const data = context.getImageData(0, 0, element.width, element.height).data;
+      for (let i = 3; i < data.length; i += 4 * 5) if (data[i] > 200) return true;
+      return false;
     });
   }
 
@@ -172,6 +176,24 @@ test.describe('チャットのダイスを 3D で転がす', () => {
     await expect(stage).toHaveAttribute('data-material', 'metal');
     await expect(stage).toHaveAttribute('data-shown', String(total));
     expect(await isDrawnOn(stage.locator('canvas'))).toBe(true);
+  });
+
+  test('スキンで選んだマットの色が、ダイスの枠に敷かれること', async ({ page }) => {
+    await chooseStage(page, 'frame');
+    const display = await openSeatDisplay(page);
+    await display.getByTestId('seat-skin').click();
+    await page.getByTestId('skin-mat-color-1').click();
+    await page
+      .locator('ui-panel')
+      .filter({ has: page.locator('app-skin-panel') })
+      .locator('button', { hasText: /^close$/ })
+      .dispatchEvent('click');
+
+    const { answer } = await roll(page, '1d6');
+
+    const stage = answer.getByTestId('dice-roll-stage');
+    await expect(stage).toHaveAttribute('data-state', 'settled', { timeout: 20000 });
+    await expect(stage).toHaveAttribute('data-mat', '#1f4d3a');
   });
 
   test('出さない設定では、ロールしても枠が出ないこと', async ({ page }) => {

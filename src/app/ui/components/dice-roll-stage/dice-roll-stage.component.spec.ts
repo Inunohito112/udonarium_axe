@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DiceRenderService } from '@axe/application/dice/dice-render.service';
 import { DiceFrame, DiceThrow, DiceThrowService } from '@axe/application/dice/dice-throw.service';
+import { SkinService } from '@axe/application/ui/skin.service';
 import { PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 import { DiceRollStageComponent } from '@axe/ui/components/dice-roll-stage/dice-roll-stage.component';
@@ -263,6 +264,19 @@ describe('DiceRollStageComponent', () => {
 
     expect(stageOf(fixture)).toBeNull();
     expect(registered[0].released).toBe(true);
+  });
+
+  it('lays the mat this reader’s skin chose under the dice', async () => {
+    const skins = TestBed.inject(SkinService);
+    skins.setMatColor('#5c1f1f', 'light');
+    skins.setMatColor('#5c1f1f', 'dark');
+    throws.set(new Map([['line', throwOf('line')]]));
+    const fixture = mount('line');
+    await fixture.whenStable();
+
+    expect(stageOf(fixture)?.dataset['mat']).toBe('#5c1f1f');
+    localStorage.removeItem('ui-skin-mat-light');
+    localStorage.removeItem('ui-skin-mat-dark');
   });
 
   it('takes its canvas off the stage when it goes', async () => {
