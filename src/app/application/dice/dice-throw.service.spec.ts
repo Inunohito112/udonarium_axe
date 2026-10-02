@@ -6,10 +6,13 @@ import {
   KEPT_IN_FULL,
   KEPT_THROWS,
   LINE_WAIT_MS,
+  LITE_TUMBLING_DICE,
   MAX_TUMBLING,
+  MAX_TUMBLING_DICE,
 } from '@axe/application/dice/dice-throw.service';
 import { DiceTrayPlacementService, TablePlacement } from '@axe/application/dice/dice-tray-placement.service';
 import { MotionService } from '@axe/application/ui/motion.service';
+import { RenderLiteService } from '@axe/application/ui/render-lite.service';
 import { callDiceThrow } from '@axe/core/event/domain-events';
 import { setNetworkIsolated } from '@axe/core/network/network-isolation';
 import { IPeerContext } from '@axe/core/network/peer-context';
@@ -391,6 +394,63 @@ describe('DiceThrowService', () => {
 
     await vi.waitFor(() => expect(lines.every((line) => thrown(line)?.result)).toBe(true));
     expect(lines.map((line) => thrown(line)?.still)).toEqual([...Array(MAX_TUMBLING).fill(false), true]);
+  });
+
+  describe('with the physics held, so every roll thrown stays on the move', () => {
+    beforeEach(() => {
+      useDicePhysicsWorkerFactory(
+        () =>
+          Object.assign(new EventTarget(), {
+            postMessage: () => undefined,
+            terminate: () => undefined,
+          }) as unknown as Worker
+      );
+    });
+
+    afterEach(() => releaseWorker());
+
+    async function throwAll(lines: ChatMessage[]): Promise<void> {
+      for (const line of lines) {
+        callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+        await vi.waitFor(() => expect(thrownOn(line, 'frame').length).toBeGreaterThan(0));
+      }
+    }
+
+    it(`tumbles a roll of ${MAX_TUMBLING_DICE / 2} dice with nothing else on the move`, async () => {
+      const big = answer({ faces: d6s(200) });
+
+      await throwAll([big]);
+
+      expect(thrownOn(big, 'frame').map((t) => t.still)).toEqual([false, false, false, false]);
+    });
+
+    it(`lays a roll down still once more than ${MAX_TUMBLING_DICE} dice would be on the move`, async () => {
+      const lines = [answer({ faces: d6s(200) }), answer({ faces: d6s(200) }), answer({ faces: d6s(1) })];
+
+      await throwAll(lines);
+
+      expect(lines.map((line) => thrownOn(line, 'frame')[0].still)).toEqual([false, false, true]);
+    });
+
+    it(`keeps no more than ${LITE_TUMBLING_DICE} dice on the move on a device drawn lightly`, async () => {
+      TestBed.inject(RenderLiteService).setting.set('on');
+      const lines = [answer({ faces: d6s(150) }), answer({ faces: d6s(50) }), answer({ faces: d6s(1) })];
+
+      await throwAll(lines);
+
+      expect(lines.map((line) => thrownOn(line, 'frame')[0].still)).toEqual([false, false, true]);
+    });
+
+    it('counts the dice a roll already has on the move in its other place', async () => {
+      Config.instance.diceStage = 'both';
+      const lines = [answer({ faces: d6s(100) }), answer({ faces: d6s(150) })];
+
+      await throwAll(lines);
+      await vi.waitFor(() => expect(thrownOn(lines[1], 'table').length).toBeGreaterThan(0));
+
+      expect(thrownOn(lines[1], 'frame').every((t) => !t.still)).toBe(true);
+      expect(thrownOn(lines[1], 'table').every((t) => t.still)).toBe(true);
+    });
   });
 
   it(`keeps the throws of the last ${KEPT_THROWS} rolls and lets older ones go`, async () => {

@@ -2,6 +2,7 @@ import { computed, DestroyRef, effect, inject, Injectable, Signal, signal, untra
 import { DiceTrayPlacementService, TablePlacement } from '@axe/application/dice/dice-tray-placement.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { MotionService } from '@axe/application/ui/motion.service';
+import { RenderLiteService } from '@axe/application/ui/render-lite.service';
 import { diceThrow$, messageAdded$ } from '@axe/core/event/domain-events';
 import { isNetworkIsolated } from '@axe/core/network/network-isolation';
 import { ObjectStore } from '@axe/core/sync/object-store';
@@ -31,8 +32,15 @@ import { DiceThrowResult, FRAME_STRIDE, FRAMES_PER_SECOND } from '@axe/infrastru
 export const JUST_ROLLED_MS = 30_000;
 /** How long a throw waits for the line it throws the dice of, which can come after the call to throw. */
 export const LINE_WAIT_MS = 5_000;
-/** How many throws tumble at once; any more are shown where they came to rest. */
-export const MAX_TUMBLING = 3;
+/** How many rolls tumble at once; any more are shown where they came to rest. */
+export const MAX_TUMBLING = 6;
+/**
+ * How many dice may be on the move at once, in every place they are drawn, for another roll to
+ * tumble beside those already tumbling; and as many on a device drawn lightly. A roll with nothing
+ * else on the move tumbles whatever its size.
+ */
+export const MAX_TUMBLING_DICE = 400;
+export const LITE_TUMBLING_DICE = 200;
 /** How many rolls' throws are kept, so a line scrolled back into view shows the dice it was thrown. */
 export const KEPT_THROWS = 300;
 /** How many of the latest rolls keep the whole of their recording; older ones keep where their dice came to rest. */
@@ -124,6 +132,7 @@ export class DiceThrowService {
   private readonly destroyRef = inject(DestroyRef);
   private readonly objectStore = inject(ObjectStore);
   private readonly motion = inject(MotionService);
+  private readonly renderLite = inject(RenderLiteService);
   private readonly placements = inject(DiceTrayPlacementService);
   private readonly objectChange = inject(ObjectChangeService);
   private readonly state = signal<ReadonlyMap<string, DiceThrow>>(new Map());
@@ -259,9 +268,7 @@ export class DiceThrowService {
           )
         : null;
     if (where === 'table' && !placements) return;
-    const others = this.rollsTumbling();
-    others.delete(messageIdentifier);
-    const still = !this.motion.enabled() || others.size >= MAX_TUMBLING;
+    const still = !this.motion.enabled() || !this.hasRoomToTumble(messageIdentifier, plan.dice.length);
     const parts = this.throwsOf(message, where, plan, placements, still);
     this.add(...parts);
 
@@ -313,13 +320,19 @@ export class DiceThrowService {
     });
   }
 
-  /** The rolls that have a throw being worked out or tumbling. */
-  private rollsTumbling(): Set<string> {
-    return new Set(
-      [...this.state().values()]
-        .filter((t) => t.phase === 'working' || t.phase === 'rolling')
-        .map((t) => t.messageIdentifier)
-    );
+  /**
+   * Whether a roll's dice, so many in one place, may tumble beside those already on the move: always
+   * when no other roll is, and otherwise while there are not too many rolls nor too many dice moving.
+   * A roll's own dice already thrown in its other place count among those moving.
+   */
+  private hasRoomToTumble(messageIdentifier: string, count: number): boolean {
+    const moving = [...this.state().values()].filter((t) => t.phase === 'working' || t.phase === 'rolling');
+    const rolls = new Set(moving.map((t) => t.messageIdentifier));
+    rolls.delete(messageIdentifier);
+    if (rolls.size < 1) return true;
+    const dice = moving.reduce((sum, t) => sum + t.dice.length, 0) + count;
+    const most = this.renderLite.active() ? LITE_TUMBLING_DICE : MAX_TUMBLING_DICE;
+    return rolls.size < MAX_TUMBLING && dice <= most;
   }
 
   /**
