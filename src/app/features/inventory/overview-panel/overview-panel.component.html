@@ -495,7 +495,7 @@
             [min]="span.min"
             [max]="span.max"
             [value]="dataElm.currentValue"
-            [disabled]="!canSlideResources"
+            [disabled]="!canEdit"
             [attr.aria-label]="dataElm.name"
             (input)="previewSliderValue(dataElm, $event)"
             (change)="commitSliderValue(dataElm, $event)"

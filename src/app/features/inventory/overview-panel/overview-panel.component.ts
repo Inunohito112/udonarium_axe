@@ -89,7 +89,8 @@ export class OverviewPanelComponent {
   private readonly disclosureService = inject(DisclosureService);
   private readonly destroyRef = inject(DestroyRef);
 
-  private get canEdit(): boolean {
+  /** Whether this seat may edit the table, which moving a resource with its slider needs. */
+  protected get canEdit(): boolean {
     return this.rolePermission.canEditTabletop;
   }
 
@@ -130,11 +131,6 @@ export class OverviewPanelComponent {
     this.sliderPreview.set(next);
     if (!this.canEdit) return;
     element.currentValue = (event.target as HTMLInputElement).valueAsNumber;
-  }
-
-  /** Whether this seat may move a resource with its slider. */
-  protected get canSlideResources(): boolean {
-    return this.canEdit;
   }
 
   /**
