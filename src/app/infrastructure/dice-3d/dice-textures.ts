@@ -11,21 +11,20 @@ export interface DiceLook {
   readonly accent: string;
 }
 
-/** The pictures a die is drawn with: its colours, and the dents of its engraving as normals. */
-export interface DiceAtlas {
-  readonly color: HTMLCanvasElement;
-  readonly normal: HTMLCanvasElement;
-}
-
 /** The size of one face's cell, in texture pixels. */
 export const CELL_PX = 256;
 
 const DARK_INK = '#161616';
 const LIGHT_INK = '#f6f3ec';
 const ACCENT = '#c8102e';
-/** How deep the engraving reads under the light. */
-const ENGRAVE_STRENGTH = 2.6;
-const BLUR_RADIUS = 2;
+/**
+ * The engraving is worked out at half the size of the faces' picture: its edges are soft, so it
+ * loses nothing, and there is a quarter of it to work out.
+ */
+const ENGRAVING_SCALE = 0.5;
+/** How deep the engraving reads under the light, and how soft the edges of its cuts are, in its own pixels. */
+const ENGRAVE_STRENGTH = 2.6 * ENGRAVING_SCALE;
+const BLUR_RADIUS = 1;
 
 /**
  * The colours of a die of a given body colour: ink that stands out from it, light on a dark body and
@@ -40,48 +39,70 @@ export function lookFor(body: string): DiceLook {
   return { body: rgbText(rgb), ink, accent: reddish ? ink : ACCENT };
 }
 
-/**
- * Draws the texture of a die: every face's cell in the body's colour with its marks in the ink,
- * and beside it the normals of the same marks cut into the face, so they catch the light as
- * engraving does.
- */
-export function drawDiceAtlas(shape: DieShape, labels: DieLabels, look: DiceLook): DiceAtlas {
+/** Draws the faces of a die: every face's cell in the body's colour, with its marks in the ink. */
+export function drawDiceFaces(shape: DieShape, labels: DieLabels, look: DiceLook): HTMLCanvasElement {
   const atlas = atlasOf(shape);
-  const width = atlas.columns * CELL_PX;
-  const height = atlas.rows * CELL_PX;
-  const color = canvasOf(width, height);
-  const depth = canvasOf(width, height);
-  const paint = color.getContext('2d')!;
-  const carve = depth.getContext('2d')!;
+  const canvas = canvasOf(atlas.columns * CELL_PX, atlas.rows * CELL_PX);
+  const paint = canvas.getContext('2d')!;
   paint.fillStyle = look.body;
-  paint.fillRect(0, 0, width, height);
-  carve.fillStyle = '#000';
-  carve.fillRect(0, 0, width, height);
+  paint.fillRect(0, 0, canvas.width, canvas.height);
+  eachGlyph(shape, labels, (glyph, left, top) =>
+    drawGlyph(paint, glyph, left, top, glyph.accent ? look.accent : look.ink, CELL_PX)
+  );
+  return canvas;
+}
 
+/**
+ * Draws the engraving of a die's marks as the normals of a surface they are cut into, so they
+ * catch the light as engraving does. It is the same whatever the die's colours, so one serves every
+ * die of a shape numbered the same way.
+ */
+export function drawDiceEngraving(shape: DieShape, labels: DieLabels): HTMLCanvasElement {
+  const atlas = atlasOf(shape);
+  const cell = CELL_PX * ENGRAVING_SCALE;
+  const depth = canvasOf(atlas.columns * cell, atlas.rows * cell);
+  const carve = depth.getContext('2d', { willReadFrequently: true })!;
+  carve.fillStyle = '#000';
+  carve.fillRect(0, 0, depth.width, depth.height);
+  eachGlyph(shape, labels, (glyph, left, top) =>
+    drawGlyph(carve, glyph, left * ENGRAVING_SCALE, top * ENGRAVING_SCALE, '#fff', cell)
+  );
+  const normal = canvasOf(depth.width, depth.height);
+  normalsFromDepth(carve.getImageData(0, 0, depth.width, depth.height), normal.getContext('2d')!);
+  return normal;
+}
+
+/** Visits every mark of a die with the top left corner of its face's cell in the faces' picture. */
+function eachGlyph(
+  shape: DieShape,
+  labels: DieLabels,
+  visit: (glyph: FaceGlyph, left: number, top: number) => void
+): void {
+  const atlas = atlasOf(shape);
   const faces = polyhedronOf(shape).faces.length;
   for (let face = 0; face < faces; face++) {
     const left = (face % atlas.columns) * CELL_PX;
     const top = Math.floor(face / atlas.columns) * CELL_PX;
-    for (const glyph of faceGlyphsOf(shape, labels, face)) {
-      drawGlyph(paint, glyph, left, top, glyph.accent ? look.accent : look.ink);
-      drawGlyph(carve, glyph, left, top, '#fff');
-    }
+    for (const glyph of faceGlyphsOf(shape, labels, face)) visit(glyph, left, top);
   }
-
-  const normal = canvasOf(width, height);
-  normalsFromDepth(carve.getImageData(0, 0, width, height), normal.getContext('2d')!);
-  return { color, normal };
 }
 
-function drawGlyph(ctx: CanvasRenderingContext2D, glyph: FaceGlyph, left: number, top: number, fill: string): void {
-  const x = left + glyph.x * CELL_PX;
-  const y = top + (1 - glyph.y) * CELL_PX;
+function drawGlyph(
+  ctx: CanvasRenderingContext2D,
+  glyph: FaceGlyph,
+  left: number,
+  top: number,
+  fill: string,
+  cell: number
+): void {
+  const x = left + glyph.x * cell;
+  const y = top + (1 - glyph.y) * cell;
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(-glyph.rotation);
   ctx.fillStyle = fill;
   if (glyph.kind === 'pip') {
-    const radius = (glyph.size * CELL_PX) / 2;
+    const radius = (glyph.size * cell) / 2;
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
     ctx.fill();
@@ -92,7 +113,7 @@ function drawGlyph(ctx: CanvasRenderingContext2D, glyph: FaceGlyph, left: number
   const figures = [...glyph.text].map((figure) => NUMERALS[figure]).filter(Boolean);
   const width =
     figures.reduce((sum, figure) => sum + figure.right - figure.left, 0) + NUMERAL_GAP * (figures.length - 1);
-  const scale = (glyph.size * CELL_PX) / NUMERAL_HEIGHT;
+  const scale = (glyph.size * cell) / NUMERAL_HEIGHT;
   ctx.scale(scale, scale);
   ctx.translate(-width / 2, NUMERAL_HEIGHT / 2);
   let pen = 0;

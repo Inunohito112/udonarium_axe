@@ -4,7 +4,7 @@ import { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
 import { diceMeshOf } from '@axe/infrastructure/dice-3d/dice-geometry';
 import { DiceThrowResult, FRAME_STRIDE, FRAMES_PER_SECOND } from '@axe/infrastructure/dice-3d/dice-physics-message';
 import { diceStudio } from '@axe/infrastructure/dice-3d/dice-studio';
-import { DiceLook, drawDiceAtlas, lookFor } from '@axe/infrastructure/dice-3d/dice-textures';
+import { DiceLook, drawDiceEngraving, drawDiceFaces, lookFor } from '@axe/infrastructure/dice-3d/dice-textures';
 import {
   AdditiveBlending,
   BufferAttribute,
@@ -119,6 +119,17 @@ const ACCENT_SECONDS = 1.1;
 /** The colour of the felt the dice land on in a frame. */
 const FELT = '#53585f';
 const TEXTURE_CACHE_SIZE = 24;
+/** Every shape and way of numbering it a roll can throw, whose engravings are cut ahead. */
+const ENGRAVINGS: readonly (readonly [DieShape, DieLabels])[] = [
+  ['d6', 'standard'],
+  ['d20', 'standard'],
+  ['d10', 'standard'],
+  ['d10', 'tens'],
+  ['d8', 'standard'],
+  ['d12', 'standard'],
+  ['d4', 'standard'],
+  ['d6', 'd3'],
+];
 const SHADOW_MAP_PX = 1024;
 /** How the frame's camera looks at the tray: its field of view, and how high above the floor it stands. */
 const FRAME_FOV = 18;
@@ -156,6 +167,13 @@ export class Dice3dEngine {
   private readonly contactTexture = contactTexture();
   private readonly haloTexture = haloTexture();
   private readonly materials = new Map<string, MeshPhysicalMaterial>();
+  /** One engraving for every die of a shape numbered the same way, whatever its colours. */
+  private readonly engravings = new Map<string, CanvasTexture>();
+  /**
+   * Engravings cut ahead, kept as pictures until a die first wears them: a texture draws on the
+   * page's randomness for its name, which a quiet moment must leave as it found it.
+   */
+  private readonly carved = new Map<string, HTMLCanvasElement>();
   private lost = false;
 
   private constructor() {
@@ -207,9 +225,11 @@ export class Dice3dEngine {
   /** Starts the renderer and readies its shaders, so the first throw does not stall while they build. */
   static async create(): Promise<Dice3dEngine> {
     const engine = new Dice3dEngine();
+    // A critical's flash too, so its shader is built along with the dice's.
     const warm = engine.prepare({
       dice: [{ shape: 'd6', labels: 'standard' }],
       color: '#202024',
+      accent: 'critical',
       tray: { halfWidth: 4, halfDepth: 2 },
       result: {
         frameCount: 1,
@@ -226,6 +246,7 @@ export class Dice3dEngine {
     engine.layOut(warm.tray, { kind: 'frame' }, 2);
     await engine.renderer.compileAsync(engine.scene, engine.frameCamera);
     engine.scene.remove(warm.root);
+    engine.engraveAhead();
     return engine;
   }
 
@@ -314,6 +335,8 @@ export class Dice3dEngine {
   dispose(): void {
     this.geometries.forEach((geometry) => geometry.dispose());
     this.materials.forEach(disposeMaterial);
+    this.engravings.forEach((engraving) => engraving.dispose());
+    this.carved.clear();
     this.contactGeometry.dispose();
     this.contactTexture.dispose();
     this.haloTexture.dispose();
@@ -397,6 +420,48 @@ export class Dice3dEngine {
     return geometry;
   }
 
+  private engravingOf(shape: DieShape, labels: DieLabels): CanvasTexture {
+    const key = `${shape}|${labels}`;
+    let engraving = this.engravings.get(key);
+    if (!engraving) {
+      engraving = new CanvasTexture(this.carvingOf(shape, labels));
+      engraving.colorSpace = NoColorSpace;
+      this.engravings.set(key, engraving);
+      this.carved.delete(key);
+    }
+    return engraving;
+  }
+
+  private carvingOf(shape: DieShape, labels: DieLabels): HTMLCanvasElement {
+    const key = `${shape}|${labels}`;
+    let carving = this.carved.get(key);
+    if (!carving) {
+      carving = drawDiceEngraving(shape, labels);
+      this.carved.set(key, carving);
+    }
+    return carving;
+  }
+
+  /**
+   * Works out the engraving of every shape, one at a time in quiet moments, so the first roll of a
+   * shape does not hold the page while its engraving is cut.
+   */
+  private engraveAhead(): void {
+    const pending = ENGRAVINGS.filter(([shape, labels]) => {
+      const key = `${shape}|${labels}`;
+      return !this.engravings.has(key) && !this.carved.has(key);
+    });
+    const next = pending[0];
+    if (!next || this.lost) return;
+    const idle = globalThis.requestIdleCallback;
+    const later = (work: () => void) =>
+      typeof idle === 'function' ? idle(work, { timeout: 2000 }) : setTimeout(work, 50);
+    later(() => {
+      this.carvingOf(next[0], next[1]);
+      this.engraveAhead();
+    });
+  }
+
   private materialOf(shape: DieShape, labels: DieLabels, look: DiceLook): MeshPhysicalMaterial {
     const key = `${shape}|${labels}|${look.body}|${look.ink}|${look.accent}`;
     let material = this.materials.get(key);
@@ -406,15 +471,12 @@ export class Dice3dEngine {
       this.materials.set(key, material);
       return material;
     }
-    const atlas = drawDiceAtlas(shape, labels, look);
-    const map = new CanvasTexture(atlas.color);
+    const map = new CanvasTexture(drawDiceFaces(shape, labels, look));
     map.colorSpace = SRGBColorSpace;
     map.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-    const normalMap = new CanvasTexture(atlas.normal);
-    normalMap.colorSpace = NoColorSpace;
     material = new MeshPhysicalMaterial({
       map,
-      normalMap,
+      normalMap: this.engravingOf(shape, labels),
       normalScale: new Vector2(1, 1),
       roughness: 0.32,
       metalness: 0,
@@ -563,8 +625,8 @@ function feltTexture(): CanvasTexture {
   return texture;
 }
 
+/** Lets a die's material go with its faces' picture; its engraving is shared, and kept. */
 function disposeMaterial(material: MeshPhysicalMaterial): void {
   material.map?.dispose();
-  material.normalMap?.dispose();
   material.dispose();
 }
