@@ -8,7 +8,7 @@ import {
 } from '@axe/application/dice/dice-throw.service';
 import { DiceTrayPlacementService, TablePlacement } from '@axe/application/dice/dice-tray-placement.service';
 import { MotionService } from '@axe/application/ui/motion.service';
-import { callDiceThrow, emitMessageAdded } from '@axe/core/event/domain-events';
+import { callDiceThrow } from '@axe/core/event/domain-events';
 import { setNetworkIsolated } from '@axe/core/network/network-isolation';
 import { IPeerContext } from '@axe/core/network/peer-context';
 import { resetPeerContextProvider, setPeerContextProvider } from '@axe/core/network/peer-context-source';
@@ -215,17 +215,16 @@ describe('DiceThrowService', () => {
   });
 
   it('waits for a line that arrives after the call to throw it', async () => {
-    const id = 'answer-that-comes-later';
-    callDiceThrow({ messageIdentifier: id }, 'here');
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(service.throws().has(id)).toBe(false);
-
     const line = answer();
-    (line as unknown as { context: { identifier: string } }).context.identifier = id;
-    ObjectStore.instance.add(line);
-    emitMessageAdded({ tabIdentifier: tab.identifier, messageIdentifier: id });
+    ObjectStore.instance.remove(line);
+    callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(thrown(line)).toBeUndefined();
 
-    await vi.waitFor(() => expect(service.throws().get(id)?.phase).toBe('rolling'));
+    ObjectStore.instance.add(line);
+    tab.appendChild(line);
+
+    await vi.waitFor(() => expect(thrown(line)?.phase).toBe('rolling'));
   });
 
   it('stops waiting for a line that never comes', async () => {
