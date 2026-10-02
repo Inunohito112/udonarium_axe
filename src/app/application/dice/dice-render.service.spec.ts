@@ -25,15 +25,23 @@ class StandInEngine {
   disposed = false;
 
   readonly accents: string[] = [];
+  /** What each set-up was made for, in the order made, and those let go. */
+  readonly made: string[] = [];
+  readonly released: string[] = [];
 
   prepare(draw: { color: string; accent?: string }): PreparedThrow {
     this.accents.push(draw.accent ?? '');
+    this.made.push(draw.color);
     return {
       totalSeconds: ROLL_SECONDS,
       restSeconds: ROLL_SECONDS,
       endSeconds: ROLL_SECONDS,
       id: draw.color,
     } as unknown as PreparedThrow;
+  }
+
+  release(prepared: PreparedThrow): void {
+    this.released.push((prepared as unknown as { id: string }).id);
   }
 
   render(prepared: PreparedThrow, seconds: number, view: { kind: string }, size: { width: number; height: number }) {
@@ -255,6 +263,36 @@ describe('DiceRenderService', () => {
     expect(engine.drawn).toHaveLength(0);
   });
 
+  it('lets a throw’s set-up go once the last canvas showing it is taken off the stage', async () => {
+    throws.set(new Map([['a', throwOf('a', { phase: 'settled', still: true })]]));
+    const one = service.register(document.createElement('canvas'), 'a');
+    const two = service.register(document.createElement('canvas'), 'a');
+    one.resize(300, 90);
+    two.resize(300, 90);
+    await nextFrame(0);
+    await nextFrame(16);
+
+    one.release();
+    expect(engine.released).toEqual([]);
+    two.release();
+    expect(engine.released).toEqual(['a']);
+  });
+
+  it('sets a throw up again when its recording is cut down to where it rests, letting the old set-up go', async () => {
+    const whole = throwOf('a', { phase: 'settled' });
+    throws.set(new Map([['a', whole]]));
+    service.register(document.createElement('canvas'), 'a').resize(300, 90);
+    await nextFrame(0);
+    await nextFrame(LATE_START_MS + 500);
+
+    throws.set(new Map([['a', { ...whole, result: { ...whole.result!, frameCount: 1, restFrame: 0 } }]]));
+    await nextFrame(LATE_START_MS + 600);
+
+    expect(engine.made).toEqual(['a', 'a']);
+    expect(engine.released).toEqual(['a']);
+    expect(engine.drawn).toHaveLength(2);
+  });
+
   it('puts every throw away when the engine cannot start', async () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -356,6 +394,22 @@ describe('DiceRenderService', () => {
 
       expect(engine.drawn).toHaveLength(drawnBefore);
       expect(frames).toHaveLength(0);
+    });
+
+    it('lets the set-up of a throw gone from the table go, and does not set it up again', async () => {
+      sheet();
+      throws.set(new Map([['a', onTable('a', { startedAt: 0, phase: 'settled' })]]));
+      await nextFrame(0);
+      await nextFrame(100);
+      const end = 100 + (ROLL_SECONDS + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS) * 1000;
+      await nextFrame(end + 10);
+      expect(engine.released).toEqual(['a']);
+
+      throws.set(new Map([...throws(), ['b', throwOf('b', { phase: 'settled', still: true })]]));
+      service.register(document.createElement('canvas'), 'b').resize(300, 90);
+      await nextFrame(end + 100);
+
+      expect(engine.made).toEqual(['a', 'b']);
     });
 
     it('draws nothing for a tray that lies off the screen', async () => {

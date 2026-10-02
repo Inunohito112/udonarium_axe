@@ -11,7 +11,7 @@ import { Config } from '@axe/domain/peer/config';
 import type { Dice3dEngine, DrawnRegion, PreparedThrow } from '@axe/infrastructure/dice-3d/dice-3d-engine';
 
 /** What the dice are drawn with: the part of the 3D engine the page uses. */
-export type DiceEngine = Pick<Dice3dEngine, 'canvas' | 'isLost' | 'prepare' | 'render' | 'dispose'>;
+export type DiceEngine = Pick<Dice3dEngine, 'canvas' | 'isLost' | 'prepare' | 'render' | 'release' | 'dispose'>;
 
 /** Starts the engine, loading it and the drawing library with it on first use. */
 export const DICE_ENGINE_LOADER = new InjectionToken<() => Promise<DiceEngine>>('DICE_ENGINE_LOADER', {
@@ -86,6 +86,8 @@ export class DiceRenderService {
   private readonly stages = new Set<Stage>();
   private table: TableStage | null = null;
   private readonly prepared = new Map<string, { result: DiceThrow['result']; prepared: PreparedThrow }>();
+  /** The throws on the table whose dice have gone from it, which are not looked at again. */
+  private readonly offTable = new Set<string>();
   private engine: DiceEngine | null = null;
   private starting: Promise<DiceEngine | null> | null = null;
   private broken = false;
@@ -143,7 +145,13 @@ export class DiceRenderService {
         stage.drawn = false;
         this.wake();
       },
-      release: () => this.stages.delete(stage),
+      release: () => {
+        this.stages.delete(stage);
+        // A throw no longer on show anywhere lets its meshes go; it is set up again if it comes back into view.
+        if (![...this.stages].some((other) => other.messageIdentifier === stage.messageIdentifier)) {
+          this.drop(stage.messageIdentifier);
+        }
+      },
     };
   }
 
@@ -188,8 +196,9 @@ export class DiceRenderService {
       return;
     }
 
-    for (const id of this.prepared.keys()) if (!throws.has(id)) this.prepared.delete(id);
+    for (const id of this.prepared.keys()) if (!throws.has(id)) this.drop(id);
     for (const id of this.playFrom.keys()) if (!throws.has(id)) this.playFrom.delete(id);
+    for (const id of this.offTable) if (!throws.has(id)) this.offTable.delete(id);
     const pixelRatio = Math.min(devicePixelRatio || 1, this.renderLite.active() ? LITE_PIXEL_RATIO : MAX_PIXEL_RATIO);
 
     let moving = false;
@@ -267,9 +276,14 @@ export class DiceRenderService {
   /** Whether a throw is on the table and still to be seen there: tumbling, at rest a while, or fading. */
   private isOnTable(engine: DiceEngine, diceThrow: DiceThrow, now: number): boolean {
     if (diceThrow.stage !== 'table' || !diceThrow.result || !diceThrow.placement) return false;
-    if (diceThrow.phase === 'failed') return false;
+    if (diceThrow.phase === 'failed' || this.offTable.has(diceThrow.key)) return false;
     const total = diceThrow.still ? 0 : this.preparedFor(engine, diceThrow).endSeconds;
-    return (now - this.playedFrom(diceThrow, now)) / 1000 < total + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS;
+    const on = (now - this.playedFrom(diceThrow, now)) / 1000 < total + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS;
+    if (!on) {
+      this.offTable.add(diceThrow.key);
+      this.drop(diceThrow.key);
+    }
+    return on;
   }
 
   /**
@@ -377,6 +391,7 @@ export class DiceRenderService {
   private preparedFor(engine: DiceEngine, diceThrow: DiceThrow): PreparedThrow {
     const kept = this.prepared.get(diceThrow.key);
     if (kept && kept.result === diceThrow.result) return kept.prepared;
+    if (kept) engine.release(kept.prepared);
     const prepared = engine.prepare({
       dice: diceThrow.dice,
       color: diceThrow.color,
@@ -386,6 +401,14 @@ export class DiceRenderService {
     });
     this.prepared.set(diceThrow.key, { result: diceThrow.result, prepared });
     return prepared;
+  }
+
+  /** Lets a throw's meshes go, once nothing draws it. */
+  private drop(key: string): void {
+    const kept = this.prepared.get(key);
+    if (!kept) return;
+    this.engine?.release(kept.prepared);
+    this.prepared.delete(key);
   }
 
   private byThrow(): Map<string, Stage[]> {

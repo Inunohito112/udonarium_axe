@@ -17,9 +17,10 @@ test.describe('チャットのダイスを 3D で転がす', () => {
   }
 
   async function chooseStage(page: Page, stage: 'off' | 'frame' | 'table' | 'both') {
-    await openPanel(page, '部屋設定');
-    await page.getByTestId('dice-stage').selectOption(stage);
-    await expect(page.getByTestId('dice-stage')).toHaveValue(stage);
+    const select = page.getByTestId('dice-stage');
+    if ((await select.count()) < 1) await openPanel(page, '部屋設定');
+    await select.selectOption(stage);
+    await expect(select).toHaveValue(stage);
   }
 
   /** Rolls in the chat and gives back the dice bot's answer and the number it came to. */
@@ -110,6 +111,19 @@ test.describe('チャットのダイスを 3D で転がす', () => {
     await expect
       .poll(() => sheet.evaluate((canvas: HTMLCanvasElement) => canvas.width), { timeout: 20000 })
       .toBeGreaterThan(1);
+  });
+
+  test('出さない設定のときに振った行も、枠に出す設定に替えると出目どおりに止まった姿で出ること', async ({ page }) => {
+    await chooseStage(page, 'off');
+    const { answer, total } = await roll(page, '1d20');
+    await expect(answer.getByTestId('dice-roll-stage')).toHaveCount(0);
+
+    await chooseStage(page, 'frame');
+
+    const stage = answer.getByTestId('dice-roll-stage');
+    await expect(stage).toHaveAttribute('data-state', 'settled', { timeout: 20000 });
+    await expect(stage).toHaveAttribute('data-shown', String(total));
+    await expect.poll(() => isDrawnOn(stage.locator('canvas')), { timeout: 10000 }).toBe(true);
   });
 
   test('出さない設定では、ロールしても枠が出ないこと', async ({ page }) => {

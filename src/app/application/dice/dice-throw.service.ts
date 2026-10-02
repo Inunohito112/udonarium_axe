@@ -1,4 +1,4 @@
-import { DestroyRef, effect, inject, Injectable, Signal, signal, untracked } from '@angular/core';
+import { computed, DestroyRef, effect, inject, Injectable, Signal, signal, untracked } from '@angular/core';
 import { DiceTrayPlacementService, TablePlacement } from '@axe/application/dice/dice-tray-placement.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { MotionService } from '@axe/application/ui/motion.service';
@@ -8,7 +8,7 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { canRoleViewTab } from '@axe/domain/chat/chat-tab-permission';
-import { showsInFrame, showsOnTable } from '@axe/domain/dice/dice-3d/dice-stage';
+import { DiceStage, showsInFrame, showsOnTable } from '@axe/domain/dice/dice-3d/dice-stage';
 import { DieToThrow, labelOf, ThrowPlan, throwPlanOf } from '@axe/domain/dice/dice-3d/dice-throw-plan';
 import { upFace } from '@axe/domain/dice/dice-3d/die-symmetry';
 import { polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
@@ -33,8 +33,10 @@ export const JUST_ROLLED_MS = 30_000;
 export const LINE_WAIT_MS = 5_000;
 /** How many throws tumble at once; any more are shown where they came to rest. */
 export const MAX_TUMBLING = 3;
-/** How many throws are kept, so a line scrolled back into view still shows its dice. */
-export const KEPT_THROWS = 30;
+/** How many rolls' throws are kept, so a line scrolled back into view shows the dice it was thrown. */
+export const KEPT_THROWS = 300;
+/** How many of the latest rolls keep the whole of their recording; older ones keep where their dice came to rest. */
+export const KEPT_IN_FULL = 30;
 
 /**
  * Where a throw has got to: being worked out, tumbling, come to rest, or not to be shown at all
@@ -72,6 +74,13 @@ export interface DiceThrow {
   readonly outcome: DiceRollOutcome;
 }
 
+/** A line's frame as this reader sees it: its shape, the dice it could not hold, and its throw once there is one. */
+export interface DiceFrame {
+  readonly aspect: number;
+  readonly overflow: number;
+  readonly diceThrow: DiceThrow | null;
+}
+
 const BLANK_COLOR = '#202024';
 /** How long the physics waits for a quiet moment to be started in, at most, in milliseconds. */
 const WARM_UP_WITHIN_MS = 3000;
@@ -103,6 +112,13 @@ export class DiceThrowService {
   /** The lines already called to be thrown, kept beyond the throws themselves so none is thrown twice. */
   private readonly called = new Set<string>();
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** The lines just said that are waiting a moment for their call to throw before being laid down still. */
+  private readonly waits = new Map<string, ReturnType<typeof setTimeout>>();
+  /** Where the room shows its rolls' dice; a room not yet set up shows none, and is not set up from here. */
+  private readonly diceStage = computed<DiceStage>(() => {
+    this.objectChange.versionOf('Config')();
+    return this.objectStore.get<Config>('Config')?.diceStage ?? 'off';
+  });
 
   /** Every throw kept, by its key: the line whose dice it throws, marked for one on the table. */
   readonly throws: Signal<ReadonlyMap<string, DiceThrow>> = this.state.asReadonly();
@@ -119,7 +135,56 @@ export class DiceThrowService {
       (event) => void this.receive(event.messageIdentifier, event.speakerIdentifier ?? ''),
       this.destroyRef
     );
-    this.destroyRef.onDestroy(() => this.timers.forEach((timer) => clearTimeout(timer)));
+    this.destroyRef.onDestroy(() => {
+      this.timers.forEach((timer) => clearTimeout(timer));
+      this.waits.forEach((timer) => clearTimeout(timer));
+    });
+  }
+
+  /**
+   * The frame a line's dice are shown in, for this reader: the one they were thrown in, or one
+   * waiting for them where the room shows dice in frames and the line has dice to show. Null where
+   * there is nothing to show.
+   *
+   * A frame waiting for its dice already has its shape, so a line keeps its height from the start
+   * and the log does not jump when they come.
+   */
+  frameOf(messageIdentifier: string): DiceFrame | null {
+    const diceThrow = this.state().get(messageIdentifier);
+    if (diceThrow) {
+      if (diceThrow.stage !== 'frame' || diceThrow.phase === 'failed') return null;
+      return { aspect: diceThrow.aspect, overflow: diceThrow.overflow, diceThrow };
+    }
+    if (!showsInFrame(this.diceStage()) || isNetworkIsolated()) return null;
+    const message = this.objectStore.get<ChatMessage>(messageIdentifier);
+    if (!(message instanceof ChatMessage) || !this.mayShow(message)) return null;
+    const plan = throwPlanOf(message.rollDetail);
+    if (plan.dice.length < 1) return null;
+    return { aspect: frameAspectFor(plan.dice.length), overflow: plan.overflow, diceThrow: null };
+  }
+
+  /**
+   * Lays the dice of a line down where they show its numbers, for a line come into view with none
+   * thrown: one said before this reader came, or whose throw has since been let go.
+   *
+   * A line just said may yet be called to be thrown, the call coming after the line, so it is given
+   * a moment for that before its dice are laid down.
+   */
+  showStill(messageIdentifier: string): void {
+    if (this.state().has(messageIdentifier) || this.waits.has(messageIdentifier)) return;
+    const message = this.objectStore.get<ChatMessage>(messageIdentifier);
+    if (!(message instanceof ChatMessage)) return;
+    if (Date.now() - message.timestamp > JUST_ROLLED_MS) {
+      this.layStill(message);
+      return;
+    }
+    this.waits.set(
+      messageIdentifier,
+      setTimeout(() => {
+        this.waits.delete(messageIdentifier);
+        this.layStill(message);
+      }, LINE_WAIT_MS)
+    );
   }
 
   /** Gives up showing a throw, as when its dice cannot be drawn on this device. */
@@ -157,9 +222,11 @@ export class DiceThrowService {
   ): Promise<void> {
     const messageIdentifier = message.identifier;
     const key = where === 'frame' ? messageIdentifier : `${messageIdentifier}${ON_THE_TABLE}`;
+    // A line already laid down still, its call to throw coming late, is left as it lies.
+    if (this.state().has(key)) return;
     const placement = where === 'table' ? this.placements.placementFor(speakerIdentifier, plan.dice.length) : null;
     if (where === 'table' && !placement) return;
-    const tray = placement?.tray ?? trayFor(plan.dice.length, frameAspectFor(plan.dice.length), FRAME_TRAY_AREA);
+    const tray = placement?.tray ?? frameTrayFor(plan.dice.length);
     const others = this.rollsTumbling();
     others.delete(messageIdentifier);
     const still = !this.motion.enabled() || others.size >= MAX_TUMBLING;
@@ -247,9 +314,42 @@ export class DiceThrowService {
     });
   }
 
+  /** Lays a line's dice down in its frame, showing their numbers, where this reader may see them there. */
+  private layStill(message: ChatMessage): void {
+    const key = message.identifier;
+    if (this.state().has(key) || isNetworkIsolated() || !showsInFrame(this.config.diceStage)) return;
+    if (!this.mayShow(message)) return;
+    const plan = throwPlanOf(message.rollDetail);
+    if (plan.dice.length < 1) return;
+    const tray = frameTrayFor(plan.dice.length);
+    const result = laidDown(plan.dice, tray, key);
+    this.add({
+      key,
+      messageIdentifier: key,
+      stage: 'frame',
+      placement: null,
+      dice: plan.dice,
+      overflow: plan.overflow,
+      color: message.messColor?.length ? message.messColor : BLANK_COLOR,
+      tray,
+      aspect: tray.halfWidth / tray.halfDepth,
+      phase: 'settled',
+      result,
+      startedAt: performance.now(),
+      still: true,
+      shown: shownBy(plan.dice, result),
+      outcome: message.rollDetail?.outcome ?? '',
+    });
+  }
+
+  /** Whether a line was just said, and this reader may see its dice. */
   private mayThrow(message: ChatMessage): boolean {
+    return Date.now() - message.timestamp <= JUST_ROLLED_MS && this.mayShow(message);
+  }
+
+  /** Whether this reader may see a line's dice: a roll they can read, and a secret one only if it was theirs. */
+  private mayShow(message: ChatMessage): boolean {
     if (!message.isDicebot) return false;
-    if (Date.now() - message.timestamp > JUST_ROLLED_MS) return false;
     if (!message.isDisplayable) return false;
     if (message.isSecret && !message.isSendFromSelf) return false;
     const tab = this.objectStore.get<ChatTab>(message.tabIdentifier);
@@ -275,17 +375,24 @@ export class DiceThrowService {
   private add(diceThrow: DiceThrow): void {
     const next = new Map(this.state());
     next.set(diceThrow.key, diceThrow);
-    // Whole rolls are let go, the oldest first, so a roll shown in both places keeps both.
-    let rolls = new Set([...next.values()].map((t) => t.messageIdentifier));
-    while (rolls.size > KEPT_THROWS) {
-      const oldest = next.values().next().value!.messageIdentifier;
-      for (const [key, kept] of next) {
-        if (kept.messageIdentifier !== oldest) continue;
+    // Whole rolls are let go, the oldest first, so a roll shown in both places keeps both; and those
+    // past the latest few keep only where their dice came to rest, which is all a line at rest draws.
+    const rolls = [...new Set([...next.values()].map((t) => t.messageIdentifier))];
+    const gone = new Set(rolls.slice(0, Math.max(0, rolls.length - KEPT_THROWS)));
+    const folded = new Set(rolls.slice(0, Math.max(0, rolls.length - KEPT_IN_FULL)));
+    for (const [key, kept] of next) {
+      if (gone.has(kept.messageIdentifier)) {
         next.delete(key);
         clearTimeout(this.timers.get(key));
         this.timers.delete(key);
+      } else if (
+        folded.has(kept.messageIdentifier) &&
+        kept.phase === 'settled' &&
+        kept.result &&
+        kept.result.frameCount > 1
+      ) {
+        next.set(key, { ...kept, result: restOf(kept.result) });
       }
-      rolls = new Set([...next.values()].map((t) => t.messageIdentifier));
     }
     this.state.set(next);
   }
@@ -305,6 +412,18 @@ function whenIdle(work: () => void): void {
   const idle = globalThis.requestIdleCallback;
   if (typeof idle === 'function') idle(() => work(), { timeout: WARM_UP_WITHIN_MS });
   else setTimeout(work, 0);
+}
+
+/** The tray a roll's dice are thrown onto in the frame of its line. */
+function frameTrayFor(count: number): Tray {
+  return trayFor(count, frameAspectFor(count), FRAME_TRAY_AREA);
+}
+
+/** A recording cut down to its last frame, where the dice lie at rest, turned the same. */
+function restOf(result: DiceThrowResult): DiceThrowResult {
+  const stride = result.landed.length * FRAME_STRIDE;
+  const last = result.frameCount - 1;
+  return { ...result, frameCount: 1, restFrame: 0, frames: result.frames.slice(last * stride, (last + 1) * stride) };
 }
 
 /** A recording of a single frame, the dice laid down side by side showing their numbers. */

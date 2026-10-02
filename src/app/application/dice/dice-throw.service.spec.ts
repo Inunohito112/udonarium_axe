@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import {
   DiceThrowService,
   JUST_ROLLED_MS,
+  KEPT_IN_FULL,
   KEPT_THROWS,
   LINE_WAIT_MS,
   MAX_TUMBLING,
@@ -25,7 +26,7 @@ import { PeerRole } from '@axe/domain/peer/peer-role';
 import { faceFramesOf } from '@axe/infrastructure/dice-3d/dice-geometry';
 import { simulateThrow } from '@axe/infrastructure/dice-3d/dice-physics';
 import { releaseWorker, useDicePhysicsWorkerFactory } from '@axe/infrastructure/dice-3d/dice-physics-client';
-import { DicePhysicsJob } from '@axe/infrastructure/dice-3d/dice-physics-message';
+import { DicePhysicsJob, FRAME_STRIDE } from '@axe/infrastructure/dice-3d/dice-physics-message';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 const ME = 'me';
@@ -358,7 +359,7 @@ describe('DiceThrowService', () => {
     expect(lines.map((line) => thrown(line)?.still)).toEqual([...Array(MAX_TUMBLING).fill(false), true]);
   });
 
-  it(`keeps the last ${KEPT_THROWS} throws and lets older ones go`, async () => {
+  it(`keeps the throws of the last ${KEPT_THROWS} rolls and lets older ones go`, async () => {
     TestBed.inject(MotionService).setting.set('off');
     const lines = Array.from({ length: KEPT_THROWS + 2 }, () => answer());
 
@@ -367,6 +368,39 @@ describe('DiceThrowService', () => {
     await vi.waitFor(() => expect(thrown(lines[lines.length - 1])?.phase).toBe('settled'));
     expect(service.throws().size).toBe(KEPT_THROWS);
     expect(thrown(lines[0])).toBeUndefined();
+  });
+
+  it(`keeps only where the dice came to rest for a throw older than the last ${KEPT_IN_FULL} rolls`, async () => {
+    const first = answer({
+      faces: [
+        { sides: 20, value: 17 },
+        { sides: 6, value: 2 },
+      ],
+    });
+    callDiceThrow({ messageIdentifier: first.identifier }, 'here');
+    await vi.waitFor(() => expect(thrown(first)?.phase).toBe('rolling'));
+    service.played(first.identifier, performance.now() - 60_000);
+    await vi.waitFor(() => expect(thrown(first)?.phase).toBe('settled'));
+    const whole = thrown(first)!.result!;
+    const stride = 2 * FRAME_STRIDE;
+    const rest = whole.frames.slice((whole.frameCount - 1) * stride, whole.frameCount * stride);
+
+    TestBed.inject(MotionService).setting.set('off');
+    const later = Array.from({ length: KEPT_IN_FULL - 1 }, () => answer());
+    for (const line of later) callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+    await vi.waitFor(() => expect(thrown(later[later.length - 1])?.phase).toBe('settled'));
+    expect(thrown(first)?.result).toBe(whole);
+
+    const last = answer();
+    callDiceThrow({ messageIdentifier: last.identifier }, 'here');
+    await vi.waitFor(() => expect(thrown(last)?.phase).toBe('settled'));
+
+    const folded = thrown(first)!.result!;
+    expect(folded.frameCount).toBe(1);
+    expect(folded.restFrame).toBe(0);
+    expect(Array.from(folded.frames)).toEqual(Array.from(rest));
+    expect(folded.corrections).toEqual(whole.corrections);
+    expect(thrown(first)?.shown).toEqual(['17', '2']);
   });
 
   it('keeps a throw put away while its dice are worked out, when they are worked out after', async () => {
@@ -397,6 +431,105 @@ describe('DiceThrowService', () => {
     service.fail(line.identifier);
 
     expect(thrown(line)?.phase).toBe('failed');
+  });
+
+  describe('for a line said before', () => {
+    const LONG_AGO = () => Date.now() - JUST_ROLLED_MS - 1000;
+
+    it('keeps a frame of the shape of its dice for a line in a room that shows dice in frames', () => {
+      const line = answer({ timestamp: LONG_AGO(), faces: [{ sides: 6, value: 4 }] });
+
+      const frame = service.frameOf(line.identifier);
+
+      expect(frame?.diceThrow).toBeNull();
+      expect(frame?.aspect).toBe(4);
+    });
+
+    it('keeps no frame where the room shows no dice in frames, or in a replay', () => {
+      const line = answer({ timestamp: LONG_AGO() });
+
+      Config.instance.diceStage = 'table';
+      TestBed.tick();
+      expect(service.frameOf(line.identifier)).toBeNull();
+
+      Config.instance.diceStage = 'frame';
+      TestBed.tick();
+      setNetworkIsolated(true);
+      expect(service.frameOf(line.identifier)).toBeNull();
+    });
+
+    it('keeps no frame for a secret roll that was someone else’s, nor for a roll with no dice it can draw', () => {
+      const theirs = answer({ timestamp: LONG_AGO(), secret: true, from: SOMEONE });
+      const odd = answer({ timestamp: LONG_AGO(), faces: [{ sides: 7, value: 3 }] });
+
+      expect(service.frameOf(theirs.identifier)).toBeNull();
+      expect(service.frameOf(odd.identifier)).toBeNull();
+    });
+
+    it('lays its dice down at rest, showing the numbers it came to', () => {
+      const line = answer({
+        timestamp: LONG_AGO(),
+        faces: [
+          { sides: 6, value: 5 },
+          { sides: 10, value: 10 },
+        ],
+        color: '#2b8a3e',
+        outcome: 'fumble',
+      });
+
+      service.showStill(line.identifier);
+
+      expect(thrown(line)?.phase).toBe('settled');
+      expect(thrown(line)?.still).toBe(true);
+      expect(thrown(line)?.shown).toEqual(['5', '0']);
+      expect(thrown(line)?.color).toBe('#2b8a3e');
+      expect(thrown(line)?.outcome).toBe('fumble');
+      expect(service.frameOf(line.identifier)?.diceThrow).toBe(thrown(line));
+    });
+
+    it('lays down nothing for a secret roll that was someone else’s', () => {
+      const theirs = answer({ timestamp: LONG_AGO(), secret: true, from: SOMEONE });
+
+      service.showStill(theirs.identifier);
+
+      expect(thrown(theirs)).toBeUndefined();
+    });
+
+    it('gives a line just said a moment for its call to throw, and lays its dice down if none comes', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      const line = answer();
+
+      service.showStill(line.identifier);
+      expect(thrown(line)).toBeUndefined();
+
+      await vi.advanceTimersByTimeAsync(LINE_WAIT_MS + 1);
+      expect(thrown(line)?.still).toBe(true);
+    });
+
+    it('throws a line just said whose call comes in that moment, rather than laying it down', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      const line = answer();
+
+      service.showStill(line.identifier);
+      callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+      await vi.waitFor(() => expect(thrown(line)?.phase).toBe('rolling'));
+      await vi.advanceTimersByTimeAsync(LINE_WAIT_MS + 1);
+
+      expect(thrown(line)?.still).toBe(false);
+    });
+
+    it('leaves a line laid down still as it lies when its call to throw comes late', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      const line = answer();
+      service.showStill(line.identifier);
+      await vi.advanceTimersByTimeAsync(LINE_WAIT_MS + 1);
+      const laid = thrown(line);
+
+      callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+      await vi.advanceTimersByTimeAsync(20);
+
+      expect(thrown(line)).toBe(laid);
+    });
   });
 
   describe('on the table', () => {

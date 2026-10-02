@@ -331,6 +331,14 @@ export class Dice3dEngine {
     return region;
   }
 
+  /**
+   * Lets a throw set up to be drawn go: the patches and rings made for its dice alone. Its dice's
+   * shapes and colours are shared with other throws and stay.
+   */
+  release(prepared: PreparedThrow): void {
+    for (const mesh of [...prepared.contacts, ...prepared.halos]) mesh.material.dispose();
+  }
+
   /** Lets the renderer and everything it holds go. */
   dispose(): void {
     this.geometries.forEach((geometry) => geometry.dispose());
