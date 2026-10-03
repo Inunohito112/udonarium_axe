@@ -412,6 +412,21 @@ export class Dice3dEngine {
     for (const material of prepared.owned) material.dispose();
   }
 
+  /**
+   * Lets a picture dice wore go, once no throw set up to be drawn wears it: its texture, the colour
+   * its ink was worked out from, and the materials its faces were painted with.
+   */
+  forgetPicture(key: string): void {
+    this.pictures.get(key)?.dispose();
+    this.pictures.delete(key);
+    this.pictureTones.delete(key);
+    for (const [kept, material] of this.materials) {
+      if (!kept.endsWith(`|${key}:wrap`) && !kept.endsWith(`|${key}:faces`)) continue;
+      this.materials.delete(kept);
+      disposeMaterial(material);
+    }
+  }
+
   /** Lets the renderer and everything it holds go. */
   dispose(): void {
     this.geometries.forEach((geometry) => geometry.dispose());

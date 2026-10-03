@@ -38,6 +38,8 @@ class StandInEngine {
   /** What each set-up was made for, in the order made, and those let go. */
   readonly made: string[] = [];
   readonly released: string[] = [];
+  /** The pictures let go, by key. */
+  readonly forgotten: string[] = [];
 
   prepare(draw: {
     color: string;
@@ -66,6 +68,10 @@ class StandInEngine {
 
   release(prepared: PreparedThrow): void {
     this.released.push((prepared as unknown as { id: string }).id);
+  }
+
+  forgetPicture(key: string): void {
+    this.forgotten.push(key);
   }
 
   render(prepared: PreparedThrow, seconds: number, view: { kind: string }, size: { width: number; height: number }) {
@@ -311,6 +317,25 @@ describe('DiceRenderService', () => {
 
       expect(asked).toEqual([PICTURE, PICTURE]);
       expect(engine.pictures.at(-1)).toBe(`${PICTURE}:wrap`);
+    });
+
+    it('lets a picture go once no throw kept wears it, with what was set up wearing it', async () => {
+      const close = vi.fn();
+      readPicture = async () => ({ width: 4, height: 4, close });
+      throws.set(new Map([['a', pictured('wrap')]]));
+      service.register(drawable(), 'a').resize(300, 90);
+      await nextFrame(0);
+      await nextFrame(16);
+      await nextFrame(32);
+      expect(engine.pictures.at(-1)).toBe(`${PICTURE}:wrap`);
+      expect(engine.forgotten).toEqual([]);
+
+      throws.set(new Map([['b', throwOf('b')]]));
+      TestBed.tick();
+
+      expect(engine.forgotten).toEqual([PICTURE]);
+      expect(engine.released).toContain('a');
+      expect(close).toHaveBeenCalled();
     });
   });
 

@@ -18,7 +18,7 @@ import type { FacePicture } from '@axe/infrastructure/dice-3d/dice-textures';
 /** What the dice are drawn with: the part of the 3D engine the page uses. */
 export type DiceEngine = Pick<
   Dice3dEngine,
-  'canvas' | 'isLost' | 'prepare' | 'render' | 'release' | 'warm' | 'dispose'
+  'canvas' | 'isLost' | 'prepare' | 'render' | 'release' | 'warm' | 'forgetPicture' | 'dispose'
 >;
 
 /** Starts the engine, loading it and the drawing library with it on first use. */
@@ -498,9 +498,19 @@ export class DiceRenderService {
     return source ? { key, source, fit: diceThrow.look.pictureFit } : null;
   }
 
-  /** Reads the pictures the throws' dice wear that are not read yet, and draws again what wears one read. */
+  /**
+   * Reads the pictures the throws' dice wear that are not read yet, and draws again what wears one
+   * read. A picture no throw kept wears any more is let go, with what was set up wearing it.
+   */
   private readPictures(throws: ReadonlyMap<string, DiceThrow>): void {
     const wanted = new Set([...throws.values()].map((diceThrow) => diceThrow.look.picture).filter(Boolean));
+    for (const [key, source] of this.pictures) {
+      if (wanted.has(key)) continue;
+      for (const [id, kept] of this.prepared) if (kept.picture === key) this.drop(id);
+      this.engine?.forgetPicture(key);
+      this.pictures.delete(key);
+      (source as Partial<ImageBitmap>).close?.();
+    }
     for (const key of wanted) {
       if (this.pictures.has(key) || this.readingPictures.has(key)) continue;
       this.readingPictures.add(key);
