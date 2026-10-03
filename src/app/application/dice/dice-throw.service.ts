@@ -500,17 +500,28 @@ export class DiceThrowService {
   }
 
   /**
-   * Keeps throws, letting the oldest rolls go past the most kept. Rolls past the latest few keep
-   * only where their dice came to rest, which is all a line at rest draws. Dice thrown to try a look
-   * out are no roll, and count as none.
+   * Keeps throws, letting whole rolls go past the most kept, so a roll shown in both places keeps
+   * both. A roll laid down still can be laid down again just as it was, and one that tumbled cannot,
+   * so the earliest laid down go first, as lines scrolled back over pile up; the latest few laid
+   * down stay, being the lines in view. Only then do the earliest that tumbled go.
+   *
+   * Rolls that tumbled before the latest few keep only where their dice came to rest, which is all a
+   * line at rest draws. Dice thrown to try a look out are no roll, and count as none.
    */
   private add(...diceThrows: DiceThrow[]): void {
     const next = new Map(this.state());
     for (const diceThrow of diceThrows) next.set(diceThrow.key, diceThrow);
-    // Whole rolls are let go, the oldest first, so a roll shown in both places keeps both.
-    const rolls = [...new Set([...next.values()].filter((t) => !isTryOut(t)).map((t) => t.messageIdentifier))];
-    const gone = new Set(rolls.slice(0, Math.max(0, rolls.length - KEPT_THROWS)));
-    const folded = new Set(rolls.slice(0, Math.max(0, rolls.length - KEPT_IN_FULL)));
+    const tumbled = new Map<string, boolean>();
+    for (const t of next.values()) {
+      if (!isTryOut(t)) tumbled.set(t.messageIdentifier, tumbled.get(t.messageIdentifier) === true || !t.still);
+    }
+    const rolls = [...tumbled.keys()];
+    const laid = rolls.filter((roll) => !tumbled.get(roll));
+    const thrown = rolls.filter((roll) => tumbled.get(roll));
+    const spare = laid.slice(0, Math.max(0, laid.length - KEPT_IN_FULL));
+    const leaving = [...spare, ...thrown, ...laid.slice(spare.length)];
+    const gone = new Set(leaving.slice(0, Math.max(0, rolls.length - KEPT_THROWS)));
+    const folded = new Set(thrown.slice(0, Math.max(0, thrown.length - KEPT_IN_FULL)));
     for (const [key, kept] of next) {
       if (gone.has(kept.messageIdentifier)) {
         next.delete(key);

@@ -103,6 +103,14 @@ describe('DiceThrowService', () => {
       .sort((a, b) => a.part - b.part);
   }
 
+  /** Throws a roll's dice and has them come to rest at once, as though their recording had played. */
+  async function throwToRest(line: ChatMessage): Promise<void> {
+    callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+    await vi.waitFor(() => expect(thrown(line)?.phase).toBe('rolling'), { timeout: 10_000 });
+    service.played(line.identifier, performance.now() - 60_000);
+    await vi.waitFor(() => expect(thrown(line)?.phase).toBe('settled'), { timeout: 10_000 });
+  }
+
   /** Faces of so many d6, each showing 1 to 6 in turn. */
   function d6s(count: number) {
     return Array.from({ length: count }, (_, i) => ({ sides: 6, value: (i % 6) + 1 }));
@@ -561,30 +569,23 @@ describe('DiceThrowService', () => {
     expect(thrown(lines[0])).toBeUndefined();
   });
 
-  it(`keeps only where the dice came to rest for a throw older than the last ${KEPT_IN_FULL} rolls`, async () => {
+  it(`keeps only where the dice came to rest for a throw older than the last ${KEPT_IN_FULL} rolls thrown`, async () => {
     const first = answer({
       faces: [
         { sides: 20, value: 17 },
         { sides: 6, value: 2 },
       ],
     });
-    callDiceThrow({ messageIdentifier: first.identifier }, 'here');
-    await vi.waitFor(() => expect(thrown(first)?.phase).toBe('rolling'));
-    service.played(first.identifier, performance.now() - 60_000);
-    await vi.waitFor(() => expect(thrown(first)?.phase).toBe('settled'));
+    await throwToRest(first);
     const whole = thrown(first)!.result!;
     const stride = 2 * FRAME_STRIDE;
     const rest = whole.frames.slice((whole.frameCount - 1) * stride, whole.frameCount * stride);
 
-    TestBed.inject(MotionService).setting.set('off');
     const later = Array.from({ length: KEPT_IN_FULL - 1 }, () => answer());
-    for (const line of later) callDiceThrow({ messageIdentifier: line.identifier }, 'here');
-    await vi.waitFor(() => expect(thrown(later[later.length - 1])?.phase).toBe('settled'));
+    for (const line of later) await throwToRest(line);
     expect(thrown(first)?.result).toBe(whole);
 
-    const last = answer();
-    callDiceThrow({ messageIdentifier: last.identifier }, 'here');
-    await vi.waitFor(() => expect(thrown(last)?.phase).toBe('settled'));
+    await throwToRest(answer());
 
     const folded = thrown(first)!.result!;
     expect(folded.frameCount).toBe(1);
@@ -592,6 +593,18 @@ describe('DiceThrowService', () => {
     expect(Array.from(folded.frames)).toEqual(Array.from(rest));
     expect(folded.corrections).toEqual(whole.corrections);
     expect(thrown(first)?.shown).toEqual(['17', '2']);
+  });
+
+  it('lets lines scrolled back over go before a roll that tumbled, keeping that one whole', async () => {
+    const roll = answer();
+    await throwToRest(roll);
+    const old = Array.from({ length: KEPT_THROWS }, () => answer({ timestamp: Date.now() - JUST_ROLLED_MS - 1000 }));
+
+    for (const line of old) service.showStill(line.identifier);
+
+    expect(thrown(old[old.length - 1])?.still).toBe(true);
+    expect(thrown(old[0])).toBeUndefined();
+    expect(thrown(roll)?.result?.frameCount).toBeGreaterThan(1);
   });
 
   it('keeps a throw put away while its dice are worked out, when they are worked out after', async () => {
