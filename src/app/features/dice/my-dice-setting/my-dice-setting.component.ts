@@ -86,6 +86,7 @@ export class MyDiceSettingComponent {
   protected readonly glassDrawnAsResin = computed(() => this.look().material === 'glass' && this.renderLite.active());
 
   constructor() {
+    void this.myDice.ensureShared();
     this.roll();
   }
 

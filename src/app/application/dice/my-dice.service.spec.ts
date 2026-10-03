@@ -163,6 +163,18 @@ describe('MyDiceService', () => {
       expect(named.name).toBe(`${PICTURE}.webp`);
     });
 
+    it('leaves the room’s images alone as the page starts, before the seat’s role is known', async () => {
+      localStorage.setItem('my-dice', JSON.stringify({ ...PLAIN_DICE_LOOK, picture: PICTURE }));
+      const kept = vi.spyOn(DiceImageStore.instance, 'get').mockResolvedValue(new Blob([PNG_HEAD]));
+      const added = vi.spyOn(ImageStorage.instance, 'addAsync').mockResolvedValue({} as ImageFile);
+
+      TestBed.inject(MyDiceService);
+      await Promise.resolve();
+
+      expect(kept).not.toHaveBeenCalled();
+      expect(added).not.toHaveBeenCalled();
+    });
+
     it('leaves the room’s images alone when the picture is already among them', async () => {
       localStorage.setItem('my-dice', JSON.stringify({ ...PLAIN_DICE_LOOK, picture: PICTURE }));
       vi.spyOn(ImageStorage.instance, 'get').mockReturnValue({ state: 2 } as unknown as ImageFile);

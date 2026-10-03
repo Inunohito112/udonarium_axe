@@ -29,7 +29,9 @@ export const DICE_PICTURE_PREPARER = new InjectionToken<(picture: Blob) => Promi
  *
  * It is the person's, not the room's or a character's: kept in this browser, and the same whoever
  * the seat speaks as. A picture for the dice is shared through the room's images, which start
- * empty with every visit, so it is kept here too and put back into them whenever it is missing.
+ * empty with every visit, so it is kept here too and put back into them when it is next needed:
+ * as the seat speaks, or opens the panel it is chosen in. Not before, since the seat's role is not
+ * known until it has joined a room, and a guest's picture must stay out of it.
  */
 @Injectable({ providedIn: 'root' })
 export class MyDiceService {
@@ -40,10 +42,6 @@ export class MyDiceService {
   private restoring: Promise<void> | null = null;
 
   readonly look = this.current.asReadonly();
-
-  constructor() {
-    void this.ensureShared();
-  }
 
   /** Chooses a look, kept for the next visit where the browser allows. */
   set(look: DiceLook): void {
