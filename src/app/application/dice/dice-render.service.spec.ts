@@ -21,6 +21,7 @@ import type { PreparedThrow } from '@axe/infrastructure/dice-3d/dice-3d-engine';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 const ROLL_SECONDS = 1;
+const FRAMES_PER_SECOND = 60;
 
 /** An engine that draws nothing and remembers what it was asked to draw. */
 class StandInEngine {
@@ -50,6 +51,7 @@ class StandInEngine {
     material?: string;
     picture?: { key: string; fit: string };
     seedKey?: string;
+    result?: { frameCount: number };
   }): PreparedThrow {
     this.seeds.push(draw.seedKey ?? '');
     this.pictures.push(draw.picture ? `${draw.picture.key}:${draw.picture.fit}` : '');
@@ -57,10 +59,11 @@ class StandInEngine {
     this.inks.push(draw.ink ?? '');
     this.materials.push(draw.material ?? 'resin');
     this.made.push(draw.color);
+    const seconds = draw.result ? (draw.result.frameCount - 1) / FRAMES_PER_SECOND : ROLL_SECONDS;
     return {
-      totalSeconds: ROLL_SECONDS,
-      restSeconds: ROLL_SECONDS,
-      endSeconds: ROLL_SECONDS,
+      totalSeconds: seconds,
+      restSeconds: seconds,
+      endSeconds: seconds,
       id: draw.color,
     } as unknown as PreparedThrow;
   }
@@ -608,6 +611,25 @@ describe('DiceRenderService', () => {
       await nextFrame(end + 10);
       expect(engine.drawn).toEqual([]);
       expect(engine.released).toEqual(['a', 'b']);
+    });
+
+    it('keeps a roll on the table its while from when it came to rest, though its recording is cut down meanwhile', async () => {
+      sheet();
+      const whole = onTable('a', { startedAt: 0, phase: 'settled' });
+      throws.set(new Map([['a', whole]]));
+      await nextFrame(0);
+      await nextFrame(100);
+      const end = 100 + (ROLL_SECONDS + TABLE_HOLD_SECONDS + TABLE_FADE_SECONDS) * 1000;
+      await nextFrame(1500);
+
+      throws.set(new Map([['a', { ...whole, result: { ...whole.result!, frameCount: 1, restFrame: 0 } }]]));
+      await nextFrame(end - 100);
+      engine.drawn.length = 0;
+      await nextFrame(end - 50);
+      expect(engine.drawn.map((d) => d.id)).toEqual(['a']);
+
+      await nextFrame(end + 10);
+      expect(engine.released).toContain('a');
     });
 
     it('lets the set-up of a throw gone from the table go, and does not set it up again', async () => {

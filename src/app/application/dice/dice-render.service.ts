@@ -131,6 +131,11 @@ export class DiceRenderService {
   >();
   /** The throws on the table whose dice have gone from it, which are not looked at again. */
   private readonly offTable = new Set<string>();
+  /**
+   * When each throw on the table came to rest, kept from when it is first known: a throw whose
+   * recording is cut down to where its dice rest would otherwise seem to have stopped sooner.
+   */
+  private readonly restedAt = new Map<string, number>();
   private engine: DiceEngine | null = null;
   private starting: Promise<DiceEngine | null> | null = null;
   private broken = false;
@@ -256,6 +261,7 @@ export class DiceRenderService {
 
     for (const id of this.prepared.keys()) if (!throws.has(id)) this.drop(id);
     for (const id of this.playFrom.keys()) if (!throws.has(id)) this.playFrom.delete(id);
+    for (const id of this.restedAt.keys()) if (!throws.has(id) || this.offTable.has(id)) this.restedAt.delete(id);
     for (const id of this.offTable) if (!throws.has(id)) this.offTable.delete(id);
     const pixelRatio = Math.min(devicePixelRatio || 1, this.renderLite.active() ? LITE_PIXEL_RATIO : MAX_PIXEL_RATIO);
 
@@ -343,13 +349,22 @@ export class DiceRenderService {
     for (const diceThrow of throws.values()) {
       if (diceThrow.stage !== 'table' || !diceThrow.placement || diceThrow.phase === 'failed') continue;
       if (this.offTable.has(diceThrow.key)) continue;
-      const rest = diceThrow.result
-        ? this.playedFrom(diceThrow, now) +
-          (diceThrow.still ? 0 : this.preparedFor(engine, diceThrow).endSeconds) * 1000
-        : Infinity;
-      rests.set(diceThrow.messageIdentifier, Math.max(rests.get(diceThrow.messageIdentifier) ?? -Infinity, rest));
+      const rest = diceThrow.result ? this.restOf(engine, diceThrow, now) : Infinity;
+      const roll = diceThrow.messageIdentifier;
+      rests.set(roll, Math.max(rests.get(roll) ?? -Infinity, rest));
     }
     return rests;
+  }
+
+  /** When a throw on the table came to rest, worked out once from the whole of its recording. */
+  private restOf(engine: DiceEngine, diceThrow: DiceThrow, now: number): number {
+    let rest = this.restedAt.get(diceThrow.key);
+    if (rest === undefined) {
+      const seconds = diceThrow.still ? 0 : this.preparedFor(engine, diceThrow).endSeconds;
+      rest = this.playedFrom(diceThrow, now) + seconds * 1000;
+      this.restedAt.set(diceThrow.key, rest);
+    }
+    return rest;
   }
 
   /** Whether a throw is on the table and still to be seen there: tumbling, at rest a while with its roll, or fading. */
