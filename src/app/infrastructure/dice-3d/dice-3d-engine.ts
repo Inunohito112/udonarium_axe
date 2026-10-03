@@ -285,7 +285,9 @@ export class Dice3dEngine {
 
   /**
    * Builds the shaders of a material ahead of the first die that wears it, in the time the physics
-   * takes to work a throw out, so that die does not stall the frame it first appears in.
+   * takes to work a throw out, so that die does not stall the frame it first appears in. The die
+   * it is built with stands in a scene of its own, lit as the engine's is, so the throws drawn
+   * while the shaders build never show it.
    */
   async warm(material: DiceMaterial): Promise<void> {
     if (this.warmed.has(material) || this.lost) return;
@@ -297,11 +299,12 @@ export class Dice3dEngine {
       tray: { halfWidth: 4, halfDepth: 2 },
       result: STILL_D6,
     });
-    this.scene.add(warm.root);
+    const staging = new Scene();
+    staging.add(warm.root);
     try {
-      await this.renderer.compileAsync(this.scene, this.frameCamera);
+      await this.renderer.compileAsync(staging, this.frameCamera, this.scene);
     } finally {
-      this.scene.remove(warm.root);
+      staging.remove(warm.root);
       this.release(warm);
     }
   }
