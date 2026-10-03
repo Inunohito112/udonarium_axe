@@ -111,6 +111,14 @@ describe('DiceThrowService', () => {
     await vi.waitFor(() => expect(thrown(line)?.phase).toBe('settled'), { timeout: 10_000 });
   }
 
+  /** A worker that takes every throw and answers none, so the dice thrown stay on the move. */
+  function heldWorker(): Worker {
+    return Object.assign(new EventTarget(), {
+      postMessage: () => undefined,
+      terminate: () => undefined,
+    }) as unknown as Worker;
+  }
+
   /** Faces of so many d6, each showing 1 to 6 in turn. */
   function d6s(count: number) {
     return Array.from({ length: count }, (_, i) => ({ sides: 6, value: (i % 6) + 1 }));
@@ -500,16 +508,8 @@ describe('DiceThrowService', () => {
 
   describe('with the physics held, so every roll thrown stays on the move', () => {
     beforeEach(() => {
-      useDicePhysicsWorkerFactory(
-        () =>
-          Object.assign(new EventTarget(), {
-            postMessage: () => undefined,
-            terminate: () => undefined,
-          }) as unknown as Worker
-      );
+      useDicePhysicsWorkerFactory(heldWorker);
     });
-
-    afterEach(() => releaseWorker());
 
     async function throwAll(lines: ChatMessage[]): Promise<void> {
       for (const line of lines) {
@@ -802,6 +802,7 @@ describe('DiceThrowService', () => {
     });
 
     it('lays the trays of a large roll on the table where the table puts them, all at once', async () => {
+      useDicePhysicsWorkerFactory(heldWorker);
       TestBed.inject(MotionService).setting.set('on');
       const line = answer({ faces: d6s(60) });
 
