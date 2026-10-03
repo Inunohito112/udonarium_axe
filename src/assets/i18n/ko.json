@@ -969,7 +969,8 @@
         "pictureHint": "돌이나 나뭇결 같은 무늬는 \"감싸기\", 로고나 문장은 \"면마다 붙이기\"가 어울립니다. 이미지는 방의 모두에게 전해지고 방을 저장할 때도 함께 들어갑니다.",
         "trouble_notPicture": "이미지로 읽을 수 없었습니다.",
         "trouble_tooLarge": "8MB를 넘는 이미지는 쓸 수 없습니다.",
-        "trouble_unstored": "이 브라우저에 이미지를 저장하지 못했습니다."
+        "trouble_unstored": "이 브라우저에 이미지를 저장하지 못했습니다.",
+        "trouble_notAllowed": "관전 중에는 주사위에 이미지를 붙일 수 없습니다."
       }
     },
     "effect": {

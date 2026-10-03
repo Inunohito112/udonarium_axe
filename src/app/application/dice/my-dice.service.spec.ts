@@ -4,6 +4,8 @@ import { DiceImageStore } from '@axe/core/storage/dice-image-store';
 import { ImageFile } from '@axe/core/storage/image-file';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 /** The first bytes of a PNG, so what the guard sniffs is what a picture actually starts with. */
@@ -84,6 +86,39 @@ describe('MyDiceService', () => {
 
       expect(added).not.toHaveBeenCalled();
       expect(service.look().picture).toBe('');
+    });
+
+    describe('for a guest, who may not add to the room’s images', () => {
+      const original = PeerCursor.myCursor;
+
+      beforeEach(() => {
+        PeerCursor.myCursor = { role: PeerRole.Guest } as PeerCursor;
+      });
+
+      afterEach(() => {
+        PeerCursor.myCursor = original;
+      });
+
+      it('turns a picture away without sharing it', async () => {
+        const added = shared(new Blob([PNG_HEAD], { type: 'image/png' }));
+        const service = TestBed.inject(MyDiceService);
+
+        expect(await service.setPicture(new Blob([PNG_HEAD], { type: 'image/png' }))).toBe('notAllowed');
+
+        expect(added).not.toHaveBeenCalled();
+        expect(service.look().picture).toBe('');
+      });
+
+      it('leaves the room’s images alone on a fresh visit', async () => {
+        localStorage.setItem('my-dice', JSON.stringify({ ...PLAIN_DICE_LOOK, picture: PICTURE }));
+        const kept = vi.spyOn(DiceImageStore.instance, 'get');
+        const added = vi.spyOn(ImageStorage.instance, 'addAsync');
+
+        await TestBed.inject(MyDiceService).ensureShared();
+
+        expect(kept).not.toHaveBeenCalled();
+        expect(added).not.toHaveBeenCalled();
+      });
     });
 
     it('makes the dice resin while they wear a picture, and gives the material back with it', async () => {

@@ -1,4 +1,5 @@
 import { inject, Injectable, InjectionToken, signal } from '@angular/core';
+import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { DiceImageStore } from '@axe/core/storage/dice-image-store';
 import { downscaleImageBlob } from '@axe/core/storage/image-downscale';
 import { ImageState } from '@axe/core/storage/image-file';
@@ -14,7 +15,7 @@ export const DICE_PICTURE_MAX_SIDE = 512;
 export const DICE_PICTURE_MAX_BYTES = 8 * 1024 * 1024;
 
 /** Why a picture offered for the dice was not taken. */
-export type DicePictureTrouble = 'notPicture' | 'tooLarge' | 'unstored';
+export type DicePictureTrouble = 'notPicture' | 'tooLarge' | 'unstored' | 'notAllowed';
 
 /** Makes a picture ready to put on the dice: resampled down and written out small. */
 export const DICE_PICTURE_PREPARER = new InjectionToken<(picture: Blob) => Promise<Blob>>('DICE_PICTURE_PREPARER', {
@@ -33,6 +34,7 @@ export const DICE_PICTURE_PREPARER = new InjectionToken<(picture: Blob) => Promi
 @Injectable({ providedIn: 'root' })
 export class MyDiceService {
   private readonly prepare = inject(DICE_PICTURE_PREPARER);
+  private readonly permission = inject(RolePermissionService);
   private readonly pictures = DiceImageStore.instance;
   private readonly current = signal<DiceLook>(storedLook());
   private restoring: Promise<void> | null = null;
@@ -56,10 +58,11 @@ export class MyDiceService {
 
   /**
    * Puts a picture on this seat's dice. It is checked to be a picture and not too large, resampled
-   * down, shared through the room's images and kept in this browser. Says what was wrong with it,
-   * or null when it was taken.
+   * down, shared through the room's images and kept in this browser. A guest, who may not add to
+   * the room's images, is turned away. Says what was wrong with it, or null when it was taken.
    */
   async setPicture(file: Blob): Promise<DicePictureTrouble | null> {
+    if (!this.permission.canEditTabletop) return 'notAllowed';
     if (file.size > DICE_PICTURE_MAX_BYTES) return 'tooLarge';
     if (!(await looksLikeImage(file))) return 'notPicture';
     const image = await ImageStorage.instance.addAsync(await this.prepare(file));
@@ -84,11 +87,12 @@ export class MyDiceService {
 
   /**
    * Puts this seat's dice picture back among the room's images where it is missing, as on a fresh
-   * visit, from the bytes this browser kept, so it comes back under the same identifier.
+   * visit, from the bytes this browser kept, so it comes back under the same identifier. A seat
+   * sitting as a guest, who may not add to the room's images, leaves them alone.
    */
   ensureShared(): Promise<void> {
     const picture = this.look().picture;
-    if (!picture) return Promise.resolve();
+    if (!picture || !this.permission.canEditTabletop) return Promise.resolve();
     const held = ImageStorage.instance.get(picture);
     if (held && ImageState.COMPLETE <= held.state) return Promise.resolve();
     this.restoring ??= this.restore(picture).finally(() => (this.restoring = null));

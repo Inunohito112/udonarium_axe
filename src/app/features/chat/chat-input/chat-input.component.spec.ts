@@ -11,6 +11,7 @@ import { DiceStage } from '@axe/domain/dice/dice-3d/dice-stage';
 import { DiceBot } from '@axe/domain/dice/dice-bot';
 import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { ChatComposeService } from '@axe/features/chat/chat-compose.service';
 import { ChatInputComponent } from '@axe/features/chat/chat-input/chat-input.component';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
@@ -277,6 +278,19 @@ describe('ChatInputComponent', () => {
       fixture.detectChanges();
       await fixture.whenStable();
       expect(button()).not.toBeNull();
+    });
+
+    it('is not offered to a guest, who is not offered the panel', async () => {
+      const role = PeerCursor.myCursor.role;
+      PeerCursor.myCursor.role = PeerRole.Guest;
+      try {
+        Config.instance.diceStage = 'frame';
+        fixture.detectChanges();
+        await fixture.whenStable();
+        expect(button()).toBeNull();
+      } finally {
+        PeerCursor.myCursor.role = role;
+      }
     });
 
     it('opens the panel for it', async () => {

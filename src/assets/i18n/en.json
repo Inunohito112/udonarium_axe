@@ -969,7 +969,8 @@
         "pictureHint": "Wrap round suits patterns such as stone or wood grain; on every face suits a logo or an emblem. The picture is sent to everyone in the room and kept when the room is saved.",
         "trouble_notPicture": "That could not be read as a picture.",
         "trouble_tooLarge": "Pictures over 8 MB cannot be used.",
-        "trouble_unstored": "The picture could not be kept in this browser."
+        "trouble_unstored": "The picture could not be kept in this browser.",
+        "trouble_notAllowed": "Guests cannot put a picture on their dice."
       }
     },
     "effect": {

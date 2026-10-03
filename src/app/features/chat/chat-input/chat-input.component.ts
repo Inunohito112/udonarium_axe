@@ -42,6 +42,7 @@ import { DataElement } from '@axe/domain/data/data-element';
 import { DiceBot } from '@axe/domain/dice/dice-bot';
 import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { ChatColorSettingComponent } from '@axe/features/chat/chat-color-setting/chat-color-setting.component';
 import { ChatComposeService } from '@axe/features/chat/chat-compose.service';
 import { ChatInputDiceBotHelper } from '@axe/features/chat/chat-input/chat-input-dicebot';
@@ -103,9 +104,14 @@ export class ChatInputComponent {
 
   private readonly roomPanels = inject(RoomPanelService);
 
-  /** Whether the room shows its rolls' dice, which is when a seat has reason to choose how its own look. */
+  /**
+   * Whether the room shows its rolls' dice, which is when a seat has reason to choose how its own
+   * look; never for a guest, who is not offered the panel.
+   */
   readonly showsMyDice = computed(() => {
     this.objectChange.versionOf('Config')();
+    this.objectChange.trackMyCursor();
+    if (PeerCursor.myRole === PeerRole.Guest) return false;
     return (this.objectStore.get<Config>('Config')?.diceStage ?? 'off') !== 'off';
   });
 

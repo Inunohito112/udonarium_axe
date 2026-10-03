@@ -244,8 +244,9 @@ export class ChatMessageService {
    * Image references to the speaker's data are lifted out into attachments, a trailing portrait
    * command picks the portrait and is removed from the text, and a line sent under a dice system is
    * tagged with it. A line from a seat that chose how its dice look carries that look, for the dice
-   * bot's answer to throw them in. A line not whispered to anyone also records who this reader last
-   * spoke as, which `sendSystemMessageAsLastSpeaker` follows.
+   * bot's answer to throw them in; a guest's carries no picture, since a guest may not add to the
+   * room's images. A line not whispered to anyone also records who this reader last spoke as, which
+   * `sendSystemMessageAsLastSpeaker` follows.
    */
   sendMessage(
     chatTab: ChatTab,
@@ -299,7 +300,7 @@ export class ChatMessageService {
     const look = this.myDice.look();
     const diceLook = encodeDiceLook(look);
     if (diceLook) chatMessage.diceLook = diceLook;
-    if (look.picture) {
+    if (look.picture && this.rolePermission.canEditTabletop) {
       chatMessage.diceImageIdentifier = look.picture;
       void this.myDice.ensureShared();
     }

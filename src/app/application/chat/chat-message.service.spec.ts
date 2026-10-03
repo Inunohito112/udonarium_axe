@@ -227,9 +227,10 @@ describe('ChatMessageService', () => {
   });
 
   describe('how the speaker’s dice look', () => {
-    function said(): ChatMessage {
+    function said(role?: PeerRole): ChatMessage {
       const service = TestBed.inject(ChatMessageService);
       PeerCursor.createMyCursor();
+      if (role) PeerCursor.myCursor.role = role;
       const chatTab = new ChatTab();
       chatTab.initialize();
       ObjectStore.instance.add(chatTab);
@@ -264,6 +265,18 @@ describe('ChatMessageService', () => {
       expect(line.diceImageIdentifier).toBe('ab'.repeat(32));
       expect(decodeDiceLook(line.diceLook, line.diceImageIdentifier).pictureFit).toBe('faces');
       expect(shared).toHaveBeenCalled();
+    });
+
+    it('carries no picture from a guest, who may not add to the room’s images', () => {
+      const dice = TestBed.inject(MyDiceService);
+      const shared = vi.spyOn(dice, 'ensureShared').mockResolvedValue();
+      dice.set({ ...PLAIN_DICE_LOOK, picture: 'ab'.repeat(32), body: '#1e6b52' });
+
+      const line = said(PeerRole.Guest);
+
+      expect(line.diceImageIdentifier ?? '').toBe('');
+      expect(decodeDiceLook(line.diceLook).body).toBe('#1e6b52');
+      expect(shared).not.toHaveBeenCalled();
     });
   });
 
