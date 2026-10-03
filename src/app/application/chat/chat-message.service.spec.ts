@@ -270,12 +270,12 @@ describe('ChatMessageService', () => {
     it('carries no picture from a guest, who may not add to the room’s images', () => {
       const dice = TestBed.inject(MyDiceService);
       const shared = vi.spyOn(dice, 'ensureShared').mockResolvedValue();
-      dice.set({ ...PLAIN_DICE_LOOK, picture: 'ab'.repeat(32), body: '#1e6b52' });
+      dice.set({ ...PLAIN_DICE_LOOK, material: 'metal', picture: 'ab'.repeat(32), body: '#1e6b52' });
 
       const line = said(PeerRole.Guest);
 
       expect(line.diceImageIdentifier ?? '').toBe('');
-      expect(decodeDiceLook(line.diceLook).body).toBe('#1e6b52');
+      expect(decodeDiceLook(line.diceLook)).toMatchObject({ material: 'metal', body: '#1e6b52' });
       expect(shared).not.toHaveBeenCalled();
     });
   });

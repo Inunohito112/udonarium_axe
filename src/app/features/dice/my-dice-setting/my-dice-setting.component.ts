@@ -83,7 +83,9 @@ export class MyDiceSettingComponent {
   });
 
   /** Whether glass is chosen on a device that draws it as resin, which this seat should be told. */
-  protected readonly glassDrawnAsResin = computed(() => this.look().material === 'glass' && this.renderLite.active());
+  protected readonly glassDrawnAsResin = computed(
+    () => this.look().material === 'glass' && !this.look().picture && this.renderLite.active()
+  );
 
   constructor() {
     void this.myDice.ensureShared();

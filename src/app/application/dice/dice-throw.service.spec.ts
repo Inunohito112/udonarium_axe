@@ -241,6 +241,12 @@ describe('DiceThrowService', () => {
     expect(service.throws().get(second)?.color).toBe('#2b8a3e');
   });
 
+  it('throws the dice to try a look out on as they wear it, resin under a picture', () => {
+    const key = service.tryOut({ ...PLAIN_DICE_LOOK, material: 'metal', picture: 'ab'.repeat(32) }, '#2b8a3e');
+
+    expect(service.throws().get(key)?.look.material).toBe('resin');
+  });
+
   it('lets the dice thrown to try a look out go when asked', async () => {
     const key = service.tryOut(PLAIN_DICE_LOOK, '#2b8a3e');
     expect(service.throws().has(key)).toBe(true);

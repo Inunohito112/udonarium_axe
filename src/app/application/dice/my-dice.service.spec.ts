@@ -3,7 +3,7 @@ import { DICE_PICTURE_MAX_BYTES, DICE_PICTURE_PREPARER, MyDiceService } from '@a
 import { DiceImageStore } from '@axe/core/storage/dice-image-store';
 import { ImageFile } from '@axe/core/storage/image-file';
 import { ImageStorage } from '@axe/core/storage/image-storage';
-import { PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
+import { PLAIN_DICE_LOOK, wornDiceLook } from '@axe/domain/dice/dice-3d/dice-look';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
@@ -145,10 +145,11 @@ describe('MyDiceService', () => {
       service.set({ ...PLAIN_DICE_LOOK, material: 'metal' });
 
       await service.setPicture(new Blob([PNG_HEAD], { type: 'image/png' }));
-      expect(service.look().material).toBe('resin');
+      expect(wornDiceLook(service.look()).material).toBe('resin');
 
       service.removePicture();
       expect(service.look().picture).toBe('');
+      expect(service.look().material).toBe('metal');
       expect(removed).toHaveBeenCalledWith(PICTURE);
     });
 

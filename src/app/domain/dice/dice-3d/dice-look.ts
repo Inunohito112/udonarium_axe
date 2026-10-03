@@ -13,8 +13,10 @@ export type DicePictureFit = (typeof DICE_PICTURE_FITS)[number];
  * How the one who rolls wants their dice to look, which everyone sees them in.
  *
  * An empty body is the colour the roll was said in, and an empty ink is worked out to stand out
- * from the body, so a look that sets neither changes nothing but the material. A die with a picture
- * is resin: the picture is its pattern, and marble's swirl or metal's sheen would fight it.
+ * from the body, so a look that sets neither changes nothing but the material. A die wears a
+ * picture as resin: the picture is its pattern, and marble's swirl or metal's sheen would fight it.
+ * The material chosen is kept under the picture all the same, for dice drawn without it: once it
+ * comes off, or on a line that does not carry it, as a guest's.
  */
 export interface DiceLook {
   readonly material: DiceMaterial;
@@ -44,7 +46,7 @@ export function isPlainDiceLook(look: DiceLook): boolean {
  * A look as a line carries it: nothing for the plain one, and only what differs from it otherwise.
  *
  * The picture is left out: a line carries it in an attribute of its own, named so that saving the
- * room keeps the picture with it.
+ * room keeps the picture with it. The material is written as chosen, under a picture too.
  */
 export function encodeDiceLook(look: DiceLook): string {
   const tidy = asDiceLook(look);
@@ -57,10 +59,10 @@ export function encodeDiceLook(look: DiceLook): string {
 }
 
 /**
- * Reads the look a line carries, with the picture it carries beside it. Nothing, as on a line said
- * before looks were offered, is the plain look; so is anything that cannot be read. A material this
- * version does not know, from a later one, is read as resin, and a colour that is not one is left
- * to the default.
+ * Reads the look a line carries, with the picture it carries beside it, as the dice wear it. Nothing,
+ * as on a line said before looks were offered, is the plain look; so is anything that cannot be
+ * read. A material this version does not know, from a later one, is read as resin, and a colour that
+ * is not one is left to the default.
  */
 export function decodeDiceLook(raw: unknown, picture: unknown = ''): DiceLook {
   let fields: unknown = {};
@@ -72,18 +74,26 @@ export function decodeDiceLook(raw: unknown, picture: unknown = ''): DiceLook {
     }
   }
   if (!fields || typeof fields !== 'object' || Array.isArray(fields)) fields = {};
-  return asDiceLook({ ...(fields as Record<string, unknown>), picture });
+  return wornDiceLook(asDiceLook({ ...(fields as Record<string, unknown>), picture }));
 }
 
-/** Anything at all read as a look, keeping what makes sense of it and the default for the rest. */
+/**
+ * Anything at all read as a look as it was chosen, keeping what makes sense of it and the default
+ * for the rest. The material is kept under a picture: see `wornDiceLook`.
+ */
 export function asDiceLook(raw: unknown): DiceLook {
   if (!raw || typeof raw !== 'object') return PLAIN_DICE_LOOK;
   const fields = raw as Record<string, unknown>;
   const picture =
     typeof fields['picture'] === 'string' && IMAGE_IDENTIFIER.test(fields['picture']) ? fields['picture'] : '';
-  const material = picture ? 'resin' : (DICE_MATERIALS.find((known) => known === fields['material']) ?? 'resin');
+  const material = DICE_MATERIALS.find((known) => known === fields['material']) ?? 'resin';
   const pictureFit = DICE_PICTURE_FITS.find((known) => known === fields['pictureFit']) ?? 'wrap';
   return { material, body: colorOf(fields['body']), ink: colorOf(fields['ink']), picture, pictureFit };
+}
+
+/** A look as the dice wear it: resin while they wear a picture, whatever material was chosen. */
+export function wornDiceLook(look: DiceLook): DiceLook {
+  return look.picture && look.material !== 'resin' ? { ...look, material: 'resin' } : look;
 }
 
 function colorOf(raw: unknown): string {

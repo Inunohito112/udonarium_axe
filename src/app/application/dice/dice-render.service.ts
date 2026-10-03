@@ -9,7 +9,7 @@ import { ImageState } from '@axe/core/storage/image-file';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { clipMatrixOf, columnsOf, eyeOf, multiply, Point3, transform } from '@axe/core/transform/css-clip-matrix';
-import type { DiceMaterial } from '@axe/domain/dice/dice-3d/dice-look';
+import { type DiceMaterial, wornDiceLook } from '@axe/domain/dice/dice-3d/dice-look';
 import type { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
 import { Config } from '@axe/domain/peer/config';
 import type { Dice3dEngine, DicePicture, DrawnRegion, PreparedThrow } from '@axe/infrastructure/dice-3d/dice-3d-engine';
@@ -178,7 +178,7 @@ export class DiceRenderService {
     // of this seat's own first roll.
     effect(() => {
       const throws = this.throws.throws();
-      const wanted = [this.myDice.look().material];
+      const wanted = [wornDiceLook(this.myDice.look()).material];
       for (const diceThrow of throws.values()) if (diceThrow.phase === 'working') wanted.push(diceThrow.look.material);
       untracked(() => this.warm(wanted));
     });
@@ -465,7 +465,7 @@ export class DiceRenderService {
     this.starting ??= this.loadEngine()
       .then((engine) => {
         this.engine = engine;
-        this.warm([this.myDice.look().material]);
+        this.warm([wornDiceLook(this.myDice.look()).material]);
         this.wake();
         return engine;
       })

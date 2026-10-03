@@ -5,6 +5,7 @@ import {
   encodeDiceLook,
   isPlainDiceLook,
   PLAIN_DICE_LOOK,
+  wornDiceLook,
 } from '@axe/domain/dice/dice-3d/dice-look';
 
 describe('dice look', () => {
@@ -81,8 +82,16 @@ describe('dice look', () => {
     });
 
     it('makes a die with a picture resin, whatever material it was asked to be', () => {
-      expect(asDiceLook({ material: 'marble', picture: PICTURE }).material).toBe('resin');
+      expect(wornDiceLook({ ...PLAIN_DICE_LOOK, material: 'marble', picture: PICTURE }).material).toBe('resin');
       expect(decodeDiceLook('{"material":"glass"}', PICTURE).material).toBe('resin');
+    });
+
+    it('keeps the material chosen under a picture, for dice drawn without it', () => {
+      const look: DiceLook = { ...PLAIN_DICE_LOOK, material: 'metal', picture: PICTURE };
+
+      expect(asDiceLook(look).material).toBe('metal');
+      expect(decodeDiceLook(encodeDiceLook(look), '').material).toBe('metal');
+      expect(decodeDiceLook(encodeDiceLook(look), PICTURE).material).toBe('resin');
     });
 
     it('reads a picture that is not one an image is known by as none', () => {

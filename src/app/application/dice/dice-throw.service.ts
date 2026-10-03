@@ -9,7 +9,7 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { canRoleViewTab } from '@axe/domain/chat/chat-tab-permission';
-import { decodeDiceLook, DiceLook } from '@axe/domain/dice/dice-3d/dice-look';
+import { decodeDiceLook, DiceLook, wornDiceLook } from '@axe/domain/dice/dice-3d/dice-look';
 import { DiceStage, showsInFrame, showsOnTable } from '@axe/domain/dice/dice-3d/dice-stage';
 import { DieToThrow, labelOf, ThrowPlan, throwPlanOf, traysOf } from '@axe/domain/dice/dice-3d/dice-throw-plan';
 import { upFace } from '@axe/domain/dice/dice-3d/die-symmetry';
@@ -239,9 +239,11 @@ export class DiceThrowService {
   /**
    * Throws one of each die in a look, to see it by before choosing it: in a frame of its own, kept by
    * the key given back, and in place of the try before it. The dice land on numbers of their own,
-   * since no roll was made; a reader who keeps the screen still has them laid down.
+   * since no roll was made; a reader who keeps the screen still has them laid down. They wear the
+   * look as dice do, resin under a picture.
    */
-  tryOut(look: DiceLook, rollColor: string): string {
+  tryOut(chosen: DiceLook, rollColor: string): string {
+    const look = wornDiceLook(chosen);
     const key = `${TRY_OUT}${++this.tries}`;
     const plan = throwPlanOf({
       system: '',
