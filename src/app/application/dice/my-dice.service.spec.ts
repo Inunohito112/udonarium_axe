@@ -88,6 +88,22 @@ describe('MyDiceService', () => {
       expect(service.look().picture).toBe('');
     });
 
+    it('lets go of the copy kept for the picture it replaces', async () => {
+      const added = vi.spyOn(ImageStorage.instance, 'addAsync');
+      added.mockResolvedValueOnce({ identifier: PICTURE, blob: new Blob([PNG_HEAD]) } as unknown as ImageFile);
+      added.mockResolvedValueOnce({ identifier: 'cd'.repeat(32), blob: new Blob([PNG_HEAD]) } as unknown as ImageFile);
+      vi.spyOn(DiceImageStore.instance, 'put').mockResolvedValue(true);
+      const removed = vi.spyOn(DiceImageStore.instance, 'remove').mockResolvedValue();
+      const service = TestBed.inject(MyDiceService);
+
+      await service.setPicture(new Blob([PNG_HEAD], { type: 'image/png' }));
+      expect(removed).not.toHaveBeenCalled();
+      await service.setPicture(new Blob([PNG_HEAD], { type: 'image/png' }));
+
+      expect(service.look().picture).toBe('cd'.repeat(32));
+      expect(removed).toHaveBeenCalledWith(PICTURE);
+    });
+
     describe('for a guest, who may not add to the room’s images', () => {
       const original = PeerCursor.myCursor;
 

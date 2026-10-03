@@ -57,9 +57,10 @@ export class MyDiceService {
   }
 
   /**
-   * Puts a picture on this seat's dice. It is checked to be a picture and not too large, resampled
-   * down, shared through the room's images and kept in this browser. A guest, who may not add to
-   * the room's images, is turned away. Says what was wrong with it, or null when it was taken.
+   * Puts a picture on this seat's dice in place of any before it, whose copy in this browser is let
+   * go. It is checked to be a picture and not too large, resampled down, shared through the room's
+   * images and kept in this browser. A guest, who may not add to the room's images, is turned away.
+   * Says what was wrong with it, or null when it was taken.
    */
   async setPicture(file: Blob): Promise<DicePictureTrouble | null> {
     if (!this.permission.canEditTabletop) return 'notAllowed';
@@ -68,7 +69,9 @@ export class MyDiceService {
     const image = await ImageStorage.instance.addAsync(await this.prepare(file));
     const bytes = image.blob;
     if (!bytes || !(await this.pictures.put(image.identifier, bytes))) return 'unstored';
+    const before = this.look().picture;
     this.set({ ...this.look(), picture: image.identifier });
+    if (before && before !== image.identifier) void this.pictures.remove(before);
     return null;
   }
 
