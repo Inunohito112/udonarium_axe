@@ -150,6 +150,8 @@ export class DiceThrowService {
   private readonly waits = new Map<string, ReturnType<typeof setTimeout>>();
   /** What each line read lately throws, which is read afresh from its words otherwise. */
   private readonly plans = new Map<string, ThrowPlan>();
+  /** The frames each line was last given, handed back while nothing in them changes. */
+  private readonly framesGiven = new Map<string, readonly DiceFrame[]>();
   private tries = 0;
   /** Where the room shows its rolls' dice; a room not yet set up shows none, and is not set up from here. */
   private readonly diceStage = computed<DiceStage>(() => {
@@ -184,7 +186,8 @@ export class DiceThrowService {
    * not see the roll, or it has no dice to show.
    *
    * A frame waiting for its dice already has its shape, so a line keeps its height from the start
-   * and the log does not jump when they come.
+   * and the log does not jump when they come. A line whose frames are as they were is handed the
+   * same ones, so a change to another line's throw leaves it be.
    */
   framesOf(messageIdentifier: string): readonly DiceFrame[] {
     if (!showsInFrame(this.diceStage()) || isNetworkIsolated()) return NO_FRAMES;
@@ -193,13 +196,19 @@ export class DiceThrowService {
     const plan = this.planOf(message);
     const trays = traysOf(plan.dice);
     const state = this.state();
-    return trays.flatMap((dice, part) => {
+    const frames = trays.flatMap((dice, part) => {
       const key = throwKeyOf(messageIdentifier, part, 'frame');
       const diceThrow = state.get(key) ?? null;
       if (diceThrow?.phase === 'failed') return [];
       const aspect = diceThrow?.aspect ?? frameAspectFor(dice.length);
       return [{ key, aspect, overflow: overflowOn(part, trays.length, plan), diceThrow }];
     });
+    const given = this.framesGiven.get(messageIdentifier);
+    if (given && sameFrames(given, frames)) return given;
+    this.framesGiven.delete(messageIdentifier);
+    this.framesGiven.set(messageIdentifier, frames);
+    if (this.framesGiven.size > KEPT_THROWS * 4) this.framesGiven.delete(this.framesGiven.keys().next().value!);
+    return frames;
   }
 
   /**
@@ -559,6 +568,20 @@ export class DiceThrowService {
     next.set(key, { ...current, ...change });
     this.state.set(next);
   }
+}
+
+/** Whether two lists of a line's frames show the same throws in the same shapes. */
+function sameFrames(a: readonly DiceFrame[], b: readonly DiceFrame[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every(
+      (frame, i) =>
+        frame.key === b[i].key &&
+        frame.aspect === b[i].aspect &&
+        frame.overflow === b[i].overflow &&
+        frame.diceThrow === b[i].diceThrow
+    )
+  );
 }
 
 /** Whether a throw is one of the dice thrown to try a look out. */

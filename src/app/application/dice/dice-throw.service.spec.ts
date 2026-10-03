@@ -595,6 +595,18 @@ describe('DiceThrowService', () => {
     expect(thrown(first)?.shown).toEqual(['17', '2']);
   });
 
+  it('hands a line the same frames while another line’s throw changes, and new ones once its own does', async () => {
+    const line = answer();
+    await throwToRest(line);
+    const before = service.framesOf(line.identifier);
+
+    await throwToRest(answer());
+    expect(service.framesOf(line.identifier)).toBe(before);
+
+    service.fail(line.identifier);
+    expect(service.framesOf(line.identifier)).not.toBe(before);
+  });
+
   it('lets lines scrolled back over go before a roll that tumbled, keeping that one whole', async () => {
     const roll = answer();
     await throwToRest(roll);
