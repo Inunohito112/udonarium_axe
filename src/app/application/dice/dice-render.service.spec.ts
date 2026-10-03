@@ -35,6 +35,8 @@ class StandInEngine {
   /** The picture each set-up was made wearing, as its key and fit, or '' for none. */
   readonly pictures: string[] = [];
   readonly warmed: string[] = [];
+  /** What each set-up's dice had their own swirls worked out from. */
+  readonly seeds: string[] = [];
   /** What each set-up was made for, in the order made, and those let go. */
   readonly made: string[] = [];
   readonly released: string[] = [];
@@ -47,7 +49,9 @@ class StandInEngine {
     ink?: string;
     material?: string;
     picture?: { key: string; fit: string };
+    seedKey?: string;
   }): PreparedThrow {
+    this.seeds.push(draw.seedKey ?? '');
     this.pictures.push(draw.picture ? `${draw.picture.key}:${draw.picture.fit}` : '');
     this.accents.push(draw.accent ?? '');
     this.inks.push(draw.ink ?? '');
@@ -471,6 +475,7 @@ describe('DiceRenderService', () => {
     expect(engine.made).toEqual(['a', 'a']);
     expect(engine.released).toEqual(['a']);
     expect(engine.drawn).toHaveLength(2);
+    expect(engine.seeds).toEqual(['a', 'a']);
   });
 
   it('puts every throw away when the engine cannot start', async () => {

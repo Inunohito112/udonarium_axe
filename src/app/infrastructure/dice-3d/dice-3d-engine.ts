@@ -1,6 +1,7 @@
 import type { DiceMaterial, DicePictureFit } from '@axe/domain/dice/dice-3d/dice-look';
 import { DieLabels } from '@axe/domain/dice/dice-3d/dice-throw-plan';
 import { dieRadiusOf, DieShape, polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
+import { throwSeedOf } from '@axe/domain/dice/dice-3d/throw-seed';
 import { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
 import {
   DiceDressing,
@@ -72,6 +73,12 @@ export interface ThrowToDraw {
   readonly picture?: DicePicture;
   /** A critical or a fumble, which the dice flash gold or red as they come to rest; empty for neither. */
   readonly accent?: 'critical' | 'fumble' | '';
+  /**
+   * What the dice's own swirls and the parts of a wrapped picture they show are worked out from:
+   * the same for the roll wherever and however it is drawn, so they do not change when its
+   * recording is cut down to where the dice came to rest.
+   */
+  readonly seedKey?: string;
   readonly tray: Tray;
   readonly result: DiceThrowResult;
 }
@@ -324,7 +331,7 @@ export class Dice3dEngine {
     const bodies = draw.dice.map((die, index) => {
       const body = new Group();
       const shared = this.materialOf(die.shape, die.labels, look, material, picture);
-      const seed = seedOf(draw.result, index);
+      const seed = seedOf(draw.seedKey ?? '', index);
       const worn =
         material === 'marble'
           ? this.ownMaterial(shared, 'marble', die.shape, die.labels, look, seed)
@@ -701,14 +708,9 @@ const STILL_D6: DiceThrowResult = {
   fault: null,
 };
 
-/**
- * A seed for a die's swirl, from where the recording first has it: the same on every device that
- * throws the roll, and different for every die and every throw.
- */
-function seedOf(result: DiceThrowResult, index: number): number {
-  const at = index * FRAME_STRIDE;
-  const mixed = Math.sin(result.frames[at] * 12.9898 + result.frames[at + 1] * 78.233 + index * 37.719) * 43758.5453;
-  return (mixed - Math.floor(mixed)) * 50;
+/** A seed for a die's swirl, from what its roll is known by: different for every die and every roll. */
+function seedOf(seedKey: string, index: number): number {
+  return (throwSeedOf(seedKey, index) % 50_000) / 1000;
 }
 
 /** Sets every die where the recording has it some seconds in, between the two frames about that moment. */

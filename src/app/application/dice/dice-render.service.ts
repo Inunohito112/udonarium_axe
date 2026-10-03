@@ -1,5 +1,5 @@
 import { DestroyRef, effect, inject, Injectable, InjectionToken, untracked } from '@angular/core';
-import { DiceThrow, DiceThrowService } from '@axe/application/dice/dice-throw.service';
+import { DiceThrow, DiceThrowService, throwKeyOf } from '@axe/application/dice/dice-throw.service';
 import { DICE_PICTURE_MAX_SIDE, MyDiceService } from '@axe/application/dice/my-dice.service';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
@@ -480,6 +480,7 @@ export class DiceRenderService {
       material: this.drawnAs(diceThrow.look.material),
       ...(picture ? { picture } : {}),
       accent: diceThrow.outcome === 'critical' || diceThrow.outcome === 'fumble' ? diceThrow.outcome : '',
+      seedKey: throwKeyOf(diceThrow.messageIdentifier, diceThrow.part, 'frame'),
       tray: diceThrow.tray,
       result: diceThrow.result!,
     });
