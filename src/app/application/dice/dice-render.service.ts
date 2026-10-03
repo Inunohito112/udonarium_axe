@@ -1,6 +1,6 @@
 import { DestroyRef, effect, inject, Injectable, InjectionToken, untracked } from '@angular/core';
 import { DiceThrow, DiceThrowService } from '@axe/application/dice/dice-throw.service';
-import { MyDiceService } from '@axe/application/dice/my-dice.service';
+import { DICE_PICTURE_MAX_SIDE, MyDiceService } from '@axe/application/dice/my-dice.service';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { RenderLiteService } from '@axe/application/ui/render-lite.service';
@@ -30,7 +30,8 @@ export const DICE_ENGINE_LOADER = new InjectionToken<() => Promise<DiceEngine>>(
 
 /**
  * Reads a picture dice wear, by its identifier among the room's images, as something the engine can
- * draw; null while it has not arrived whole.
+ * draw; null while it has not arrived whole. A line may point at any of the room's images, so one
+ * larger than a dice picture is made is read down to that size.
  */
 export const DICE_PICTURE_LOADER = new InjectionToken<(identifier: string) => Promise<FacePicture | null>>(
   'DICE_PICTURE_LOADER',
@@ -39,7 +40,16 @@ export const DICE_PICTURE_LOADER = new InjectionToken<(identifier: string) => Pr
     factory: () => async (identifier) => {
       const image = ImageStorage.instance.get(identifier);
       if (!image || image.state < ImageState.COMPLETE || !image.blob) return null;
-      return createImageBitmap(image.blob);
+      const whole = await createImageBitmap(image.blob);
+      const scale = DICE_PICTURE_MAX_SIDE / Math.max(whole.width, whole.height);
+      if (scale >= 1) return whole;
+      const small = await createImageBitmap(whole, {
+        resizeWidth: Math.max(1, Math.round(whole.width * scale)),
+        resizeHeight: Math.max(1, Math.round(whole.height * scale)),
+        resizeQuality: 'high',
+      });
+      whole.close();
+      return small;
     },
   }
 );
