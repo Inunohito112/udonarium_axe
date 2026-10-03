@@ -476,6 +476,7 @@ describe('SkinService', () => {
       expect(await skins.importSkin(zipped)).toBe(true);
       expect(skins.mat().color).toBe('#1f4d3a');
       expect(skins.mat().layer).toMatchObject({ name: 'mat.png', fit: 'tile' });
+      expect(skins.diceMat().picture?.backgroundImage).toBe('url("blob:skin")');
     });
 
     it('is laid plain by a skin read in from before mats were offered', async () => {

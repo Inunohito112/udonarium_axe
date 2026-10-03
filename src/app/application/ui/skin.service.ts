@@ -577,8 +577,11 @@ export class SkinService {
       };
     }
 
-    this.keepStack(mode, brought);
-    this.keepMat(mode, mat);
+    this.stacks[mode].set(brought);
+    write(LAYERS_KEY[mode], JSON.stringify(brought));
+    this.mats[mode].set(mat);
+    write(MAT_KEY[mode], JSON.stringify(mat));
+    this.releaseUnused();
     this.build(skin.recipe, mode);
     this.editLadder(mode);
     return true;
