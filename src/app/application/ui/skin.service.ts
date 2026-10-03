@@ -18,7 +18,7 @@ import {
   reorderLayers,
   SkinLayer,
 } from '@axe/domain/ui/skin-layer';
-import { DiceMat, parseMat } from '@axe/domain/ui/skin-mat';
+import { DiceMat, parseMat, PLAIN_MAT } from '@axe/domain/ui/skin-mat';
 import { panelTone, SkinMode, SkinRecipe, SkinTokens, skinTokens } from '@axe/domain/ui/skin-palette';
 import { STANDARD_TOKENS } from '@axe/domain/ui/skin-standard';
 
@@ -534,7 +534,8 @@ export class SkinService {
   }
 
   /**
-   * Reads a skin someone was handed, and wears it. Anything unreadable is left alone.
+   * Reads a skin someone was handed, and wears it. Anything unreadable is left alone. A skin from
+   * before mats were offered lays the plain one, as the rest of what it wears replaces the seat's.
    *
    * The whole skin is read before any of it is worn: a file whose pictures will not open is
    * refused outright rather than taking the stack already on the seat down with it.
@@ -562,7 +563,7 @@ export class SkinService {
       return false;
     }
 
-    let mat: DiceMat | null = null;
+    let mat: DiceMat = PLAIN_MAT;
     if (skin.mat) {
       const wanted = skin.mat.layer;
       const packed = wanted && entries.find((entry) => entry.name === wanted.file);
@@ -577,7 +578,7 @@ export class SkinService {
     }
 
     this.keepStack(mode, brought);
-    if (mat) this.keepMat(mode, mat);
+    this.keepMat(mode, mat);
     this.build(skin.recipe, mode);
     this.editLadder(mode);
     return true;

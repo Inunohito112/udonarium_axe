@@ -477,6 +477,25 @@ describe('SkinService', () => {
       expect(skins.mat().color).toBe('#1f4d3a');
       expect(skins.mat().layer).toMatchObject({ name: 'mat.png', fit: 'tile' });
     });
+
+    it('is laid plain by a skin read in from before mats were offered', async () => {
+      const { createZipBlob } = await import('@axe/core/storage/zip-archive');
+      const { skins } = setup();
+      skins.setMatColor('#5c1f1f');
+      const text = JSON.stringify({
+        kind: 'udonarium-axe-skin',
+        version: 1,
+        name: 'old',
+        mode: 'light',
+        recipe: { hue: 111, chroma: 15, accentHue: 20, accentChroma: 40 },
+        layers: [],
+      });
+      const zipped = await createZipBlob([new File([text], SKIN_FILE_NAME, { type: 'application/json' })]);
+
+      expect(await skins.importSkin(zipped)).toBe(true);
+      expect(skins.mat().color).toBe(DEFAULT_MAT_COLOR);
+      expect(skins.mat().layer).toBeNull();
+    });
   });
 
   it('leaves the seat alone when the zip is not a skin', async () => {
