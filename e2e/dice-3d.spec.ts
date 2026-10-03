@@ -178,6 +178,36 @@ test.describe('チャットのダイスを 3D で転がす', () => {
     expect(await isDrawnOn(stage.locator('canvas'))).toBe(true);
   });
 
+  test('マイダイスで画像を貼ると、選んだ貼り方で自分のロールが転がること', async ({ page }) => {
+    await chooseStage(page, 'frame');
+
+    await page.getByTestId('chat-my-dice').click();
+    await page.getByTestId('my-dice-picture-file').setInputFiles({
+      name: 'checks.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAL0lEQVR4nGPUqAhggIEFNm/g7IQjIljFmRhIBLTXwEKMu5HFB6MfiHH3aDzQXAMAc2EX3rQP/moAAAAASUVORK5CYII=',
+        'base64'
+      ),
+    });
+    await expect(page.getByTestId('my-dice-picture-shown')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('my-dice-material-metal')).toBeDisabled();
+    await page.getByTestId('my-dice-picture-fit-faces').click();
+    await page
+      .locator('ui-panel')
+      .filter({ has: page.getByTestId('my-dice-picture') })
+      .locator('button', { hasText: /^close$/ })
+      .dispatchEvent('click');
+
+    const { answer, total } = await roll(page, '1d6');
+
+    const stage = answer.getByTestId('dice-roll-stage');
+    await expect(stage).toHaveAttribute('data-state', 'settled', { timeout: 20000 });
+    await expect(stage).toHaveAttribute('data-picture-fit', 'faces');
+    await expect(stage).toHaveAttribute('data-shown', String(total));
+    await expect.poll(() => isDrawnOn(stage.locator('canvas')), { timeout: 10000 }).toBe(true);
+  });
+
   test('スキンで選んだマットの色が、ダイスの枠に敷かれること', async ({ page }) => {
     await chooseStage(page, 'frame');
     const display = await openSeatDisplay(page);

@@ -5,6 +5,7 @@
   [attr.data-state]="frame().diceThrow?.phase ?? 'waiting'"
   [attr.data-shown]="frame().diceThrow?.shown?.join(' ') ?? ''"
   [attr.data-material]="frame().diceThrow?.look?.material ?? null"
+  [attr.data-picture-fit]="frame().diceThrow?.look?.picture ? frame().diceThrow?.look?.pictureFit : null"
   [attr.data-mat]="mat().color"
 >
   <dice-mat [mat]="mat()" />
