@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { DiceFrame, DiceThrowService } from '@axe/application/dice/dice-throw.service';
 import { DicePictureTrouble, MyDiceService } from '@axe/application/dice/my-dice.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
@@ -88,6 +88,7 @@ export class MyDiceSettingComponent {
   constructor() {
     void this.myDice.ensureShared();
     this.roll();
+    inject(DestroyRef).onDestroy(() => this.throws.endTryOut());
   }
 
   protected choose(material: DiceMaterial): void {

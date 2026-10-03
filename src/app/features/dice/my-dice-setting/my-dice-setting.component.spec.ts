@@ -11,6 +11,7 @@ import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 describe('MyDiceSettingComponent', () => {
   let fixture: ComponentFixture<MyDiceSettingComponent>;
   let tries: { look: DiceLook; color: string }[];
+  let ended: number;
 
   function element<T extends HTMLElement>(testId: string): T {
     return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as T;
@@ -26,6 +27,7 @@ describe('MyDiceSettingComponent', () => {
     PeerCursor.createMyCursor();
     PeerCursor.myCursor.chatColorCode = ['#2b8a3e', '#000000', '#000000'];
     tries = [];
+    ended = 0;
     TestBed.configureTestingModule({
       imports: [MyDiceSettingComponent],
       providers: [
@@ -39,6 +41,7 @@ describe('MyDiceSettingComponent', () => {
               return `try-out:${tries.length}`;
             },
             showStill: () => undefined,
+            endTryOut: () => ended++,
           },
         },
       ],
@@ -52,6 +55,15 @@ describe('MyDiceSettingComponent', () => {
     await settled();
 
     expect(tries).toEqual([{ look: PLAIN_DICE_LOOK, color: '#2b8a3e' }]);
+  });
+
+  it('lets the dice thrown to try the look out go as it closes', async () => {
+    await settled();
+    expect(ended).toBe(0);
+
+    fixture.destroy();
+
+    expect(ended).toBe(1);
   });
 
   it('keeps the material chosen and throws the dice again in it', async () => {

@@ -233,6 +233,29 @@ describe('DiceThrowService', () => {
     expect(service.throws().get(second)?.color).toBe('#2b8a3e');
   });
 
+  it('lets the dice thrown to try a look out go when asked', async () => {
+    const key = service.tryOut(PLAIN_DICE_LOOK, '#2b8a3e');
+    expect(service.throws().has(key)).toBe(true);
+
+    service.endTryOut();
+
+    expect(service.throws().has(key)).toBe(false);
+  });
+
+  it('counts the dice thrown to try a look out as no roll among those kept', async () => {
+    TestBed.inject(MotionService).setting.set('off');
+    const lines = Array.from({ length: KEPT_THROWS }, () => answer());
+    const last = lines[lines.length - 1];
+    for (const line of lines.slice(0, -1)) callDiceThrow({ messageIdentifier: line.identifier }, 'here');
+    await vi.waitFor(() => expect(thrown(lines[lines.length - 2])?.phase).toBe('settled'));
+
+    service.tryOut(PLAIN_DICE_LOOK, '#2b8a3e');
+    callDiceThrow({ messageIdentifier: last.identifier }, 'here');
+
+    await vi.waitFor(() => expect(thrown(last)?.phase).toBe('settled'));
+    expect(thrown(lines[0])).toBeDefined();
+  });
+
   it('lets the dice come to rest once their recording has played', async () => {
     const line = answer();
     callDiceThrow({ messageIdentifier: line.identifier }, 'here');
@@ -480,6 +503,15 @@ describe('DiceThrowService', () => {
         await vi.waitFor(() => expect(thrownOn(line, 'frame').length).toBeGreaterThan(0));
       }
     }
+
+    it(`tumbles ${MAX_TUMBLING} rolls beside dice thrown to try a look out, which no line said`, async () => {
+      service.tryOut(PLAIN_DICE_LOOK, '#2b8a3e');
+      const lines = Array.from({ length: MAX_TUMBLING }, () => answer());
+
+      await throwAll(lines);
+
+      expect(lines.map((line) => thrownOn(line, 'frame')[0].still)).toEqual(Array(MAX_TUMBLING).fill(false));
+    });
 
     it(`tumbles a roll of ${MAX_TUMBLING_DICE / 2} dice with nothing else on the move`, async () => {
       const big = answer({ faces: d6s(200) });

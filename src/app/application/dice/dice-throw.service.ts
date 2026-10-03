@@ -241,7 +241,7 @@ export class DiceThrowService {
     });
     const still = !this.motion.enabled();
     const tray = frameTrayFor(plan.dice.length);
-    this.forget((kept) => kept.messageIdentifier.startsWith(TRY_OUT));
+    this.endTryOut();
     this.add({
       key,
       messageIdentifier: key,
@@ -263,6 +263,11 @@ export class DiceThrowService {
     });
     void this.play([this.state().get(key)!], still);
     return key;
+  }
+
+  /** Lets the dice thrown to try a look out go, as when the panel they were thrown in closes. */
+  endTryOut(): void {
+    this.forget(isTryOut);
   }
 
   /** Gives up showing a throw, as when its dice cannot be drawn on this device. */
@@ -379,10 +384,13 @@ export class DiceThrowService {
   /**
    * Whether a roll's dice, so many in one place, may tumble beside those already on the move: always
    * when no other roll is, and otherwise while there are not too many rolls nor too many dice moving.
-   * A roll's own dice already thrown in its other place count among those moving.
+   * A roll's own dice already thrown in its other place count among those moving; dice thrown to try
+   * a look out, which no line said, do not.
    */
   private hasRoomToTumble(messageIdentifier: string, count: number): boolean {
-    const moving = [...this.state().values()].filter((t) => t.phase === 'working' || t.phase === 'rolling');
+    const moving = [...this.state().values()].filter(
+      (t) => (t.phase === 'working' || t.phase === 'rolling') && !isTryOut(t)
+    );
     const rolls = new Set(moving.map((t) => t.messageIdentifier));
     rolls.delete(messageIdentifier);
     if (rolls.size < 1) return true;
@@ -493,13 +501,14 @@ export class DiceThrowService {
 
   /**
    * Keeps throws, letting the oldest rolls go past the most kept. Rolls past the latest few keep
-   * only where their dice came to rest, which is all a line at rest draws.
+   * only where their dice came to rest, which is all a line at rest draws. Dice thrown to try a look
+   * out are no roll, and count as none.
    */
   private add(...diceThrows: DiceThrow[]): void {
     const next = new Map(this.state());
     for (const diceThrow of diceThrows) next.set(diceThrow.key, diceThrow);
     // Whole rolls are let go, the oldest first, so a roll shown in both places keeps both.
-    const rolls = [...new Set([...next.values()].map((t) => t.messageIdentifier))];
+    const rolls = [...new Set([...next.values()].filter((t) => !isTryOut(t)).map((t) => t.messageIdentifier))];
     const gone = new Set(rolls.slice(0, Math.max(0, rolls.length - KEPT_THROWS)));
     const folded = new Set(rolls.slice(0, Math.max(0, rolls.length - KEPT_IN_FULL)));
     for (const [key, kept] of next) {
@@ -539,6 +548,11 @@ export class DiceThrowService {
     next.set(key, { ...current, ...change });
     this.state.set(next);
   }
+}
+
+/** Whether a throw is one of the dice thrown to try a look out. */
+function isTryOut(diceThrow: DiceThrow): boolean {
+  return diceThrow.messageIdentifier.startsWith(TRY_OUT);
 }
 
 /** Runs some work in a quiet moment, or soon where the browser has no word for one. */
