@@ -235,6 +235,32 @@ describe('DiceRenderService', () => {
     expect(engine.drawn.map((d) => d.seconds)).toEqual([0, 0.4]);
   });
 
+  it('carries a throw on from where it was after a frame that took long to draw, as one building shaders does', async () => {
+    let clock = 0;
+    const clockRead = vi.spyOn(performance, 'now').mockImplementation(() => clock);
+    try {
+      const render = engine.render.bind(engine);
+      engine.render = (...args: Parameters<StandInEngine['render']>) => {
+        if (engine.drawn.length === 0) clock += 5000;
+        return render(...args);
+      };
+      throws.set(new Map([['a', throwOf('a', { startedAt: 0 })]]));
+      service.register(document.createElement('canvas'), 'a').resize(300, 90);
+      await nextFrame(0);
+      await nextFrame(100);
+      await nextFrame(5100);
+      await nextFrame(5600);
+
+      expect(engine.drawn.map((d) => d.seconds)).toEqual([0, 0, 0.5]);
+      expect(played).toEqual([
+        ['a', 100],
+        ['a', 5100],
+      ]);
+    } finally {
+      clockRead.mockRestore();
+    }
+  });
+
   it('tells the throws when one began to play, so it comes to rest when its dice do on the screen', async () => {
     throws.set(new Map([['a', throwOf('a', { startedAt: 0 })]]));
     service.register(document.createElement('canvas'), 'a').resize(300, 90);

@@ -72,6 +72,11 @@ const TABLE_REACH_SHADOW = 6;
  * milliseconds; longer than the drawing library takes to load on a slow device.
  */
 export const LATE_START_MS = 12_000;
+/**
+ * How long drawing one frame may take before the dice on show are held back by the time it took, in
+ * milliseconds, as when the first die of a material has its shaders built: far longer than a frame.
+ */
+export const STALL_MS = 200;
 /** How long the engine waits for a quiet moment to be readied in, at most, in milliseconds. */
 const WARM_UP_WITHIN_MS = 3000;
 /** How often the table's view is read again while it seems to stand still, in milliseconds. */
@@ -246,7 +251,28 @@ export class DiceRenderService {
     this.frame = requestAnimationFrame((now) => this.draw(now));
   }
 
+  /** Draws a frame, holding the dice on show back by the time it took where that was long. */
   private draw(now: number): void {
+    const began = performance.now();
+    this.drawFrame(now);
+    const spent = performance.now() - began;
+    if (spent > STALL_MS) this.holdBack(spent);
+  }
+
+  /**
+   * Has every throw on show carry on from where it was after a frame that took long to draw, rather
+   * than leap ahead by the time the frame took: the dice keep their tumble, and their while on the
+   * table, as though the frame had come at once.
+   */
+  private holdBack(ms: number): void {
+    for (const [key, from] of this.playFrom) {
+      this.playFrom.set(key, from + ms);
+      this.throws.played(key, from + ms);
+    }
+    for (const [key, rest] of this.restedAt) this.restedAt.set(key, rest + ms);
+  }
+
+  private drawFrame(now: number): void {
     this.frame = 0;
     const throws = this.throws.throws();
     const onTable = [...throws.values()].some((t) => t.stage === 'table' && t.result && t.phase !== 'failed');
