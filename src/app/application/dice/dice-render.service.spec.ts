@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   DICE_ENGINE_LOADER,
+  DICE_PICTURE_LOADER,
   DiceEngine,
   DiceRenderService,
   LATE_START_MS,
@@ -11,6 +12,7 @@ import {
 import { DiceThrow, DiceThrowService } from '@axe/application/dice/dice-throw.service';
 import { MyDiceService } from '@axe/application/dice/my-dice.service';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
+import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { RenderLiteService } from '@axe/application/ui/render-lite.service';
 import { Matrix3D } from '@axe/core/transform/matrix-3d';
 import { DiceMaterial, PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
@@ -30,12 +32,21 @@ class StandInEngine {
   readonly accents: string[] = [];
   readonly inks: string[] = [];
   readonly materials: string[] = [];
+  /** The picture each set-up was made wearing, as its key and fit, or '' for none. */
+  readonly pictures: string[] = [];
   readonly warmed: string[] = [];
   /** What each set-up was made for, in the order made, and those let go. */
   readonly made: string[] = [];
   readonly released: string[] = [];
 
-  prepare(draw: { color: string; accent?: string; ink?: string; material?: string }): PreparedThrow {
+  prepare(draw: {
+    color: string;
+    accent?: string;
+    ink?: string;
+    material?: string;
+    picture?: { key: string; fit: string };
+  }): PreparedThrow {
+    this.pictures.push(draw.picture ? `${draw.picture.key}:${draw.picture.fit}` : '');
     this.accents.push(draw.accent ?? '');
     this.inks.push(draw.ink ?? '');
     this.materials.push(draw.material ?? 'resin');
@@ -106,6 +117,8 @@ describe('DiceRenderService', () => {
   let engine: StandInEngine;
   let loads: number;
   let service: DiceRenderService;
+  /** Reads a picture the dice wear, which a test puts off or hands over as it needs. */
+  let readPicture: (identifier: string) => Promise<unknown>;
 
   async function nextFrame(at: number): Promise<void> {
     await Promise.resolve();
@@ -124,6 +137,7 @@ describe('DiceRenderService', () => {
     played = [];
     engine = new StandInEngine();
     loads = 0;
+    readPicture = async () => null;
     TestBed.configureTestingModule({
       providers: [
         ...TEST_PROVIDERS,
@@ -139,6 +153,7 @@ describe('DiceRenderService', () => {
           provide: CoordinateService,
           useValue: { tabletopTransformVersion: signal(0), tabletopSceneMatrix: () => new Matrix3D() },
         },
+        { provide: DICE_PICTURE_LOADER, useValue: (identifier: string) => readPicture(identifier) },
         {
           provide: DICE_ENGINE_LOADER,
           useValue: () => {
@@ -244,6 +259,59 @@ describe('DiceRenderService', () => {
     await nextFrame(16);
 
     expect(engine.inks).toEqual(['#e8c547', '']);
+  });
+
+  describe('wearing a picture of the roller’s own', () => {
+    const PICTURE = 'ab'.repeat(32);
+    const pictured = (pictureFit: 'wrap' | 'faces') =>
+      throwOf('a', { phase: 'settled', still: true, look: { ...PLAIN_DICE_LOOK, picture: PICTURE, pictureFit } });
+
+    /** A canvas that takes the copied picture, so the stage counts as drawn once it is. */
+    function drawable(): HTMLCanvasElement {
+      const canvas = document.createElement('canvas');
+      const context = { clearRect: () => undefined, drawImage: () => undefined };
+      canvas.getContext = (() => context) as unknown as HTMLCanvasElement['getContext'];
+      return canvas;
+    }
+
+    it('draws the dice without the picture until it has arrived, and again with it once it has', async () => {
+      let handOver: (picture: unknown) => void = () => undefined;
+      readPicture = () => new Promise((resolve) => (handOver = resolve));
+      throws.set(new Map([['a', pictured('faces')]]));
+      service.register(drawable(), 'a').resize(300, 90);
+      await nextFrame(0);
+      await nextFrame(16);
+      expect(engine.pictures).toEqual(['']);
+      expect(engine.drawn).toHaveLength(1);
+
+      handOver({ width: 4, height: 4 });
+      await nextFrame(32);
+      await nextFrame(48);
+
+      expect(engine.pictures).toEqual(['', `${PICTURE}:faces`]);
+      expect(engine.released).toEqual(['a']);
+      expect(engine.drawn).toHaveLength(2);
+    });
+
+    it('asks again for a picture that had not arrived, once the room’s images have changed', async () => {
+      const asked: string[] = [];
+      readPicture = async (identifier) => {
+        asked.push(identifier);
+        return asked.length > 1 ? { width: 4, height: 4 } : null;
+      };
+      throws.set(new Map([['a', pictured('wrap')]]));
+      service.register(document.createElement('canvas'), 'a').resize(300, 90);
+      await nextFrame(0);
+      await nextFrame(16);
+
+      TestBed.inject(ObjectChangeService).fileVersion.update((version) => version + 1);
+      TestBed.tick();
+      await nextFrame(32);
+      await nextFrame(48);
+
+      expect(asked).toEqual([PICTURE, PICTURE]);
+      expect(engine.pictures.at(-1)).toBe(`${PICTURE}:wrap`);
+    });
   });
 
   describe('in the material the one who rolled chose', () => {

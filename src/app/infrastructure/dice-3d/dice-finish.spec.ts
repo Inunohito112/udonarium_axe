@@ -1,12 +1,19 @@
-import { DiceMaterial } from '@axe/domain/dice/dice-3d/dice-look';
-import { DiceDressing, dressDie, faceColorsOf, FINISHES, veinOf } from '@axe/infrastructure/dice-3d/dice-finish';
+import {
+  DiceDressing,
+  DiceDressingKind,
+  dressDie,
+  faceColorsOf,
+  FINISHES,
+  veinOf,
+} from '@axe/infrastructure/dice-3d/dice-finish';
 import { Color, ShaderLib, Texture, WebGLProgramParametersWithUniforms } from 'three';
 
-function dressed(material: DiceMaterial) {
+function dressed(material: DiceDressingKind) {
   const dressing: DiceDressing = {
     diceMarks: { value: new Texture() },
     diceVein: { value: new Color(1, 1, 1) },
     diceSeed: { value: 7 },
+    dicePicture: { value: new Texture() },
   };
   const shader = {
     uniforms: {},
@@ -45,6 +52,23 @@ describe('dice finish', () => {
   it('takes the metal out of metal where its marks are painted', () => {
     expect(dressed('metal').shader.fragmentShader).toContain('metalnessFactor *= 1.0 - diceMark;');
     expect(dressed('marble').shader.fragmentShader).not.toContain('metalnessFactor *= 1.0 - diceMark;');
+  });
+
+  it('wraps a picture round a die from three ways across it, by where on the die each point lies and which way it faces', () => {
+    const { shader, dressing } = dressed('picture');
+
+    expect(shader.uniforms['dicePicture']).toBe(dressing.dicePicture);
+    expect(shader.vertexShader).toContain('vDiceNormal = normal;');
+    expect(shader.fragmentShader).toContain('uniform sampler2D dicePicture;');
+    expect(shader.fragmentShader).toContain('texture2D( dicePicture, dicePictureAt.xy + dicePictureShift )');
+    expect(shader.fragmentShader).toContain('diffuseColor.rgb = mix( diceWorn, diffuseColor.rgb, diceMark );');
+  });
+
+  it('asks nothing of a picture on a die that wears none', () => {
+    for (const material of ['marble', 'metal', 'glass'] as const) {
+      expect(dressed(material).shader.fragmentShader).not.toContain('dicePicture');
+      expect(dressed(material).shader.vertexShader).not.toContain('vDiceNormal');
+    }
   });
 
   it('lets no light through glass where its marks are painted', () => {

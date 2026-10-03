@@ -41,17 +41,97 @@ export function lookFor(body: string, inkAskedFor = ''): DiceColors {
   return { body: rgbText(rgb), ink, accent: reddish ? ink : ACCENT };
 }
 
-/** Draws the faces of a die: every face's cell in the body's colour, with its marks in the ink. */
-export function drawDiceFaces(shape: DieShape, labels: DieLabels, look: DiceColors): HTMLCanvasElement {
+/** A picture as the faces are drawn with it: anything a canvas can draw, with its size. */
+export type FacePicture = CanvasImageSource & { readonly width: number; readonly height: number };
+
+/**
+ * Draws the faces of a die: every face's cell in the body's colour, with its marks in the ink. A
+ * picture laid on every face covers each cell over the body, which shows through where the picture
+ * is clear, turned as the face's number is so the two stand upright together.
+ */
+export function drawDiceFaces(
+  shape: DieShape,
+  labels: DieLabels,
+  look: DiceColors,
+  picture: FacePicture | null = null
+): HTMLCanvasElement {
   const atlas = atlasOf(shape);
   const canvas = canvasOf(atlas.columns * CELL_PX, atlas.rows * CELL_PX);
   const paint = canvas.getContext('2d')!;
   paint.fillStyle = look.body;
   paint.fillRect(0, 0, canvas.width, canvas.height);
+  if (picture) eachFace(shape, labels, (glyphs, left, top) => coverCell(paint, picture, left, top, uprightOf(glyphs)));
   eachGlyph(shape, labels, (glyph, left, top) =>
     drawGlyph(paint, glyph, left, top, glyph.accent ? look.accent : look.ink, CELL_PX)
   );
   return canvas;
+}
+
+/**
+ * The average colour of a picture, as `#rrggbb`, weighed by how much of each part shows: what the
+ * ink of a die wearing it is worked out to stand out from. Null where the page cannot look into it.
+ */
+export function averageColorOf(picture: FacePicture): string | null {
+  const sample = canvasOf(8, 8);
+  const paint = sample.getContext('2d', { willReadFrequently: true });
+  if (!paint) return null;
+  paint.drawImage(picture, 0, 0, 8, 8);
+  const data = paint.getImageData(0, 0, 8, 8).data;
+  let [r, g, b, weight] = [0, 0, 0, 0];
+  for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3] / 255;
+    r += data[i] * alpha;
+    g += data[i + 1] * alpha;
+    b += data[i + 2] * alpha;
+    weight += alpha;
+  }
+  if (weight <= 0) return null;
+  const hex = (value: number) =>
+    Math.round(value / weight)
+      .toString(16)
+      .padStart(2, '0');
+  return `#${hex(r)}${hex(g)}${hex(b)}`;
+}
+
+/** Visits every face with its marks and the top left corner of its cell in the faces' picture. */
+function eachFace(
+  shape: DieShape,
+  labels: DieLabels,
+  visit: (glyphs: readonly FaceGlyph[], left: number, top: number) => void
+): void {
+  const atlas = atlasOf(shape);
+  const faces = polyhedronOf(shape).faces.length;
+  for (let face = 0; face < faces; face++) {
+    const left = (face % atlas.columns) * CELL_PX;
+    const top = Math.floor(face / atlas.columns) * CELL_PX;
+    visit(faceGlyphsOf(shape, labels, face), left, top);
+  }
+}
+
+/** Which way is up on a face, as its middle mark stands; a face with none there, as a d4's, is not turned. */
+function uprightOf(glyphs: readonly FaceGlyph[]): number {
+  const middle = glyphs.find((glyph) => Math.hypot(glyph.x - 0.5, glyph.y - 0.5) < 0.2);
+  return middle?.rotation ?? 0;
+}
+
+/** Lays a picture over a cell, filling it and turned about its middle. */
+function coverCell(
+  paint: CanvasRenderingContext2D,
+  picture: FacePicture,
+  left: number,
+  top: number,
+  rotation: number
+): void {
+  const scale = CELL_PX / Math.min(picture.width, picture.height);
+  const [width, height] = [picture.width * scale, picture.height * scale];
+  paint.save();
+  paint.beginPath();
+  paint.rect(left, top, CELL_PX, CELL_PX);
+  paint.clip();
+  paint.translate(left + CELL_PX / 2, top + CELL_PX / 2);
+  paint.rotate(-rotation);
+  paint.drawImage(picture, -width / 2, -height / 2, width, height);
+  paint.restore();
 }
 
 /**
@@ -91,13 +171,9 @@ function eachGlyph(
   labels: DieLabels,
   visit: (glyph: FaceGlyph, left: number, top: number) => void
 ): void {
-  const atlas = atlasOf(shape);
-  const faces = polyhedronOf(shape).faces.length;
-  for (let face = 0; face < faces; face++) {
-    const left = (face % atlas.columns) * CELL_PX;
-    const top = Math.floor(face / atlas.columns) * CELL_PX;
-    for (const glyph of faceGlyphsOf(shape, labels, face)) visit(glyph, left, top);
-  }
+  eachFace(shape, labels, (glyphs, left, top) => {
+    for (const glyph of glyphs) visit(glyph, left, top);
+  });
 }
 
 function drawGlyph(

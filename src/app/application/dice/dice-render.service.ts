@@ -5,12 +5,15 @@ import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { RenderLiteService } from '@axe/application/ui/render-lite.service';
 import { Logger } from '@axe/core/logging/logger';
+import { ImageState } from '@axe/core/storage/image-file';
+import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { clipMatrixOf, columnsOf, eyeOf, multiply, Point3, transform } from '@axe/core/transform/css-clip-matrix';
 import type { DiceMaterial } from '@axe/domain/dice/dice-3d/dice-look';
 import type { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
 import { Config } from '@axe/domain/peer/config';
-import type { Dice3dEngine, DrawnRegion, PreparedThrow } from '@axe/infrastructure/dice-3d/dice-3d-engine';
+import type { Dice3dEngine, DicePicture, DrawnRegion, PreparedThrow } from '@axe/infrastructure/dice-3d/dice-3d-engine';
+import type { FacePicture } from '@axe/infrastructure/dice-3d/dice-textures';
 
 /** What the dice are drawn with: the part of the 3D engine the page uses. */
 export type DiceEngine = Pick<
@@ -24,6 +27,22 @@ export const DICE_ENGINE_LOADER = new InjectionToken<() => Promise<DiceEngine>>(
   factory: () => () =>
     import('@axe/infrastructure/dice-3d/dice-3d-engine').then(({ Dice3dEngine }) => Dice3dEngine.create()),
 });
+
+/**
+ * Reads a picture dice wear, by its identifier among the room's images, as something the engine can
+ * draw; null while it has not arrived whole.
+ */
+export const DICE_PICTURE_LOADER = new InjectionToken<(identifier: string) => Promise<FacePicture | null>>(
+  'DICE_PICTURE_LOADER',
+  {
+    providedIn: 'root',
+    factory: () => async (identifier) => {
+      const image = ImageStorage.instance.get(identifier);
+      if (!image || image.state < ImageState.COMPLETE || !image.blob) return null;
+      return createImageBitmap(image.blob);
+    },
+  }
+);
 
 /** The sharpest the dice are drawn, in device pixels to a CSS pixel, and on a device drawn lightly. */
 const MAX_PIXEL_RATIO = 2;
@@ -90,9 +109,16 @@ export class DiceRenderService {
   private readonly objectChange = inject(ObjectChangeService);
   private readonly objectStore = inject(ObjectStore);
   private readonly loadEngine = inject(DICE_ENGINE_LOADER);
+  private readonly loadPicture = inject(DICE_PICTURE_LOADER);
+  /** The pictures dice wear that have arrived and been read, and those being read, by identifier. */
+  private readonly pictures = new Map<string, FacePicture>();
+  private readonly readingPictures = new Set<string>();
   private readonly stages = new Set<Stage>();
   private table: TableStage | null = null;
-  private readonly prepared = new Map<string, { result: DiceThrow['result']; prepared: PreparedThrow }>();
+  private readonly prepared = new Map<
+    string,
+    { result: DiceThrow['result']; picture: string; prepared: PreparedThrow }
+  >();
   /** The throws on the table whose dice have gone from it, which are not looked at again. */
   private readonly offTable = new Set<string>();
   private engine: DiceEngine | null = null;
@@ -135,6 +161,13 @@ export class DiceRenderService {
       const wanted = [this.myDice.look().material];
       for (const diceThrow of throws.values()) if (diceThrow.phase === 'working') wanted.push(diceThrow.look.material);
       untracked(() => this.warm(wanted));
+    });
+    // A picture the dice wear is read once it has arrived whole, and until then they are drawn
+    // without it; every throw wearing it is drawn again once it is here.
+    effect(() => {
+      this.objectChange.fileVersion();
+      const throws = this.throws.throws();
+      untracked(() => this.readPictures(throws));
     });
     // So is the table's sheet when the table is turned or moved under it.
     effect(() => {
@@ -426,19 +459,21 @@ export class DiceRenderService {
   }
 
   private preparedFor(engine: DiceEngine, diceThrow: DiceThrow): PreparedThrow {
+    const picture = this.pictureOf(diceThrow);
     const kept = this.prepared.get(diceThrow.key);
-    if (kept && kept.result === diceThrow.result) return kept.prepared;
+    if (kept && kept.result === diceThrow.result && kept.picture === (picture?.key ?? '')) return kept.prepared;
     if (kept) engine.release(kept.prepared);
     const prepared = engine.prepare({
       dice: diceThrow.dice,
       color: diceThrow.color,
       ink: diceThrow.look.ink,
       material: this.drawnAs(diceThrow.look.material),
+      ...(picture ? { picture } : {}),
       accent: diceThrow.outcome === 'critical' || diceThrow.outcome === 'fumble' ? diceThrow.outcome : '',
       tray: diceThrow.tray,
       result: diceThrow.result!,
     });
-    this.prepared.set(diceThrow.key, { result: diceThrow.result, prepared });
+    this.prepared.set(diceThrow.key, { result: diceThrow.result, picture: picture?.key ?? '', prepared });
     return prepared;
   }
 
@@ -453,6 +488,32 @@ export class DiceRenderService {
     if (!engine || this.broken) return;
     for (const material of new Set(materials.map((material) => this.drawnAs(material)))) {
       if (material !== 'resin') void engine.warm(material);
+    }
+  }
+
+  /** The picture a throw's dice wear, once it has been read; until then they are drawn without it. */
+  private pictureOf(diceThrow: DiceThrow): DicePicture | null {
+    const key = diceThrow.look.picture;
+    const source = key ? this.pictures.get(key) : undefined;
+    return source ? { key, source, fit: diceThrow.look.pictureFit } : null;
+  }
+
+  /** Reads the pictures the throws' dice wear that are not read yet, and draws again what wears one read. */
+  private readPictures(throws: ReadonlyMap<string, DiceThrow>): void {
+    const wanted = new Set([...throws.values()].map((diceThrow) => diceThrow.look.picture).filter(Boolean));
+    for (const key of wanted) {
+      if (this.pictures.has(key) || this.readingPictures.has(key)) continue;
+      this.readingPictures.add(key);
+      void this.loadPicture(key)
+        .catch(() => null)
+        .then((source) => {
+          this.readingPictures.delete(key);
+          if (!source) return;
+          this.pictures.set(key, source);
+          for (const stage of this.stages)
+            if (this.throws.throws().get(stage.key)?.look.picture === key) stage.drawn = false;
+          this.wake();
+        });
     }
   }
 
