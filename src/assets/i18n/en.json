@@ -958,7 +958,18 @@
         "ink": "Number colour",
         "inkAuto": "Pick one that stands out from the dice",
         "pickColor": "Pick a colour",
-        "seenByAll": "Everyone in the room sees your rolls in this look. It is kept in this browser."
+        "seenByAll": "Everyone in the room sees your rolls in this look. It is kept in this browser.",
+        "picture": "Picture",
+        "choosePicture": "Choose a picture",
+        "changePicture": "Change the picture",
+        "removePicture": "Remove",
+        "fit_wrap": "Wrap round",
+        "fit_faces": "On every face",
+        "pictureMakesResin": "Dice wearing a picture are resin.",
+        "pictureHint": "Wrap round suits patterns such as stone or wood grain; on every face suits a logo or an emblem. The picture is sent to everyone in the room and kept when the room is saved.",
+        "trouble_notPicture": "That could not be read as a picture.",
+        "trouble_tooLarge": "Pictures over 8 MB cannot be used.",
+        "trouble_unstored": "The picture could not be kept in this browser."
       }
     },
     "effect": {

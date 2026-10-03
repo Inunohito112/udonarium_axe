@@ -1,8 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DiceFrame, DiceThrowService } from '@axe/application/dice/dice-throw.service';
-import { MyDiceService } from '@axe/application/dice/my-dice.service';
+import { DicePictureTrouble, MyDiceService } from '@axe/application/dice/my-dice.service';
+import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { RenderLiteService } from '@axe/application/ui/render-lite.service';
-import { DICE_MATERIALS, DiceLook, DiceMaterial } from '@axe/domain/dice/dice-3d/dice-look';
+import { ImageStorage } from '@axe/core/storage/image-storage';
+import {
+  DICE_MATERIALS,
+  DICE_PICTURE_FITS,
+  DiceLook,
+  DiceMaterial,
+  DicePictureFit,
+} from '@axe/domain/dice/dice-3d/dice-look';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { DiceTrayFrameComponent } from '@axe/ui/components/dice-roll-stage/dice-tray-frame.component';
 import { TranslocoModule } from '@jsverse/transloco';
@@ -46,8 +54,10 @@ export class MyDiceSettingComponent {
   private readonly myDice = inject(MyDiceService);
   private readonly throws = inject(DiceThrowService);
   private readonly renderLite = inject(RenderLiteService);
+  private readonly objectChange = inject(ObjectChangeService);
 
   protected readonly materials = DICE_MATERIALS;
+  protected readonly fits = DICE_PICTURE_FITS;
   protected readonly bodySwatches = BODY_SWATCHES;
   protected readonly inkSwatches = INK_SWATCHES;
   protected readonly look = this.myDice.look;
@@ -60,6 +70,16 @@ export class MyDiceSettingComponent {
     const diceThrow = this.throws.throws().get(key);
     if (!diceThrow || diceThrow.phase === 'failed') return null;
     return { key, aspect: diceThrow.aspect, overflow: 0, diceThrow };
+  });
+
+  /** What was wrong with the last picture offered, for the line under it. */
+  protected readonly trouble = signal<DicePictureTrouble | ''>('');
+
+  /** Where the picture on the dice can be shown from, once it is among the room's images. */
+  protected readonly pictureUrl = computed(() => {
+    this.objectChange.fileVersion();
+    const picture = this.look().picture;
+    return picture ? ImageStorage.instance.get(picture)?.url || null : null;
   });
 
   /** Whether glass is chosen on a device that draws it as resin, which this seat should be told. */
@@ -91,6 +111,28 @@ export class MyDiceSettingComponent {
 
   protected setInk(color: string): void {
     this.change({ ink: color });
+  }
+
+  /** Takes the picture chosen for the dice, or says why it was not taken. */
+  protected async takePicture(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    const trouble = await this.myDice.setPicture(file);
+    this.trouble.set(trouble ?? '');
+    if (!trouble) this.roll();
+  }
+
+  protected removePicture(): void {
+    this.myDice.removePicture();
+    this.trouble.set('');
+    this.roll();
+  }
+
+  protected fitPicture(fit: DicePictureFit): void {
+    this.myDice.setPictureFit(fit);
+    this.roll();
   }
 
   /** Throws a die of each shape in the look as it stands. */

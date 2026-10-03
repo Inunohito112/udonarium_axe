@@ -958,7 +958,18 @@
         "ink": "数字の色",
         "inkAuto": "ダイスの色から自動で決める",
         "pickColor": "色を選ぶ",
-        "seenByAll": "部屋の全員に、この見た目で転がって見えます。設定はこのブラウザに保存されます。"
+        "seenByAll": "部屋の全員に、この見た目で転がって見えます。設定はこのブラウザに保存されます。",
+        "picture": "画像",
+        "choosePicture": "画像を選ぶ",
+        "changePicture": "画像を替える",
+        "removePicture": "外す",
+        "fit_wrap": "巻き付ける",
+        "fit_faces": "各面に貼る",
+        "pictureMakesResin": "画像を貼っているあいだは樹脂になります。",
+        "pictureHint": "石や木目のような模様は「巻き付ける」、ロゴや紋章は「各面に貼る」が向いています。画像は部屋の全員に送られ、部屋の保存にも入ります。",
+        "trouble_notPicture": "画像として読めませんでした。",
+        "trouble_tooLarge": "8MB を超える画像は使えません。",
+        "trouble_unstored": "このブラウザに画像を保存できませんでした。"
       }
     },
     "effect": {

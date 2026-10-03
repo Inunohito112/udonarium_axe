@@ -958,7 +958,18 @@
         "ink": "숫자 색",
         "inkAuto": "주사위 색에 맞춰 자동으로 정하기",
         "pickColor": "색 고르기",
-        "seenByAll": "방에 있는 모두에게 이 모습으로 굴러갑니다. 설정은 이 브라우저에 저장됩니다."
+        "seenByAll": "방에 있는 모두에게 이 모습으로 굴러갑니다. 설정은 이 브라우저에 저장됩니다.",
+        "picture": "이미지",
+        "choosePicture": "이미지 고르기",
+        "changePicture": "이미지 바꾸기",
+        "removePicture": "떼기",
+        "fit_wrap": "감싸기",
+        "fit_faces": "면마다 붙이기",
+        "pictureMakesResin": "이미지를 붙이는 동안에는 레진이 됩니다.",
+        "pictureHint": "돌이나 나뭇결 같은 무늬는 \"감싸기\", 로고나 문장은 \"면마다 붙이기\"가 어울립니다. 이미지는 방의 모두에게 전해지고 방을 저장할 때도 함께 들어갑니다.",
+        "trouble_notPicture": "이미지로 읽을 수 없었습니다.",
+        "trouble_tooLarge": "8MB를 넘는 이미지는 쓸 수 없습니다.",
+        "trouble_unstored": "이 브라우저에 이미지를 저장하지 못했습니다."
       }
     },
     "effect": {

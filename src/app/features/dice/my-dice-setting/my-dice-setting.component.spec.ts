@@ -97,4 +97,67 @@ describe('MyDiceSettingComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('半透明は樹脂で描いています');
   });
+
+  describe('a picture for the dice', () => {
+    const PICTURE = 'ab'.repeat(32);
+
+    async function offer(file: File): Promise<void> {
+      const input = element<HTMLInputElement>('my-dice-picture-file');
+      Object.defineProperty(input, 'files', { value: [file], configurable: true });
+      input.dispatchEvent(new Event('change'));
+      await settled();
+      await settled();
+    }
+
+    it('takes a picture offered and throws the dice again wearing it', async () => {
+      const dice = TestBed.inject(MyDiceService);
+      vi.spyOn(dice, 'setPicture').mockImplementation(async () => {
+        dice.set({ ...dice.look(), picture: PICTURE });
+        return null;
+      });
+      await settled();
+
+      await offer(new File(['x'], 'stone.png', { type: 'image/png' }));
+
+      expect(tries.at(-1)?.look.picture).toBe(PICTURE);
+      expect(element('my-dice-picture-trouble')).toBeNull();
+    });
+
+    it('says why a picture was not taken', async () => {
+      vi.spyOn(TestBed.inject(MyDiceService), 'setPicture').mockResolvedValue('tooLarge');
+      await settled();
+
+      await offer(new File(['x'], 'huge.png', { type: 'image/png' }));
+
+      expect(element('my-dice-picture-trouble').textContent).toContain('8MB');
+    });
+
+    it('offers how to put the picture on, and holds the material to resin while it is worn', async () => {
+      const dice = TestBed.inject(MyDiceService);
+      dice.set({ ...dice.look(), picture: PICTURE });
+      await settled();
+
+      expect(element<HTMLButtonElement>('my-dice-material-metal').disabled).toBe(true);
+      expect(element('my-dice-picture-fit-wrap').getAttribute('aria-checked')).toBe('true');
+
+      element<HTMLButtonElement>('my-dice-picture-fit-faces').click();
+      await settled();
+
+      expect(dice.look().pictureFit).toBe('faces');
+      expect(tries.at(-1)?.look.pictureFit).toBe('faces');
+    });
+
+    it('takes the picture off and gives the material back', async () => {
+      const dice = TestBed.inject(MyDiceService);
+      vi.spyOn(dice, 'removePicture').mockImplementation(() => dice.set({ ...dice.look(), picture: '' }));
+      dice.set({ ...dice.look(), picture: PICTURE });
+      await settled();
+
+      element<HTMLButtonElement>('my-dice-picture-remove').click();
+      await settled();
+
+      expect(dice.look().picture).toBe('');
+      expect(element<HTMLButtonElement>('my-dice-material-metal').disabled).toBe(false);
+    });
+  });
 });
