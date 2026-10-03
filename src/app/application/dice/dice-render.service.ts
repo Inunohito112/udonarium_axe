@@ -123,6 +123,11 @@ export class DiceRenderService {
   /** The pictures dice wear that have arrived and been read, and those being read, by identifier. */
   private readonly pictures = new Map<string, FacePicture>();
   private readonly readingPictures = new Set<string>();
+  /**
+   * The pictures that had arrived whole but could not be read, which are not read again: a picture
+   * is known by its bytes, so reading the same one again would fail again.
+   */
+  private readonly unreadablePictures = new Set<string>();
   private readonly stages = new Set<Stage>();
   private table: TableStage | null = null;
   private readonly prepared = new Map<
@@ -537,11 +542,15 @@ export class DiceRenderService {
       this.pictures.delete(key);
       (source as Partial<ImageBitmap>).close?.();
     }
+    for (const key of this.unreadablePictures) if (!wanted.has(key)) this.unreadablePictures.delete(key);
     for (const key of wanted) {
-      if (this.pictures.has(key) || this.readingPictures.has(key)) continue;
+      if (this.pictures.has(key) || this.readingPictures.has(key) || this.unreadablePictures.has(key)) continue;
       this.readingPictures.add(key);
       void this.loadPicture(key)
-        .catch(() => null)
+        .catch(() => {
+          this.unreadablePictures.add(key);
+          return null;
+        })
         .then((source) => {
           this.readingPictures.delete(key);
           if (!source) return;

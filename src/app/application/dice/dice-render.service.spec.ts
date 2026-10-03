@@ -326,6 +326,27 @@ describe('DiceRenderService', () => {
       expect(engine.pictures.at(-1)).toBe(`${PICTURE}:wrap`);
     });
 
+    it('does not read again a picture that arrived but could not be read', async () => {
+      const asked: string[] = [];
+      readPicture = async (identifier) => {
+        asked.push(identifier);
+        throw new Error('not a picture');
+      };
+      throws.set(new Map([['a', pictured('wrap')]]));
+      service.register(document.createElement('canvas'), 'a').resize(300, 90);
+      await nextFrame(0);
+      await nextFrame(16);
+
+      TestBed.inject(ObjectChangeService).fileVersion.update((version) => version + 1);
+      throws.set(new Map([...throws(), ['b', throwOf('b')]]));
+      TestBed.tick();
+      await nextFrame(32);
+      await nextFrame(48);
+
+      expect(asked).toEqual([PICTURE]);
+      expect(engine.pictures.at(-1)).toBe('');
+    });
+
     it('lets a picture go once no throw kept wears it, with what was set up wearing it', async () => {
       const close = vi.fn();
       readPicture = async () => ({ width: 4, height: 4, close });
