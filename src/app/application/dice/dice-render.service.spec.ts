@@ -235,7 +235,7 @@ describe('DiceRenderService', () => {
   it('inks the numbers in the colour the one who rolled chose', async () => {
     throws.set(
       new Map([
-        ['a', throwOf('a', { look: { material: 'resin', body: '', ink: '#e8c547' } })],
+        ['a', throwOf('a', { look: { ...PLAIN_DICE_LOOK, material: 'resin', body: '', ink: '#e8c547' } })],
         ['b', throwOf('b')],
       ])
     );
@@ -247,7 +247,7 @@ describe('DiceRenderService', () => {
   });
 
   describe('in the material the one who rolled chose', () => {
-    const made = (material: DiceMaterial) => ({ material, body: '', ink: '' });
+    const made = (material: DiceMaterial) => ({ ...PLAIN_DICE_LOOK, material, body: '', ink: '' });
 
     it('draws each throw in its own material', async () => {
       throws.set(

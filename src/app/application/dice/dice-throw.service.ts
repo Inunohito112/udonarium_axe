@@ -349,7 +349,7 @@ export class DiceThrowService {
     still: boolean
   ): DiceThrow[] {
     const trays = traysOf(plan.dice);
-    const look = decodeDiceLook(message.diceLook);
+    const look = decodeDiceLook(message.diceLook, message.diceImageIdentifier);
     const color = look.body || (message.messColor?.length ? message.messColor : BLANK_COLOR);
     return trays.map((dice, part) => {
       const placement = placements?.[part] ?? null;

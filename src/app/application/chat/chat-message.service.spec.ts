@@ -11,7 +11,7 @@ import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { ChatTabList } from '@axe/domain/chat/chat-tab-list';
 import { DataElement } from '@axe/domain/data/data-element';
-import { decodeDiceLook } from '@axe/domain/dice/dice-3d/dice-look';
+import { decodeDiceLook, PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { beMyself } from '@axe/testing/peer-context-stub';
@@ -239,13 +239,31 @@ describe('ChatMessageService', () => {
     afterEach(() => localStorage.removeItem('my-dice'));
 
     it('carries the look this seat chose, for the dice bot’s answer to throw the dice in', () => {
-      TestBed.inject(MyDiceService).set({ material: 'marble', body: '#1e6b52', ink: '' });
+      TestBed.inject(MyDiceService).set({ ...PLAIN_DICE_LOOK, material: 'marble', body: '#1e6b52', ink: '' });
 
-      expect(decodeDiceLook(said().diceLook)).toEqual({ material: 'marble', body: '#1e6b52', ink: '' });
+      expect(decodeDiceLook(said().diceLook)).toEqual({
+        ...PLAIN_DICE_LOOK,
+        material: 'marble',
+        body: '#1e6b52',
+        ink: '',
+      });
     });
 
     it('carries nothing for the plain look', () => {
       expect(said().diceLook ?? '').toBe('');
+      expect(said().diceImageIdentifier ?? '').toBe('');
+    });
+
+    it('carries the picture on the dice apart from the look, and sees that the room has it', () => {
+      const dice = TestBed.inject(MyDiceService);
+      const shared = vi.spyOn(dice, 'ensureShared').mockResolvedValue();
+      dice.set({ ...PLAIN_DICE_LOOK, picture: 'ab'.repeat(32), pictureFit: 'faces' });
+
+      const line = said();
+
+      expect(line.diceImageIdentifier).toBe('ab'.repeat(32));
+      expect(decodeDiceLook(line.diceLook, line.diceImageIdentifier).pictureFit).toBe('faces');
+      expect(shared).toHaveBeenCalled();
     });
   });
 

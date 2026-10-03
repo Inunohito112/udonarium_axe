@@ -27,5 +27,6 @@ export function copiedMessageContext(message: ChatMessage, timestamp: number): C
     messBubbleDark: message.messBubbleDark,
     sendFrom: message.sendFrom,
     diceLook: message.diceLook,
+    diceImageIdentifier: message.diceImageIdentifier,
   };
 }

@@ -596,6 +596,7 @@ export class DiceBot extends GameObject {
       text: multiTargetOption ? `${result}${multiTargetOption}` : result,
       ...answerColorsOf(originalMessage),
       diceLook: originalMessage.diceLook,
+      diceImageIdentifier: originalMessage.diceImageIdentifier,
     };
 
     if (originalMessage.to != null && 0 < originalMessage.to.length) {

@@ -178,7 +178,7 @@ describe('DiceThrowService', () => {
       callDiceThrow({ messageIdentifier: line.identifier }, 'here');
 
       await vi.waitFor(() => expect(thrown(line)?.phase).toBe('rolling'));
-      expect(thrown(line)?.look).toEqual({ material: 'marble', body: '#1e6b52', ink: '#f6f3ec' });
+      expect(thrown(line)?.look).toEqual({ ...PLAIN_DICE_LOOK, material: 'marble', body: '#1e6b52', ink: '#f6f3ec' });
       expect(thrown(line)?.color).toBe('#1e6b52');
     });
 
@@ -209,13 +209,13 @@ describe('DiceThrowService', () => {
 
       service.showStill(line.identifier);
 
-      expect(thrown(line)?.look).toEqual({ material: 'resin', body: '#5f3dc4', ink: '' });
+      expect(thrown(line)?.look).toEqual({ ...PLAIN_DICE_LOOK, material: 'resin', body: '#5f3dc4', ink: '' });
       expect(thrown(line)?.color).toBe('#5f3dc4');
     });
   });
 
   it('throws one of each die to try a look out on, in place of the try before', async () => {
-    const first = service.tryOut({ material: 'marble', body: '#5f3dc4', ink: '' }, '#000000');
+    const first = service.tryOut({ ...PLAIN_DICE_LOOK, material: 'marble', body: '#5f3dc4', ink: '' }, '#000000');
 
     await vi.waitFor(() => expect(service.throws().get(first)?.phase).toBe('rolling'));
     expect(

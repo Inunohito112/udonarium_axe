@@ -55,6 +55,7 @@ describe('DiceBot', () => {
       text: '2d6',
       timestamp: 1000,
       diceLook: '{"material":"marble"}',
+      diceImageIdentifier: 'ab'.repeat(32),
     });
     const plain = tab.addMessage({ from: 'me', name: 'わたし', text: '2d6', timestamp: 2000 });
     const bot = new DiceBot();
@@ -67,6 +68,8 @@ describe('DiceBot', () => {
     const plainAnswer = answerTo(9);
 
     expect(fancyAnswer.diceLook).toBe('{"material":"marble"}');
+    expect(fancyAnswer.diceImageIdentifier).toBe('ab'.repeat(32));
+    expect(plainAnswer.diceImageIdentifier ?? '').toBe('');
     expect(plainAnswer.diceLook ?? '').toBe('');
 
     bot.destroy();

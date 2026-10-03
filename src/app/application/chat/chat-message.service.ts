@@ -296,8 +296,13 @@ export class ChatMessageService {
     if (bubbles?.light) chatMessage.messBubbleLight = bubbles.light;
     if (bubbles?.dark) chatMessage.messBubbleDark = bubbles.dark;
     if (vnEmote) chatMessage.vnEmote = vnEmote;
-    const diceLook = encodeDiceLook(this.myDice.look());
+    const look = this.myDice.look();
+    const diceLook = encodeDiceLook(look);
     if (diceLook) chatMessage.diceLook = diceLook;
+    if (look.picture) {
+      chatMessage.diceImageIdentifier = look.picture;
+      void this.myDice.ensureShared();
+    }
 
     const portrait = this.applyPortraitCommand(chatMessage, text, sendFrom, imgIndex);
     this.setLastControlInfoToPeer(sendFrom, portrait.identifier, portrait.index, sendTo);

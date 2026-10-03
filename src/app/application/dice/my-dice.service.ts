@@ -1,43 +1,127 @@
-import { Injectable, signal } from '@angular/core';
-import {
-  asDiceLook,
-  decodeDiceLook,
-  DiceLook,
-  encodeDiceLook,
-  PLAIN_DICE_LOOK,
-} from '@axe/domain/dice/dice-3d/dice-look';
+import { inject, Injectable, InjectionToken, signal } from '@angular/core';
+import { DiceImageStore } from '@axe/core/storage/dice-image-store';
+import { downscaleImageBlob } from '@axe/core/storage/image-downscale';
+import { ImageState } from '@axe/core/storage/image-file';
+import { looksLikeImage } from '@axe/core/storage/image-sniff';
+import { ImageStorage } from '@axe/core/storage/image-storage';
+import { asDiceLook, DiceLook, DicePictureFit, PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
 
 const STORAGE_KEY = 'my-dice';
+
+/** The largest a dice picture may be once resampled, on its longer side: a die is never drawn larger. */
+export const DICE_PICTURE_MAX_SIDE = 512;
+/** The largest file taken in at all, before anything is decoded. */
+export const DICE_PICTURE_MAX_BYTES = 8 * 1024 * 1024;
+
+/** Why a picture offered for the dice was not taken. */
+export type DicePictureTrouble = 'notPicture' | 'tooLarge' | 'unstored';
+
+/** Makes a picture ready to put on the dice: resampled down and written out small. */
+export const DICE_PICTURE_PREPARER = new InjectionToken<(picture: Blob) => Promise<Blob>>('DICE_PICTURE_PREPARER', {
+  providedIn: 'root',
+  factory: () => async (picture) => (await downscaleImageBlob(picture, DICE_PICTURE_MAX_SIDE)) ?? picture,
+});
 
 /**
  * How this seat's dice look. Every line the seat says carries it, so everyone sees its rolls thrown
  * in it, and the dice bot's answer to a roll carries it on.
  *
  * It is the person's, not the room's or a character's: kept in this browser, and the same whoever
- * the seat speaks as.
+ * the seat speaks as. A picture for the dice is shared through the room's images, which start
+ * empty with every visit, so it is kept here too and put back into them whenever it is missing.
  */
 @Injectable({ providedIn: 'root' })
 export class MyDiceService {
+  private readonly prepare = inject(DICE_PICTURE_PREPARER);
+  private readonly pictures = DiceImageStore.instance;
   private readonly current = signal<DiceLook>(storedLook());
+  private restoring: Promise<void> | null = null;
 
   readonly look = this.current.asReadonly();
+
+  constructor() {
+    void this.ensureShared();
+  }
 
   /** Chooses a look, kept for the next visit where the browser allows. */
   set(look: DiceLook): void {
     const tidy = asDiceLook(look);
     this.current.set(tidy);
     try {
-      localStorage.setItem(STORAGE_KEY, encodeDiceLook(tidy));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tidy));
     } catch {
       // Private browsing refuses the write; the look still holds for this session.
     }
+  }
+
+  /**
+   * Puts a picture on this seat's dice. It is checked to be a picture and not too large, resampled
+   * down, shared through the room's images and kept in this browser. Says what was wrong with it,
+   * or null when it was taken.
+   */
+  async setPicture(file: Blob): Promise<DicePictureTrouble | null> {
+    if (file.size > DICE_PICTURE_MAX_BYTES) return 'tooLarge';
+    if (!(await looksLikeImage(file))) return 'notPicture';
+    const image = await ImageStorage.instance.addAsync(await this.prepare(file));
+    const bytes = image.blob;
+    if (!bytes || !(await this.pictures.put(image.identifier, bytes))) return 'unstored';
+    this.set({ ...this.look(), picture: image.identifier });
+    return null;
+  }
+
+  /** Takes the picture off this seat's dice, letting go of the copy this browser kept. */
+  removePicture(): void {
+    const picture = this.look().picture;
+    if (!picture) return;
+    this.set({ ...this.look(), picture: '' });
+    void this.pictures.remove(picture);
+  }
+
+  /** Chooses how the picture is put on the dice. */
+  setPictureFit(pictureFit: DicePictureFit): void {
+    this.set({ ...this.look(), pictureFit });
+  }
+
+  /**
+   * Puts this seat's dice picture back among the room's images where it is missing, as on a fresh
+   * visit, from the bytes this browser kept, so it comes back under the same identifier.
+   */
+  ensureShared(): Promise<void> {
+    const picture = this.look().picture;
+    if (!picture) return Promise.resolve();
+    const held = ImageStorage.instance.get(picture);
+    if (held && ImageState.COMPLETE <= held.state) return Promise.resolve();
+    this.restoring ??= this.restore(picture).finally(() => (this.restoring = null));
+    return this.restoring;
+  }
+
+  private async restore(picture: string): Promise<void> {
+    const bytes = await this.pictures.get(picture);
+    if (!bytes) return;
+    const named = new File([bytes], `${picture}.${extensionOf(bytes.type)}`, { type: bytes.type });
+    await ImageStorage.instance.addAsync(named);
   }
 }
 
 function storedLook(): DiceLook {
   try {
-    return decodeDiceLook(localStorage.getItem(STORAGE_KEY));
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? asDiceLook(JSON.parse(raw)) : PLAIN_DICE_LOOK;
   } catch {
     return PLAIN_DICE_LOOK;
+  }
+}
+
+/** The file ending that keeps a picture's identifier when it is read back in. */
+function extensionOf(type: string): string {
+  switch (type) {
+    case 'image/png':
+      return 'png';
+    case 'image/jpeg':
+      return 'jpg';
+    case 'image/gif':
+      return 'gif';
+    default:
+      return 'webp';
   }
 }
