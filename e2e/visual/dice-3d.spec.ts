@@ -60,6 +60,53 @@ async function atRest(canvas: Locator) {
     .toBe(true);
 }
 
+/**
+ * Seeds the dice bot's own randomness. It draws its seed from the page's once, as it loads with the
+ * first roll, while other work may draw on the page's randomness too, so the numbers it rolls would
+ * otherwise change from one run to the next.
+ */
+async function seedDiceBot(page: Page) {
+  await page.evaluate(() => {
+    (globalThis as unknown as { Opal: { Random: { $srand(seed: number): void } } }).Opal.Random.$srand(0x2f6e2b1);
+  });
+}
+
+/**
+ * Keeps the dice on the table from fading. The page draws as it would until a frame would draw them
+ * fading, a few seconds after they come to rest; every frame from then on is drawn at the moment of
+ * the last one that showed them in full, so they lie at rest for as long as the shot takes.
+ */
+async function keepFromFading(page: Page) {
+  await page.evaluate(() => {
+    const overlay = document.querySelector('[data-testid="table-dice-overlay"]');
+    const requestFrame = window.requestAnimationFrame.bind(window);
+    const drawImage = CanvasRenderingContext2D.prototype.drawImage;
+    const kept = { at: 0, inFull: 0, held: -1, redrawn: false };
+    Object.assign(window, { diceKept: kept });
+    window.requestAnimationFrame = (callback) =>
+      requestFrame((now) => {
+        kept.at = kept.held < 0 ? now : kept.held;
+        callback(kept.at);
+      });
+    CanvasRenderingContext2D.prototype.drawImage = function (this: CanvasRenderingContext2D, ...args: unknown[]) {
+      if (this.canvas === overlay && this.globalAlpha < 1 && kept.held < 0) {
+        kept.held = kept.inFull;
+      } else if (this.canvas === overlay) {
+        kept.inFull = kept.at;
+        kept.redrawn ||= kept.held >= 0;
+      }
+      return Reflect.apply(drawImage, this, args);
+    } as typeof drawImage;
+  });
+}
+
+/** Waits until the dice on the table have come to rest and are kept there in full. */
+async function keptAtRest(page: Page) {
+  await page.waitForFunction(() => (window as unknown as { diceKept: { redrawn: boolean } }).diceKept.redrawn, null, {
+    timeout: 30_000,
+  });
+}
+
 /*
  * Each scene first throws a die it does not shoot. Starting the dice engine draws on the page's
  * randomness, in a quiet moment that could come before the roll or between the roll and its
@@ -76,6 +123,7 @@ test('the dice of a chat roll come to rest in the frame of its answer', async ({
   await expect(stages.first()).toHaveAttribute('data-state', 'settled', { timeout: 30_000 });
   await atRest(stages.first().locator('canvas'));
 
+  await seedDiceBot(page);
   await roll(page, '2d6+1d20');
 
   await expect(stages).toHaveCount(2);
@@ -92,13 +140,15 @@ test('the dice of a chat roll come to rest on the table', async ({ page }) => {
   const overlay = page.getByTestId('table-dice-overlay');
   await roll(page, '1d6');
   await expect.poll(() => diceOn(overlay), { timeout: 30_000 }).not.toBe('');
-  await expect.poll(() => diceOn(overlay), { timeout: 30_000 }).toBe('');
+  await expect.poll(() => overlay.evaluate((canvas: HTMLCanvasElement) => canvas.width), { timeout: 30_000 }).toBe(1);
 
+  await seedDiceBot(page);
+  await keepFromFading(page);
   await roll(page, '2d6+1d20');
   // The dice come down in the middle of the screen, under the windows, which also tell the time.
   await closePanels(page);
 
-  await atRest(overlay);
+  await keptAtRest(page);
   await page.mouse.move(1279, 799);
   await expect(page).toHaveScreenshot('dice-3d-table.png', { maxDiffPixels: 60 });
 });
