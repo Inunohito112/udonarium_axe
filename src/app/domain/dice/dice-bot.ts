@@ -564,7 +564,7 @@ export class DiceBot extends GameObject {
       return;
     }
 
-    this.resourceProcessor.checkResourceEditCommand(
+    void this.resourceProcessor.checkResourceEditCommand(
       chatMessage,
       (data.messageTargetContext as ChatMessageTargetContext[] | null) ?? []
     );
