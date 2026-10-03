@@ -58,10 +58,15 @@ describe('MyDiceService', () => {
   });
 
   describe('a picture for the dice', () => {
+    /** A picture made ready to share, as the room's images would hold it. */
+    function imageOf(identifier: string, bytes: Blob): ImageFile {
+      return { identifier, blob: bytes, destroy: vi.fn() } as unknown as ImageFile;
+    }
+
+    /** Has a picture offered come out as these bytes, and watches the room's images being added to. */
     function shared(bytes: Blob) {
-      return vi
-        .spyOn(ImageStorage.instance, 'addAsync')
-        .mockResolvedValue({ identifier: PICTURE, blob: bytes } as unknown as ImageFile);
+      vi.spyOn(ImageFile, 'createAsync').mockResolvedValue(imageOf(PICTURE, bytes));
+      return vi.spyOn(ImageStorage.instance, 'add').mockImplementation((image) => image as ImageFile);
     }
 
     it('shares a picture through the room’s images, keeps it in this browser and puts it on the dice', async () => {
@@ -88,10 +93,26 @@ describe('MyDiceService', () => {
       expect(service.look().picture).toBe('');
     });
 
+    it('shares nothing that could not be kept in this browser', async () => {
+      const bytes = new Blob([PNG_HEAD], { type: 'image/png' });
+      const image = imageOf(PICTURE, bytes);
+      vi.spyOn(ImageFile, 'createAsync').mockResolvedValue(image);
+      const added = vi.spyOn(ImageStorage.instance, 'add');
+      vi.spyOn(DiceImageStore.instance, 'put').mockResolvedValue(false);
+      const service = TestBed.inject(MyDiceService);
+
+      expect(await service.setPicture(bytes)).toBe('unstored');
+
+      expect(added).not.toHaveBeenCalled();
+      expect(image.destroy).toHaveBeenCalled();
+      expect(service.look().picture).toBe('');
+    });
+
     it('lets go of the copy kept for the picture it replaces', async () => {
-      const added = vi.spyOn(ImageStorage.instance, 'addAsync');
-      added.mockResolvedValueOnce({ identifier: PICTURE, blob: new Blob([PNG_HEAD]) } as unknown as ImageFile);
-      added.mockResolvedValueOnce({ identifier: 'cd'.repeat(32), blob: new Blob([PNG_HEAD]) } as unknown as ImageFile);
+      const made = vi.spyOn(ImageFile, 'createAsync');
+      made.mockResolvedValueOnce(imageOf(PICTURE, new Blob([PNG_HEAD])));
+      made.mockResolvedValueOnce(imageOf('cd'.repeat(32), new Blob([PNG_HEAD])));
+      vi.spyOn(ImageStorage.instance, 'add').mockImplementation((image) => image as ImageFile);
       vi.spyOn(DiceImageStore.instance, 'put').mockResolvedValue(true);
       const removed = vi.spyOn(DiceImageStore.instance, 'remove').mockResolvedValue();
       const service = TestBed.inject(MyDiceService);

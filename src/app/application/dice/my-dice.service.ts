@@ -2,7 +2,7 @@ import { inject, Injectable, InjectionToken, signal } from '@angular/core';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { DiceImageStore } from '@axe/core/storage/dice-image-store';
 import { downscaleImageBlob } from '@axe/core/storage/image-downscale';
-import { ImageState } from '@axe/core/storage/image-file';
+import { ImageFile, ImageState } from '@axe/core/storage/image-file';
 import { looksLikeImage } from '@axe/core/storage/image-sniff';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { asDiceLook, DiceLook, DicePictureFit, PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
@@ -56,17 +56,22 @@ export class MyDiceService {
 
   /**
    * Puts a picture on this seat's dice in place of any before it, whose copy in this browser is let
-   * go. It is checked to be a picture and not too large, resampled down, shared through the room's
-   * images and kept in this browser. A guest, who may not add to the room's images, is turned away.
-   * Says what was wrong with it, or null when it was taken.
+   * go. It is checked to be a picture and not too large, resampled down, kept in this browser and
+   * only then shared through the room's images, so one this browser cannot keep is shared with no
+   * one. A guest, who may not add to the room's images, is turned away. Says what was wrong with it,
+   * or null when it was taken.
    */
   async setPicture(file: Blob): Promise<DicePictureTrouble | null> {
     if (!this.permission.canEditTabletop) return 'notAllowed';
     if (file.size > DICE_PICTURE_MAX_BYTES) return 'tooLarge';
     if (!(await looksLikeImage(file))) return 'notPicture';
-    const image = await ImageStorage.instance.addAsync(await this.prepare(file));
+    const image = await ImageFile.createAsync(await this.prepare(file));
     const bytes = image.blob;
-    if (!bytes || !(await this.pictures.put(image.identifier, bytes))) return 'unstored';
+    if (!bytes || !(await this.pictures.put(image.identifier, bytes))) {
+      image.destroy();
+      return 'unstored';
+    }
+    ImageStorage.instance.add(image);
     const before = this.look().picture;
     this.set({ ...this.look(), picture: image.identifier });
     if (before && before !== image.identifier) void this.pictures.remove(before);
