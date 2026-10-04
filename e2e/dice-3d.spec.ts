@@ -71,7 +71,7 @@ test.describe('チャットのダイスを 3D で転がす', () => {
     const stage = answer.getByTestId('dice-roll-stage');
     await expect(stage).toHaveAttribute('data-state', 'settled', { timeout: 20000 });
     await expect(stage).toHaveAttribute('data-shown', String(total));
-    expect(await isDrawnOn(stage.locator('canvas'))).toBe(true);
+    await expect.poll(() => isDrawnOn(stage.locator('canvas')), { timeout: 10000 }).toBe(true);
   });
 
   test('1d100 は十の位と一の位の d10 が、合わせて出目になる面で止まること', async ({ page }) => {
@@ -182,7 +182,7 @@ test.describe('チャットのダイスを 3D で転がす', () => {
     await expect(stage).toHaveAttribute('data-state', 'settled', { timeout: 20000 });
     await expect(stage).toHaveAttribute('data-material', 'metal');
     await expect(stage).toHaveAttribute('data-shown', String(total));
-    expect(await isDrawnOn(stage.locator('canvas'))).toBe(true);
+    await expect.poll(() => isDrawnOn(stage.locator('canvas')), { timeout: 10000 }).toBe(true);
   });
 
   test('マイダイスで画像を貼ると、選んだ貼り方で自分のロールが転がること', async ({ page }) => {
