@@ -1,4 +1,5 @@
 import type { DiceMaterial } from '@axe/domain/dice/dice-3d/dice-look';
+import { throwSeedOf } from '@axe/domain/dice/dice-3d/throw-seed';
 import type { DiceColors } from '@axe/infrastructure/dice-3d/dice-textures';
 import {
   Color,
@@ -178,6 +179,15 @@ export function dressDie(
     if (material === 'glass') fragment = fragment.replace('#include <transmission_fragment>', GLASS_TRANSMISSION);
     shader.fragmentShader = fragment;
   };
+}
+
+/**
+ * A seed for a die's swirl, and for the part of a wrapped picture it shows, from what its roll is
+ * known by and which die of it this is: the same wherever and however the roll is drawn, and
+ * different for every die and every roll.
+ */
+export function swirlSeedOf(seedKey: string, index: number): number {
+  return (throwSeedOf(seedKey, index) % 50_000) / 1000;
 }
 
 /**

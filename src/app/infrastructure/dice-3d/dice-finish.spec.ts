@@ -4,6 +4,7 @@ import {
   dressDie,
   faceColorsOf,
   FINISHES,
+  swirlSeedOf,
   veinOf,
 } from '@axe/infrastructure/dice-3d/dice-finish';
 import { Color, ShaderLib, Texture, WebGLProgramParametersWithUniforms } from 'three';
@@ -85,6 +86,16 @@ describe('dice finish', () => {
     expect(faceColorsOf('metal', colors)).toBe(colors);
     const glass = new Color(faceColorsOf('glass', colors).body);
     expect(glass.getHSL({ h: 0, s: 0, l: 0 }).l).toBeGreaterThan(new Color(colors.body).getHSL({ h: 0, s: 0, l: 0 }).l);
+  });
+
+  it('seeds a die’s swirl from its roll and its place in it alone, so it never changes for the same die', () => {
+    expect(swirlSeedOf('roll-a', 0)).toBe(swirlSeedOf('roll-a', 0));
+    expect(swirlSeedOf('roll-a', 1)).not.toBe(swirlSeedOf('roll-a', 0));
+    expect(swirlSeedOf('roll-b', 0)).not.toBe(swirlSeedOf('roll-a', 0));
+    for (const seed of [swirlSeedOf('roll-a', 0), swirlSeedOf('roll-b', 3), swirlSeedOf('', 0)]) {
+      expect(seed).toBeGreaterThanOrEqual(0);
+      expect(seed).toBeLessThan(50);
+    }
   });
 
   it('veins a dark die lighter and a light die darker', () => {

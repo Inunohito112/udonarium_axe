@@ -1,7 +1,6 @@
 import type { DiceMaterial, DicePictureFit } from '@axe/domain/dice/dice-3d/dice-look';
 import { DieLabels } from '@axe/domain/dice/dice-3d/dice-throw-plan';
 import { dieRadiusOf, DieShape, polyhedronOf } from '@axe/domain/dice/dice-3d/polyhedra';
-import { throwSeedOf } from '@axe/domain/dice/dice-3d/throw-seed';
 import { Tray } from '@axe/domain/dice/dice-3d/throw-validation';
 import {
   DiceDressing,
@@ -9,6 +8,7 @@ import {
   dressDie,
   faceColorsOf,
   FINISHES,
+  swirlSeedOf,
   veinOf,
 } from '@axe/infrastructure/dice-3d/dice-finish';
 import { diceMeshOf } from '@axe/infrastructure/dice-3d/dice-geometry';
@@ -331,7 +331,7 @@ export class Dice3dEngine {
     const bodies = draw.dice.map((die, index) => {
       const body = new Group();
       const shared = this.materialOf(die.shape, die.labels, look, material, picture);
-      const seed = seedOf(draw.seedKey ?? '', index);
+      const seed = swirlSeedOf(draw.seedKey ?? '', index);
       const worn =
         material === 'marble'
           ? this.ownMaterial(shared, 'marble', die.shape, die.labels, look, seed)
@@ -707,11 +707,6 @@ const STILL_D6: DiceThrowResult = {
   attempt: 0,
   fault: null,
 };
-
-/** A seed for a die's swirl, from what its roll is known by: different for every die and every roll. */
-function seedOf(seedKey: string, index: number): number {
-  return (throwSeedOf(seedKey, index) % 50_000) / 1000;
-}
 
 /** Sets every die where the recording has it some seconds in, between the two frames about that moment. */
 function pose(prepared: PreparedThrow, seconds: number): void {
