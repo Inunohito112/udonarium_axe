@@ -1,3 +1,59 @@
+## [1.61.0](https://github.com/Xelltis/udonarium_axe/compare/v1.60.0...v1.61.0) (2026-10-04)
+
+### ✨ Features
+
+* **dice:** add a panel to choose how one's own dice look ([b51aaea](https://github.com/Xelltis/udonarium_axe/commit/b51aaea2f2cdf2d9561a3140415e4119f002ae28))
+* **dice:** carry the roller's chosen dice look on their lines ([0673523](https://github.com/Xelltis/udonarium_axe/commit/067352308ea046488b2a47063118eaf936826744))
+* **dice:** choose a picture for one's dice in the My Dice panel ([6a1a4f6](https://github.com/Xelltis/udonarium_axe/commit/6a1a4f683d20c6c25b894eba20dfd6a7ba6043aa))
+* **dice:** draw dice in marble, metal and glass ([046052a](https://github.com/Xelltis/udonarium_axe/commit/046052a1fc19aaf32d33fd878f1f9b86a652df6d))
+* **dice:** draw dice in the picture their roller put on them ([d270940](https://github.com/Xelltis/udonarium_axe/commit/d2709402e451c132ab4c8855aaebba3fb4a55576))
+* **dice:** let a seat put a picture of its own on its dice ([7155ca0](https://github.com/Xelltis/udonarium_axe/commit/7155ca099878fc027ebffcb6d3f8bbb221171630))
+* **dice:** let more rolls tumble at once, counted by their dice ([97bd097](https://github.com/Xelltis/udonarium_axe/commit/97bd09711f8d0c1f120ffd3faaba416348001e64))
+* **dice:** show the dice of past rolls laid down in their lines ([d0301a3](https://github.com/Xelltis/udonarium_axe/commit/d0301a3e64e0afc529ffdfd8594ecb16c591a3d9))
+* **dice:** throw rolls of more than fifty dice on several trays ([6ecc03e](https://github.com/Xelltis/udonarium_axe/commit/6ecc03e9b094e7d49a380a0229041c8d5e1ad068))
+* **skin:** lay a dice mat of the skin's choosing under roll frames ([137b44f](https://github.com/Xelltis/udonarium_axe/commit/137b44f231b81f26aa127d2802ec1c4c847db086))
+
+### 🐛 Bug Fixes
+
+* **a11y:** end the rest of the animations at once when motion is stopped ([ec96093](https://github.com/Xelltis/udonarium_axe/commit/ec96093b2d36d7a6045f316b97ed50fa0cfacb9c))
+* **character:** hold a new piece still for a reader who keeps motion off ([2ae0398](https://github.com/Xelltis/udonarium_axe/commit/2ae0398fc25cb834c1a239e7babda4b73e45b4d2))
+* **dice:** build shaders ahead out of sight of the dice drawn meanwhile ([597ce03](https://github.com/Xelltis/udonarium_axe/commit/597ce030e6dfc88add8a5364402f066d80ef1c53))
+* **dice:** call drawing lightly by the name the setting has ([dacecae](https://github.com/Xelltis/udonarium_axe/commit/dacecaea86bd2b5caf349d47e818892ac35dba75))
+* **dice:** carry the dice on after a frame that took long to draw ([8a069fc](https://github.com/Xelltis/udonarium_axe/commit/8a069fc09c375cc6c6a00c017752b82ecb2acc04))
+* **dice:** count the dice thrown to try a look out as no roll ([341e19f](https://github.com/Xelltis/udonarium_axe/commit/341e19fe070d6b613dd9fd81c6041f0c14af03f2))
+* **dice:** do not read again a dice picture that could not be read ([a4129d2](https://github.com/Xelltis/udonarium_axe/commit/a4129d2e112c94c246dc47417452a7ea94bcd3dd))
+* **dice:** keep a dice picture in this browser before sharing it ([e525c7e](https://github.com/Xelltis/udonarium_axe/commit/e525c7e45c5702cd01f835863a25b5f3facd4945))
+* **dice:** keep a guest's dice picture out of the room's images ([2281683](https://github.com/Xelltis/udonarium_axe/commit/2281683d527a5d516603a1988370d946e1a29fc7))
+* **dice:** keep dice on the table their while though their recording is cut ([d5799e7](https://github.com/Xelltis/udonarium_axe/commit/d5799e78ae14be42fd0d937119dd06c8f7737cff))
+* **dice:** keep the material chosen under a picture on the dice ([ec233ad](https://github.com/Xelltis/udonarium_axe/commit/ec233addc69612dac8c0cf5b62ad6a188ae5b8e2))
+* **dice:** let go of dice pictures no kept throw wears ([aa35915](https://github.com/Xelltis/udonarium_axe/commit/aa359156351df74d91498b8637490d8d972258e8))
+* **dice:** let go of the copy kept for a dice picture that is replaced ([4cc0141](https://github.com/Xelltis/udonarium_axe/commit/4cc0141588b764e1c7f556a6391af74c810cb2d9))
+* **dice:** let lines scrolled back over go before rolls that tumbled ([9c413fe](https://github.com/Xelltis/udonarium_axe/commit/9c413fe26976b851f46cd69e0a40f0567dcfd8b9))
+* **dice:** put a dice picture back among the room's images only when needed ([94549fb](https://github.com/Xelltis/udonarium_axe/commit/94549fb20f65414d9825b5e96c23b73e96918976))
+* **dice:** put a dice picture back once a line of the seat's wants it ([3a69b9a](https://github.com/Xelltis/udonarium_axe/commit/3a69b9a194f14578b90c99155a508a0729e06dda))
+* **dice:** read a picture larger than dice pictures down to their size ([6995833](https://github.com/Xelltis/udonarium_axe/commit/699583311a1929ccee9d85e23e16b3ed47d6047b))
+* **dice:** seed each die's swirl from its roll, not its recording ([a7f36b2](https://github.com/Xelltis/udonarium_axe/commit/a7f36b2d15df8980f8269c06c3e648703ca0aa69))
+* **menu:** restore what the drawer did before it was arranged ([3ffe8c5](https://github.com/Xelltis/udonarium_axe/commit/3ffe8c57c84163e0cd12cad68f66ac292ed9c30f))
+* **skin:** lay the plain mat when a skin from before mats is read in ([170e563](https://github.com/Xelltis/udonarium_axe/commit/170e563f0d6f36d146f0c3dd05dd1192f6b9dbe1))
+* **skin:** show the fit and corner a picture is laid with ([31b7860](https://github.com/Xelltis/udonarium_axe/commit/31b7860d4e76906b8ff2c3e905cd03378c065fc1))
+* **skin:** show the mat picture of a skin that is read in ([dfe1d17](https://github.com/Xelltis/udonarium_axe/commit/dfe1d17691ce238b488b55353a6a0d80dbf3d2c3))
+* **storage:** keep files in IndexedDB as their bytes ([1cbaab2](https://github.com/Xelltis/udonarium_axe/commit/1cbaab2668050e8ba1e0e17172f95f45cef84c4e))
+
+### ⚡ Performance
+
+* **dice:** hand a line the same frames while nothing in them changes ([942788d](https://github.com/Xelltis/udonarium_axe/commit/942788db2ea1dc7a5e42b265798d1bf3503a665c))
+
+### 📝 Documentation
+
+* **dice:** move notes on keeping and dropping throws into doc comments ([2fa4633](https://github.com/Xelltis/udonarium_axe/commit/2fa4633f2402d0b9ec6b95068047394d196eaf0c))
+* **manual:** describe shared trays, past rolls, My Dice and the dice mat ([414b790](https://github.com/Xelltis/udonarium_axe/commit/414b790bfef506bfd7a001462ae3ec19362378a2))
+* **manual:** say the dice take back their material when the picture comes off ([1c159f9](https://github.com/Xelltis/udonarium_axe/commit/1c159f9c43f2c52f793c05abe9608c47015c3961))
+* **manual:** show how to put a picture on one's dice ([c78584e](https://github.com/Xelltis/udonarium_axe/commit/c78584e9bd035eb507a8684b7b472fcdafdaf9f8))
+
+### ♻️ Refactor
+
+* **storage:** keep the skin's picture database as one of a kind ([ecacf05](https://github.com/Xelltis/udonarium_axe/commit/ecacf05d760fc1a86ec9fc0d69dd7c94672be08d))
+
 ## [1.60.0](https://github.com/Xelltis/udonarium_axe/compare/v1.59.0...v1.60.0) (2026-10-02)
 
 ### ✨ Features
