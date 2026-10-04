@@ -302,6 +302,25 @@ function applyConfigureTestingModuleWrapper(): void {
   TestBed.configureTestingModule = wrapped as typeof TestBed.configureTestingModule;
 }
 
+// vi.waitFor gives up after a second unless it is told otherwise. A step that takes a moment on its
+// own can take longer than that while every spec runs at once on a busy machine, and the wait then
+// fails with what it saw first. A wait that names no time is given ten seconds, well inside a
+// test's own thirty; one that names its time keeps it.
+const WAIT_FOR_MS = 10_000;
+
+function applyWaitForDefault(): void {
+  if ((vi.waitFor as unknown as Record<string, unknown>)[WRAPPER_SENTINEL]) return;
+  const waitFor = vi.waitFor;
+  const wrapped = ((callback, options) =>
+    waitFor(
+      callback,
+      typeof options === 'number' ? options : { timeout: WAIT_FOR_MS, ...options }
+    )) as typeof vi.waitFor;
+  (wrapped as unknown as Record<string, unknown>)[WRAPPER_SENTINEL] = true;
+  vi.waitFor = wrapped;
+}
+applyWaitForDefault();
+
 // Vitest runs setup once per test file; swallow the "already initialized" throw on re-entry.
 try {
   TestBed.initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
