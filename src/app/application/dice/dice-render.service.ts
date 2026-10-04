@@ -558,6 +558,10 @@ export class DiceRenderService {
   /**
    * Reads the pictures the throws' dice wear that are not read yet, and draws again what wears one
    * read. A picture no throw kept wears any more is let go, with what was set up wearing it.
+   *
+   * One of this seat's own that the room's images lack, as on a line it said before the page was
+   * opened again, is put back among them from this browser; by then the seat has joined the room
+   * the line is in, and its role is known.
    */
   private readPictures(throws: ReadonlyMap<string, DiceThrow>): void {
     const wanted = new Set([...throws.values()].map((diceThrow) => diceThrow.look.picture).filter(Boolean));
@@ -579,7 +583,10 @@ export class DiceRenderService {
         })
         .then((source) => {
           this.readingPictures.delete(key);
-          if (!source) return;
+          if (!source) {
+            if (key === this.myDice.look().picture) void this.myDice.ensureShared();
+            return;
+          }
           this.pictures.set(key, source);
           for (const stage of this.stages)
             if (this.throws.throws().get(stage.key)?.look.picture === key) stage.drawn = false;

@@ -352,6 +352,28 @@ describe('DiceRenderService', () => {
       expect(engine.pictures.at(-1)).toBe(`${PICTURE}:wrap`);
     });
 
+    it('has this seat’s own picture put back among the room’s images when a line wants it and they lack it', async () => {
+      const dice = TestBed.inject(MyDiceService);
+      vi.spyOn(dice, 'look').mockReturnValue({ ...PLAIN_DICE_LOOK, picture: PICTURE });
+      const shared = vi.spyOn(dice, 'ensureShared').mockResolvedValue();
+      throws.set(new Map([['a', pictured('wrap')]]));
+      service.register(document.createElement('canvas'), 'a').resize(300, 90);
+      await nextFrame(0);
+      await nextFrame(16);
+
+      expect(shared).toHaveBeenCalled();
+    });
+
+    it('leaves someone else’s picture to arrive by itself', async () => {
+      const shared = vi.spyOn(TestBed.inject(MyDiceService), 'ensureShared').mockResolvedValue();
+      throws.set(new Map([['a', pictured('wrap')]]));
+      service.register(document.createElement('canvas'), 'a').resize(300, 90);
+      await nextFrame(0);
+      await nextFrame(16);
+
+      expect(shared).not.toHaveBeenCalled();
+    });
+
     it('does not read again a picture that arrived but could not be read', async () => {
       const asked: string[] = [];
       readPicture = async (identifier) => {
