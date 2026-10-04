@@ -40,8 +40,9 @@ test.describe('セッション進行まわり', () => {
     await expect(snapshot).toContainText('まだスナップショットがありません');
 
     await snapshot.getByRole('button', { name: /今すぐ保存/ }).click();
-    // 保存できたら世代の数え上げが動く。
-    await expect(snapshot).not.toContainText('まだスナップショットがありません', { timeout: 10000 });
+    // 保存できたら世代の数え上げが動く。部屋全体を zip にまとめるので、ブラウザを並べて
+    // 流していると普段の 0.3 秒が 10 秒を超えることがある。
+    await expect(snapshot).not.toContainText('まだスナップショットがありません', { timeout: 30000 });
   });
 
   test('インベントリをラウンド表示に切り替えると行動順だけに縮み、卓上のコマが並ぶこと', async ({ page }) => {
