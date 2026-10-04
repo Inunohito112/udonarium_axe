@@ -1,4 +1,5 @@
 import { Logger } from '@axe/core/logging/logger';
+import { blobFromStored, storedBytesOf } from '@axe/core/storage/stored-bytes';
 
 const DB_VERSION = 1;
 const STORE_NAME = 'images';
@@ -8,7 +9,8 @@ const STORE_NAME = 'images';
  *
  * For what belongs to this browser and is too large for local storage: a skin's backgrounds, or the
  * picture a seat chose for its dice. Where the browser has no IndexedDB, nothing is kept and every
- * read comes back empty.
+ * read comes back empty. A picture is kept as its bytes, which a private window in WebKit stores
+ * where it refuses the picture itself.
  */
 export class IndexedBlobStore {
   private dbPromise: Promise<IDBDatabase | null> | null = null;
@@ -27,12 +29,13 @@ export class IndexedBlobStore {
   /** The picture stored under a key, or null when there is none or storage is unavailable. */
   async get(key: string): Promise<Blob | null> {
     const found = await this.request<unknown>('readonly', (store) => store.get(key));
-    return found instanceof Blob ? found : null;
+    return blobFromStored(found);
   }
 
   /** Stores or replaces the picture under a key, resolving false when it could not be written. */
   async put(key: string, blob: Blob): Promise<boolean> {
-    const done = await this.request<IDBValidKey>('readwrite', (store) => store.put(blob, key));
+    const stored = await storedBytesOf(blob);
+    const done = await this.request<IDBValidKey>('readwrite', (store) => store.put(stored, key));
     return done !== null;
   }
 
