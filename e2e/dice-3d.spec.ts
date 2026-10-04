@@ -2,8 +2,15 @@ import { expect, Locator, Page, test } from '@playwright/test';
 
 import { openPanel, openSeatDisplay, waitAppReady } from './helpers';
 
-// The dice are drawn with WebGL, which headless Chromium gives through SwiftShader.
-test.use({ launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] } });
+// The dice are drawn with WebGL, which headless Chromium gives through SwiftShader. The switches
+// are Chromium's own; WebKit refuses to start with them, and Firefox draws WebGL without.
+test.use({
+  launchOptions: [
+    async ({ browserName }, use) =>
+      use(browserName === 'chromium' ? { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] } : {}),
+    { scope: 'worker' },
+  ],
+});
 
 /** A chat roll's dice tumble in the frame of the line that answers it, when the room has them shown there. */
 test.describe('チャットのダイスを 3D で転がす', () => {
