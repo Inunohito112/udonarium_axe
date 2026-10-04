@@ -101,14 +101,15 @@ i18n の翻訳文字列とドキュメント本文は対象外（詳細は
 
 ## ドキュメントの日本語
 
-README・`docs/`・`website/` のまとまった日本語は `natural-japanese` スキルを通して書く
-（[.claude/settings.json](.claude/settings.json) の `enabledPlugins` で有効化済み）。詳細は
-[docs/contribution.md](docs/contribution.md)。要点のみ:
+README・`docs/`・`website/`のまとまった日本語は`yomiyasu`スキルを通して書く
+（[.claude/settings.json](.claude/settings.json)の`enabledPlugins`で有効化済み。干渉を避けるため`natural-japanese`は無効にしてある）。
+詳細は[docs/contribution.md](docs/contribution.md)にあり、ここには要点だけを書く。
 
-- 対象は新規執筆と書き直し。1〜2 行の追記や表のセル修正はそのまま書いてよい
-- 禁止語・翻訳調・リズムの均質さはスキル同梱の lint が機械的に拾う。
+- 対象は新規執筆と書き直し。1〜2行の追記や表のセル修正はそのまま書いてよい
+- 和文と英数字の間に半角空白を入れない。空けてある既存の文書は書き直すときにそろえる
+- 比喩動詞・太字や箇条書きの多さ・文末コロンなどはスキル同梱のリンターが拾う。
   出るのは疑いなので、直すか残すかは文脈で決める
-- **コミットメッセージと CHANGELOG は対象外** — 前者は英語、後者は semantic-release の生成物
+- **コミットメッセージとCHANGELOGは対象外**。前者は英語で書き、後者はsemantic-releaseが生成する
 
 ## 留意事項
 
