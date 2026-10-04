@@ -20,8 +20,12 @@ export interface ThrowPlan {
   readonly overflow: number;
 }
 
+/** The most dice thrown on one tray; a larger roll is shared out over several. */
+export const MAX_DICE_PER_TRAY = 50;
+/** The most trays one roll is thrown on. */
+export const MAX_TRAYS = 4;
 /** The most dice one roll throws on screen; the rest are only counted. */
-export const MAX_THROWN_DICE = 50;
+export const MAX_THROWN_DICE = MAX_DICE_PER_TRAY * MAX_TRAYS;
 
 const SHAPE_BY_SIDES: Readonly<Record<number, DieShape>> = {
   4: 'd4',
@@ -45,13 +49,30 @@ const EMPTY_PLAN: ThrowPlan = { dice: [], overflow: 0 };
  * - A d3 is a d6 numbered 1 to 3 twice.
  * - Anything else, such as a d2 or a choice among seven, is not thrown at all.
  *
- * No more than fifty dice are thrown; the rest are counted as overflow.
+ * No more than two hundred dice are thrown; the rest are counted as overflow.
  */
 export function throwPlanOf(detail: DiceRollDetail | null): ThrowPlan {
   if (!detail || detail.faces.length < 1) return EMPTY_PLAN;
   const all = detail.faces.flatMap(diceFor);
   if (all.length < 1) return EMPTY_PLAN;
   return { dice: all.slice(0, MAX_THROWN_DICE), overflow: Math.max(0, all.length - MAX_THROWN_DICE) };
+}
+
+/**
+ * A roll's dice shared out over as few trays as hold them, as evenly as they go and in the order
+ * they were rolled: a hundred and twenty go forty to a tray rather than fifty, fifty and twenty,
+ * since a tray is sized by its dice and a small one would show its dice larger than the rest.
+ */
+export function traysOf(dice: readonly DieToThrow[]): DieToThrow[][] {
+  const count = Math.ceil(dice.length / MAX_DICE_PER_TRAY);
+  const trays: DieToThrow[][] = [];
+  let from = 0;
+  for (let tray = 0; tray < count; tray++) {
+    const size = Math.floor(dice.length / count) + (tray < dice.length % count ? 1 : 0);
+    trays.push(dice.slice(from, from + size));
+    from += size;
+  }
+  return trays;
 }
 
 /** What one face of a die says, for the shape and the way it is numbered. */

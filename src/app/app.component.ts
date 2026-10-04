@@ -362,10 +362,13 @@ export class AppComponent {
     return isMenuGroupView(node) ? node.entries : [];
   }
 
-  /** Does what an entry is for, and closes the menu it was in behind it. */
+  /**
+   * Does what an entry is for, and closes the menu it was in behind it, unless the entry is a
+   * switch of this seat's own that is pressed in turn to see each choice.
+   */
   protected chooseFromFabSubmenu(entry: MenuEntryView): void {
     if (entry.disabled) return;
-    this.closeFabSubmenu();
+    if (!entry.command.stays) this.closeFabSubmenu();
     this.menuCommands.run(entry.command);
   }
 

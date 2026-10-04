@@ -942,6 +942,35 @@
       "log": {
         "reveal": "{{name}}'s die reads {{face}}.",
         "revealNoName": "The die reads {{face}}."
+      },
+      "myDice": {
+        "title": "My Dice",
+        "hint": "Choose what your dice are made of and their colours.",
+        "rollAgain": "Roll again",
+        "material": "Material",
+        "material_resin": "Resin",
+        "material_marble": "Marble",
+        "material_metal": "Metal",
+        "material_glass": "Translucent",
+        "glassDrawnLightly": "This device draws lightly, so translucent dice are shown as resin here. Others still see them translucent.",
+        "body": "Dice colour",
+        "bodyFollowsRoll": "Match the colour of my chat line",
+        "ink": "Number colour",
+        "inkAuto": "Pick one that stands out from the dice",
+        "pickColor": "Pick a colour",
+        "seenByAll": "Everyone in the room sees your rolls in this look. It is kept in this browser.",
+        "picture": "Picture",
+        "choosePicture": "Choose a picture",
+        "changePicture": "Change the picture",
+        "removePicture": "Remove",
+        "fit_wrap": "Wrap round",
+        "fit_faces": "On every face",
+        "pictureMakesResin": "Dice wearing a picture are resin.",
+        "pictureHint": "Wrap round suits patterns such as stone or wood grain; on every face suits a logo or an emblem. The picture is sent to everyone in the room and kept when the room is saved.",
+        "trouble_notPicture": "That could not be read as a picture.",
+        "trouble_tooLarge": "Pictures over 8 MB cannot be used.",
+        "trouble_unstored": "The picture could not be kept in this browser.",
+        "trouble_notAllowed": "Guests cannot put a picture on their dice."
       }
     },
     "effect": {
@@ -2665,7 +2694,10 @@
       "name_grassland": "Grassland",
       "name_coast": "Coast",
       "name_wasteland": "Wasteland",
-      "name_academy": "Academy days"
+      "name_academy": "Academy days",
+      "mat": "Dice mat",
+      "matColor": "Mat colour",
+      "matHint": "What the dice roll on in a chat frame. A picture is laid over the colour. Only this screen sees the mat; nobody else’s changes."
     },
     "lobby": {
       "peerMenu": {
@@ -2826,7 +2858,8 @@
         "textareaPlaceholderShort": "Type a message",
         "sendToTicker": "Ticker",
         "sendToTickerHint": "Also run this line around the edge of the screen",
-        "tools": "Input settings"
+        "tools": "Input settings",
+        "myDice": "My Dice"
       },
       "tab": {
         "unnamedCharacter": "Unnamed character",

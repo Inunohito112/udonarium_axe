@@ -1,5 +1,6 @@
 import { inject, TestBed } from '@angular/core/testing';
 import { ChatMessageService } from '@axe/application/chat/chat-message.service';
+import { MyDiceService } from '@axe/application/dice/my-dice.service';
 import { Network } from '@axe/core/network/network';
 import { IPeerContext } from '@axe/core/network/peer-context';
 import { ImageStorage } from '@axe/core/storage/image-storage';
@@ -10,6 +11,7 @@ import { ChatMessage } from '@axe/domain/chat/chat-message';
 import { ChatTab } from '@axe/domain/chat/chat-tab';
 import { ChatTabList } from '@axe/domain/chat/chat-tab-list';
 import { DataElement } from '@axe/domain/data/data-element';
+import { decodeDiceLook, PLAIN_DICE_LOOK } from '@axe/domain/dice/dice-3d/dice-look';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { beMyself } from '@axe/testing/peer-context-stub';
@@ -221,6 +223,60 @@ describe('ChatMessageService', () => {
       const message = service.sendMessage(chatTab, 'では、判定を', null, PeerCursor.myCursor.identifier);
 
       expect(message.senderRole).toBe(PeerRole.GameMaster);
+    });
+  });
+
+  describe('how the speaker’s dice look', () => {
+    function said(role?: PeerRole): ChatMessage {
+      const service = TestBed.inject(ChatMessageService);
+      PeerCursor.createMyCursor();
+      if (role) PeerCursor.myCursor.role = role;
+      const chatTab = new ChatTab();
+      chatTab.initialize();
+      ObjectStore.instance.add(chatTab);
+      return service.sendMessage(chatTab, '2d6', null, PeerCursor.myCursor.identifier);
+    }
+
+    afterEach(() => localStorage.removeItem('my-dice'));
+
+    it('carries the look this seat chose, for the dice bot’s answer to throw the dice in', () => {
+      TestBed.inject(MyDiceService).set({ ...PLAIN_DICE_LOOK, material: 'marble', body: '#1e6b52', ink: '' });
+
+      expect(decodeDiceLook(said().diceLook)).toEqual({
+        ...PLAIN_DICE_LOOK,
+        material: 'marble',
+        body: '#1e6b52',
+        ink: '',
+      });
+    });
+
+    it('carries nothing for the plain look', () => {
+      expect(said().diceLook ?? '').toBe('');
+      expect(said().diceImageIdentifier ?? '').toBe('');
+    });
+
+    it('carries the picture on the dice apart from the look, and sees that the room has it', () => {
+      const dice = TestBed.inject(MyDiceService);
+      const shared = vi.spyOn(dice, 'ensureShared').mockResolvedValue();
+      dice.set({ ...PLAIN_DICE_LOOK, picture: 'ab'.repeat(32), pictureFit: 'faces' });
+
+      const line = said();
+
+      expect(line.diceImageIdentifier).toBe('ab'.repeat(32));
+      expect(decodeDiceLook(line.diceLook, line.diceImageIdentifier).pictureFit).toBe('faces');
+      expect(shared).toHaveBeenCalled();
+    });
+
+    it('carries no picture from a guest, who may not add to the room’s images', () => {
+      const dice = TestBed.inject(MyDiceService);
+      const shared = vi.spyOn(dice, 'ensureShared').mockResolvedValue();
+      dice.set({ ...PLAIN_DICE_LOOK, material: 'metal', picture: 'ab'.repeat(32), body: '#1e6b52' });
+
+      const line = said(PeerRole.Guest);
+
+      expect(line.diceImageIdentifier ?? '').toBe('');
+      expect(decodeDiceLook(line.diceLook)).toMatchObject({ material: 'metal', body: '#1e6b52' });
+      expect(shared).not.toHaveBeenCalled();
     });
   });
 

@@ -25,4 +25,10 @@ describe('lookFor', () => {
     expect(lookFor('').body).toBe('rgb(32, 32, 36)');
     expect(lookFor('not a colour').ink).toBe('#f6f3ec');
   });
+
+  it('inks the numbers in the colour asked for, whatever the body', () => {
+    expect(lookFor('#000000', '#e8c547').ink).toBe('rgb(232, 197, 71)');
+    expect(lookFor('#f2efe6', '#1e6b52').ink).toBe('rgb(30, 107, 82)');
+    expect(lookFor('#3b5bdb', '').ink).toBe('#f6f3ec');
+  });
 });

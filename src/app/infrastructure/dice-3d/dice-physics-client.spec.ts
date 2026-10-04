@@ -128,6 +128,17 @@ describe('throwDice', () => {
     expect(result.frameCount).toBeGreaterThan(0);
   });
 
+  it('drops a throw still waiting on a worker that is swapped out, rather than working it out on the page', async () => {
+    const held = new StandInWorker();
+    held.postMessage = () => undefined;
+    useDicePhysicsWorkerFactory(() => held as unknown as Worker);
+    const waiting = throwDice(request);
+
+    useDicePhysicsWorkerFactory(() => null);
+
+    await expect(waiting).rejects.toThrow();
+  });
+
   it('lets a worker that stopped go, and answers the throw it was holding on the page', async () => {
     const dying = new StandInWorker();
     dying.postMessage = () => queueMicrotask(() => dying.dispatchEvent(new Event('error')));

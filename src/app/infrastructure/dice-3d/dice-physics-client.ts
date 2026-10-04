@@ -31,13 +31,18 @@ let worker: Worker | null = null;
 let idleTimer: ReturnType<typeof setTimeout> | null = null;
 let nextId = 1;
 const pending = new Map<number, (result: DiceThrowResult | null) => void>();
+/** Counts the times the worker has been swapped out, so a throw can tell it waited on one gone. */
+let swaps = 0;
 
 /**
  * Hands in how the worker is made, or null to go back to the real one. A test hands in a stand-in,
- * or one that makes none so the page works the throw out itself.
+ * or one that makes none so the page works the throw out itself. Throws still waiting on the worker
+ * swapped out are dropped rather than worked out on the page, so a test that held them leaves no
+ * work behind to stall the next.
  */
 export function useDicePhysicsWorkerFactory(factory: (() => Worker | null) | null): void {
   makeWorker = factory;
+  swaps++;
   releaseWorker();
 }
 
@@ -46,11 +51,13 @@ export function useDicePhysicsWorkerFactory(factory: (() => Worker | null) | nul
  * stutters the screen while they are worked out.
  *
  * The page works it out itself when no worker can be started or the worker fails, so a throw is
- * always answered.
+ * always answered; one left waiting on a worker swapped out is dropped instead.
  */
 export async function throwDice(request: DiceThrowRequest): Promise<DiceThrowResult> {
+  const asked = swaps;
   const fromWorker = await askWorker(request);
   if (fromWorker) return fromWorker;
+  if (asked !== swaps) throw new Error('The worker the throw waited on was swapped out');
   const { simulateThrow } = await import('@axe/infrastructure/dice-3d/dice-physics');
   return simulateThrow(request);
 }

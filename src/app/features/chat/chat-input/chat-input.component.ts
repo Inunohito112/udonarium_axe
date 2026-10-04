@@ -42,11 +42,13 @@ import { DataElement } from '@axe/domain/data/data-element';
 import { DiceBot } from '@axe/domain/dice/dice-bot';
 import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { ChatColorSettingComponent } from '@axe/features/chat/chat-color-setting/chat-color-setting.component';
 import { ChatComposeService } from '@axe/features/chat/chat-compose.service';
 import { ChatInputDiceBotHelper } from '@axe/features/chat/chat-input/chat-input-dicebot';
 import { allowsChat } from '@axe/features/chat/chat-input/chat-input-helpers';
 import { ChatInputHistory } from '@axe/features/chat/chat-input/chat-input-history';
+import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { PortraitChoice, PortraitPickerComponent } from '@axe/ui/components/portrait-picker/portrait-picker.component';
 import { PortraitSliderComponent } from '@axe/ui/components/portrait-slider/portrait-slider.component';
 import { NgSelectWindowDirective } from '@axe/ui/directives/ng-select-window.directive';
@@ -99,6 +101,24 @@ export class ChatInputComponent {
     () => this.tabletopService.mode2d() && this.tabletopDisplay.settings().multiAngleTickerEnabled
   );
   readonly sendsToTicker = signal(false);
+
+  private readonly roomPanels = inject(RoomPanelService);
+
+  /**
+   * Whether the room shows its rolls' dice, which is when a seat has reason to choose how its own
+   * look; never for a guest, who is not offered the panel.
+   */
+  readonly showsMyDice = computed(() => {
+    this.objectChange.versionOf('Config')();
+    this.objectChange.trackMyCursor();
+    if (PeerCursor.myRole === PeerRole.Guest) return false;
+    return (this.objectStore.get<Config>('Config')?.diceStage ?? 'off') !== 'off';
+  });
+
+  /** Opens where this seat chooses how its dice look. */
+  openMyDice(): void {
+    this.roomPanels.open('myDice');
+  }
 
   /** Switches whether the lines this seat sends also run along the ticker band. */
   toggleTickerSend(): void {

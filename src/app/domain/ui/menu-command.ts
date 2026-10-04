@@ -96,6 +96,12 @@ export interface MenuCommand {
   testId?: string;
   /** Whether it is drawn faintly while it stands off, which only the switches over the table do. */
   dims?: boolean;
+  /**
+   * Whether pressing it leaves the small menu it sits in open: a switch of how this seat draws, or
+   * of what floats over the table, which is pressed in turn to see each choice it moves through.
+   * Anything that opens something or acts on the room closes the menu behind it.
+   */
+  stays?: boolean;
 }
 
 const EVERYWHERE: readonly MenuSurface[] = MENU_SURFACES;
@@ -106,6 +112,7 @@ type CommandOptions = {
   surfaces?: readonly MenuSurface[];
   testId?: string;
   dims?: boolean;
+  stays?: boolean;
 };
 
 function make(
@@ -113,7 +120,7 @@ function make(
   icon: string,
   labelKey: string,
   action: MenuAction,
-  { audience = 'anyone', surfaces = EVERYWHERE, testId, dims }: CommandOptions = {}
+  { audience = 'anyone', surfaces = EVERYWHERE, testId, dims, stays }: CommandOptions = {}
 ): MenuCommand {
   return {
     key,
@@ -124,6 +131,7 @@ function make(
     surfaces,
     ...(testId ? { testId } : {}),
     ...(dims ? { dims } : {}),
+    ...(stays ? { stays } : {}),
   };
 }
 
@@ -142,7 +150,12 @@ function toggle(key: MenuToggleName, icon: string, labelKey: string, options: Co
 }
 
 function cycle(key: MenuCycleName, icon: string, labelKey: string, options: CommandOptions = {}): MenuCommand {
-  return make(key, icon, labelKey, { kind: 'cycle', cycle: key }, options);
+  return make(key, icon, labelKey, { kind: 'cycle', cycle: key }, { stays: true, ...options });
+}
+
+/** A widget shown or hidden over the table, which a small menu stays open over to set the rest. */
+function widget(key: MenuToggleName, icon: string, labelKey: string, options: CommandOptions = {}): MenuCommand {
+  return toggle(key, icon, labelKey, { stays: true, ...options });
 }
 
 function act(key: MenuActName, icon: string, labelKey: string, options: CommandOptions = {}): MenuCommand {
@@ -177,6 +190,7 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
   panel('buffManager', 'timeline', 'buffManager', 'feature.buffManager.title', { audience: 'playing' }),
   panel('statusAilment', 'list_alt', 'statusAilment', 'feature.statusAilment.title'),
   panel('diceTableSetting', 'casino', 'diceTableSetting', 'feature.dice.tableSetting.title'),
+  panel('myDice', 'format_paint', 'myDice', 'feature.dice.myDice.title', { audience: 'playing' }),
   panel('images', 'photo_library', 'fileStorage', 'app.fab.images'),
   panel('jukebox', 'queue_music', 'jukebox', 'app.fab.jukebox'),
   panel('cutIn', 'slideshow', 'cutInList', 'app.fab.cutIn'),
@@ -193,7 +207,7 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
   panel('menuEditor', 'tune', 'menuEditor', 'feature.menuEditor.title'),
 
   toggle('visualNovel', 'auto_stories', 'app.fab.visualNovel'),
-  toggle('handRail', 'style', 'app.fab.hand', { audience: 'playing' }),
+  toggle('handRail', 'style', 'app.fab.hand', { audience: 'playing', testId: 'fab-entry-hand' }),
   toggle('darkness', 'bedtime', 'app.fab.darknessOn', { audience: 'gameMaster', dims: true }),
   toggle('fog', 'foggy', 'app.fab.fogOn', { audience: 'gameMaster', dims: true }),
   toggle('resourceBars', 'align_horizontal_left', 'app.fab.resourceBarsShown', {
@@ -202,21 +216,21 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
   }),
   toggle('buffs', 'auto_fix_high', 'app.fab.buffsShown', { testId: 'toolbar-buffs', dims: true }),
   toggle('npcBar', 'groups', 'app.fab.npcBar', { audience: 'gameMaster' }),
-  toggle('widgetPlToolbar', 'person', 'app.fab.plTools', { audience: 'player', testId: 'seat-widget-plToolbar' }),
-  toggle('widgetGmToolbar', 'shield', 'app.fab.gmTools', {
+  widget('widgetPlToolbar', 'person', 'app.fab.plTools', { audience: 'player', testId: 'seat-widget-plToolbar' }),
+  widget('widgetGmToolbar', 'shield', 'app.fab.gmTools', {
     audience: 'gameMaster',
     testId: 'seat-widget-gmToolbar',
   }),
-  toggle('widgetClock', 'schedule', 'app.fab.clock', { testId: 'seat-widget-clock' }),
-  toggle('widgetCompass', 'explore', 'app.fab.compass', { testId: 'seat-widget-compass' }),
-  toggle('widgetRecording', 'radio_button_checked', 'app.fab.recording', {
+  widget('widgetClock', 'schedule', 'app.fab.clock', { testId: 'seat-widget-clock' }),
+  widget('widgetCompass', 'explore', 'app.fab.compass', { testId: 'seat-widget-compass' }),
+  widget('widgetRecording', 'radio_button_checked', 'app.fab.recording', {
     testId: 'seat-widget-recording',
   }),
-  toggle('widgetConnectionQuality', 'network_check', 'app.fab.connectionQuality', {
+  widget('widgetConnectionQuality', 'network_check', 'app.fab.connectionQuality', {
     testId: 'seat-widget-connectionQuality',
   }),
-  toggle('widgetMiniPlayer', 'play_circle', 'app.fab.miniPlayer', { testId: 'seat-widget-miniPlayer' }),
-  toggle('widgetHotbar', 'apps', 'feature.hotbar.toggle', { audience: 'playing', testId: 'seat-widget-hotbar' }),
+  widget('widgetMiniPlayer', 'play_circle', 'app.fab.miniPlayer', { testId: 'seat-widget-miniPlayer' }),
+  widget('widgetHotbar', 'apps', 'feature.hotbar.toggle', { audience: 'playing', testId: 'seat-widget-hotbar' }),
 
   cycle('viewMode', 'view_in_ar', 'app.fab.viewPerspective', { testId: 'seat-view' }),
   cycle('theme', 'brightness_auto', 'common.theme.auto', { testId: 'seat-theme' }),
