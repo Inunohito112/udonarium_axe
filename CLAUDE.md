@@ -3,7 +3,7 @@
 Udonarium AxeはブラウザベースのTRPGオンラインセッション支援ツール。
 WebRTC (SkyWay SDK)によるP2P通信でサーバレスにオブジェクトを同期する。
 
-本ファイルは**日々の開発で守るべき最小限の規範**のみを記す。詳細は以下を参照:
+本ファイルは**日々の開発で守るべき最小限の規範**のみを記す。詳細は以下を参照。
 
 - 設計思想・各層の役割・実装パターン → [docs/architecture.md](docs/architecture.md)
 - コーディング規範・コードスタイル → [docs/coding-guidelines.md](docs/coding-guidelines.md)
@@ -11,7 +11,7 @@ WebRTC (SkyWay SDK)によるP2P通信でサーバレスにオブジェクトを�
 
 ## アーキテクチャ規範
 
-依存方向（各層は右側の層をimport可。逆流はESLintで禁止、`pre-commit`で検出）:
+依存方向は次のとおり。各層は右側の層をimportできる。逆流はESLintで禁止し、`pre-commit`で検出する。
 
 ```
 composition → features → ui → application → infrastructure → domain → core
@@ -34,7 +34,7 @@ composition → features → ui → application → infrastructure → domain �
 
 ## 規範ハイライト
 
-実装中に最低限意識すべき強制事項（詳細は[docs/coding-guidelines.md](docs/coding-guidelines.md)）:
+実装中に最低限意識すべき強制事項は次のとおり（詳細は[docs/coding-guidelines.md](docs/coding-guidelines.md)）。
 
 - **コンポーネント**: `OnPush`必須、`templateUrl`外部分離、`styleUrls` / `styles`禁止
   （Tailwind utility classをinline）
@@ -42,7 +42,7 @@ composition → features → ui → application → infrastructure → domain �
 - **イベント購読**: `ObjectChangeService.onObjectChangedFor()` / `onObjectChangedForAlias()`を使う
 - **feature副作用**: 各feature配下の`*-event-handler.service.ts`を`providedIn: 'root'`で書く
 - **context-menu**: 各feature配下に`*-context-menu.ts`を純関数で置き、specで固定
-- **ドメインモデルからDIサービスを呼ばない** — サービス側からモデルを操作する向きを保つ
+- **ドメインモデルからDIサービスを呼ばない**。サービス側からモデルを操作する向きを保つ
 - **import**: 相対パス禁止（`@axe/*` / `@env/*`）、層境界はESLintでerror化
 
 ## パスエイリアス
@@ -82,7 +82,7 @@ composition → features → ui → application → infrastructure → domain �
 
 ## コミット・フック規約（要点）
 
-詳細は[docs/contribution.md](docs/contribution.md)。要点のみ:
+詳細は[docs/contribution.md](docs/contribution.md)を参照。以下は要点のみ。
 
 - **コミットメッセージは必ず英語**。形式は`type(scope): subject`（Conventional Commits）
   - 例: `feat(tabletop): expand table area to 6000px and adjust zoom range`

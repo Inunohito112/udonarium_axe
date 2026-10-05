@@ -21,7 +21,7 @@
 
 ### scope
 
-変更対象の領域名。よく使うもの:
+変更対象の領域名。よく使うものは次のとおり。
 
 | カテゴリ | scope                                                                                                         |
 | -------- | ------------------------------------------------------------------------------------------------------------- |
@@ -43,7 +43,7 @@
 
 ### footer（任意）
 
-- `BREAKING CHANGE:`フッタは現状未使用だが、必要時はフッタとして追加
+- `BREAKING CHANGE:`フッタは現状未使用だが、必要なときは追加する
 
 ### 例
 
@@ -77,7 +77,7 @@ chore(release): bump version to 1.2.2
 `pre-commit`の`vitest related`はstagedファイルからimportを逆にたどって当たるspecだけを回す
 （[scripts/vitest-related.mjs](../scripts/vitest-related.mjs)。テンプレートは隣の`.ts`に読み替える）。
 ただし、テストのセットアップが読み込むファイル（間接的に読むものも含む）や、ランナーの設定
-（`vitest.config.ts`など）をstagedにしたときは、どのspecにも効くので全量を回す。
+（`vitest.config.ts`など）をstagedにしたときは、どのspecにも影響するので全量を回す。
 全量は`pre-push`とCIが見る。
 
 設定: [../lefthook.yml](../lefthook.yml)
@@ -105,7 +105,7 @@ E2Eは載せていない。PlaywrightはCIだと5ブラウザぶん走る設定�
 
 演出の見た目は`e2e/visual/`のスクリーンショット比較で守る。
 `npx playwright test --project=visual`が`e2e/visual/__screenshots__/`の基準画像と
-突き合わせる。時計を止め、アニメーションを終端まで送ってから撮るので、同じ機械なら同じ絵になる。
+比べる。時計を止め、アニメーションを終端まで送ってから撮るので、同じ機械なら同じ絵になる。
 基準画像は手元のChromiumで作ってコミットし、CIでは回さない。
 見た目を変えるつもりの変更で差分が出たら`--update-snapshots`で撮り直し、何がどう変わったかを
 コミット本文に書く。差分の理由が言えないなら、それは退行として直す。
@@ -146,19 +146,19 @@ E2Eは載せていない。PlaywrightはCIだと5ブラウザぶん走る設定�
 - 範囲内の更新は`npm update`。範囲を跨ぐものは[dependabot.yml](../.github/dependabot.yml)の方針に従う
   （`typescript` / `@types/node` / `conventional-changelog-conventionalcommits`のメジャーは意図的に無視）
 - **`typescript`はAngularのpeerに縛られる**（22.1系は`>=6.0 <6.1`）
-- **`conventional-changelog-conventionalcommits`は9系に留める** — 10系にすると
+- **`conventional-changelog-conventionalcommits`は9系に留める**。10系にすると
   `@semantic-release/release-notes-generator`が節を1つも出さず、リリースノートが見出しだけになる
-  （壊れるのはリリース時だけなので、上げる前にcommit-analyzer / release-notes-generatorを直接叩いて確かめる）
-- **`bcdice`を上げたら`node scripts/generate-bcdice-importers.mjs`を実行する** — ゲームシステムと翻訳は
+  （おかしくなるのはリリース時だけなので、上げる前にcommit-analyzer / release-notes-generatorを直接叩いて確かめる）
+- **`bcdice`を上げたら`node scripts/generate-bcdice-importers.mjs`を実行する**。ゲームシステムと翻訳は
   この一覧から1つずつ読み込む。新しいシステムが一覧に無いと、そのシステムを選んでもDiceBotで振られる
 
 ## 依存の脆弱性（`npm audit`）
 
 - **`npm audit`は0件を保つ**（`website/`も同じ）
 - 直せるものは`overrides`に固定版を書いて上げる（`npm audit fix`に任せると別の依存まで動く）
-- **`npm`は`tools/npm-stub`に差し替えてある** — `@semantic-release/npm`が同梱するnpm CLIの
+- **`npm`は`tools/npm-stub`に差し替えてある**。`@semantic-release/npm`が同梱するnpm CLIの
   `bundleDependencies`（`tar` / `undici` / `ip-address` / `brace-expansion`）は`overrides`が届かず、
   修正済みの同梱物を持つnpmもまだ出ていないため。差し替えても動く理由と戻し方は
   [tools/npm-stub/README.md](../tools/npm-stub/README.md)を参照
-- **`semantic-release`をdevDependenciesから外さないこと** — `npx semantic-release`はローカルの解決を
+- **`semantic-release`をdevDependenciesから外さないこと**。`npx semantic-release`はローカルの解決を
   使うので、外すと`overrides`の`undici`が効かなくなり、リリース時のzipアップロードが落ちる

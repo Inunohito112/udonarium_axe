@@ -1,10 +1,10 @@
 # Udonarium Axe — 追加・拡張機能
 
 [Udonarium](https://github.com/TK11235/udonarium) / [Udonarium Lily](https://github.com/entyu/udonarium_lily)の系譜の上で、
-Udonarium Axeが**追加**または**大きく拡張・再設計**した機能の一覧です。本リポジトリの開発履歴（`feat` / `perf`コミット）を基に整理しています。
+Udonarium Axeが**追加**または**大きく拡張・再設計**した機能の一覧。本リポジトリの開発履歴（`feat` / `perf`コミット）を基に整理している。
 
-> 「追加」か「Lilyからの拡張」かの切り分けは、本リポジトリのLICENSE・コード・公開情報に基づく暫定整理です。
-> 既存機能の再設計（ジュークボックス、カットイン、バフ編集など）も「拡張」として含めています。
+> 「追加」か「Lilyからの拡張」かの切り分けは、本リポジトリのLICENSE・コード・公開情報に基づく暫定整理。
+> 既存機能の再設計（ジュークボックス、カットイン、バフ編集など）も「拡張」として含めている。
 
 ## テーブル表示（2D / 3D）
 
@@ -14,7 +14,7 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 - **卓上ディスプレイの設えは画面のもの** — 遠近の有無・1マスの実寸・実寸表示・ビュー固定・メニューの出し方・多方向表示・コマ詳細・外周ティッカー・多方向カットインは、その画面のlocalStorageが答える。**部屋へは配らない**（画面を囲むのはオフラインの卓であり、同じセッションに遠隔から入っている人の見え方を変えてはいけない）。まだ触っていない項目はいま出ているテーブルが答えるので、フォーク版で作った部屋の見え方は変わらない。GM権限は要らない（`domain/tabletop/tabletop-display`、`application/tabletop/tabletop-display.service`、`application/ui/tabletop-display-preference.service`）
 - **推奨ビュー** — テーブルは3D / 2Dのどちらで読むのが良いかを示すだけで、強制しない。席の視点は自動・3D・2Dの三択で、自動のときだけ推奨ビューに従う（`domain/ui/view-mode`）
 - **壁面サーフェス** — テーブルに北 / 東 / 南 / 西の壁を追加。各壁面にオブジェクトを配置でき、ドラッグまたはコンテキストメニューでサーフェス間を移動
-- **重力** — 支えとなるオブジェクトが動くと、上に載ったオブジェクトが落下。混雑したテーブルでも破綻しないよう購読をインデックス化
+- **重力** — 支えとなるオブジェクトが動くと、上に載ったオブジェクトが落下。混雑したテーブルでもうまく動くよう購読をインデックス化
 - **登れない地形（`blocksClimb`）** — 崖やガラスのように「向こう側へ行けない」地形。コマは天面に乗らず、ドラッグでは手前の面で止まる（止める領域は地形の箱そのもの。コマが自分のマスからはみ出す分だけ広げるので、1マスの隙間は1マスのコマが通れる）。移動範囲でも越えられないマスとして数える。開いた扉は通す。GMと、地形そのものを組んでいるときは対象外。右クリックメニュー・機能塗り・ダンジョン生成の「壁を登れなくする」から入れられる（`domain/tabletop/move/blocked-path`、`domain/tabletop/move/blocked-cells`）
 - **ドラッグ中の高さ** — 掴んだコマは足場の高さに合わせて上下し、頭上に隙間のある地形の下はくぐれる。掴んだままホイールを回すと、その場所にある足場を上下に辿って乗り移る（1ノッチで1足場）。手を離したときのグリッドスナップも同じ判定を通す（`ui/directives/movable-helpers`）
 - **ビルボード** — キャラクター / ダイスの画像をカメラ方向へ向ける（テーブル単位で切り替え可）。名前・所有者・バフラベルもカメラ追従
@@ -38,8 +38,8 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 
 - **暗闇** — テーブル単位の暗化（暗さ / 環境光 / 暗闇の色 / 壁の高さ）。照らされた範囲と視界の合成でオーバーレイを彫る
 - **キャラクターの視界** — 通常視界 / 暗視 / 真視 / 盲目 / 熱視界と視界範囲。遮蔽（壁・地形・コマ）を考慮
-- **光源** — プリセット、明半径 / 薄明半径、色、照射角（球状 / 円錐）、仰俯角、アニメーション。高度を3Dで解釈し、円錐はビームを描く。駒に依存しない光源オブジェクト（トークン追従）も置ける
-- **視線を遮る環境エフェクト** — `TableAmbience.blocksSight`。`collectSegments()`が矩形の外枠を`sightSegments`に積む（高さは床から`AMBIENCE_SIGHT_HEIGHT_CELLS`＝2マス、底はその高度）。**`lightSegments`には積まない** — 濃い空気であって石ではないので、霧の中のランタンは霧ごしに光る。`VisionService`の`RELEVANT_ALIASES` / `STANDING_ALIASES`に`table-ambience`を足してあるので、切り替えは壁と同じ経路で拾う
+- **光源** — プリセット、明半径 / 薄明半径、色、照射角（球状 / 円錐）、仰俯角、アニメーション。高度を3Dで解釈し、円錐はビームを描く。コマに依存しない光源オブジェクト（トークン追従）も置ける
+- **視線を遮る環境エフェクト** — `TableAmbience.blocksSight`。`collectSegments()`が矩形の外枠を`sightSegments`に積む（高さは床から`AMBIENCE_SIGHT_HEIGHT_CELLS`＝2マス、底はその高度）。**`lightSegments`には積まない**。濃い空気であって石ではないので、霧の中のランタンは霧ごしに光る。`VisionService`の`RELEVANT_ALIASES` / `STANDING_ALIASES`に`table-ambience`を足してあるので、切り替えは壁と同じ経路で拾う
 - **区画ごとの明るさ** — `TableAmbience.brightness`（`AMBIENCE_BRIGHTNESS`＝`none` / `dark` / `dim` / `bright`、`domain/effect/ambience/ambience-brightness`）。`collectBrightAreas()`が`VisionScene.brightAreas`に写し、`lightLevelAt()`の末尾で**明るくするものは床、暗くするものは天井、天井が最後**（`shadedLevel()`）。`isSnuffed()`は暗闇の区画だけを別に答え、`isPointVisibleFrom()`が卓の暗闇と無関係にそこを隠す。ただし`VisionService.isTokenVisible` / `isSeenByParty`は`darknessEnabled || fogEnabled`で先に素通ししているので、**効くのは暗闇か霧が入っている卓だけ**
 - **照明のマス目スナップ** — 照らされた範囲をマス単位（四角 / ヘクス）に量子化。遮蔽の解決後に丸めるため、壁を越えて光が漏れない
 - **同行（パーティ）** — キャラクター単位のパーティ編成で視界とコマの可視性を共有。GMツールバーの専用パネルから編成し、ルームの保存データに含まれる。PL側は所有キャラクター一覧で所属と同行者を確認できる（編集はGMのみ）
@@ -55,7 +55,7 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 
 ## マップ生成
 
-- **ボタン1つで組み立てる** — ダンジョンかフィールドかを選ぶ。壁や木立は地形（terrain）として、地面は1枚の絵として、新しいテーブルへ置く。地形はそのまま視線と光を遮るので、置いた瞬間から視界システムと噛み合う
+- **ボタン1つで組み立てる** — ダンジョンかフィールドかを選ぶ。壁や木立は地形（terrain）として、地面は1枚の絵として、新しいテーブルへ置く。地形はそのまま視線と光を遮るので、置いた時点から視界システムに反映される
 - **シード** — 同じシードなら同じ形が出る。振り直しはパネルのサイコロボタンから
 - **生成前のプレビュー** — 置かれるものをSVGで描き、地形の個数と同期データ量を出す。200個で警告、400個で生成を止める
 - **卓は自動で切り替わらない** — セッション中に用意してもプレイヤーが飛ばされない。移動はパネルのボタンから。振り直すと前回の卓を破棄する。生成したもの（地形・扉・明かり・地面の絵）は卓と一緒に消える
@@ -98,7 +98,7 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 
 ## 機能塗り（マップエディター）
 
-- **地形塗りは地形と同等** — `TerrainPaintSpec`（`domain/tabletop/function-paint`）が名前・高さ・見せ方(`TerrainViewState`)・6面＋wall/floor＋コマ自身のテクスチャ・高度と高度表示・視線/光の遮り・タイル/グリッド/影/陰影を持ち、`Terrain`にそのまま載る。マスク側の`MaskPaintSpec`も同様に、色・濃さ・所有者・ロック表示に加えて**削った跡と削りかけの跡**（`scratchedGrids` / `scratchingGrids`）まで持つ。テクスチャ未指定の地形は**透明な壁**（`Terrain.hasFaceImage`がfalse → 面を描かず、GMにだけ足元の枠を出す）。判定は**解決した画像ではなく識別子の有無**で行う（未同期の画像で壁が消えるのを防ぐ）。置いたあとに透明化する導線は右クリックの`terrainToGlass`＝`Terrain.clearFaceImages()`で、`TERRAIN_IMAGE_SLOTS`を空文字で埋める（**要素はdestroyしない** — 識別子が`面名_親ID`なので消すと二度と着せ替えられなくなる）。GM向けの枠は**壁の高さと足元の2つ**を出す。足元の箱は卓と同じ深さにあって押下を卓に取られるので、GMには天面と壁の位置に見えない当たり面（`TerrainComponent.glassFaces`、卓から0.5px浮かせる。ヘクスは辺ごと）を置き、枠の中ならどこでも掴めるようにする
+- **地形塗りは地形と同等** — `TerrainPaintSpec`（`domain/tabletop/function-paint`）が名前・高さ・見せ方(`TerrainViewState`)・6面＋wall/floor＋コマ自身のテクスチャ・高度と高度表示・視線/光の遮り・タイル/グリッド/影/陰影を持ち、`Terrain`にそのまま載る。マスク側の`MaskPaintSpec`も同様に、色・濃さ・所有者・ロック表示に加えて**削った跡と削りかけの跡**（`scratchedGrids` / `scratchingGrids`）まで持つ。テクスチャ未指定の地形は**透明な壁**（`Terrain.hasFaceImage`がfalse → 面を描かず、GMにだけ足元の枠を出す）。判定は**解決した画像ではなく識別子の有無**で行う（未同期の画像で壁が消えるのを防ぐ）。置いたあとに透明化する導線は右クリックの`terrainToGlass`＝`Terrain.clearFaceImages()`で、`TERRAIN_IMAGE_SLOTS`を空文字で埋める（**要素はdestroyしない**。識別子が`面名_親ID`なので消すと二度と着せ替えられなくなる）。GM向けの枠は**壁の高さと足元の2つ**を出す。足元の箱は卓と同じ深さにあって押下を卓に取られるので、GMには天面と壁の位置に見えない当たり面（`TerrainComponent.glassFaces`、卓から0.5px浮かせる。ヘクスは辺ごと）を置き、枠の中ならどこでも掴めるようにする
 - **塗りは最大矩形にまとめる** — `domain/tabletop/cell-rectangles`の`largestRectangles()`が左上から貪欲に最大矩形を取る。**決定的**であることが要件（揺れると反映のたびに壁が建て直される）。矩形の起点はオブジェクトの`location`、実寸は自身のwidth/depthが持つ
 - **既存オブジェクトを例外なく取り込む** — 卓上の`Terrain`/`GameTableMask`はすべて`TableSnapshot`に入り、以後エディター管理。回転・非整数位置・扉・スロープ・光も対象で、`TerrainPaintSpec`が**そのオブジェクトの全属性**を持つ（`blockFootprintOf()`がセル矩形＋`BlockPlacement`（実座標・実寸・回転）を返し、マス目に揃っているものだけplacementがnull）。触られていないブロックは差分に出ないので作り直されず、identifierも保たれる。ブロックは各々specを持ち、`sceneFromTable`が**見た目ごとに別レイヤー**へ分ける（1枚に混ぜると次の反映で片方の見た目に揃ってしまう）
 - **面の着せ替えはテクスチャが主** — 面を押すと開くのは画像ライブラリではなくパレットで、`WALL_TEXTURE_IDS` / `TEXTURE_IDS`（`domain/media/texture-catalog`）＋`TEXTURE_IMAGE_TAG`の付いた自前テクスチャ＋追加タイル、の順に並ぶ。同梱テクスチャは`DungeonBuildService.registerAsset()`がURL単位で`ImageStorage`に一度だけ登録してidentifierを返す（ランダムダンジョンと同じ経路なので画像が二重にならない）。追加は`TextureIntakeService.takeIn()`（切り抜き→保存→タグ付け）で、塗りつぶしツールのテクスチャピッカーと同じ入口を共有する。画像ライブラリ全体はパレット末尾の導線に残す
@@ -110,18 +110,18 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 - **書き戻し** — `table-apply`の`planFunctionPaint()`が**卓を触らずに差分だけ返す**のでspecが書ける。適用は`application/tabletop/functional-paint.service`。マス数・グリッド種別が食い違うsceneは拒否する（cellPxの差は無害＝配置は卓の`gridSize`を使う）。差分は**セル矩形の一致**で当てるので、塗り直されていないブロックは`remove`に出ず、作り直されないままidentifierを保つ
 - **床に触らない反映** — 「機能だけ反映」と「テーブル背景に設定」の2つ。前者は床画像を焼き直さないので、既存マップへの塗り足しで画質と画像の同一性を失わない
 - **立入禁止は全員に見える** — `table-move-block-overlay`のGM判定を撤去。塗りはGMツールバーからマップエディターへ移り、`MoveBlockService`は表示用の読み出しだけになった
-- **見せる相手（`SHOWN_TO`）** — `master` / `sight` / `room`（`domain/tabletop/shown-to`）。`TableTrigger.shownTo`と`TableAmbience.shownTo`が持ち、空欄は前者が`open`から・後者は`room`から読む（`once`→`repeat`と同じ後方互換の手）。`sight`の判定は`groundInSight()`（`domain/tabletop/ground-in-sight`、**1マスでも見えていれば全体を描く**）＋`VisionService.overlayVision()?.visible`。**暗闇も霧も無い卓では`visible`がundefined＝ 何も隠れていない**ので`sight`は`room`と同じに落ちる。アンビエンスの絞り込みは`TableAmbienceService`（`TabletopService`に`VisionService`を持ち込まないため別サービス）
+- **見せる相手（`SHOWN_TO`）** — `master` / `sight` / `room`（`domain/tabletop/shown-to`）。`TableTrigger.shownTo`と`TableAmbience.shownTo`が持ち、空欄は前者が`open`から・後者は`room`から読む（`once`→`repeat`と同じ後方互換の手）。`sight`の判定は`groundInSight()`（`domain/tabletop/ground-in-sight`、**1マスでも見えていれば全体を描く**）＋`VisionService.overlayVision()?.visible`。**暗闇も霧も無い卓では`visible`がundefined＝何も隠れていない**ので`sight`は`room`と同じに落ちる。アンビエンスの絞り込みは`TableAmbienceService`（`TabletopService`に`VisionService`を持ち込まないため別サービス）
 - **塗りの上に書く名前と効果** — `triggerEffectLine()`（`domain/tabletop/table-trigger`）が`HP -2d6  毒  →`の1行を組む。**飛ばす先の座標は出さない**（見つけた罠に行き先まで書いてあるのはやりすぎ）。描画は`table-trigger-overlay`の`write()`で、縁取り（`strokeText` → `fillText`）つき
-- **踏んだら起きること** — `TableTrigger`の欄は7つ（リソース・`say`・`check`/`checkTarget`・`ailment`・`sound`/`cutIn`・`warps`）。`TriggerFireService.spring()`の順は**リソース → 状態異常 → 演出 → チャット → ワープ**で、**ワープは`ending`のときだけ**（歩いている途中で飛ばすと移動計画が「もう居ない場所」から残りを歩く。この規則が飛び先の罠の無限連鎖も同時に潰す）。演出・チャットは`try/catch`で包むが、リソースと状態異常は包まない（どちらも卓の変化そのもの）。効果音とカットインは**識別子でなく名前**で引き、**同名が2つあるものは引かない**（`findByReference`と同じ考え方。マップを別部屋へ持っていくと識別子は意味を失う）。`silent`は`sendSecretSystemMessageToMainTab(text)`を`from`無しで送る（`from`を入れると`isSendFromSelf`で**踏んだ本人に読めてしまう**）
+- **踏んだら起きること** — `TableTrigger`の欄は7つ（リソース・`say`・`check`/`checkTarget`・`ailment`・`sound`/`cutIn`・`warps`）。`TriggerFireService.spring()`の順は**リソース → 状態異常 → 演出 → チャット → ワープ**で、**ワープは`ending`のときだけ**（歩いている途中で飛ばすと移動計画が「もう居ない場所」から残りを歩く。この規則は飛び先の罠の無限連鎖も同時に防ぐ）。演出・チャットは`try/catch`で包むが、リソースと状態異常は包まない（どちらも卓の変化そのもの）。効果音とカットインは**識別子でなく名前**で引き、**同名が2つあるものは引かない**（`findByReference`と同じ考え方。マップを別部屋へ持っていくと識別子は意味を失う）。`silent`は`sendSecretSystemMessageToMainTab(text)`を`from`無しで送る（`from`を入れると`isSendFromSelf`で**踏んだ本人に読めてしまう**）
 - **いつ・何回起きるか** — `TRIGGER_MOMENTS`に`turnStart` / `turnEnd`を追加。`TurnOrderService`の`takeTurn` / `closeCurrentPiece` / `next`から`TriggerFireService.standingOn(piece, moment)`を呼ぶ（**ラウンド数は`TurnState`を直接読む**。turn → tabletop → turnの循環参照を避けるため）。歩きの2つと手番の2つは**互いに発火しない**。`TRIGGER_REPEATS`は`always` / `once` / `oncePerPiece` / `oncePerRound`。`TableTrigger.repeats`が「新しい答えが空なら古い`once`を読む」形で、`spend()`は**両方**書く（旧ピアが`spent`を読めるように）。`spentBy`はスペース区切りのソート済み識別子（`FogMemory.found`と同じ書き方）
 - **地面が自分で判定を振る** — `TableTrigger.checkRoll`に式、`checkTarget`に目標値を置くと`TriggerFireService.throwFor()`が`rollTriggerAmount()`で振り、成功なら`triggerPassTake(passAmount, 振った量)`（空欄＝0、`half`＝半分切り捨て、それ以外は自前の式）を、失敗なら`amount`を引く。**bcdiceは通さない**ので発火経路は同期のまま。目標値が空なら振らず、これまでどおり`ask()`がチャットに促す行を出す
 - **別のテーブルへ落とす** — `TableTrigger.warpTable`に卓の識別子。`carry()`が飛び先の卓のグリッドで着地セルを出し（マス目の大きさが違っていてよい）、最後に`TableSelecter.viewTableIdentifier`を書き換える。**コマは全部の卓に同時に立っている**ので、1体を落とすことは部屋ごと落とすことになる。この部屋に無い識別子は今の卓として読む（他の部屋で塗ったシーンを開いたとき）
 - **手で運んだ道を推測する** — `RoomRules.handTracesWay`（既定は切）。`putDown()`が持ち上げたセルと置いたセルの間を`cheapestPath()`で結び、`walked()`に通す。壁だけを見て、停止条件や敵のheldは見ない（手は歩いていない）。切ってあるのは、GMが敵をまとめて並べるたびに間の罠が全部鳴るため
-- **状態異常がシートを動かす** — `StatusAilment`に`stat` / `op` / `amount`。`StatusAilmentService.plant()`が`parseBuffModifierRequest` → `buffs.applyModifier`を通す（チャットの`&!`と同じ経路）。外すときの戻しは`BuffManager.delete`が既に持っている。**移動計算には一切手を入れていない** — 移動範囲はシートの「移動」を読むので、組み込みの麻痺・睡眠・石化に`移動 = 0`を入れるだけで足が止まる。鈍足（半分）は`=`/`+`/`-`では書けないので覚え書きのまま。注意: `StatusAilmentService`には**公開の`move(name, delta)`（カタログの並べ替え）が先にある**ので、privateを`move`にすると黙って覆う
-- **危険地帯は3つに振り分ける** — `hazard`ロールの1 spec（`kind`と`element`）が`hazardBlocksOf()`（`table-apply`）で`TableAmbience` / `TableMoveCost` / `TableTrigger`の3方向へ散る。**新しい卓オブジェクトは作らない**ので保存互換が動かない。プリセット表は`domain/tabletop/hazard-presets`。**取り込みでは畳まない**（どの3つが一組かを推測すると、手で組んだものを壊す）。`ambience`の`BlockChange`は`sceneCarriesFunctions(scene, 'hazard')`で必ずゲートする（しないとhazardレイヤーの無いシーンが卓の環境エフェクトを全消しする）
-- **通りにくさは1本の筆** — 「通れない」と「渡るのに余分にかかる」は同じ軸の両端なので、役割は`moveCost` 1つ。`MoveCostPaintSpec.blocks`が立っていれば通れない。**探索側は何も変えていない** — `reachableCells` / `cheapestPath`は`costOf`が有限でない値を返したらそのマスを捨てるので、通れない＝コスト∞ として既に載る。**卓側の表現は2本立てのまま**で、`planFunctionPaint`が`blocks`で`MoveBlockMap`（ビット地図1枚）と`TableMoveCost`（矩形オブジェクト）へ振り分ける。こうすると既存の部屋・古いピア・保存済みZIP・`MoveBlockService` / `table-move-block-overlay`が無傷で残る。旧シーンの`role: "moveBlock"`は`sanitizeFunctionLayerLook()`が読み替える（**役割とspecを別々に読むと既定の +1になってしまう**ので、2つをまとめて読む関数にしてある）。エディターの色は`functionInkOf(role, spec)`が値で分ける
-- **道（半分で進める）** — `TableMoveCost.halves`。移動の数え方を**半マス単位**に変えた（`domain/tabletop/move/move-steps`の`STEPS_PER_CELL = 2`と`stepsFor()`）。探索エンジン（`reachableCells` / `cheapestPath`）は**一切触っていない** — `Math.max(1, Math.ceil(ground))`の下限1が「1マス」から「半マス」に読み替わるだけ。境界は`MoveRangeService.build()`の`costOf`（セル単位の値段を最後に`stepsFor()`）と`terms.walk`、`MovePlanService.legRoom()`の`jumpCells`。**`costOf`をundefinedにできなくなった**（エンジン既定の1は半マスなので、素の地面にも`PLAIN_GOING = () => STEPS_PER_CELL`を渡す）。`moveCostCells()`は高いほう勝ちの後に道を上書きする2パス（沼を貫く街道が作れないと道の意味がない）。`MovePlan.budget` / `spent`は歩数単位で、読み手に出る数値はどこにも無い
-- **移動コスト塗り** — `TableMoveCost`（`domain/tabletop/table-move-cost`、卓の子。`TableTrigger`と同じ矩形オブジェクト方式で、`spent`にあたる状態を持たないぶん素直）。`extraCost`は1〜9に丸め、`moveCostCells()`（`domain/tabletop/move/move-cost-cells`）がセルごとのコスト表にする。**重なりはmaxで、加算しない**（塗り重ねるたびに値段が上がると卓で数えられない）。**GMだけに見せる旗は持たせない** — リーチのへこみで場所が割れるので、立入禁止と同じく全員に見せる。描画は`table-move-cost-overlay`（値が高いほど濃く）
+- **状態異常がシートを動かす** — `StatusAilment`に`stat` / `op` / `amount`。`StatusAilmentService.plant()`が`parseBuffModifierRequest` → `buffs.applyModifier`を通す（チャットの`&!`と同じ経路）。外すときの戻しは`BuffManager.delete`が既に持っている。**移動計算には一切手を入れていない**。移動範囲はシートの「移動」を読むので、組み込みの麻痺・睡眠・石化に`移動 = 0`を入れるだけで足が止まる。鈍足（半分）は`=`/`+`/`-`では書けないので覚え書きのまま。注意: `StatusAilmentService`には**公開の`move(name, delta)`（カタログの並べ替え）が先にある**ので、privateを`move`にすると気づかないうちに覆う
+- **危険地帯は3つに振り分ける** — `hazard`ロールの1 spec（`kind`と`element`）が`hazardBlocksOf()`（`table-apply`）で`TableAmbience` / `TableMoveCost` / `TableTrigger`の3方向へ散る。**新しい卓オブジェクトは作らない**ので保存互換が動かない。プリセット表は`domain/tabletop/hazard-presets`。**取り込みでは畳まない**（どの3つが一組かを推測すると、手で組んだものがおかしくなる）。`ambience`の`BlockChange`は`sceneCarriesFunctions(scene, 'hazard')`で必ずゲートする（しないとhazardレイヤーの無いシーンが卓の環境エフェクトを全消しする）
+- **通りにくさは1本の筆** — 「通れない」と「渡るのに余分にかかる」は同じ軸の両端なので、役割は`moveCost` 1つ。`MoveCostPaintSpec.blocks`が立っていれば通れない。**探索側は何も変えていない**。`reachableCells` / `cheapestPath`は`costOf`が有限でない値を返したらそのマスを捨てるので、通れない＝コスト∞ として既に載る。**卓側の表現は2本立てのまま**で、`planFunctionPaint`が`blocks`で`MoveBlockMap`（ビット地図1枚）と`TableMoveCost`（矩形オブジェクト）へ振り分ける。こうすると既存の部屋・古いピア・保存済みZIP・`MoveBlockService` / `table-move-block-overlay`が無傷で残る。旧シーンの`role: "moveBlock"`は`sanitizeFunctionLayerLook()`が読み替える（**役割とspecを別々に読むと既定の+1になってしまう**ので、2つをまとめて読む関数にしてある）。エディターの色は`functionInkOf(role, spec)`が値で分ける
+- **道（半分で進める）** — `TableMoveCost.halves`。移動の数え方を**半マス単位**に変えた（`domain/tabletop/move/move-steps`の`STEPS_PER_CELL = 2`と`stepsFor()`）。探索エンジン（`reachableCells` / `cheapestPath`）は**一切触っていない**。`Math.max(1, Math.ceil(ground))`の下限1が「1マス」から「半マス」に読み替わるだけ。境界は`MoveRangeService.build()`の`costOf`（セル単位の値段を最後に`stepsFor()`）と`terms.walk`、`MovePlanService.legRoom()`の`jumpCells`。**`costOf`をundefinedにできなくなった**（エンジン既定の1は半マスなので、素の地面にも`PLAIN_GOING = () => STEPS_PER_CELL`を渡す）。`moveCostCells()`は高いほう勝ちの後に道を上書きする2パス（沼を貫く街道が作れないと道の意味がない）。`MovePlan.budget` / `spent`は歩数単位で、読み手に出る数値はどこにも無い
+- **移動コスト塗り** — `TableMoveCost`（`domain/tabletop/table-move-cost`、卓の子。`TableTrigger`と同じ矩形オブジェクト方式で、`spent`にあたる状態を持たないぶん素直）。`extraCost`は1〜9に丸め、`moveCostCells()`（`domain/tabletop/move/move-cost-cells`）がセルごとのコスト表にする。**重なりはmaxで、加算しない**（塗り重ねるたびに値段が上がると卓で数えられない）。**GMだけに見せる旗は持たせない**。リーチのへこみで場所が割れるので、立入禁止と同じく全員に見せる。描画は`table-move-cost-overlay`（値が高いほど濃く）
 
 ## 複数選択・一括操作
 
@@ -161,7 +161,7 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 - **min/maxの分割** — 基準値＋補正に分離し、実効上下限を算出
 - **表示項目の既定はサンプル語彙から切り離した** — `DataSummarySetting`の`dataTag` / `tableDataTag` / `sortTag`の既定は**空**。空のあいだは卓のコマから推定する（`application/inventory/summary-items`の`derivedItemNames`：`cs-piece-gauge`付きを先に、次に多くのコマが共有するリソース、上限8件。表は推定結果の後ろに登録済み状態異常を足すが、推定が空なら表も空＝「表示項目が空です」の案内が出る）。サンプル部屋を作ったときだけ`makeSampleSummaryItems()`がHP/MP＋6能力値と`敏捷度`降順を書き込む。既存の部屋は保存値をそのまま尊重し、推定で上書きしない
 - **表示項目は引用符でパス参照・空白入りの名前を書ける** — `domain/data/summary-tag-list`の`splitSummaryTags`が引用符付きトークンを1項目として切り出し、**引用を外して下流へ渡す**ので`DataElement.findElementByReference`のパス解決がそのまま効く（`"リソース/正気度"` / `"所持金 合計"`）。裸の`/`は従来どおり改行マーカー。改名追従の発火条件は`tagLeafNames`でパス末尾の名前と照合する（途中のグループを改名するとパスは切れる。名前で参照している以上の制約）
-- **リソースの棚卸しは1か所** — 「何がリソースか」「コマの集合で何を名前で操作できるか」は`domain/character/resource-catalog`（`isResourceElement` / `isResourceField` / `resourceElementsOf` / `resourceNamesOf` / `resourceCatalogOf`）。リモコン・PLツールのインライン編集・コマのバーの増減演出・マップエディターの項目名一覧が同じ判定を使い、ICON/POS（シート内部のUI状態）の除外もここだけに書いてある。画面ごとに線引きが違っていたのを揃えたもの
+- **リソースの棚卸しは1か所** — 「何がリソースか」「コマの集合で何を名前で操作できるか」は`domain/character/resource-catalog`（`isResourceElement` / `isResourceField` / `resourceElementsOf` / `resourceNamesOf` / `resourceCatalogOf`）。リモコン・PLツールのインライン編集・コマのバーの増減演出・マップエディターの項目名一覧が同じ判定を使い、ICON/POS（シート内部のUI状態）の除外もここだけに書いてある。画面ごとに判定が違っていたのを揃えたもの
 - **リソースのスロットは1つの語彙** — 現在値・最大値・上下限のベースと補正値を`domain/data/resource-slot`の`ResourceSlot`に統一。`StatusAccessor`・チャットの`:`記法・バフの`&!`修整・リモコンが同じ語彙を使い、`HP^` / `HP_MAX` / `HP_MAX_BUFF` / `HP_MIN` / `HP_MIN_BUFF`の読み取りも`readNamedResourceSlot`の1か所。知らないスロット名は現在値として読むので、古いピアが書いたバフもそのまま動く
 - **チェック表（check-table）型** — 旧Markdownレンダラを置換
 - 要素単位の原寸表示オプション（ポップアップ画像）
@@ -193,7 +193,7 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 
 ## ダイス
 
-- **振った中身を残す** — bcdiceは個々の出目と成否（`rands` / `detailedRands` / `success` / `critical` / `fumble`）を返しているが、以前は整形済みの文章だけを受け取って捨てていた。いまは`domain/dice/dice-roll-detail`の形に写し、**未使用だった`ChatMessage.dicebot`**（宣言だけで代入箇所が無かったSyncVar）に載せて持ち回る。新しいSyncVarを足さないので部屋データの後方互換に触らない。読み出しは`message.rollDetail`（この版より前の発言と、その欄に別のものが入っている古い部屋ではnull）。**文章からは読み直さない** — 言い回しはシステムごとに違い、`＞`の置換や改行の挿入まで通ったあとの文字列が相手になる
+- **振った中身を残す** — bcdiceは個々の出目と成否（`rands` / `detailedRands` / `success` / `critical` / `fumble`）を返しているが、以前は整形済みの文章だけを受け取って捨てていた。いまは`domain/dice/dice-roll-detail`の形に写し、**未使用だった`ChatMessage.dicebot`**（宣言だけで代入箇所が無かったSyncVar）に載せて持ち回る。新しいSyncVarを足さないので部屋データの後方互換に触らない。読み出しは`message.rollDetail`（この版より前の発言と、その欄に別のものが入っている古い部屋ではnull）。**文章からは読み直さない**。言い回しはシステムごとに違い、`＞`の置換や改行の挿入まで通ったあとの文字列が相手になる
 - **卓上で振った目もチャットへ** — ダイスシンボルを振ると、いま開いているタブへ結果が流れる（`application/dice/dice-roll.service`）。コインと同じ扱いで、行き先は`ActiveChatTabService`。複数選択して右クリックすればまとめて振れ、同時に回って1行にまとまる（面がすべて数字なら合計つき）。伏せられているダイスは回さない
 - **コマに持たせて連動** — ダイスシンボルの`ownerCharacterIdentifier`でコマの持ち物にできる（「自分だけ見る」の`owner`とは別）。チャットに`dice:コマ名`を書き添えると、そのロールの出目が卓上のダイスに乗る（`domain/dice/dice-chat-token` + `dice-link`、`features/dice/dice-chat-event-handler`）。面の数が合うダイスから順に埋め、その目を出せないダイスは動かさない。適用するのは送信者の端末だけ（面はSyncVarなので二重に当てない）
 - **キャラが持つダイス** — ダイスをキャラクターシートへ預けられる（`domain/character/character-dice`）。保存先はシートの「所持ダイス」節で、個数と面ごとの絵柄を持つ普通のDataElementなので、部屋データにもキャラの持ち出しにも一緒に乗り、詳細画面から手で直せる。盤の右クリック**コマにしまう**で預け（複数選択なら選択メニューから預け先を選んでまとめて）、キャラの右クリック**ダイスを展開する**でコマの隣へ並べ直す（`application/dice/character-dice.service`）。**しまったときの出目も1個ずつ残る**ので、展開するとその目のまま並ぶ。展開はシートから取り出す操作（`takeHeldDice`）で、1個のダイスは盤の上かシートの中のどちらかにしか無い。取り出さないと押すたびに増える。詳細画面ではviewMode=tableの1行として出る（個数・出目・面の絵柄）。面の絵柄は`type="image"`なので保存zipの画像収集にそのまま乗る。展開したダイスは最初からそのコマの持ち物なので`dice:コマ名`の連動がそのまま効く
@@ -229,10 +229,10 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 
 ### 発動の入口
 
-**入口は4つ**:
+**入口は4つ**。
 
 - エフェクト集パネル
-- チャット記法`《…》`（`domain/effect/effect-chat-token`で解析し、`features/effect/effect-chat-event-handler`が`resourceEditMessage$`で受けて発火。送信者だけが撃つ＝全員が撃つと人数ぶん重なる。対象は`t:`と同じ、撃ち手はその行の発言者）
+- チャット記法`《…》`（`domain/effect/effect-chat-token`で解析し、`features/effect/effect-chat-event-handler`が`resourceEditMessage$`で受けて発火。送信者だけが撃つのは、全員が撃つと人数ぶん重なるため。対象は`t:`と同じ、撃ち手はその行の発言者）
 - キャラクターシートの`DataElementFieldType.EFFECT`欄（値は演出名。コマ右クリックの「演出を発動」にも並ぶ）
 - HP増減の自動割り当て（`EffectAutoPlayService`。増減は同期済みなので各自がローカル再生し、`localStorage`の個人設定で既定は切）
 
@@ -240,15 +240,15 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 
 ### 対象の選び方
 
-エフェクト集（`EffectPreset`）から選ぶと**順序付きの対象選択**（`application/effect/effect-targeting`）に入り、盤面のコマをクリックした順に対象が積まれる（再クリックで解除、上限に達した状態での選択は最古と入れ替え）。上限に届いた瞬間に自動発動し、少ない数ならEnterかパネルのボタンで確定、Escで中止して開始前のターゲット指定へ戻す。`areaRadius`を持つプリセットは1クリックで中心からの半径内を近い順にまとめて選び（`domain/effect/effect-area`）、巻き込む範囲を円で描いてから確定させる（まとめ選択では自動発動しない）。
+エフェクト集（`EffectPreset`）から選ぶと**順序付きの対象選択**（`application/effect/effect-targeting`）に入り、盤面のコマをクリックした順に対象が積まれる（再クリックで解除、上限に達した状態での選択は最古と入れ替え）。上限に届いた時点で自動発動し、少ない数ならEnterかパネルのボタンで確定、Escで中止して開始前のターゲット指定へ戻す。`areaRadius`を持つプリセットは1クリックで中心からの半径内を近い順にまとめて選び（`domain/effect/effect-area`）、巻き込む範囲を円で描いてから確定させる（まとめ選択では自動発動しない）。
 
-選んだ順の配列が真実の源で、コマの`targeted`はその写しなので、発動後にチャットの`t:`がそのまま同じ対象へ効く。撃ち手は選択開始時の選択コマを固定して保持する（選び進めると選択が対象側へ移るため）。選択中は`effect-target-overlay`が順番の番号（板ポリ）と撃ち手からの線（地面）を描く。
+選んだ順の配列が元データで、コマの`targeted`はその写しなので、発動後にチャットの`t:`がそのまま同じ対象へ効く。撃ち手は選択開始時の選択コマを固定して保持する（選び進めると選択が対象側へ移るため）。選択中は`effect-target-overlay`が順番の番号（板ポリ）と撃ち手からの線（地面）を描く。
 
 ### 飛翔体（射撃系）
 
 `EffectCast.origin`（選択中のコマ＝撃ち手）から対象まで3D経路上に尾を並べて飛ばし、着弾後は`impactKind`が指す種類の演出へ委譲する（氷の矢なら霜、岩弾なら岩石破砕）。連射（`shots` / `shotInterval`）に対応し、弾ごとに撃つ・飛ぶ・当たるが独立する。
 
-`projectileStyle`で見た目を切り替える:
+`projectileStyle`で見た目を切り替える。
 
 | 見た目             | 飛び方                                                        |
 | ------------------ | ------------------------------------------------------------- |
@@ -263,7 +263,7 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 
 飛翔中は「速度方向へ引き伸ばした頭」と尾で描く。**まっすぐ飛ぶもの（銃弾・光線・曳光・飛ぶ斬撃・ミサイル）の尾は1本に繋げる**（粒に割ると散弾のように見える）。魔法弾と矢は帯のまま。飛ぶ斬撃は`PROJECTILE_TURN`で進行方向に直交させる（向けないと刃が寝て線に見える）。速さは`PROJECTILE_TRAVEL_MS`に見た目ごとの実時間で持つ。
 
-ミサイル系は経路と直交する向きへ`PROJECTILE_SWERVE`ぶん膨らませ、後ろに推進炎を引く（飛んでいるのではなく飛ばしているように見せる）。膨らみの折り返しは経路の前半へ寄せる（中央だと着弾間際まで的から外れて飛ぶ）。噴煙は経路に沿って短い区間で継ぐ（弦1本で結ぶと、回り込んでいる間だけ弾と尾の向きがずれる）。誘導弾の高さは「巡航高度まで一気に上がって保ち、的の直前で一気に落とす」形で取る（放物線で放り投げると迫撃砲に、緩く下ろすと着陸に見える）。推進炎は弾の長さぶんだけ後ろへ置く（1フレームの進みで測ると、速さや間合いで離れ方が変わる）。**ミサイルの絵は輪郭で見せる** — 実物は胴の長さに対して直径が1/12ほどしかないが、そのまま細く描くと板の縦横比と掛かって矢に見えるので、読める太さまで寄せ、弾頭は直線で尖らせ、翼は横から見たなりの小ささに留める。
+ミサイル系は経路と直交する向きへ`PROJECTILE_SWERVE`ぶん膨らませ、後ろに推進炎を引く（飛んでいるのではなく飛ばしているように見せる）。膨らみの折り返しは経路の前半へ寄せる（中央だと着弾間際まで的から外れて飛ぶ）。噴煙は経路に沿って短い区間で継ぐ（弦1本で結ぶと、回り込んでいる間だけ弾と尾の向きがずれる）。誘導弾の高さは「巡航高度まで一気に上がって保ち、的の直前で一気に落とす」形で取る（放物線で放り投げると迫撃砲に、緩く下ろすと着陸に見える）。推進炎は弾の長さぶんだけ後ろへ置く（1フレームの進みで測ると、速さや間合いで離れ方が変わる）。**ミサイルの絵は輪郭で見せる**。実物は胴の長さに対して直径が1/12ほどしかないが、そのまま細く描くと板の縦横比と掛かって矢に見えるので、読める太さまで寄せ、弾頭は直線で尖らせ、翼は横から見たなりの小ささに留める。
 
 **SEは発射音と着弾音の2段階**で鳴らす（`impactSoundIdentifier`を着弾時刻に予約。撃った瞬間から音が要るレーザーと放電は着弾時刻を前倒しする）。発射音は弾ごとに鳴らす（`launchSoundTimes`。連射で1回しか鳴らないと弾数が耳に伝わらない）。
 
@@ -271,7 +271,7 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 
 ### 降り注ぐ矢（`arrowrain`）
 
-**撃ち上げ → 予告 → 落下 → 突き刺さり**の四段。射手の足元から36本が順に空へ抜け、落ちる位置の輪を地面へ描いて絞り込み、そこへ矢が落ち、土埃と地面に残って震える矢で終える。撃ち上げを省くと矢がどこから湧いたのか分からず、予告を省くと見る側は当たった後で何が起きたかを知ることになる。落ちる位置は対象ごとのseedから決まるので、毎フレーム同じ場所へ落ちる。矢1本ごとの撃つ・落ちる・刺さるは`arrowRainShots()`が返す1枚の表で、絵と音の両方がこれを見る。**発射音も着弾音も矢ごとに鳴らす**（110ms未満は間引く。1発ずつ鳴らすと連続音になって本数が消える）。
+**撃ち上げ → 予告 → 落下 → 突き刺さり**の四段。射手の足元から36本が順に空へ抜け、落ちる位置の輪を地面へ描いて絞り込み、そこへ矢が落ち、土埃と地面に残って震える矢で終える。撃ち上げを省くと矢がどこから湧いたのか分からず、予告を省くと見る側は当たった後で何が起きたかを知ることになる。落ちる位置は対象ごとのseedから決まるので、毎フレーム同じ場所へ落ちる。矢1本ごとの撃つ・落ちる・刺さるは`arrowRainShots()`が返す1枚の表で、絵と音の両方がこれを見る。**発射音も着弾音も矢ごとに鳴らす**（110ms未満は間引く。1発ずつ鳴らすと連続音になって本数が聞き分けられなくなる）。
 
 ### 弾道ミサイル（`ballistic`）
 
@@ -287,7 +287,7 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 
 **極太ビーム**（`beam`）は溜め → 溜めた光を潰す一拍 → 貫通 → 第2波の増幅 → 根元からの引き上げ、という段で組む。柱は4層（淡い外周・シルエットの縁・本体・白熱の芯）を区間ごとに分けて並べ、**区間の端は丸めない**（丸めると数珠つなぎに見える）。太さのうねりは区間番号で割り当てず、経路上の位置に沿わせる。巻き付く帯は位相で手前／奥を明暗に振って丸い柱に見せ、輪と奔流を速度差で走らせ、着弾点では光が撃った側へ噴き返す。太さは間合いに応じて絞る（近距離では長さを太さが追い越して塊に見えるため）。
 
-**レーザー照射**（`raybeam`）は極太ビームとは別種で、細い3層の線を当て続け、焼け跡の輪と立ち上る光だけで押す（段組みを持たない）。線は区間に割って並べる（1枚の板で結ぶと、視線に沿う角度で投影長が縮んで途中で切れる）。
+**レーザー照射**（`raybeam`）は極太ビームとは別種で、細い3層の線を当て続け、焼け跡の輪と立ち上る光だけで見せる（段組みを持たない）。線は区間に割って並べる（1枚の板で結ぶと、視線に沿う角度で投影長が縮んで途中で切れる）。
 
 **ブレス**の円錐は**層ごとに1枚のSVG**で描く（`breathConeSvg`）。区間に割ると、区間ごとの太さと濃さの差が縦縞の継ぎ目になって出るため。輪郭は層ごとに違う揺れを持ち、縁のぼかしは縦方向のマスク、濃さは軸方向のグラデーションが受け持つ。縁を転がる渦・軸を走る筋・ほどける先端・混ざる煙は別スプライトで重ね、吹き終わりは広がりながら薄れて散る。流れの速さは実尺から出す（再生位置の割合で回すと、尺の長いものほど中身が遅くなって勢いが死ぬ）。
 
@@ -312,7 +312,7 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 - **霧と瘴気の濃さは塗りではなく雲の重なりで作る** — 塗りを濃くすると雲が沈んで団子になる。塊は流れながら回り、大きさ・伸び・濃さが別々の周期で揺れる（`haze()`）。平行移動だけだと板が流れて見える
 - **稲光は経過時間だけの純関数**（`skyAmbienceFlash`） — 誰の画面でも同じ拍で光る。1回で消さず二度光らせないと、雷ではなく写真のフラッシュに見える
 
-**マップ全体（天候）** は`GameTable`の`weatherKind` / `weatherColor` / `weatherDensity`。`ambience-sky`がviewport大の1枚を作り、`features/tabletop/table-weather-overlay`が盤面の3D変換の外へ貼る（寝かせて描くとカメラを倒したとき雨が地面を這う）。大きさはhostの`ResizeObserver`で測り、盤面を天井（壁の高さ、最低10マス）までの箱として投影した凸包に`clip-path`で切る（切らないと盤の外の余白にも降る）。**床の四角形だけで切ってはいけない** — 盤の上空に降っているぶんが消えて、雨が地面に貼り付いて見える。カメラは盤面が変わらなくても動くので形は毎フレーム作り直し、8点は`CoordinateService.convertManyToGlobal()`でまとめて投影する（1点ずつ呼ぶと祖先の行列を8回組み直す）。
+**マップ全体（天候）** は`GameTable`の`weatherKind` / `weatherColor` / `weatherDensity`。`ambience-sky`がviewport大の1枚を作り、`features/tabletop/table-weather-overlay`が盤面の3D変換の外へ貼る（寝かせて描くとカメラを倒したとき雨が地面を這う）。大きさはhostの`ResizeObserver`で測り、盤面を天井（壁の高さ、最低10マス）までの箱として投影した凸包に`clip-path`で切る（切らないと盤の外の余白にも降る）。**床の四角形だけで切ってはいけない**。盤の上空に降っているぶんが消えて、雨が地面に貼り付いて見える。カメラは盤面が変わらなくても動くので形は毎フレーム作り直し、8点は`CoordinateService.convertManyToGlobal()`でまとめて投影する（1点ずつ呼ぶと祖先の行列を8回組み直す）。
 
 **範囲**は`TableAmbience`（`TabletopObject`）。マップマスクと同じくテーブルの子なので、マップを切り替えると一緒に切り替わる。`ambience-ground`が面と立ち上りを別々の層で返し、`features/tabletop/table-ambience`が面を盤面に寝かせたまま、立ち上りだけoverlayと同じ反転回転でカメラへ正対させる。粒の大きさは`unit`（1マス）を基準に決めるので、範囲を広げても粒が巨大化しない。
 
@@ -323,7 +323,7 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 - **粒の数はマスで数える** — 面積(px²)を基準にすると、既定の4×4マス（0.04メガピクセル）では数個しか出ず、置いても何も無いように見える
 - **オブジェクトを返すcomputedに版を吸わせない** — `versionOf()`を読んでから同じオブジェクトを返すcomputedを挟むと、参照が変わらないのでsignalsが下流へ変化を伝えない。版そのもの（数値）を配って各値がそれを読む。これを間違えるとロックも大きさの変更も画面に出ない
 - **canvas 1枚の画素数に上限を置く**（`pixelRatioFor`） — マップ全体を覆う範囲は一辺数千pxになり、高精細画面では数億画素を確保しようとする
-- **濃霧の塗りだけ濃さを非線形に伸ばす**（`ambienceWashLevel`、`level^1.6`） — 100% で盤面が白く潰れるところまで届かせつつ、途中の薄さを保つ。線形にすると中ほどが一気に重くなる
+- **濃霧の塗りだけ濃さを非線形に伸ばす**（`ambienceWashLevel`、`level^1.6`） — 100%で盤面が白く潰れるところまで届かせつつ、途中の薄さを保つ。線形にすると中ほどが一気に重くなる
 - **canvasは範囲より一回り大きく取る**（`SURFACE_PAD_UNITS` / `VAPOR_PAD_UNITS`） — 粒はcanvasの形に切り取られるので、粒の直径が範囲と同じくらい大きいと、中心が真ん中にあっても裾が枠で切られて灰色の四角が浮く。中心からの距離で透明度を落としても防げない
 - **塗りのグラデーションは`closest-side`** — 既定のfarthest-cornerだと、中心を寄せた塊が箱からはみ出し、はみ出した側が不透明なまま直線で切られる
 - **演出を止めていても面の塗り（`groundSurfaceWash` / `skyAmbienceWash`）は残す** — 発動する演出と違い、消すと「そこが毒沼である」という盤面の情報ごと消える
@@ -350,11 +350,11 @@ SEは効果音ラボ・On-Jinの素材を取り込み、`PresetSound`経由で�
 
 ### プリセットの編集と持ち出し
 
-プリセットは**編集できる**: `features/effect/effect-preset-editor`が種類・系統・等級・色・大きさ・尺・ずらし・対象規則・SE・種類ごとの項目（弾の見た目 / 弾数 / 間隔 / 着弾演出 / 太刀筋）を直接モデルへ書き込み、範囲は`EffectPreset`のgetterが丸める。どの項目を出すかは`domain/effect/effect-preset-form`の純関数が種類から決める。**試し撃ちはローカル再生**（`EffectCastService.preview()`が`EffectPlaybackService`を直接叩き、`EFFECT_CAST`を送らない）。
+プリセットは**編集できる**。`features/effect/effect-preset-editor`が種類・系統・等級・色・大きさ・尺・ずらし・対象規則・SE・種類ごとの項目（弾の見た目 / 弾数 / 間隔 / 着弾演出 / 太刀筋）を直接モデルへ書き込み、範囲は`EffectPreset`のgetterが丸める。どの項目を出すかは`domain/effect/effect-preset-form`の純関数が種類から決める。**試し撃ちはローカル再生**（`EffectCastService.preview()`が`EffectPlaybackService`を直接叩き、`EFFECT_CAST`を送らない）。
 
 一覧は検索・等級／対象数／系統での絞り込み・系統の折りたたみ・最近使った履歴を持ち、印には演出の形から起こしたSVGグリフを当てる。一覧からは追加・複製（`duplicatedEffectName`で連番）・削除（右クリックメニュー、`effect-library-context-menu`）ができ、`gmOnly`のプリセットはPLの一覧に名前ごと出さない。
 
-エフェクト集の持ち出しは`EffectPresetSet`（`InnerXml`の入れ物。`ObjectStore`には残さない）。`EffectPresetSet.of([preset])`で**1つだけ**書き出せ（タイル右クリックと編集パネルの「書き出す」）、形式は集合と同じなのでドロップの読み込み経路も共通。`EffectPreset`は`toAttributes` / `parseAttributes`でidentifierをXMLに残す（`ChatMessage`と同じ手。既定では`ObjectSerializer.parseXml`が読むたびに新しいidentifierを振る）ので、**併合の第一の鍵はidentifier**（`domain/effect/effect-preset-merge`の`takeIntoLibrary`）: 同じidentifierがあればそこへ、無ければ同名へ`toContext()` / `apply()`で中身を丸ごと移す（フィールドを列挙しないので段リストのような後付けも自動で乗る）。どちらも無ければ追加。identifierで重ねた結果その名前が別のエフェクトと衝突するときは、戻ってきた側を`duplicatedEffectName`で連番にする（名前はチャット記法やシートの演出欄から呼ばれるため、先に名乗っていた方を動かさない）。プリセットは部屋データとしても保存され、「既定を反映」で既定プリセットを最新のseedへ再適用・欠けたものを再作成する（自作プリセットには触れない）。
+エフェクト集の持ち出しは`EffectPresetSet`（`InnerXml`の入れ物。`ObjectStore`には残さない）。`EffectPresetSet.of([preset])`で**1つだけ**書き出せ（タイル右クリックと編集パネルの「書き出す」）、形式は集合と同じなのでドロップの読み込み経路も共通。`EffectPreset`は`toAttributes` / `parseAttributes`でidentifierをXMLに残す（`ChatMessage`と同じ手。既定では`ObjectSerializer.parseXml`が読むたびに新しいidentifierを振る）ので、**併合の第一の鍵はidentifier**（`domain/effect/effect-preset-merge`の`takeIntoLibrary`）。同じidentifierがあればそこへ、無ければ同名へ`toContext()` / `apply()`で中身を丸ごと移す（フィールドを列挙しないので段リストのような後付けも自動で乗る）。どちらも無ければ追加。identifierで重ねた結果その名前が別のエフェクトと衝突するときは、戻ってきた側を`duplicatedEffectName`で連番にする（名前はチャット記法やシートの演出欄から呼ばれるため、先にその名前を使っていた方を動かさない）。プリセットは部屋データとしても保存され、「既定を反映」で既定プリセットを最新のseedへ再適用・欠けたものを再作成する（自作プリセットには触れない）。
 
 ## PLツール / 手札
 
@@ -365,7 +365,7 @@ SEは効果音ラボ・On-Jinの素材を取り込み、`PresetSound`経由で�
 - **行動順のツールバー表示** — ラウンド数と現在の手番を常時表示（GM側は前後の送りボタン付き）
 - **ラウンド送りは未行動を置き去りにしない** — `advanceRound()`は`unactedCharacters()`が残っているあいだ`ConfirmService.ask()`で名前を並べて確認する（先頭8体＋残り数）。押し忘れと意図的なスキップは区別がつかないので、止めるのではなく判断を返す形にしてある。**`advanceRound()`は非同期**になったので呼び出し側は`void`を付ける
 - **一覧も陣営で区切る** — `bandRowsBySide()`（`features/inventory/.../inventory-list`）がリッチ表示と簡略表示（表）の行を陣営順に束ねる。卓のタブ限定で、フォルダ表示・検索中は束ねない（それ自体がまとめ方なので二重になる）。どの陣営にも属さない行は末尾に見出し無しで置く
-- **陣営交互ラウンド** — `Config.turnOrderMode`が`faction`のとき、ラウンドは陣営のフェイズを順に開く（`domain/tabletop/turn-side`の純関数群）。陣営は`Party`をそのまま使い、無所属は番兵`@none`の1陣営にまとめる。順番は`Config.factionOrder`（CSV）だが**正規化は読むだけ**で、消えたPartyは落とし、未登録のPartyは生成順で末尾に足す（同時作成の取りこぼしを書き戻しで固定しないため）。`TurnState.currentSide`も読むたび`resolveCurrentSide()`で解決するので、進行中にPartyを消してもフェイズは固まらない。フェイズ内は`free`（開いても手番は渡らず、クリックした1体が取る）と`initiative`（開いた時点で先頭へ渡る）の違いだけで、**`next()`はどちらもその陣営の未行動へ手番を渡す**（1押しでフェイズを丸ごと閉じて全員を行動済みにしていたのを改めた。押し忘れた側の手番が黙って消えるため）。`orderedCharacters()`はシグネチャ据え置きで陣営順に並べ替えて返すため、既存の消費者はそのまま動く
+- **陣営交互ラウンド** — `Config.turnOrderMode`が`faction`のとき、ラウンドは陣営のフェイズを順に開く（`domain/tabletop/turn-side`の純関数群）。陣営は`Party`をそのまま使い、無所属は番兵`@none`の1陣営にまとめる。順番は`Config.factionOrder`（CSV）だが**正規化は読むだけ**で、消えたPartyは落とし、未登録のPartyは生成順で末尾に足す（同時作成の取りこぼしを書き戻しで固定しないため）。`TurnState.currentSide`も読むたび`resolveCurrentSide()`で解決するので、進行中にPartyを消してもフェイズは固まらない。フェイズ内は`free`（開いても手番は渡らず、クリックした1体が取る）と`initiative`（開いた時点で先頭へ渡る）の違いだけで、**`next()`はどちらもその陣営の未行動へ手番を渡す**（1押しでフェイズを丸ごと閉じて全員を行動済みにしていたのを改めた。押し忘れた側の手番が気づかないうちに消えるため）。`orderedCharacters()`はシグネチャ据え置きで陣営順に並べ替えて返すため、既存の消費者はそのまま動く
 - **バフの残ラウンド自動減少** — ラウンドを進めて閉じたときだけ全員のバフを1減らし、尽きたものを消して失効をチャットへ通知（`domain/character/buff-manager`の`expireOneRound`、`application/turn/turn-order.service`の`finishRound`）。巻き戻しでは減らさず、進行操作をしたピアだけが実行するのでP2Pでも二重に減らない。`TurnState.buffDecay`（既定ON・SyncVar）で卓ごとに切り替え
 - **バフの重ねがけ** — `&`の直後の`+`（`&+猛攻撃/攻撃+2/3`・`&+!`も可、リモコンはバフ名の前に`+`）で、同名バフを上書きせず積む。効果欄の足し算は`domain/character/buff-stack`の`stackBuffEffect()`（数値の前後の語が一致するときだけ足す。`攻撃+2`と`防御+1`は足さずに書き換え）、積む側は`BuffManager.stackRound()` / `stackModifier()`。`+` 2つ（`&++`）なら残ラウンドも足す（`extendRound()`。効果欄を空にすれば持続だけ延ばせる）。**`+` 1つの残ラウンドは長いほう勝ち**で、省略時は据え置き、消えないバフはどちらも消えないまま。`stackModifier()`は`applied`を足して持つので、外すと全部まとめて戻る（**上限で頭打ちになった分は足されない**）。`=`（値に留める）だけは二度留めても同じなので従来どおり掛け直し。**既定は今までどおり上書き**で、`+`を書いたときだけ積む（既存のパレットとマクロを動かさないため）。バフマネージャーの記法ビルダーにも**重ねがけ**と**ラウンドも足す**のチェックがあり、`=`を選んでいるあいだは`builderCanStack()`で欄ごと出さない
 - **射程範囲のショートカット** — 操作対象のコマを基点に範囲を生成し、コマへドッキング
@@ -403,10 +403,10 @@ SEは効果音ラボ・On-Jinの素材を取り込み、`PresetSound`経由で�
 - **跳び越え** — 計画中にスペース、または画面下の帯の「歩く／跳ぶ」で切り替える（`MovePlanService.toggleJump()`）。跳んでいる間は高さが止めなくなり、`terrainBlocksJump()`で**登れない地形だけ**が残る。`ReachTerms`が歩き用と跳び用の2つの`CellBits`を持ち（他は共通なので1度だけ集めて双方へ被せる）、切り替えのたびにいまの位置から`reachableCells()`を引き直す。範囲は紫で描き分ける。歩かせるときは到着マスの地形の天面（`landingHeightAt()`）を`posZ`に直接置く（**重力は自分より上のものには乗せないので、任せると壁の上に立てない**）。高さが変わる1歩は弧を描いて跳ぶ（`hopHeightAt()` / `hopLiftFor()`、跳ぶ高さは段差の0.8倍。これだけあると進行の3割で着地点の高さを越えるので、壁の面を登るようには見えない）。降りるのは切り替え不要（床は歩きでも行ける）。どちらの規則で動いているかは`PeerCursor.movingJumping`で部屋へ配り、他人の範囲もその規則で引き直す（`domain/tabletop/move/landing-height`）
 - **渡るのに余分にかかる地面** — `MoveRangeService.build()`の`costOf`に`moveCostCells()`の項を足す。値段の順は`1 + 地面 + 通り抜け + ZOC`で、離脱の`breakOutToll()`は「出る一歩」への課金なので最後。`reachableCells`側で`Math.max(1, Math.ceil(price)) * corner`が掛かるため、**斜めコストは乗算**（ZOCの追加コストと同じ既存挙動に揃えた）。コスト表は`dearToken`（`collectionOf(TableMoveCost.aliasName)`＋各`versionOf`）でmemoする。**卓の版だけでは子の属性変更を拾えない**
 - **通り抜けと停止を割る** — `ReachOptions.restsAt`（`domain/tabletop/move/reachable-cells`）。偽のセルは`reached`に入れないが**枝刈りはしない**ので、その先は届く。`cheapestPath()`はgoalが偽なら`null`。これで`MovePlanService`は無改修で追随する（`plan.reach`が`terms.cells`、引き直しは`...terms.options`を展開しているため）。副作用として**止まれないマスは経由点にもできない**
-- **パーティ同士の同盟** — `Party.allies`（識別子をスペース区切り。`FogMemory.found`と同じ書き方）。`allianceOf()`（`domain/party/party-alliance`）が`PartyAlliance = (a, b) => boolean`を組み、**片側が名指しすれば成立**（両方に書かせると半分だけ書いた状態が黙って効かない）。`relationBetween(piece, mover, allied)`が同盟相手を`same`に落とすので、**通り抜けとZOCの両方が一度に効く**。既定は`NO_ALLIANCE`なので、触らない部屋は寸分同じ。`MoveRangeService`は`partyToken`（`collectionOf(Party.aliasName)`＋各`versionOf`）をreach tokenに混ぜて、同盟を切り替えたら全リーチを引き直す
+- **パーティ同士の同盟** — `Party.allies`（識別子をスペース区切り。`FogMemory.found`と同じ書き方）。`allianceOf()`（`domain/party/party-alliance`）が`PartyAlliance = (a, b) => boolean`を組み、**片側が名指しすれば成立**（両方に書かせると、半分だけ書いた状態が気づかないうちに効かないままになる）。`relationBetween(piece, mover, allied)`が同盟相手を`same`に落とすので、**通り抜けとZOCの両方が一度に効く**。既定は`NO_ALLIANCE`なので、触らない部屋は寸分同じ。`MoveRangeService`は`partyToken`（`collectionOf(Party.aliasName)`＋各`versionOf`）をreach tokenに混ぜて、同盟を切り替えたら全リーチを引き直す
 - **パーティで敵味方を分けるのは通り抜けだけ** — `relationBetween()`（`domain/tabletop/move/piece-relation`、`same` / `other` / `none`）と`passageCells()`（`piece-passage`、`block` / `pass` / `cost` / `share`）。`RoomRules`の`samePartyPassage` / `otherPartyPassage` / `noPartyPassage` / `piecePassageCost`。**既定は`piecesShareCells`から導く**（`diagonalMove`が`moveDiagonally`に落ちるのと同じ手。`true→share` / `false→block`）ので、触らない部屋は寸分同じに動く。ZOCの`isHostileTo`は`isNpc`のまま（所属を持たないコマが多い）
 - **歩く以外の移動** — `MOVE_MODES`（`domain/tabletop/move/move-mode`、`walk` / `climb` / `swim` / `crawl` / `fly`）を`GameCharacter.moveMode`に持たせ、`MOVE_MODE_TERMS`が`toll`（1マスごとの上乗せ）・`paysGround`（地面の追加コストを払うか）・`clears`（跳び越えと同じものを越えるか）を返す。`build()`は`toll`を`costOf`の先頭に足し、`paysGround`が偽なら`moveCostCells()`を引かず、`clears`が真なら`blocked`を`leapt`に差し替える（跳び越え用の集合をそのまま使い回す）。入口はコマの右クリックメニューの「移動の仕方」で、**移動の計画を出せるコマにだけ出す**（リーチの無いコマには意味が無い）
-- **狭い隙間への押し込み** — `RoomRules.squeezes`（既定は切）。`pieceFitsOn()`に`across`を足してひと回り小さい足跡を問えるようにし（`sizeShiftOf()`を`piece-on-grid`に切り出して、置かれる角を畳んだ大きさで出す）、`restsAt`が「本来の大きさで入る」か「畳めば入る」で通し、`costOf`が畳んだセルにだけ1を足す。**大きさ2のコマは畳むと1マスなので述語が`null`になる** — その場合は「どこでも入る」と読む
+- **狭い隙間への押し込み** — `RoomRules.squeezes`（既定は切）。`pieceFitsOn()`に`across`を足してひと回り小さい足跡を問えるようにし（`sizeShiftOf()`を`piece-on-grid`に切り出して、置かれる角を畳んだ大きさで出す）、`restsAt`が「本来の大きさで入る」か「畳めば入る」で通し、`costOf`が畳んだセルにだけ1を足す。**大きさ2のコマは畳むと1マスなので述語が`null`になる**。その場合は「どこでも入る」と読む
 - **跳躍の距離** — `RoomRules.jumpCells`（0は移動力いっぱい＝これまでの挙動）。`MovePlanService.legRoom()`が`toggleJump()` / `settle()` / `lookAt()`の3か所で`Math.min(残り, jumpCells)`を返す。脚ごとに掛かるので、経由点を置くたびに1回ぶんの跳躍に戻る
 - **通り抜けも見えているコマだけを見る** — `build()`が`isTokenVisible()`で濾した一覧を`passageCells`と`heldGroundAround`の双方に渡す。**へこみは位置だけでなく陣営も漏らす**（味方は通れて敵は通れないため）
 - **経路の厳密化** — `Config.moveStrictPath`（`moveStrict`の下位オプション）。`MoveRangeService.trace()`を`movable.ondrag`から呼んで通過セルを記録し、`walkedPath()`（`domain/tabletop/move/walked-path`）が隣接・侵入可否・コストを再計算する。**リーチは最安経路で出るので終点判定だけでは壁をまたげてしまう**のが動機。1マス戻る動きは記録側で打ち消す（手の震えで移動力が減らないように）。ZOCのcost/stopも同じ`ReachOptions`を使い回すため、リーチと経路で判定がずれない
@@ -414,7 +414,7 @@ SEは効果音ラボ・On-Jinの素材を取り込み、`PresetSound`経由で�
 - **メニューは命令表＋並べ方の2枚** — 押せるもの1つずつに固定のkeyを与えた`MENU_COMMANDS`（`domain/ui/menu-command`）と、面ごとの並び`MenuLayout`（`domain/ui/menu-layout`、入れ子は1段）。`MenuAction`は`panel` / `toggle` / `cycle` / `act` / `custom`の5種で、`custom`は行動順表示・ペルソナ・NPCバー・操作対象・射程のようにボタンでないものの逃げ道。**`audience`は命令表が持つ**のが要で、利用者のデータに入るのはkeyだけなのでlocalStorageを書き換えてもGM専用の命令は現れない（`MenuCommandService.run()`が`offers()`を再確認する）。発火と「いまどう見えるか」（切替の点灯・設定の現在値アイコン・保存中の無効化）は`features/menu/menu-command.service`の1か所。保存と読み込み・画面の開閉だけは画面が持つので`registerHost()`で受け取る。FAB・GMツール・PLツールの3面がこの1枚から描かれ、`FabEntry` / `FabSubmenuOpener` / 手書きHTML / `SeatButton`の4形と、ツールバーの手書き`<ui-icon-button>`は全部消えた（`features/seat-display`ごと削除）。i18nの抜けは`i18n-choices.spec`が`MENU_COMMANDS`の`labelKey`と既定の小窓の`labelKey`で拾う
 - **並びはこの端末だけのもの** — `application/ui/menu-layout.service`（`axe.menu.fab` / `axe.menu.gmToolbar` / `axe.menu.plToolbar`）。**保存キーが無いときだけ既定**（状態異常カタログの「空なら配る」とは意味が違う。空にした人に配り直さないため）。リセットは既定を書き込むのでなく**キーを消す**ので、後の版で項目が増えたらその増分が入る。`parseMenuLayout`は寛容で、知らないcommandを**読み取り時には落とさず**描画時に落とす（新しい版で書いた並びを古い版で開いて戻したとき、消えていないように）。部屋のXML・`SaveDataService`・`FileArchiver`は一切触らない
 - **編集パネル** — `features/menu/menu-editor-panel`（パネル名`menuEditor`、Favの「表示」から）。足す / 外す / 改名 / アイコン変更 / 小窓へ出し入れ / 上下。アイコンは`ui/components/icon-picker`の一覧から選ぶ。候補は`domain/ui/icon-font`の`ICON_FONT_NAMES`（同梱WOFF2の字形2,234種を、切り出し元の符号位置表で公開名に戻したもの。合字名は数字が英単語に化けるため字形名からは起こせない）で、**打つ前は命令表が使っているマークだけを出す**（2,234件を並べても選べない）。`icon-font.spec`が「既定のメニューが使うマークは全部描ける」を固定する。小窓の出る位置は`ui/anchored-popover`の`fitPopover`（立ち絵ピッカーと共用）。並べ替えと段替えはどちらも取っ手のドラッグで、`ui/dragging/row-reorder`の`RowReorder`に載る。**落とし先は`domain/ui/menu-layout-edit`の`menuDropSpot`が決める**（小窓の見出しの下半分は「中へ」・それ以外の隙間は隣り合う項目のもの・小窓を小窓の中身の隣に落とすとその小窓の隣に出る）。タッチはドラッグが始まらないので、行の右クリック/長押しに`buildReorderContextMenu`の上下と移す先を出す。足す側は`menu-command-picker`（同じ小窓の作法・名前とキーで絞り込み・**選んでも閉じない**ので続けて足せる）で、小窓は名前を聞かずに作って行で改名させる（同じことを二度聞かない）。編集操作は`domain/ui/menu-layout-edit`の純関数で、小窓の入れ子は`moveMenuNodeInto`が拒む。持ち出しは`domain/ui/menu-layout-file`のJSON 1枚（`axe-menus.json`）で、**面を1つも名指ししていないファイルはnull**（読むと全面が空になるため）
-- **部屋設定パネル** — テーブルをまたいで効く決めごとを1枚に集める（`features/room-settings/`、パネル名`roomSettings`）。中身は`ROOM_SETTINGS_TABS`（一般/戦闘/移動/UI/自動保存/ユーティリティ）のタブ。UIタブは共通設定（コマの向きの示し方＝部屋ルール、コマ画像を常にカメラに向ける＝卓の属性）と個人設定（卓上ディスプレイ一式＝その画面のlocalStorage）に割る。読み取り専用の`inert`は共通設定側だけに掛ける（個人設定は誰でも触れる）。**読み取り専用の`inert`はタブの中身に掛ける**（hostに掛けると見学者がタブを切り替えられない）。自動保存タブは`RoomSnapshotPanelComponent`を埋め込む（`FEATURE_DEPENDENCIES`に`'room-settings': ['room-archive']`が要る）。自動保存の入切は`RoomSnapshotService.isKeeping`＝**localStorage**（ひかえはその端末の中にしか無いので、部屋の決めごとにしない）。`RoomArchiveEventHandlerService`は`markDirty`と`flush`の両方で見る。移動範囲・ZOC・1マスの距離・コマの向きは`GameTable`の属性のままだが、`Config`が同名の答えを持ち、`domain/tabletop/room-rules`の`resolveRoomRules()`が**フィールド単位でConfig → table → 既定**の順に解決する。`Config`側の「未回答」は文字列/enumが`''`・数値が`-1`・booleanが`''`/`'0'`/`'1'`（`_hideSystemAvatar`と同じ規約。素のbooleanだと未設定時の`JSON.parse('')`がconfig.xmlを丸ごと落とす）。**移行処理は無く**、パネルでその項目を初めて書いた瞬間がその項目の移行で、触らない部屋は永久に今までどおり動く。「テーブルごとに戻す」は`ROOM_RULE_GROUPS`単位で番兵を書き戻すだけ。既定ダイスボットもテーブル設定のフッタからここへ移した
+- **部屋設定パネル** — テーブルをまたいで効く決めごとを1枚に集める（`features/room-settings/`、パネル名`roomSettings`）。中身は`ROOM_SETTINGS_TABS`（一般/戦闘/移動/UI/自動保存/ユーティリティ）のタブ。UIタブは共通設定（コマの向きの示し方＝部屋ルール、コマ画像を常にカメラに向ける＝卓の属性）と個人設定（卓上ディスプレイ一式＝その画面のlocalStorage）に割る。読み取り専用の`inert`は共通設定側だけに掛ける（個人設定は誰でも触れる）。**読み取り専用の`inert`はタブの中身に掛ける**（hostに掛けると見学者がタブを切り替えられない）。自動保存タブは`RoomSnapshotPanelComponent`を埋め込む（`FEATURE_DEPENDENCIES`に`'room-settings': ['room-archive']`が要る）。自動保存の入切は`RoomSnapshotService.isKeeping`＝**localStorage**（ひかえはその端末の中にしか無いので、部屋の決めごとにしない）。`RoomArchiveEventHandlerService`は`markDirty`と`flush`の両方で見る。移動範囲・ZOC・1マスの距離・コマの向きは`GameTable`の属性のままだが、`Config`が同名の答えを持ち、`domain/tabletop/room-rules`の`resolveRoomRules()`が**フィールド単位でConfig → table → 既定**の順に解決する。`Config`側の「未回答」は文字列/enumが`''`・数値が`-1`・booleanが`''`/`'0'`/`'1'`（`_hideSystemAvatar`と同じ規約。素のbooleanだと未設定時の`JSON.parse('')`がconfig.xmlを丸ごと落とす）。**移行処理は無く**、パネルでその項目を初めて書いた時点がその項目の移行で、触らない部屋は永久に今までどおり動く。「テーブルごとに戻す」は`ROOM_RULE_GROUPS`単位で番兵を書き戻すだけ。既定ダイスボットもテーブル設定のフッタからここへ移した
 - **招待リンク** — 接続パネルで部屋ID / 部屋名 / 合言葉（任意）/ ロールを載せたリンクを生成。開くと起動時に自動入室し、進行状況と失敗時のロビー導線をバナーで表示。リンクはハッシュフラグメントに載せるためサーバーログに残らず、合言葉は部屋固有のマスクを掛けて平文を出さない（`domain/peer/invite-link`、`features/lobby/invite-join`）
 - **入室処理の共通化** — 部屋検索と接続を`application/lobby/room-join.service`に集約し、タイムアウトで決着させる（ロビーと招待リンクで共用）
 - ロビー / 部屋設定 / パスワード確認のUI再設計
@@ -470,27 +470,27 @@ SEは効果音ラボ・On-Jinの素材を取り込み、`PresetSound`経由で�
 - **タイムライン** — 目盛りは経過時間。各時点のできごとの多さを山として描き、通り過ぎた分を色で示す。目印は章のしおりとして並び、押せばその1件へ飛ぶ（`features/replay/replay-timeline`）
 - **非破壊編集** — 削除・並べ替え（つまんで移動、または矢印で1つずつ）・台詞の直し・任意のイベントの差し込みを行い、別の記録として保存する。移した項目は移した先の時刻を引き継ぐ。Ctrl+Zで1手ずつ戻せる。派生先には編集後の並びで計算し直したキーフレームを書く（`domain/replay/replay-edit`、`application/replay/replay-editor.service`）
 - **捏造の収録** — 手で打つ代わりに、盤面を預かった状態で実際に操作し、その結果をイベントとして任意の位置へ差し込む（`application/replay/replay-staging.service`、`features/replay/replay-staging-banner`）
-- **MP4書き出し** — 記録を絵コンテ（1発言 = 1カット、目印は章の扉、VNの場面転換が背景）に起こし、canvasに描いてWebCodecsで符号化する。**720p / 1080p / 1440p / 2160p**、**30 / 60fps**、読める速さ / 当日と同じ間、台詞と章だけ / 盤面の動きも（既定）、を選べる。**長さで打ち切らない** — 記録した分は最後まで書き出す。盤面の動きは記録一覧と同じ言い回しで字幕にする。編集中なら編集後の並びが、秘匿は見る人のロールで絞られた結果が画になる（`domain/replay/replay-storyboard`、`domain/replay/replay-frame-layout`、`infrastructure/replay/replay-frame-painter`、`core/media/video-encoder`、`application/replay/replay-video.service`、`features/replay/replay-video-panel`）
+- **MP4書き出し** — 記録を絵コンテ（1発言 = 1カット、目印は章の扉、VNの場面転換が背景）に起こし、canvasに描いてWebCodecsで符号化する。**720p / 1080p / 1440p / 2160p**、**30 / 60fps**、読める速さ / 当日と同じ間、台詞と章だけ / 盤面の動きも（既定）、を選べる。**長さで打ち切らない**。記録した分は最後まで書き出す。盤面の動きは記録一覧と同じ言い回しで字幕にする。編集中なら編集後の並びが、秘匿は見る人のロールで絞られた結果が画になる（`domain/replay/replay-storyboard`、`domain/replay/replay-frame-layout`、`infrastructure/replay/replay-frame-painter`、`core/media/video-encoder`、`application/replay/replay-video.service`、`features/replay/replay-video-panel`）
 - **動画に映る盤面** — カットごとに、その時点の卓をキーフレームからpatchを積んで組み直し、真上から描く。卓の絵・コマの絵と名前・大きさ（マス数）・重なり順を持ち、しまわれているコマは出さない。台詞窓はその下に敷く（`domain/replay/replay-board-view`）
 - **動画の構図** — 盤面が画面のほぼ全面を占め、台詞窓はその上に重ねる。卓が広くて空白が多いと小さく見えるので、コマのある範囲に余白2マスを足した所へ寄せて映す。マス目の線と、移動の道筋・行き先の矢印を描く。立ち絵は話し手のコマがある側（左右）へ寄せる
 - **コマの滑走** — 移動のカットでは記録したfrom / to（畳んだ移動は途中の道のりも）を経路として、カットの尺いっぱいを使ってeaseで滑らせる。滑り終わりは記録された置き場所にぴったり重なる（`domain/replay/replay-route`を再生と共有）
 - **小さすぎるコマ** — 広い卓ではマス目が数ピクセルになるので、コマは見える下限まで底上げして中心を保ったまま描く
-- **当日と同じ間** — 実際の間をそのまま尺にする（下限だけは読める速さに丸める）。上を丸めると、名乗ったとおりの間にならない
+- **当日と同じ間** — 実際の間をそのまま尺にする（下限だけは読める速さに丸める）。上を丸めると、名前のとおりの間にならない
 - **付随する音** — 効果音は移動や判定に付いて鳴るだけで、それ自体は出来事ではない。だから音としては残すが、動画の字幕にも記録一覧にも既定では出さない（一覧の「付随する音も出す」で編集用に出せる。`isIncidentalReplayEvent`）
 - **動画に入る音** — 効果音は鳴った場面の時刻に、BGMは鳴り始めから止まる（または曲が変わる）までを区間として置き、`OfflineAudioContext`で1本に混ぜてAACで多重化する。BGMは区間ぶんループしフェードで出入りする（`domain/replay/replay-soundtrack`、`application/replay/replay-sound-mixer`）
-- **読み物書き出し** — 記録をMarkdown（小説 / 台本）で書き出す（`domain/replay/replay-script`）。**動画と同じ絵コンテ**（`buildReplayStoryboard`）を使うので、章の切れ目も地の文の扱いも動画と揃う。動画のために読める長さへ割ったカットは、同じ`seq`を持つものだけ1つの発言へ戻す（話者で繋ぐと、続けて喋った別の発言まで繋がる）。見えるものは書き出す人のロールで決まる（動画と同じ`canViewReplayEvent`）。盤面の動きは既定で入れない — 入れると読み物が操作ログになる
+- **読み物書き出し** — 記録をMarkdown（小説 / 台本）で書き出す（`domain/replay/replay-script`）。**動画と同じ絵コンテ**（`buildReplayStoryboard`）を使うので、章の切れ目も地の文の扱いも動画と揃う。動画のために読める長さへ割ったカットは、同じ`seq`を持つものだけ1つの発言へ戻す（話者で繋ぐと、続けて喋った別の発言まで繋がる）。見えるものは書き出す人のロールで決まる（動画と同じ`canViewReplayEvent`）。盤面の動きは既定で入れない。入れると読み物が操作ログになる
 - **書き出し先** — `showSaveFilePicker`があれば保存先を先に尋ね、`FileSystemWritableFileStreamTarget`でディスクへ直接流す。長さを決めるのは空き容量だけになる。無い環境でも、見込みが大きければ`StreamTarget`で分割してBlobに積む（索引を先頭に置く`fastStart: 'in-memory'`は全体をメモリに載せるので、長い動画では使わず`'fragmented'`に切り替える）
 - **符号化できない環境** — WebCodecsが無ければ`MediaRecorder`へ落とす（`core/media/media-recorder-encoder`）。canvasの絵と混ぜた音をそのまま流し込むので**尺と同じだけ実時間がかかる**（その旨をパネルに出す）。入れ物はMP4 → WebMの順に、そのブラウザが受け取れるものを選ぶ。音はAAC → Opusの順に`AudioEncoder.isConfigSupported()`で試すので、AACが無い環境でも無音にならない
 - **動画の暗闇・視界・光源** — キーフレームから`VisionScene`を組み直し、判定は生きている卓と同じ`domain/tabletop/vision-scene`に任せる（`domain/replay/replay-vision-scene`）。見る人のロールで見え方が変わるのも同じで、GMは全部、PLは自分の持ちコマと同行者、見学者は卓に居るPLの視界を借りる。描くのはcanvasに切り抜きが無いので、暗幕を別の面へ描いてから灯りの形で削り、削り終えた面を盤面へ重ねる（`infrastructure/replay/replay-darkness-painter`）。面は長辺2048pxで頭打ちにする（卓の座標のまま作ると6000px四方になる）
-- **動画の盤面の向き** — 真上から（既定）と、卓と同じ傾き（`REPLAY_BOARD_TABLE_VIEW`）を選べる。カメラの角度は同期していない＝記録に残らないので、当日の角度ではなく卓の既定の角度で映す。射影は回す → 倒す → 枠に合わせる、の順（`domain/replay/replay-board-camera`）。**遠近は付けない** — 手前と奥で縮尺が変わらないぶん、コマの大小が距離ではなく実際の大きさとして読める。地面に貼り付くもの（卓の絵・マス目・移動の跡・暗闇）は卓の座標のまま描いて行列に傾けさせ、コマだけは倒さずに足元で立てる（倒すと板が潰れて何のコマか分からない）
+- **動画の盤面の向き** — 真上から（既定）と、卓と同じ傾き（`REPLAY_BOARD_TABLE_VIEW`）を選べる。カメラの角度は同期しておらず記録に残らないので、当日の角度ではなく卓の既定の角度で映す。射影は回す → 倒す → 枠に合わせる、の順（`domain/replay/replay-board-camera`）。**遠近は付けない**。手前と奥で縮尺が変わらないぶん、コマの大小が距離ではなく実際の大きさとして読める。地面に貼り付くもの（卓の絵・マス目・移動の跡・暗闇）は卓の座標のまま描いて行列に傾けさせ、コマだけは倒さずに足元で立てる（倒すと板が潰れて何のコマか分からない）
 - **書き出しの制約** — 動画のカットイン（YouTube等）は絵として入らない（音だけのカットインと同じく字幕で出る）。画像のカットインは盤面の上に重ねて映す
-- **まとめ** — 記録を1枚に数え上げる（`domain/replay/replay-digest`、`features/replay/replay-digest-panel`）。数・今日の称号・ダイスの出方・受けた増減を出し、Markdownでも書き出せる。数えるのは記録に残っているものだけで、足りない欄は「出せません」と言う。**与えた側は出さない** — 記録に残るのは値を変えた人であって攻撃した人ではない（GMが敵のHPを減らせばGMの名前になる）。出目はv1.33.0以降の記録にしかない。見える範囲は読む人のロールに従う
-- **記念写真** — 卓に出ていたコマの立ち絵を1枚に並べ、部屋名と日付を焼き込んだPNGを保存する（`application/replay/replay-photo.service`、`domain/replay/replay-cast`）。盤に出ているコマだけを並べ、入りきらなかった人数は黙って切らずに画面へ出す。絵が手元に無いコマも枠と名前は残す
+- **まとめ** — 記録を1枚に数え上げる（`domain/replay/replay-digest`、`features/replay/replay-digest-panel`）。数・今日の称号・ダイスの出方・受けた増減を出し、Markdownでも書き出せる。数えるのは記録に残っているものだけで、足りない欄は「出せません」と表示する。**与えた側は出さない**。記録に残るのは値を変えた人であって攻撃した人ではない（GMが敵のHPを減らせばGMの名前になる）。出目はv1.33.0以降の記録にしかない。見える範囲は読む人のロールに従う
+- **記念写真** — 卓に出ていたコマの立ち絵を1枚に並べ、部屋名と日付を焼き込んだPNGを保存する（`application/replay/replay-photo.service`、`domain/replay/replay-cast`）。盤に出ているコマだけを並べ、入りきらなかった人数は、知らせないまま切り捨てずに画面へ出す。絵が手元に無いコマも枠と名前は残す
 
 ## 配信オーバーレイ
 
 - **透過画面** — 招待リンクの「配信用（透過画面）」で開くと、盤面もパネルも出さず直近の発言と手番だけを透過の背景に出す（`features/streaming-overlay`、`application/ui/overlay-mode.service`）。OBSのブラウザソースに貼る用途
-- **見せる範囲は狭いほうへ倒す** — 密談・伏せたダイス・その役割で見えないタブは出さない。入室が終わるまで自分のロールは既定（PL）のままなので、リンクで頼んだロールとの狭いほうを採る（広いほうを採ると入室の途中だけ見えてはいけないタブが映る）
+- **見せる範囲は狭いほうを優先する** — 密談・伏せたダイス・その役割で見えないタブは出さない。入室が終わるまで自分のロールは既定（PL）のままなので、リンクで頼んだロールとの狭いほうを採る（広いほうを採ると入室の途中だけ見えてはいけないタブが映る）
 - **古い行は落とす** — 直近の数件だけを組み、10秒ごとの拍で古い行を落とす（`streaming-overlay-feed`）。卓が静かな間も貼り付いたままにしない
 
 ## 同期 / 内部基盤

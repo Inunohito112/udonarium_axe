@@ -28,14 +28,14 @@
 合図（ネットワークイベント）由来:
 `ROLL_DICE_SYMBOL` / `FLIP_COIN` / `SHUFFLE_CARD_STACK` / `SOUND_EFFECT` /
 `EFFECT_CAST` / `SELECT_GAME_TABLE` / `RESOURCE_CHANGE` / `CONNECT_PEER` / `DISCONNECT_PEER`。
-鳴らし直せるものは`signal`を添えて再生時に撃ち直す。
+鳴らし直せるものは`signal`を添えて、再生時に発火し直す。
 
 ## 意図的に規則を置いていない
 
 | alias                                                                                                                                            | 理由                                                           |
 | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
 | `chat-tab` / `chat-tab-list`                                                                                                                     | タブの作成・改名は卓の出来事ではなく設定。`full`でのみ残る     |
-| `cut-in` / `cut-in-scene` / `cut-in-layer` / `effect-preset` / `effect-preset-set` / `dice-table` / `dice-bot` / `chat-palette` / `buff-palette` | 素材・定義の編集。使った瞬間は別途記録される                   |
+| `cut-in` / `cut-in-scene` / `cut-in-layer` / `effect-preset` / `effect-preset-set` / `dice-table` / `dice-bot` / `chat-palette` / `buff-palette` | 素材・定義の編集。使ったときは別途記録される                   |
 | `image-tag` / `image-tag-list` / `audio-tag` / `audio-tag-list` / `playlist`                                                                     | 素材の整理                                                     |
 | `config` / `summary-setting` / `markdown` / `reload-check` / `room` / `sound-effect`                                                             | 部屋の設定・内部管理                                           |
 | `party`                                                                                                                                          | 同行編成。卓の進行としては現れにくい。要望があれば規則を足せる |
@@ -45,8 +45,8 @@
 
 ## 記録できないもの
 
-- **記録者が落ちていた区間** — 再接続時にキーフレームを取って断絶を明示する
-- **各ピアのローカル表示** — カメラ位置、パネル配置、音量など。VN表示モードだけは
+- **記録者が落ちていた区間**。再接続時にキーフレームを取って断絶を明示する
+- **各ピアのローカル表示**（カメラ位置、パネル配置、音量など）。VN表示モードだけは
   再生の見え方に関わるため例外的に記録する
 
 ## 前提: 卓の出来事はすべてブロードキャストで流れる
@@ -60,7 +60,7 @@
 | `image-storage` / `audio-storage` / `*-sharing-system` / `buffer-sharing-task` | `SYNCHRONIZE_FILE_LIST` / `SYNCHRONIZE_AUDIO_LIST` / `START_*_TRANSMISSION` / `FILE_*_CHUNK_*` / `CANCEL_TASK_*`                | ファイル転送                     |
 | `domain-events`                                                                | `WRITING_A_MESSAGE` / `WRITING_A_MESSAGE_DETAIL`                                                                                | 入力中インジケータ（記録対象外） |
 
-内緒話・秘匿ダイス・秘話カットインは、いずれも**同期オブジェクトとして全員へ流れ**、
+内緒話・秘匿ダイス・秘話カットインは、いずれも同期オブジェクトとして全員へ流れ、
 見せるかどうかは表示側が決めている。だから記録者にも届き、当時の可視性ごと残る。
 
 **不変条件**: 卓の出来事はブロードキャストで流す。ユニキャストは複製の裏方に限る。
@@ -73,4 +73,4 @@
 2. そのaliasが[replay-interpreter.ts](../src/app/domain/replay/replay-interpreter.ts)
    の規則にあるか確認する
 3. 無ければ`object.update`に落ちている。卓の出来事なら規則を足し、
-   設定や素材なら本書の「意図的に置いていない」へ追記する
+   設定や素材なら本書の「意図的に規則を置いていない」へ追記する

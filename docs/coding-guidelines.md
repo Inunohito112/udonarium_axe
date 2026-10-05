@@ -16,7 +16,7 @@
   - SCSSは使わない
 - **selector**: 原則prefixなし（`game-character`, `chat-window`, `range`等）。
   ただし汎用UI directiveは`app` prefixを付ける（`appDraggable`, `appTooltip`, `appResizable`等）。
-  既存の`app-` prefix component（`alarm-menu`等）はhistorical互換で残置
+  既存の`app-` prefix component（`alarm-menu`等）は過去との互換のため残している
 
 ### 変更検知 / Signals
 
@@ -33,7 +33,7 @@
 ### イベント購読
 
 - `ObjectChangeService.onObjectChangedFor()` / `onObjectChangedForAlias()`を使う
-- 生の`objectChanged$.subscribe()` + 個別identifierフィルタは漸進的に置き換え
+- 生の`objectChanged$.subscribe()` + 個別identifierフィルタは段階的に置き換え
 - 詳細な使用例は[architecture.md#イベント購読パターン](architecture.md#イベント購読パターン)を参照
 
 ### feature副作用
@@ -58,8 +58,8 @@
 
 - ドメインモデル（`@SyncObject`クラス）からDIサービスを呼ぶ箇所を**新規で増やさない**
 - サービス側からモデルを操作する向きを保つ
-- やむを得ない場合は`ServiceLocator.get<T>(token)`を使う
-  ([../src/app/core/di/service-locator.ts](../src/app/core/di/service-locator.ts))が、現状1箇所のみ
+- やむを得ない場合は`ServiceLocator.get<T>(token)`
+  （[../src/app/core/di/service-locator.ts](../src/app/core/di/service-locator.ts)）を使うが、現状1箇所のみ
 
 ## コメント・テスト名の言語
 

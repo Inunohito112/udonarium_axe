@@ -1,7 +1,7 @@
 # Udonarium Axe — アーキテクチャ設計
 
-このドキュメントは**7層構造の設計思想と、各層の詳細な役割・パターン**をまとめたものです。
-日々の開発で守るべき "規範ルール" は[CLAUDE.md](../CLAUDE.md)を参照してください。
+このドキュメントは**7層構造の設計思想と、各層の詳細な役割・パターン**をまとめたもの。
+日々の開発で守るべき「規範ルール」は[CLAUDE.md](../CLAUDE.md)を参照。
 
 ## 全体像
 
@@ -35,8 +35,8 @@ composition → features → ui → application → infrastructure → domain �
 - **依存可能**: なし
 - **入れる**: 純粋インフラ、I/Oラッパ、msgpack/XML serialization、event channel、`@SyncObject`のシリアライゼーション基盤
 - **入れない**: ドメインモデルへの直接依存（spec内テストフィクスチャを除く）、featuresへのcallback登録
-- **設計上の注意**: `core/storage/file-archiver.ts`等はdomainのSyncObjectに依存したいケースがあるが、
-  必ず**構造的interface (`LoadGuard`等)をcore内に定義し、ObjectStoreのalias文字列でランタイム取得**することで
+- **設計上の注意**: `core/storage/file-archiver.ts`等はdomainのSyncObjectに依存したいケースがある。
+  その場合も必ず**構造的interface（`LoadGuard`等）をcore内に定義し、ObjectStoreのalias文字列でランタイム取得**することで、
   cross-layer型importを回避する
 
 ### `@axe/domain/*`
@@ -56,7 +56,7 @@ domain ↔ DOM/Webを橋渡しするアダプタ層。
 - **依存可能**: `core`, `domain`
 - **入れる**: domain ↔ 外部世界（Canvas, Audio, IndexedDB, localStorage, MediaSession等）のアダプタ
 - **入れない**: `application` / `ui` / `features`への参照、Angularの`@Injectable` / `inject`
-- **例**: `replay/replay-frame-painter` — domainの絵コンテをCanvas 2Dに描く。描く内容（配置・折返し）はdomainの純関数、描く手段だけがここ
+- **例**: `replay/replay-frame-painter`はdomainの絵コンテをCanvas 2Dに描く。描く内容（配置・折返し）はdomainの純関数、描く手段だけがここ
 
 ### `@axe/application/*`
 
@@ -95,7 +95,7 @@ featureに紐付かない汎用UI部品。
 `AppComponent`と、すべてのSyncObjectシングルトンをDI登録する合成コード。
 すべての層に依存可能。
 
-- **配下** (`composition/`): `app-config.service.ts`（設定読み込み）, `app-initialization.service.ts`（SyncObjectインスタンス化）, `class-provider.ts`（`CLASS_SINGLETON_PROVIDERS`）
+- **配下**（`composition/`）: `app-config.service.ts`（設定読み込み）, `app-initialization.service.ts`（SyncObjectインスタンス化）, `class-provider.ts`（`CLASS_SINGLETON_PROVIDERS`）
 - **依存可能**: すべて
 - 各featureのevent-handler serviceを`inject()`するのみで起動する
 - 個別feature専用サービスを`app.component`に直書きしないこと。composition rootはあくまで「束ねる」役
@@ -115,12 +115,12 @@ featureに紐付かない汎用UI部品。
 - DI管理外のクラスからDIサービスに触る必要があるときだけ
   `ServiceLocator.get<T>(token)`を使う
   ([src/app/core/di/service-locator.ts](../src/app/core/di/service-locator.ts))。
-  **新規でドメインモデルからDIサービスを呼ぶ箇所を増やさないこと** —
+  **新規でドメインモデルからDIサービスを呼ぶ箇所を増やさないこと**。
   サービス側からモデルを操作する向きを保つ
 
 ## イベント購読パターン
 
-`ObjectChangeService.onObjectChangedFor()` / `onObjectChangedForAlias()`を使う:
+`ObjectChangeService.onObjectChangedFor()` / `onObjectChangedForAlias()`を使う。
 
 ```typescript
 this.objectChange.onObjectChangedFor(
@@ -149,7 +149,7 @@ this.objectChange.onObjectChangedForAlias(
 })
 ```
 
-- **テンプレートは外部ファイル分離** (`templateUrl`)
+- **テンプレートは外部ファイル分離**（`templateUrl`）
 - **スタイルは原則テンプレート内Tailwind utility class**。`styleUrls` / `styles`は使わない。
   どうしてもTailwindで表現できない場合に限り`styleUrls`を許容するが、
   現状`.component.css`を持つコンポーネントは存在しない（例外なし）。SCSSは使わない
@@ -165,7 +165,7 @@ this.objectChange.onObjectChangedForAlias(
 ## context-menu builderパターン
 
 各tabletopオブジェクトのコンテキストメニューは`features/<scope>/<name>-context-menu.ts`
-として純関数で実装する。コンポーネント本体は短く保ち、メニュー構築はspecを書いて挙動を固定する:
+として純関数で実装する。コンポーネント本体は短く保ち、メニュー構築はspecを書いて挙動を固定する。
 
 ```typescript
 export function buildXxxContextMenu(
