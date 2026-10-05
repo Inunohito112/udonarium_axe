@@ -148,7 +148,7 @@ Udonarium Axeが**追加**または**大きく拡張・再設計**した機能�
 ## ルームの取り込み（実験的）
 
 - **ココフォリア ルームデータzip** — `__data.json`を持つzipをテーブルに落とすと、通常のzip展開を止めて取り込みへ回す（`core/storage/room-archive`、`core/storage/file-archiver`、`features/tabletop/ccfolia-room-import`）
-- **場面 = テーブル** — `scenes` 1件を`GameTable` 1枚へ（名前はシーン名、`order`順）。ココフォリアは場面を切り替えてもパネルとコマが残るため、パネルは全テーブルへ複製し、コマは1体ずつ生成する（AXEのコマはテーブル横断）。盤面サイズはコマ座標の基準を揃えるためルームの値で統一する
+- **場面 = テーブル** — `scenes` 1件を`GameTable` 1枚へ（名前はシーン名、`order`順）。ココフォリアは場面を切り替えてもパネルとコマが残るため、パネルは全テーブルへ複製し、コマは1体ずつ生成する（Axeのコマはテーブル横断）。盤面サイズはコマ座標の基準を揃えるためルームの値で統一する
 - **画像レイヤー** — ココフォリアの前景が盤面サイズちょうどの絵なので`imageIdentifier`（テーブル面）へ、背景は盤面外の壁紙なので`backgroundImageIdentifier`へ写す
 - **写像** — `items`を床のみの`Terrain`（視界・光を遮らない）へ、`characters`を`ImportedCharacterFactory`経由の`GameCharacter`へ。`faces`はコマ画像ギャラリーに追加し、`secret` / `invisible`は`DisclosureMode.GameMaster`にする
 - **座標** — 原点は盤面中央。パネルはマス単位、コマだけは1マス = 25のピクセル単位（`domain/tabletop/import/ccfolia-room-layout`）。盤外配置は意図的な用法なのでクランプしない
