@@ -26,7 +26,7 @@ SkyWayのSecretをブラウザに置けないので、署名する場所が外�
 
 ## 接続できません {#cannot-connect}
 
-上から順に潰してください。
+上から順に確かめてください。
 
 1. `https://<バックエンドのURL>/v1/status`を開いて`OK`が返るか
 2. バックエンドの`ACCESS_CONTROL_ALLOW_ORIGIN`が、Axeを公開しているURLを許可しているか

@@ -28,7 +28,7 @@
 
 [Releases](https://github.com/Xelltis/udonarium_axe/releases)の`axe_x.y.z.zip`を展開し
 （または自分でビルドした`dist/`を使い）、中身を任意の静的ホスティング
-（Cloudflare Pages / Amazon S3 / レンタルサーバー など）に置きます。
+（Cloudflare Pages / Amazon S3 / レンタルサーバーなど）に置きます。
 
 ## 4. 接続先を設定
 

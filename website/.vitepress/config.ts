@@ -10,7 +10,7 @@ const base = '/udonarium_axe/';
 // spelled out here. Change it together with the Pages settings.
 const siteUrl = `https://xelltis.github.io${base}`;
 const siteName = 'Udonarium Axe';
-const siteDescription = 'ブラウザで動く TRPG オンラインセッション支援ツール — 利用ガイド';
+const siteDescription = 'ブラウザで動くTRPGオンラインセッション支援ツールの利用ガイド';
 const ogImage = `${siteUrl}og.jpg`;
 
 /**
@@ -203,7 +203,7 @@ export default defineConfig({
           text: 'ロールと公開範囲',
           items: [
             { text: 'ロール（GM / PL / 見学）', link: '/manual/roles' },
-            { text: 'PL ツールバー', link: '/manual/pl-tools' },
+            { text: 'PLツールバー', link: '/manual/pl-tools' },
             { text: 'ホットバー', link: '/manual/hotbar' },
             { text: '情報の公開範囲', link: '/manual/disclosure' },
             { text: 'オブジェクト一覧（GM）', link: '/manual/gm-object-list' },
@@ -362,9 +362,9 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Axe について',
+          text: 'Axeについて',
           items: [
-            { text: 'Udonarium Axe とは', link: '/guide/getting-started' },
+            { text: 'Udonarium Axeとは', link: '/guide/getting-started' },
             { text: 'できること', link: '/guide/features' },
           ],
         },
