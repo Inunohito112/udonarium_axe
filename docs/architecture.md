@@ -23,7 +23,7 @@ composition → features → ui → application → infrastructure → domain �
 | `src/app/*.ts`          | composition root（`app.component.ts`等）。すべての層に依存可能 |
 
 依存方向はESLintの`no-restricted-imports`で自動検査される（[eslint.config.ts](../eslint.config.ts)）。
-`pre-commit`フック(`ng lint`)で必ず検出されるため、新規ファイル追加時は層を意識する。
+`pre-commit`フック(staged分の`eslint`)で必ず検出されるため、新規ファイル追加時は層を意識する。
 
 ## 各レイヤー詳細
 
@@ -87,7 +87,7 @@ featureに紐付かない汎用UI部品。
 - **入れる**: 1機能のUI（component + html）、そのfeature専用のcontext-menu builder / event-handler.service / helpers / spec
 - **入れない**: 他featureのcomponentを直接importするのは原則禁止（共通化したいなら`ui/` / `application/` / `domain/`のいずれかへ）
 - feature間でモデル経由（`domain/*`）以外の結合が必要な場合は、`application/`の薄いサービス経由で橋渡しする
-- feature同士の直接importは[eslint.config.ts](../eslint.config.ts)の`FEATURE_DEPENDENCIES`にある辺だけ通る（`panels`と`mobile`は例外）
+- feature同士の直接importは[eslint.config.ts](../eslint.config.ts)の`FEATURE_DEPENDENCIES`にある辺だけ通る（`panels`はどのfeatureからもimportでき、台帳にない`mobile`と`button-guide`からのimportは制限しない）
 - イベント駆動の副作用（パネル開閉、サウンド再生等）は各feature配下に`*-event-handler.service.ts`を置き、`providedIn: 'root'`でAppComponentが`inject()`するだけで自動起動する設計
 
 ### `@axe/composition/*` + `src/app/*.ts`（composition root）

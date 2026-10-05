@@ -22,7 +22,7 @@ updates:
           - version-update:semver-major
       # 22.1.5〜22.1.xの@angular/buildはunit-testビルダーがsetupFilesを適用しなくなり、
       # happy-domに無いWebRTCを補うスタブが走らないまま@skyway-sdk/coreを読み込んで
-      # 全specが落ちた。22.2.0では直っているのを確かめたうえで固定を移している。
+      # 全specが落ちた。22.2.0では直っているのを確かめたうえで、package.jsonの完全一致の固定を22.2.0へ移している。
       # 提案は止めたままにして、ng testが通ることを見てから手で上げる。
       - dependency-name: '@angular/build'
       - dependency-name: '@angular/cli'

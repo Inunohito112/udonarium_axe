@@ -153,7 +153,7 @@ npm run e2e        # Playwright E2E
 「オフライン」を選んでください。SkyWayへつなぎに行かないので、バックエンドを立てなくても
 1つのブラウザの中で操作できます。通信するときは「オンライン」に戻します。
 
-開発サーバーは既定でSkyWayバックエンドのURLを`assets/config.json`（`http://localhost:3000`）から読み込みます。
+開発サーバーはSkyWayバックエンドのURLを`assets/config.json`から読み込みます（ローカルのバックエンドなら`http://localhost:3000`）。
 ローカルで動かす場合はバックエンドをローカル起動するか、`assets/config.json`を公開済みバックエンドに向けてください。
 
 詳細な開発規範は以下を参照してください。

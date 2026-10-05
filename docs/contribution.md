@@ -54,9 +54,9 @@ feat(tabletop): expand table area to 6000px and adjust zoom range
 ```
 fix(chat): prevent duplicate logout message and invisible messages from late-timestamp peers
 
-- chat tab がメッセージ受信時にローカルのみフィルタしていたため、
-  P2P で受信した古いタイムスタンプメッセージが描画されない問題があった
-- フィルタ判定を timestamp ではなく aliasName ベースに変更
+- the chat tab filtered incoming messages locally, so messages that
+  arrived over P2P with an older timestamp were never drawn
+- filter by aliasName instead of timestamp
 ```
 
 ```
@@ -150,7 +150,7 @@ E2Eは載せていない。PlaywrightはCIだと5ブラウザぶん走る設定�
   `@semantic-release/release-notes-generator`が節を1つも出さず、リリースノートが見出しだけになる
   （おかしくなるのはリリース時だけなので、上げる前にcommit-analyzer / release-notes-generatorを直接叩いて確かめる）
 - **`bcdice`を上げたら`node scripts/generate-bcdice-importers.mjs`を実行する**。ゲームシステムと翻訳は
-  この一覧から1つずつ読み込む。新しいシステムが一覧に無いと、そのシステムを選んでもDiceBotで振られる
+  生成される`src/app/domain/dice/bcdice/bcdice-importers.generated.ts`の一覧から1つずつ読み込む。新しいシステムが一覧に無いと、そのシステムを選んでもDiceBotで振られる
 
 ## 依存の脆弱性（`npm audit`）
 
