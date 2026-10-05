@@ -158,7 +158,7 @@ test.describe('画像管理パネル', () => {
 
   test('タグのラジオボタンが存在すること', async ({ page }) => {
     // 「全て / 未設定」など複数のシステムタグが既定で存在する。
-    // ラジオ自体は class="peer hidden" で display:none。
+    // ラジオ自体はclass="peer hidden"でdisplay:none。
     await expect(page.locator('file-storage input[name="image-chg"]').first()).toBeAttached();
   });
 });

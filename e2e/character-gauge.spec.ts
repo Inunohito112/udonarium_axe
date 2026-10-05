@@ -56,9 +56,9 @@ async function box(locator: Locator) {
 }
 
 /**
- * バフのアイコンと、その中の要素を同じ瞬間に測る。
+ * バフのアイコンと、その中の要素を同時に測る。
  * アイコンは少し縮んだ位置から現れるので、アニメーションが終わるのを待ってから測る。
- * 2 回に分けて測ると、その間に描き直されたときに別々の瞬間の位置を比べてしまう。
+ * 2回に分けて測ると、その間に描き直されたときに別々の時点の位置を比べてしまう。
  */
 async function settledBoxes(badge: Locator, inner: string) {
   return badge.evaluate(async (element, selector) => {

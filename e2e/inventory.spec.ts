@@ -20,7 +20,7 @@ test.describe('インベントリパネル', () => {
   });
 
   test('タブを切り替えられること', async ({ page }) => {
-    // ラジオは [&_input[type=radio]]:hidden で display:none、ラベル本体をクリックする。
+    // ラジオは[&_input[type=radio]]:hiddenでdisplay:noneなので、ラベル本体をクリックする。
     const labels = page.locator('game-object-inventory form[name="game-object-inventory"] > label');
     const tabs = page.locator('game-object-inventory input[name="tab"]');
     await labels.nth(1).click();
@@ -101,7 +101,7 @@ test.describe('インベントリのコンテキストメニュー', () => {
     const menu = page.locator('context-menu');
     await expect(menu.locator('li').first()).toBeVisible({ timeout: 3000 });
     // テーブル上のオブジェクトを右クリックした場合、「テーブルに移動」は現在地と
-    // 同じなので項目化されない。他 3 つのロケーション移動先が表示される。
+    // 同じなので項目化されない。他3つのロケーション移動先が表示される。
     await expect(menu.getByText('共有イベントリに移動')).toBeVisible();
     await expect(menu.getByText('個人イベントリに移動')).toBeVisible();
     await expect(menu.getByText('墓場に移動')).toBeVisible();

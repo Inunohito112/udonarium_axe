@@ -60,7 +60,7 @@ test.describe('キャラクターシート (詳細パネル)', () => {
     const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
     await page.locator('game-character-sheet').getByRole('button', { name: '保存' }).click();
     const download = await downloadPromise;
-    // SaveDataService はキャラ単体でも xml_<name>_<timestamp>.zip 形式で保存する。
+    // SaveDataServiceはキャラ単体でもxml_<name>_<timestamp>.zip形式で保存する。
     expect(download.suggestedFilename()).toMatch(/^xml_.*\.zip$/);
   });
 });

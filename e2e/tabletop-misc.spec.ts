@@ -22,7 +22,7 @@ test.describe('地形 (terrain) の追加コンテキスト操作', () => {
     await page.locator('terrain').first().dispatchEvent('contextmenu');
     await expect(page.locator('context-menu').locator('li').first()).toBeVisible({ timeout: 5000 });
     await page.locator('context-menu').getByText('傾斜').hover();
-    // チェックマークは context-menu 側で視覚ノードから strip されるので li 単位で検証する。
+    // チェックマークはcontext-menu側で視覚ノードからstripされるので、li単位で検証する。
     const items = page.locator('context-menu li');
     for (const side of ['なし', '北', '東', '南', '西', '全方向']) {
       await expect(items.filter({ hasText: side }).first()).toBeVisible({ timeout: 5000 });
@@ -80,7 +80,7 @@ test.describe('ダイスシンボル ダイス目設定サブメニュー', () =
     await page.locator('dice-symbol').first().dispatchEvent('contextmenu');
     await expect(page.locator('context-menu').locator('li').first()).toBeVisible({ timeout: 5000 });
     await page.locator('context-menu').getByText('ダイス目を設定').hover();
-    // D6 は 6 面体なので少なくとも 6 種類の選択肢が出る (◉/○ のラジオマーク付き)。
+    // D6は6面体なので少なくとも6種類の選択肢が出る（◉/○のラジオマーク付き）。
     const items = page.locator('context-menu li');
     for (const face of ['1', '2', '3', '4', '5', '6']) {
       await expect(items.filter({ hasText: new RegExp(`(?:^|\\s)${face}(?:$|\\s)`) }).first()).toBeVisible({

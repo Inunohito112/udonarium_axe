@@ -53,7 +53,7 @@ test.describe('マップマスク (game-table-mask)', () => {
   });
 
   test('「スクラッチ開始」後はコンテキストメニュー項目が「スクラッチ確定」に切り替わること', async ({ page }) => {
-    // onStartScratch は mask.owner を自分の userId にするだけで、scratch-mask 要素は
+    // onStartScratchはmask.ownerを自分のuserIdにするだけで、scratch-mask要素は
     // 実際にユーザーがドラッグしてから初めて発生する。所有権が自分になったことは、
     // 次回のコンテキストメニューに「スクラッチ確定」が出ることで確認できる。
     await page.locator('game-table-mask').first().dispatchEvent('contextmenu');
