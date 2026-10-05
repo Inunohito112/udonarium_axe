@@ -102,7 +102,7 @@ i18nの翻訳文字列とドキュメント本文は対象外（詳細は
 ## ドキュメントの日本語
 
 README・`docs/`・`website/`のまとまった日本語は`yomiyasu`スキルを通して書く
-（[.claude/settings.json](.claude/settings.json)の`enabledPlugins`で有効化済み。干渉を避けるため`natural-japanese`は無効にしてある）。
+（[.claude/settings.json](.claude/settings.json)の`enabledPlugins`で有効化済み。ほかの日本語校正スキルとは併用しない）。
 詳細は[docs/contribution.md](docs/contribution.md)にあり、ここには要点だけを書く。
 
 - 対象は新規執筆と書き直し。1〜2行の追記や表のセル修正はそのまま書いてよい

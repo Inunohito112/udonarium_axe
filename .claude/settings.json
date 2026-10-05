@@ -20,8 +20,7 @@
     "pr": ""
   },
   "enabledPlugins": {
-    "yomiyasu@yomiyasu": true,
-    "natural-japanese@natural-japanese": false
+    "yomiyasu@yomiyasu": true
   },
   "extraKnownMarketplaces": {
     "yomiyasu": {

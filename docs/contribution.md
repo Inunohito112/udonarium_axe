@@ -121,8 +121,7 @@ E2Eは載せていない。PlaywrightはCIだと5ブラウザぶん走る設定�
 まとまった日本語（[README.md](../README.md)・`docs/`・`website/`の本文）は、`yomiyasu`スキルを通して書く。
 プラグインは[.claude/settings.json](../.claude/settings.json)の`enabledPlugins`で有効にしてあり、
 配布元は[nanaism/yomiyasu](https://github.com/nanaism/yomiyasu)。
-以前使っていた`natural-japanese`は、同時に有効にすると指示が干渉するため、同じ設定で`false`にしてある。
-ユーザー設定で有効にしていても、このリポジトリではプロジェクト設定が優先されて無効になる。
+ほかの日本語校正スキル（以前使っていた`natural-japanese`など）と同時に有効にすると指示が干渉するので、併用しない。
 
 | 頼み方                                             | 用途                                                      |
 | -------------------------------------------------- | --------------------------------------------------------- |
