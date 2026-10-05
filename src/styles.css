@@ -1105,7 +1105,7 @@ chat-message > div > div {
     scrollbar-color: var(--ui-text-dim) transparent;
   }
 
-  /* テーブル hr デフォルト */
+  /* hr要素の既定スタイル */
   hr {
     border: none;
     border-top: 1px solid var(--ui-panel-border);
