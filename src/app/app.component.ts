@@ -109,6 +109,7 @@ import { ContextMenuComponent } from '@axe/ui/components/context-menu/context-me
 import { UiFabSubmenuComponent } from '@axe/ui/components/fab-submenu/fab-submenu.component';
 import { UiFabSubmenuButtonComponent } from '@axe/ui/components/fab-submenu/fab-submenu-button.component';
 import { ModalComponent } from '@axe/ui/components/modal/modal.component';
+import { SnackbarComponent } from '@axe/ui/components/snackbar/snackbar.component';
 import { UIPanelComponent } from '@axe/ui/components/ui-panel/ui-panel.component';
 import { DraggableDirective } from '@axe/ui/directives/draggable.directive';
 import { ReloadNoticeDirective } from '@axe/ui/directives/reload-notice.directive';
@@ -159,6 +160,7 @@ const FAB_MARGIN_PX = 12;
     InviteJoinComponent,
     StreamingOverlayComponent,
     SwitchNoticeComponent,
+    SnackbarComponent,
     ChatTickerComponent,
     UiFabSubmenuComponent,
     UiFabSubmenuButtonComponent,
