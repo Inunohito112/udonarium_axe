@@ -4665,7 +4665,8 @@
       "duplicate": "複製",
       "saveTemplate": "テンプレートとして保存",
       "addFromTemplate": "テンプレートから追加",
-      "deleteTemplate": "テンプレートを削除"
+      "deleteTemplate": "テンプレートを削除",
+      "moveTo": "グループへ移動…"
     },
     "defaults": {
       "newGroup": "グループ",

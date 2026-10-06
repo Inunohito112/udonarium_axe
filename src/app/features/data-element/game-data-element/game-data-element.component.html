@@ -372,63 +372,34 @@
               <ng-option [value]="item.type">{{ item.label }}</ng-option>
             }
           </ng-select>
-          <button
-            class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-            type="button"
-            (click)="copyReferencePath($event)"
-            [title]="'feature.dataElement.action.copyReference' | transloco"
-          >
-            <i class="material-icons">content_copy</i>
-          </button>
-          <button
-            class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-            [class.bg-ui-accent-bg]="isPopupDataElement()"
-            [class.text-ui-accent!]="isPopupDataElement()"
-            type="button"
-            (click)="togglePopupDataElement($event)"
-            [title]="'feature.dataElement.action.popupShow' | transloco"
-          >
-            <i class="material-icons">open_in_new</i>
-          </button>
-          @if (shouldShowFieldOptions()) {
-            <button
-              class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-              [class.bg-ui-accent-bg]="fieldOptionsOpen()"
-              [class.text-ui-accent!]="fieldOptionsOpen()"
-              type="button"
-              (click)="toggleFieldOptions()"
-              [title]="'feature.dataElement.action.fieldOptions' | transloco"
-            >
-              <i class="material-icons">tune</i>
-            </button>
-          } @else {
-            <button
-              class="pointer-events-none invisible inline-flex h-5.5 w-5 shrink-0 items-center justify-center rounded-(--gde-radius-control) [&_.material-icons]:text-[14px]"
-              type="button"
-              aria-hidden="true"
-              tabindex="-1"
-            >
-              <i class="material-icons">tune</i>
-            </button>
+          @for (action of fieldActions(); track action.id) {
+            @if (action.placeholder) {
+              <button
+                class="pointer-events-none invisible inline-flex h-5.5 w-5 shrink-0 items-center justify-center rounded-(--gde-radius-control) [&_.material-icons]:text-[14px]"
+                type="button"
+                aria-hidden="true"
+                tabindex="-1"
+              >
+                <i class="material-icons">{{ action.icon }}</i>
+              </button>
+            } @else if (action.inline) {
+              <button
+                class="text-ui-muted disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
+                [class.hover:bg-ui-hover]="action.tone !== 'danger'"
+                [class.hover:text-ui-text]="action.tone !== 'danger'"
+                [class.hover:bg-ui-danger-bg]="action.tone === 'danger'"
+                [class.hover:text-ui-danger]="action.tone === 'danger'"
+                [class.bg-ui-accent-bg]="action.pressed"
+                [class.text-ui-accent!]="action.pressed"
+                [attr.aria-pressed]="action.pressed ?? null"
+                type="button"
+                (click)="runAction(action.id, $event)"
+                [title]="action.labelKey | transloco"
+              >
+                <i class="material-icons">{{ action.icon }}</i>
+              </button>
+            }
           }
-          @if (canAddSiblingFieldElement()) {
-            <button
-              class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-              type="button"
-              (click)="addSiblingElement()"
-              [title]="'feature.dataElement.action.addRow' | transloco"
-            >
-              <i class="material-icons">add</i>
-            </button>
-          }
-          <button
-            class="text-ui-muted hover:bg-ui-danger-bg hover:text-ui-danger disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-            type="button"
-            (click)="deleteElement()"
-            [title]="'feature.dataElement.action.deleteRow' | transloco"
-          >
-            <i class="material-icons">delete_outline</i>
-          </button>
         </div>
       }
       @if (fieldOptionsOpen() && shouldShowFieldOptions()) {
@@ -723,96 +694,19 @@
                 [(ngModel)]="name"
                 [placeholder]="'feature.dataElement.headingPlaceholder' | transloco"
               />
-              @if (canToggleTableViewMode()) {
-                <button
-                  class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-                  [class.bg-ui-accent-bg]="isTableViewMode()"
-                  [class.text-ui-accent!]="isTableViewMode()"
-                  type="button"
-                  (click)="toggleTableViewMode()"
-                  [title]="
-                    (isTableViewMode()
-                      ? 'feature.dataElement.action.normalView'
-                      : 'feature.dataElement.action.tableView'
-                    ) | transloco
-                  "
-                >
-                  <i class="material-icons">table_chart</i>
-                </button>
-              }
-              @if (shouldShowContainerOptions()) {
-                <button
-                  class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-                  [class.bg-ui-accent-bg]="fieldOptionsOpen()"
-                  [class.text-ui-accent!]="fieldOptionsOpen()"
-                  type="button"
-                  (click)="toggleFieldOptions()"
-                  [title]="'feature.dataElement.action.tableSettings' | transloco"
-                >
-                  <i class="material-icons">tune</i>
-                </button>
-              }
-              <button
-                class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-                [class.bg-ui-accent-bg]="isPopupDataElement()"
-                [class.text-ui-accent!]="isPopupDataElement()"
-                type="button"
-                (click)="togglePopupDataElement($event)"
-                [title]="'feature.dataElement.action.popupShow' | transloco"
-              >
-                <i class="material-icons">open_in_new</i>
-              </button>
-              @if (canDuplicateElement()) {
-                <button
-                  class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-                  type="button"
-                  (click)="duplicateElement()"
-                  [title]="'feature.dataElement.action.duplicate' | transloco"
-                >
-                  <i class="material-icons">library_add</i>
-                </button>
-              }
-              @if (canSaveAsTemplate()) {
-                <button
-                  class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-                  type="button"
-                  (click)="saveAsTemplate()"
-                  [title]="'feature.dataElement.action.saveTemplate' | transloco"
-                >
-                  <i class="material-icons">bookmark_add</i>
-                </button>
-              }
-              @if (isImage()) {
-                <button
-                  class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-                  type="button"
-                  (click)="addImageElement()"
-                  [title]="'feature.dataElement.action.addImage' | transloco"
-                >
-                  <i class="material-icons">add</i>
-                </button>
-              } @else {
-                @if (canAddChildGroupElement()) {
-                  <button
-                    class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-                    type="button"
-                    (click)="addGroupElement()"
-                    [title]="'feature.dataElement.action.addGroup' | transloco"
-                  >
-                    <i class="material-icons">create_new_folder</i>
-                  </button>
-                }
-                @if (elementTemplates().length > 0) {
+              @for (action of containerActions(); track action.id) {
+                @if (action.id === 'addFromTemplate') {
                   <div class="relative shrink-0">
                     <button
                       class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-                      [class.bg-ui-accent-bg]="templateMenuOpen()"
-                      [class.text-ui-accent!]="templateMenuOpen()"
+                      [class.bg-ui-accent-bg]="action.pressed"
+                      [class.text-ui-accent!]="action.pressed"
+                      [attr.aria-pressed]="action.pressed ?? null"
                       type="button"
-                      (click)="templateMenuOpen.update((v) => !v)"
-                      [title]="'feature.dataElement.action.addFromTemplate' | transloco"
+                      (click)="runAction(action.id, $event)"
+                      [title]="action.labelKey | transloco"
                     >
-                      <i class="material-icons">bookmarks</i>
+                      <i class="material-icons">{{ action.icon }}</i>
                     </button>
                     @if (templateMenuOpen()) {
                       <div class="fixed inset-0 z-100" (click)="templateMenuOpen.set(false)"></div>
@@ -841,26 +735,24 @@
                       </div>
                     }
                   </div>
-                }
-                @if (canAddChildFieldElement()) {
+                } @else if (action.inline) {
                   <button
-                    class="text-ui-muted hover:bg-ui-hover hover:text-ui-text disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
+                    class="text-ui-muted disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
+                    [class.hover:bg-ui-hover]="action.tone !== 'danger'"
+                    [class.hover:text-ui-text]="action.tone !== 'danger'"
+                    [class.hover:bg-ui-danger-bg]="action.tone === 'danger'"
+                    [class.hover:text-ui-danger]="action.tone === 'danger'"
+                    [class.bg-ui-accent-bg]="action.pressed"
+                    [class.text-ui-accent!]="action.pressed"
+                    [attr.aria-pressed]="action.pressed ?? null"
                     type="button"
-                    (click)="addElement()"
-                    [title]="'feature.dataElement.action.addRowChild' | transloco"
+                    (click)="runAction(action.id, $event)"
+                    [title]="action.labelKey | transloco"
                   >
-                    <i class="material-icons">add</i>
+                    <i class="material-icons">{{ action.icon }}</i>
                   </button>
                 }
               }
-              <button
-                class="text-ui-muted hover:bg-ui-danger-bg hover:text-ui-danger disabled:text-ui-dim inline-flex h-5.5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-(--gde-radius-control) border-none bg-transparent p-0 disabled:cursor-default disabled:bg-transparent disabled:opacity-[0.36] [&_.material-icons]:text-[14px]"
-                type="button"
-                (click)="deleteElement()"
-                [title]="'feature.dataElement.action.deleteSection' | transloco"
-              >
-                <i class="material-icons">delete_outline</i>
-              </button>
             </div>
             @if (fieldOptionsOpen() && shouldShowContainerOptions()) {
               <div

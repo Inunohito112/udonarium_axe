@@ -11,7 +11,6 @@ import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { DataElementDragService } from '@axe/application/ui/data-element-drag.service';
 import { ModalService } from '@axe/application/ui/modal.service';
 import { PanelService } from '@axe/application/ui/panel.service';
-import { buildReorderContextMenu } from '@axe/application/ui/reorder-context-menu';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
@@ -50,6 +49,14 @@ import {
   type TableColumn as DataElementTableColumn,
   type TableColumnHeaderGroup as DataElementTableColumnHeaderGroup,
 } from '@axe/domain/data/table-layout';
+import {
+  buildContainerActions,
+  buildFieldActions,
+  buildMoveActions,
+  type DataElementAction,
+  type DataElementActionId,
+  toContextMenuActions,
+} from '@axe/features/data-element/game-data-element/data-element-actions';
 import { FIELD_TYPE_CATALOG } from '@axe/features/data-element/game-data-element/field-type-catalog';
 import {
   canAcceptChildRole,
@@ -872,31 +879,114 @@ export class GameDataElementComponent {
    */
   onStructureHandleContextMenu(event: MouseEvent): void {
     if (!this.isEdit() || this.isImage() || !this.pointerDeviceService.isAllowedToOpenContextMenu) return;
-    const element = this.gameDataElement();
-    const parent = this.getDataElementParent(element);
-    if (!parent) return;
-    const siblings = parent.children.filter((child): child is DataElement => child instanceof DataElement);
-    const index = siblings.indexOf(element);
-    if (index < 0) return;
-    const move = (target: DataElement, position: 'before' | 'after') => {
-      if (canDropStructureElement(element, target, position, this.depth())) {
-        this.applyStructureMove(element, target, position);
-      }
-    };
-    const actions = buildReorderContextMenu(
-      { index, count: siblings.length },
-      {
-        moveToTop: () => move(siblings[0], 'before'),
-        moveUp: () => move(siblings[index - 1], 'before'),
-        moveDown: () => move(siblings[index + 1], 'after'),
-        moveToBottom: () => move(siblings[siblings.length - 1], 'after'),
-      },
-      this.t
-    );
-    if (actions.length === 0) return;
+    const moves = this.moveActions();
+    if (moves.length === 0) return;
     event.preventDefault();
     event.stopPropagation();
-    this.contextMenuService.open(this.pointerDeviceService.pointers[0], actions, element.name);
+    const actions = toContextMenuActions(moves, (id) => this.runAction(id), this.t);
+    this.contextMenuService.open(this.pointerDeviceService.pointers[0], actions, this.gameDataElement().name);
+  }
+
+  /** The actions of this field row, in the order its bar shows them. */
+  fieldActions(): DataElementAction[] {
+    return buildFieldActions({
+      isPopup: this.isPopupDataElement(),
+      hasFieldOptions: this.shouldShowFieldOptions(),
+      fieldOptionsOpen: this.fieldOptionsOpen(),
+      canAddSibling: this.canAddSiblingFieldElement(),
+      canDuplicate: this.canDuplicateElement(),
+    });
+  }
+
+  /** The actions of this group or section heading, in the order its bar shows them. */
+  containerActions(): DataElementAction[] {
+    return buildContainerActions({
+      isImage: this.isImage(),
+      isPopup: this.isPopupDataElement(),
+      canToggleTableView: this.canToggleTableViewMode(),
+      isTableView: this.isTableViewMode(),
+      hasTableSettings: this.shouldShowContainerOptions(),
+      settingsOpen: this.fieldOptionsOpen(),
+      canDuplicate: this.canDuplicateElement(),
+      canSaveTemplate: this.canSaveAsTemplate(),
+      canAddGroup: this.canAddChildGroupElement(),
+      hasTemplates: this.elementTemplates().length > 0,
+      templateMenuOpen: this.templateMenuOpen(),
+      canAddField: this.canAddChildFieldElement(),
+    });
+  }
+
+  /** The moves this element can make among the ones beside it. */
+  moveActions(): DataElementAction[] {
+    const siblings = this.siblingElements();
+    const index = siblings.indexOf(this.gameDataElement());
+    if (index < 0) return [];
+    return buildMoveActions({ index, count: siblings.length, hasMoveTargets: false });
+  }
+
+  /** Does what an action of this row or heading stands for. */
+  runAction(id: DataElementActionId, event?: MouseEvent): void {
+    switch (id) {
+      case 'copyReference':
+        return this.copyReferencePath(event);
+      case 'togglePopup':
+        return this.togglePopupDataElement(event);
+      case 'fieldOptions':
+      case 'tableSettings':
+        return this.toggleFieldOptions();
+      case 'addSibling':
+        return this.addSiblingElement();
+      case 'tableView':
+        return this.toggleTableViewMode();
+      case 'duplicate':
+        return this.duplicateElement();
+      case 'saveTemplate':
+        return this.saveAsTemplate();
+      case 'addImage':
+        return this.addImageElement();
+      case 'addGroup':
+        return this.addGroupElement();
+      case 'addFromTemplate':
+        this.templateMenuOpen.update((isOpen) => !isOpen);
+        return;
+      case 'addField':
+        return this.addElement();
+      case 'moveToTop':
+      case 'moveUp':
+      case 'moveDown':
+      case 'moveToBottom':
+        return this.moveAmongSiblings(id);
+      case 'moveTo':
+        return;
+      case 'delete':
+        return this.deleteElement();
+    }
+  }
+
+  private siblingElements(): DataElement[] {
+    const parent = this.getDataElementParent();
+    if (!parent) return [];
+    return parent.children.filter((child): child is DataElement => child instanceof DataElement);
+  }
+
+  /** Moves this element to the top, up one, down one or to the bottom of the ones beside it. */
+  private moveAmongSiblings(id: 'moveToTop' | 'moveUp' | 'moveDown' | 'moveToBottom'): void {
+    const element = this.gameDataElement();
+    const siblings = this.siblingElements();
+    const index = siblings.indexOf(element);
+    if (index < 0) return;
+    const [target, position]: [DataElement | undefined, 'before' | 'after'] =
+      id === 'moveToTop'
+        ? [siblings[0], 'before']
+        : id === 'moveUp'
+          ? [siblings[index - 1], 'before']
+          : id === 'moveDown'
+            ? [siblings[index + 1], 'after']
+            : [siblings[siblings.length - 1], 'after'];
+    if (!target || target === element) return;
+    if (canDropStructureElement(element, target, position, this.depth())) {
+      this.applyStructureMove(element, target, position);
+    }
   }
 
   private getDraggedElement(event: DragEvent): DataElement | null {

@@ -4246,7 +4246,8 @@
         "duplicate": "복제",
         "saveTemplate": "템플릿으로 저장",
         "addFromTemplate": "템플릿에서 추가",
-        "deleteTemplate": "템플릿 삭제"
+        "deleteTemplate": "템플릿 삭제",
+        "moveTo": "그룹으로 이동…"
       },
       "defaults": {
         "newGroup": "그룹",

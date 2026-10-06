@@ -4665,7 +4665,8 @@
       "duplicate": "Duplicate",
       "saveTemplate": "Save as template",
       "addFromTemplate": "Add from template",
-      "deleteTemplate": "Delete template"
+      "deleteTemplate": "Delete template",
+      "moveTo": "Move to group…"
     },
     "defaults": {
       "newGroup": "Group",
