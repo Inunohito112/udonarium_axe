@@ -1,3 +1,23 @@
+## [1.61.1](https://github.com/Xelltis/udonarium_axe/compare/v1.61.0...v1.61.1) (2026-10-06)
+
+### 🐛 Bug Fixes
+
+* **mobile:** let a finger move a resource slider in a piece's detail ([1ec9017](https://github.com/Xelltis/udonarium_axe/commit/1ec9017a53b89fe1da16b5b0990412d05469f41a))
+
+### 📝 Documentation
+
+* correct developer docs where they disagreed with the code ([5686969](https://github.com/Xelltis/udonarium_axe/commit/56869692df0a2caf614c2a08c01eeb5b906dd316))
+* drop the space between Japanese and Latin text ([fe04acf](https://github.com/Xelltis/udonarium_axe/commit/fe04acf60a0da546214e69099025f4e092d64d8a))
+* run the developer docs and README through yomiyasu ([04922d5](https://github.com/Xelltis/udonarium_axe/commit/04922d522791988fbaf3f96f5b62e39df51e5606))
+* spell the product name Axe instead of AXE ([8862521](https://github.com/Xelltis/udonarium_axe/commit/8862521b48948b747abcdaa43351972a40ca64d8))
+* **website:** correct manual and release-note statements ([a7e1287](https://github.com/Xelltis/udonarium_axe/commit/a7e12875ace768a1257610841446b345381464f2))
+* **website:** fix three manual links that pointed at missing anchors ([3ba47f4](https://github.com/Xelltis/udonarium_axe/commit/3ba47f4eabd6b26afeab3f3927f1637a5fac260d))
+* **website:** run the site through yomiyasu ([96809df](https://github.com/Xelltis/udonarium_axe/commit/96809dfb063e1a1b2cf03df25dd0c26ddd22989b))
+* **website:** settle the points left open by the yomiyasu pass ([86e0f9c](https://github.com/Xelltis/udonarium_axe/commit/86e0f9c07716afa9247fe28929c1322dbb2002aa))
+* **website:** write the release notes for v1.61.0 ([d93ac78](https://github.com/Xelltis/udonarium_axe/commit/d93ac78e99834067598e30383eb572ecbcfd93ea))
+* **website:** write the release notes for v1.61.1 ([9ccb17f](https://github.com/Xelltis/udonarium_axe/commit/9ccb17f083a59d264687bae28c495ccd3e7604cf))
+* write Japanese prose through yomiyasu ([9d40e8d](https://github.com/Xelltis/udonarium_axe/commit/9d40e8dbe7362e8068c3484a8371508c4431b4b3))
+
 ## [1.61.0](https://github.com/Xelltis/udonarium_axe/compare/v1.60.0...v1.61.0) (2026-10-04)
 
 ### ✨ Features
