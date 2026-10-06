@@ -3146,6 +3146,11 @@ body.touch-input button {
   pointer-events: none !important;
 }
 
+/* A resource's slider is there to be moved with a finger, so it alone takes the touch. */
+.tooltip-passthrough input[type='range']:not(:disabled) {
+  pointer-events: auto !important;
+}
+
 body.touch-input :is(ui-panel, app-mobile-shell, visual-novel-overlay) button:active:not(:disabled) {
   transform: scale(0.97);
 }
