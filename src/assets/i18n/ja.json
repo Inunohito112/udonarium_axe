@@ -4688,6 +4688,11 @@
       "distance": "距離: {{distance}}",
       "chatNote": "{{target}}（{{source}}から{{distance}}）",
       "sendToChat": "チャットに入力"
+    },
+    "deletion": {
+      "deleted": "「{{name}}」を削除しました",
+      "deletedUnnamed": "項目を削除しました",
+      "undo": "元に戻す"
     }
   },
   "ui": {

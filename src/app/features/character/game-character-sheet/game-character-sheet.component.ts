@@ -51,6 +51,7 @@ import {
 import { GameCharacterSettingsTabComponent } from '@axe/features/character/game-character-sheet/game-character-settings-tab.component';
 import { clampInRange, roundOr } from '@axe/features/character/game-character-sheet/numeric-input-helpers';
 import { ImportCharacterImgComponent } from '@axe/features/character/import-character-img/import-character-img.component';
+import { DataElementDeletionService } from '@axe/features/data-element/game-data-element/data-element-deletion.service';
 import { GameDataElementComponent } from '@axe/features/data-element/game-data-element/game-data-element.component';
 import { DisclosureControlComponent } from '@axe/features/disclosure/disclosure-control/disclosure-control.component';
 import { FileSelecterComponent } from '@axe/ui/components/file-selecter/file-selecter.component';
@@ -87,6 +88,7 @@ export class GameCharacterSheetComponent {
   private readonly dataElementDrag = inject(DataElementDragService);
   private readonly translateFn = inject(TRANSLATE_FN);
   private readonly rolePermission = inject(RolePermissionService);
+  private readonly dataElementDeletion = inject(DataElementDeletionService);
 
   readonly isReadOnly = computed(() => {
     this.objectChange.trackMyCursor();
@@ -666,15 +668,15 @@ export class GameCharacterSheetComponent {
   }
 
   /**
-   * Deletes a card from the character's sheet, from the card's delete button, and forgets that it
-   * was open for editing.
+   * Deletes a card from the character's sheet, from the card's delete button, leaving a notice that
+   * offers to put it back, and forgets that it was open for editing.
    */
   deleteTopLevelElement(id: string) {
     const char = this.character;
     if (!char?.detailDataElement) return;
     const el = char.detailDataElement.children.find((e) => e.identifier === id);
-    if (!el) return;
-    el.destroy();
+    if (!(el instanceof DataElement)) return;
+    this.dataElementDeletion.delete(el, () => char.update());
     this.editingIds.update((set) => {
       const next = new Set(set);
       next.delete(id);

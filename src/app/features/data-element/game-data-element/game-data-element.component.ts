@@ -50,6 +50,7 @@ import {
   type DataElementActionId,
   toContextMenuActions,
 } from '@axe/features/data-element/game-data-element/data-element-actions';
+import { DataElementDeletionService } from '@axe/features/data-element/game-data-element/data-element-deletion.service';
 import { FIELD_TYPE_CATALOG } from '@axe/features/data-element/game-data-element/field-type-catalog';
 import {
   canAcceptChildRole,
@@ -125,6 +126,7 @@ export class GameDataElementComponent {
   private readonly effectLibrary = inject(EffectLibraryService);
   private readonly effectCast = inject(EffectCastService);
   private readonly rolePermission = inject(RolePermissionService);
+  private readonly deletion = inject(DataElementDeletionService);
 
   readonly isReadOnly = computed(() => {
     this.objectChange.trackMyCursor();
@@ -888,9 +890,9 @@ export class GameDataElementComponent {
     }
   }
 
-  /** Destroys this element and everything under it. */
+  /** Destroys this element and everything under it, leaving a notice that offers to put it back. */
   deleteElement() {
-    this.gameDataElement().destroy();
+    this.deletion.delete(this.gameDataElement());
   }
 
   /**

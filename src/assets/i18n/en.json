@@ -4688,6 +4688,11 @@
       "distance": "Distance: {{distance}}",
       "chatNote": "{{target}} (from {{source}}, {{distance}})",
       "sendToChat": "Send to chat"
+    },
+    "deletion": {
+      "deleted": "Deleted “{{name}}”",
+      "deletedUnnamed": "Deleted an item",
+      "undo": "Undo"
     }
   },
   "ui": {
