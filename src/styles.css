@@ -2220,6 +2220,152 @@ game-data-element .elm-markdown-view,
   overflow-x: auto;
 }
 
+/*
+ * A character sheet narrower than 36rem, such as one on a phone, lays its rows out for a finger.
+ *
+ * A row is as tall as a fingertip, its label reads at 13px beside its value, and a value that can
+ * be written in is drawn as a box, since nothing hovers on a phone to show that it can. Groups
+ * stop stepping in from the left at every level, which cost a fifth of a phone's width four levels
+ * down; a group heading is a divider with its name instead, and a group inside a group is told
+ * apart by its heading alone.
+ *
+ * The sheet's rows are styled by the unlayered rules above, which Tailwind's utilities cannot
+ * outweigh, so the narrow layout is written here beside them rather than in the templates.
+ */
+@container sheet (width < 36rem) {
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) {
+    --gde-row-min: 44px;
+    grid-template-columns: minmax(5.25rem, 36%) minmax(0, 1fr);
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]).elm-editing {
+    grid-template-columns: 2.75rem minmax(5rem, 32%) minmax(0, 1fr);
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]):has(> .elm-value-cell) {
+    border-bottom: 1px solid color-mix(in srgb, var(--gde-row-border) 40%, transparent);
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) + :is(game-data-element, [game-data-element]) {
+    margin-top: 0;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-name-cell {
+    min-height: 44px;
+    padding: 4px 8px 4px 2px;
+    font-size: 13px;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-name-cell > div {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.35;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-value-cell {
+    min-height: 44px;
+    padding: 3px 0;
+    font-size: 16px;
+  }
+
+  [data-own-mobile-layout]
+    :is(game-data-element, [game-data-element])
+    .elm-value-content
+    :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']), select, textarea) {
+    min-height: 38px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--ui-input-bg) 72%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-panel-border) 70%, transparent);
+    font-size: 16px;
+  }
+
+  [data-own-mobile-layout]
+    :is(game-data-element, [game-data-element])
+    .elm-value-content
+    :is(input, textarea)[readonly] {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  [data-own-mobile-layout]
+    :is(game-data-element, [game-data-element])
+    .elm-value-content
+    :is(input, select, textarea):focus {
+    background: var(--ui-input-bg);
+    box-shadow: 0 0 0 2px var(--ui-accent);
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-value-content input[type='checkbox'] {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    accent-color: var(--ui-accent);
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-children {
+    padding-top: 0;
+    padding-left: 0;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-children::before {
+    display: none;
+  }
+
+  [data-own-mobile-layout] .table-row > .elm-children {
+    border-width: 0;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-child-list > :last-child {
+    border-bottom: 0;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-child-list {
+    gap: 0;
+    padding-left: 0;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-group-heading {
+    margin: 10px 0 0;
+    padding: 8px 2px 4px;
+    border: 0;
+    border-top: 1px solid color-mix(in srgb, var(--gde-row-border) 70%, transparent);
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--ui-accent);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-group-heading :is(span, .material-icons) {
+    color: inherit;
+    font-size: inherit;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-group-heading[data-depth='2'] {
+    margin-top: 12px;
+    border-top: 0;
+    color: var(--ui-text);
+    font-size: 14px;
+  }
+
+  [data-own-mobile-layout]
+    :is(game-data-element, [game-data-element])
+    .elm-child-list
+    > :first-child
+    > .elm-children
+    > .elm-group-heading {
+    margin-top: 0;
+    border-top: 0;
+  }
+}
+
 /* Taking their leave: held for a beat so the parting line can be read, then gone. */
 @keyframes vnLeave {
   from {
@@ -2963,30 +3109,52 @@ game-data-element .elm-markdown-view,
 
 /**************** mobile layout ****************/
 
+/*
+ * A part of a panel marked data-own-mobile-layout sizes its own controls for a phone, by its own
+ * width, so the blanket sizes below leave it alone. Text is still never drawn under 16px, which is
+ * what keeps iOS from zooming onto a box as it is typed in.
+ */
 body.mobile-layout
   :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar)
   input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
 body.mobile-layout :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar) select,
 body.mobile-layout :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar) textarea {
-  min-height: 40px;
   font-size: 16px;
 }
 
 body.mobile-layout
   :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar)
-  button:not(.material-icons) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not(
+    [data-own-mobile-layout] *
+  ),
+body.mobile-layout
+  :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar)
+  select:not([data-own-mobile-layout] *),
+body.mobile-layout
+  :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar)
+  textarea:not([data-own-mobile-layout] *) {
+  min-height: 40px;
+}
+
+body.mobile-layout
+  :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar)
+  button:not(.material-icons):not([data-own-mobile-layout] *) {
   min-height: 36px;
 }
 
 body.mobile-layout
   :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar)
-  input[type='checkbox'],
-body.mobile-layout :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar) input[type='radio'] {
+  input[type='checkbox']:not([data-own-mobile-layout] *),
+body.mobile-layout
+  :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar)
+  input[type='radio']:not([data-own-mobile-layout] *) {
   width: 20px;
   height: 20px;
 }
 
-body.mobile-layout :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar) table {
+body.mobile-layout
+  :is(ui-panel, app-mobile-shell, modal, context-menu, app-hand-rail, app-hotbar)
+  table:not([data-own-mobile-layout] *) {
   display: block;
   max-width: 100%;
   overflow-x: auto;
@@ -3098,13 +3266,8 @@ body.touch-input .group-hover\:opacity-100 {
   opacity: 1;
 }
 
-body.mobile-layout ui-panel .grid-cols-\[180px_1fr\],
-body.mobile-layout ui-panel .grid-cols-2 {
+body.mobile-layout ui-panel .grid-cols-2:not([data-own-mobile-layout] *) {
   grid-template-columns: minmax(0, 1fr);
-}
-
-body.mobile-layout ui-panel .grid-cols-\[180px_1fr\] > .w-45 {
-  width: 100%;
 }
 
 body.mobile-layout ui-panel card-stack-card-list li {
@@ -3115,15 +3278,11 @@ body.mobile-layout ui-panel card-stack-card-list li > div:nth-child(3) {
   flex-basis: 100%;
 }
 
-body.mobile-layout ui-panel .grid-cols-3,
-body.mobile-layout ui-panel .grid-cols-4 {
+body.mobile-layout ui-panel :is(.grid-cols-3, .grid-cols-4):not([data-own-mobile-layout] *) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-body.mobile-layout ui-panel .min-w-50,
-body.mobile-layout ui-panel .min-w-55,
-body.mobile-layout ui-panel .min-w-40,
-body.mobile-layout ui-panel .min-w-36 {
+body.mobile-layout ui-panel :is(.min-w-50, .min-w-55, .min-w-40, .min-w-36):not([data-own-mobile-layout] *) {
   min-width: 0;
 }
 

@@ -24,7 +24,7 @@
     <disclosure-control [object]="disclosable" />
   }
   @if (character) {
-    <div class="flex w-full flex-col gap-0">
+    <div class="@container/sheet flex w-full flex-col gap-0">
       <div class="border-ui-border-panel bg-ui-surface flex items-end gap-px border-b border-solid px-2 pt-1.5">
         <button
           class="hover:text-ui-text text-ui-muted border-ui-border-panel -mb-px inline-flex cursor-pointer items-center gap-1 rounded-t-xs border border-solid bg-[color-mix(in_srgb,var(--ui-elevated)_58%,var(--ui-surface))] px-3.5 py-1.5 text-[0.8em] font-semibold whitespace-nowrap transition-[background,border-color,color,box-shadow] hover:bg-[color-mix(in_srgb,var(--ui-elevated)_82%,var(--ui-surface))] [&_.material-icons]:text-[14px]!"
@@ -55,8 +55,12 @@
       </div>
 
       @if (activeTab() === 'sheet') {
-        <div class="grid grid-cols-[180px_1fr] items-start gap-3 px-2.5 pt-2.5" [attr.inert]="isReadOnly() ? '' : null">
-          <div class="flex w-45 min-w-0 shrink-0 flex-col gap-1.5 overflow-hidden">
+        <div
+          class="grid grid-cols-[180px_1fr] items-start gap-3 px-2.5 pt-2.5 @max-xl/sheet:grid-cols-1 @max-xl/sheet:px-2"
+          [attr.inert]="isReadOnly() ? '' : null"
+          data-own-mobile-layout
+        >
+          <div class="flex w-45 min-w-0 shrink-0 flex-col gap-1.5 overflow-hidden @max-xl/sheet:w-full">
             <div
               class="border-ui-border-panel text-ui-accent mx-0 mt-0 mb-2 flex items-center gap-1.25 border-b border-solid pb-1.25 text-[0.72em] font-semibold tracking-[0.06em] uppercase [&_.material-icons]:text-[14px]!"
             >

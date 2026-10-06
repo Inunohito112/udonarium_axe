@@ -409,14 +409,15 @@
   }
   @if (gameDataElement().children.length) {
     <div
-      class="relative col-span-full box-border w-full max-w-full min-w-0 overflow-hidden py-0.75 pr-0 pl-[calc(var(--gde-depth,0)*7px)] contain-[inline-size] before:pointer-events-none before:absolute before:top-2 before:bottom-1.5 before:left-[calc(var(--gde-depth,0)*7px+1px)] before:w-0.5 before:rounded-none before:bg-(--gde-nested-line,var(--ui-accent)) before:content-['']"
+      class="elm-children relative col-span-full box-border w-full max-w-full min-w-0 overflow-hidden py-0.75 pr-0 pl-[calc(var(--gde-depth,0)*7px)] contain-[inline-size] before:pointer-events-none before:absolute before:top-2 before:bottom-1.5 before:left-[calc(var(--gde-depth,0)*7px+1px)] before:w-0.5 before:rounded-none before:bg-(--gde-nested-line,var(--ui-accent)) before:content-['']"
     >
       @if (!hideSectionTitle()) {
         <div
-          class="relative z-1 m-0 mb-1 min-w-0 rounded-l-none rounded-r-xs border border-l-[3px] border-(--gde-row-border) border-l-(--gde-accent-border) bg-(--gde-section-bg) px-2 py-1.25 pl-2.5 text-[0.82em] shadow-(--gde-section-shadow)"
+          class="elm-group-heading relative z-1 m-0 mb-1 min-w-0 rounded-l-none rounded-r-xs border border-l-[3px] border-(--gde-row-border) border-l-(--gde-accent-border) bg-(--gde-section-bg) px-2 py-1.25 pl-2.5 text-[0.82em] shadow-(--gde-section-shadow)"
           [class.px-2!]="isEdit()"
           [class.py-1.25!]="isEdit()"
           [class.z-100!]="iconPickerOpen() || templateMenuOpen()"
+          [attr.data-depth]="depth()"
         >
           @if (!isTagLocked() && isEdit()) {
             <div
@@ -591,7 +592,7 @@
           [loopVertical]="loopVertical"
         ></game-data-element-table-view>
       } @else if (gameDataElement().children.length) {
-        <div class="relative box-border flex w-full min-w-0 flex-col gap-0.5 pl-2.25">
+        <div class="elm-child-list relative box-border flex w-full min-w-0 flex-col gap-0.5 pl-2.25">
           @for (childElement of gameDataElement().children; track childElement.identifier; let i = $index) {
             <div
               game-data-element
