@@ -1399,7 +1399,12 @@
         "defaultGroupName": "グループ",
         "defaultTagName": "タグ",
         "imageCopyTitle": "{{name}}への画像複製",
-        "portraitClickHintTouch": "タップして画像を差し替え"
+        "portraitClickHintTouch": "タップして画像を差し替え",
+        "portraitsManage": "立ち絵",
+        "collapseAll": "すべて畳む",
+        "expandAll": "すべて開く",
+        "moreActions": "その他の操作",
+        "portraitsManageTitle": "立ち絵 - {{name}}"
       },
       "settingsTab": {
         "inventorySetting": "インベントリ設定",

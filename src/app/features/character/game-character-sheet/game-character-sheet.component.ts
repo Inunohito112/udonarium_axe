@@ -5,6 +5,7 @@ import {
   DestroyRef,
   effect,
   inject,
+  Injector,
   signal,
   untracked,
 } from '@angular/core';
@@ -14,6 +15,7 @@ import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
+import { BottomSheetService } from '@axe/application/ui/bottom-sheet.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { DataElementDragService } from '@axe/application/ui/data-element-drag.service';
 import { ModalService } from '@axe/application/ui/modal.service';
@@ -42,6 +44,7 @@ import { Terrain, TERRAIN_FACES, TerrainFace } from '@axe/domain/tabletop/terrai
 import { TextNote } from '@axe/domain/tabletop/text-note';
 import { CardStackCardListComponent } from '@axe/features/card/card-stack-card-list/card-stack-card-list.component';
 import { CharacterPortraitPanelComponent } from '@axe/features/character/game-character-sheet/character-portrait-panel.component';
+import { buildCharacterSheetMenu } from '@axe/features/character/game-character-sheet/character-sheet-context-menu';
 import { cloneTabletopObject } from '@axe/features/character/game-character-sheet/character-sheet-target-helpers';
 import {
   canReorderDetailElement,
@@ -89,6 +92,8 @@ export class GameCharacterSheetComponent {
   private readonly translateFn = inject(TRANSLATE_FN);
   private readonly rolePermission = inject(RolePermissionService);
   private readonly dataElementDeletion = inject(DataElementDeletionService);
+  private readonly bottomSheet = inject(BottomSheetService);
+  private readonly injector = inject(Injector);
 
   readonly isReadOnly = computed(() => {
     this.objectChange.trackMyCursor();
@@ -563,6 +568,48 @@ export class GameCharacterSheetComponent {
     this.objectChange.versionOf(char.identifier)();
     return this.readKomaIndex(char);
   });
+
+  /** The character's name, as the narrow sheet's heading shows it. */
+  readonly characterName = computed(() => {
+    const char = this.character;
+    if (!char) return '';
+    this.objectChange.versionOf(char.identifier)();
+    return char.name;
+  });
+
+  /**
+   * Opens the character's portraits in a sheet from the bottom, from the portrait at the top of a
+   * narrow sheet, where there is no column beside the game data to show them in.
+   */
+  openPortraitSheet(event?: Event): void {
+    const char = this.character;
+    if (!char) return;
+    this.bottomSheet.open(CharacterPortraitPanelComponent, {
+      title: this.translateFn('feature.inventory.sheet.portraitsManageTitle', { name: char.name }),
+      inputs: { character: char },
+      host: event?.currentTarget instanceof Element ? event.currentTarget : null,
+      injector: this.injector,
+    });
+  }
+
+  /**
+   * Opens the menu under the "⋯" at the top of a narrow sheet, which holds what the toolbar and the
+   * portrait column hold on a wide one.
+   */
+  openSheetMenu(event: MouseEvent): void {
+    const button = event.currentTarget instanceof Element ? event.currentTarget : null;
+    const rect = button?.getBoundingClientRect();
+    const position = rect ? { x: rect.right, y: rect.bottom } : this.pointerDeviceService.pointers[0];
+    const actions = buildCharacterSheetMenu(
+      {
+        portraits: () => this.openPortraitSheet(event),
+        copy: () => this.clone(),
+        save: () => void this.saveToXML(),
+      },
+      this.translateFn
+    );
+    this.contextMenuService.open(position, actions, this.characterName());
+  }
 
   readonly komaImageFile = computed(() => {
     this.objectChange.fileVersion();

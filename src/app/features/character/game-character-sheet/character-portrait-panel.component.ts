@@ -30,7 +30,7 @@ export const MAX_PORTRAIT_POSITION = 11;
   templateUrl: './character-portrait-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SafePipe, TranslocoModule],
-  host: { class: 'contents' },
+  host: { class: 'flex min-w-0 flex-col gap-1.5' },
 })
 export class CharacterPortraitPanelComponent {
   private readonly objectChange = inject(ObjectChangeService);

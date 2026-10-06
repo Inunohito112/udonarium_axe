@@ -1399,7 +1399,12 @@
         "defaultSectionName": "Section",
         "defaultGroupName": "Group",
         "defaultTagName": "Tag",
-        "portraitClickHintTouch": "Tap to replace the image"
+        "portraitClickHintTouch": "Tap to replace the image",
+        "portraitsManage": "Portraits",
+        "collapseAll": "Collapse all",
+        "expandAll": "Expand all",
+        "moreActions": "More actions",
+        "portraitsManageTitle": "Portraits - {{name}}"
       },
       "settingsTab": {
         "inventorySetting": "Inventory settings",

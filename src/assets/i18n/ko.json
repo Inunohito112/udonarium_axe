@@ -1399,7 +1399,12 @@
         "defaultGroupName": "그룹",
         "defaultTagName": "태그",
         "imageCopyTitle": "{{name}}에 이미지 복제",
-        "portraitClickHintTouch": "탭해서 이미지 교체"
+        "portraitClickHintTouch": "탭해서 이미지 교체",
+        "portraitsManage": "입화",
+        "collapseAll": "모두 접기",
+        "expandAll": "모두 펼치기",
+        "moreActions": "기타 작업",
+        "portraitsManageTitle": "입화 - {{name}}"
       },
       "settingsTab": {
         "inventorySetting": "인벤토리 설정",

@@ -1,4 +1,4 @@
-@if (tabletopObject && !terrain && !cardStack && !textNote) {
+@if (tabletopObject && !terrain && !cardStack && !textNote && !character) {
   <div
     class="border-ui-border-panel [&_button]:bg-ui-elevated [&_button]:border-ui-border-panel [&_button]:text-ui-muted [&_button]:hover:bg-ui-hover [&_button]:hover:text-ui-text [&_button]:rounded-ui-sm mb-1 flex flex-wrap items-center gap-1 border-b border-solid px-1.5 pt-1.5 pb-1 [&_button]:inline-flex [&_button]:cursor-pointer [&_button]:items-center [&_button]:gap-0.75 [&_button]:border [&_button]:border-solid [&_button]:px-2 [&_button]:py-0.75 [&_button]:text-[0.8em] [&_button]:whitespace-nowrap [&_button]:transition-[background,color]"
   >
@@ -15,16 +15,57 @@
     }
     <button (click)="clone()">{{ 'feature.inventory.sheet.copy' | transloco }}</button>
     <button (click)="saveToXML()">{{ 'feature.inventory.sheet.save' | transloco }}</button>
-    @if (character) {}
   </div>
 }
 
 @if (tabletopObject) {
-  @if (disclosableObject; as disclosable) {
+  @if (!character && disclosableObject; as disclosable) {
     <disclosure-control [object]="disclosable" />
   }
-  @if (character) {
+  @if (character; as char) {
     <div class="@container/sheet flex w-full flex-col gap-0">
+      <div
+        class="border-ui-border-panel [&_button]:bg-ui-elevated [&_button]:border-ui-border-panel [&_button]:text-ui-muted [&_button]:hover:bg-ui-hover [&_button]:hover:text-ui-text [&_button]:rounded-ui-sm mb-1 flex flex-wrap items-center gap-1 border-b border-solid px-1.5 pt-1.5 pb-1 @max-xl/sheet:hidden [&_button]:inline-flex [&_button]:cursor-pointer [&_button]:items-center [&_button]:gap-0.75 [&_button]:border [&_button]:border-solid [&_button]:px-2 [&_button]:py-0.75 [&_button]:text-[0.8em] [&_button]:whitespace-nowrap [&_button]:transition-[background,color]"
+      >
+        <button (click)="clone()">{{ 'feature.inventory.sheet.copy' | transloco }}</button>
+        <button (click)="saveToXML()">{{ 'feature.inventory.sheet.save' | transloco }}</button>
+      </div>
+      <div
+        class="hidden items-center gap-3 px-3 pt-3 pb-2 @max-xl/sheet:flex"
+        data-own-mobile-layout
+        data-testid="sheet-compact-header"
+      >
+        <button
+          type="button"
+          class="border-ui-border-panel bg-ui-elevated text-ui-dim active:border-ui-accent flex size-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-solid p-0"
+          [attr.aria-label]="'feature.inventory.sheet.portraitsManage' | transloco"
+          (click)="openPortraitSheet($event)"
+          data-testid="sheet-portrait-button"
+        >
+          @if (komaImageFile().url) {
+            <img
+              class="block size-full object-cover object-top"
+              [src]="komaImageFile().url | safe: 'resourceUrl'"
+              [alt]="'feature.inventory.sheet.portraitAlt' | transloco"
+            />
+          } @else {
+            <i class="material-icons text-[32px]!">person</i>
+          }
+        </button>
+        <div class="text-ui-text min-w-0 flex-1 truncate text-[1.15rem] leading-tight font-bold">
+          {{ characterName() }}
+        </div>
+        <button
+          type="button"
+          class="text-ui-muted hover:bg-ui-hover hover:text-ui-text active:bg-ui-hover flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0"
+          [attr.aria-label]="'feature.inventory.sheet.moreActions' | transloco"
+          (click)="openSheetMenu($event)"
+          data-testid="sheet-menu"
+        >
+          <i class="material-icons text-[24px]!">more_vert</i>
+        </button>
+      </div>
+      <disclosure-control [object]="char" />
       <div class="border-ui-border-panel bg-ui-surface flex items-end gap-px border-b border-solid px-2 pt-1.5">
         <button
           class="hover:text-ui-text text-ui-muted border-ui-border-panel -mb-px inline-flex cursor-pointer items-center gap-1 rounded-t-xs border border-solid bg-[color-mix(in_srgb,var(--ui-elevated)_58%,var(--ui-surface))] px-3.5 py-1.5 text-[0.8em] font-semibold whitespace-nowrap transition-[background,border-color,color,box-shadow] hover:bg-[color-mix(in_srgb,var(--ui-elevated)_82%,var(--ui-surface))] [&_.material-icons]:text-[14px]!"
@@ -60,7 +101,7 @@
           [attr.inert]="isReadOnly() ? '' : null"
           data-own-mobile-layout
         >
-          <div class="flex w-45 min-w-0 shrink-0 flex-col gap-1.5 overflow-hidden @max-xl/sheet:w-full">
+          <div class="flex w-45 min-w-0 shrink-0 flex-col gap-1.5 overflow-hidden @max-xl/sheet:hidden">
             <character-portrait-panel [character]="character" />
           </div>
 
