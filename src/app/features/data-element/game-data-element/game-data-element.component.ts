@@ -61,9 +61,11 @@ import {
   createFieldElement,
   createGroupElement,
   insertElementAfter,
+  moveAmongSiblings,
   moveStructureElement,
   type NewElementNames,
   placeElementTemplate,
+  type SiblingMove,
 } from '@axe/features/data-element/game-data-element/game-data-element-structure-ops';
 import { GameDataElementTableViewComponent } from '@axe/features/data-element/game-data-element/game-data-element-table-view.component';
 import {
@@ -834,23 +836,10 @@ export class GameDataElementComponent {
   }
 
   /** Moves this element to the top, up one, down one or to the bottom of the ones beside it. */
-  private moveAmongSiblings(id: 'moveToTop' | 'moveUp' | 'moveDown' | 'moveToBottom'): void {
+  private moveAmongSiblings(move: SiblingMove): void {
     const element = this.gameDataElement();
-    const siblings = this.siblingElements();
-    const index = siblings.indexOf(element);
-    if (index < 0) return;
-    const [target, position]: [DataElement | undefined, 'before' | 'after'] =
-      id === 'moveToTop'
-        ? [siblings[0], 'before']
-        : id === 'moveUp'
-          ? [siblings[index - 1], 'before']
-          : id === 'moveDown'
-            ? [siblings[index + 1], 'after']
-            : [siblings[siblings.length - 1], 'after'];
-    if (!target || target === element) return;
-    if (canDropStructureElement(element, target, position, this.depth())) {
-      this.applyStructureMove(element, target, position);
-    }
+    const moved = moveAmongSiblings(element, move);
+    if (moved) this.notifyStructureChanged(moved.newParent, element, moved.oldParent ?? undefined);
   }
 
   private getDraggedElement(event: DragEvent): DataElement | null {
