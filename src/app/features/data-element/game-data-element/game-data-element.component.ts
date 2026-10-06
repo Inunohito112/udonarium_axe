@@ -15,13 +15,6 @@ import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
-import {
-  playsEffectOnChange,
-  playsSoundOnChange,
-  RESOURCE_SOUND_SET_OPTIONS,
-  ResourceSoundSet,
-  soundSetOnChange,
-} from '@axe/domain/character/resource-feedback';
 import { ResourceSliderRange, resourceSliderRange, showsResourceSlider } from '@axe/domain/character/resource-slider';
 import {
   DataElement,
@@ -73,7 +66,13 @@ import {
   placeElementTemplate,
 } from '@axe/features/data-element/game-data-element/game-data-element-structure-ops';
 import { GameDataElementTableViewComponent } from '@axe/features/data-element/game-data-element/game-data-element-table-view.component';
-import { escapeHtml, isUrlText } from '@axe/features/data-element/game-data-element/game-data-element-utils';
+import {
+  escapeHtml,
+  isTableCellField as isTableCellFieldShared,
+  isUrlText,
+  tableCellLineage,
+} from '@axe/features/data-element/game-data-element/game-data-element-utils';
+import { GameDataElementFieldOptionsComponent } from '@axe/features/data-element/game-data-element-field-options/game-data-element-field-options.component';
 import { GameDataElementRangeShapeComponent } from '@axe/features/data-element/game-data-element-range-shape/game-data-element-range-shape.component';
 import { FileSelecterComponent } from '@axe/ui/components/file-selecter/file-selecter.component';
 import { NgSelectWindowDirective } from '@axe/ui/directives/ng-select-window.directive';
@@ -96,6 +95,7 @@ import { NgOptionComponent, NgSelectComponent } from '@ng-select/ng-select';
     GameDataElementTableViewComponent,
     TranslocoModule,
     GameDataElementRangeShapeComponent,
+    GameDataElementFieldOptionsComponent,
   ],
   host: {
     class:
@@ -154,7 +154,6 @@ export class GameDataElementComponent {
 
   readonly structureDropPosition = signal<DataElementDropPosition | null>(null);
   readonly fieldOptionsOpen = signal(false);
-  readonly soundSetOptions = RESOURCE_SOUND_SET_OPTIONS;
 
   private trackTableDependencies(): void {
     const element = this.gameDataElement();
@@ -337,98 +336,18 @@ export class GameDataElementComponent {
     if (el) el.setAttribute('cs-icon', value.trim());
   }
 
-  /**
-   * The choices a select field offers, as written in its settings. Setting blank text removes them.
-   */
-  get choicesText(): string {
-    return this.attrText(DataElementAttribute.CHOICES);
-  }
-  set choicesText(value: string) {
-    this.setFieldAttribute(DataElementAttribute.CHOICES, value);
-  }
-
   /** The unit shown after a number or resource field's value. Setting blank text removes it. */
   get unitText(): string {
     return this.attrText(DataElementAttribute.UNIT);
   }
-  set unitText(value: string) {
-    this.setFieldAttribute(DataElementAttribute.UNIT, value);
-  }
-
   /** The lowest value a number field takes, as written in its settings; empty for no limit. */
   get minText(): string {
     return this.attrText(DataElementAttribute.MIN);
   }
-  set minText(value: string | number | null | undefined) {
-    this.setFieldAttribute(DataElementAttribute.MIN, value);
-  }
-
   /** The highest value a number field takes, as written in its settings; empty for no limit. */
   get maxText(): string {
     return this.attrText(DataElementAttribute.MAX);
   }
-  set maxText(value: string | number | null | undefined) {
-    this.setFieldAttribute(DataElementAttribute.MAX, value);
-  }
-
-  /**
-   * A resource's minimum before its correction is added, reading the plain minimum where no base is
-   * set. Setting blank text removes it.
-   */
-  get minBaseText(): string {
-    return this.attrText(DataElementAttribute.MIN_BASE, DataElementAttribute.MIN);
-  }
-  set minBaseText(value: string | number | null | undefined) {
-    this.setFieldAttribute(DataElementAttribute.MIN_BASE, value);
-  }
-
-  /** The amount added to a resource's minimum base; empty for none. */
-  get minCorrectionText(): string {
-    return this.attrText(DataElementAttribute.MIN_CORRECTION);
-  }
-  set minCorrectionText(value: string | number | null | undefined) {
-    this.setFieldAttribute(DataElementAttribute.MIN_CORRECTION, value);
-  }
-
-  /**
-   * A resource's maximum before its correction is added, reading the plain maximum where no base is
-   * set. Setting it also moves the resource's maximum to the new effective one.
-   */
-  get maxBaseText(): string {
-    return this.attrText(DataElementAttribute.MAX_BASE, DataElementAttribute.MAX);
-  }
-  set maxBaseText(value: string | number | null | undefined) {
-    this.setFieldAttribute(DataElementAttribute.MAX_BASE, value);
-    this.syncCurrentMaxToEffective();
-  }
-
-  /**
-   * The amount added to a resource's maximum base. Setting it also moves the resource's maximum to
-   * the new effective one.
-   */
-  get maxCorrectionText(): string {
-    return this.attrText(DataElementAttribute.MAX_CORRECTION);
-  }
-  set maxCorrectionText(value: string | number | null | undefined) {
-    this.setFieldAttribute(DataElementAttribute.MAX_CORRECTION, value);
-    this.syncCurrentMaxToEffective();
-  }
-
-  /**
-   * After a max-base or max-correction edit, push the current max (value SyncVar)
-   * to the new effective max so the displayed "/X" follows the configured maximum.
-   */
-  private syncCurrentMaxToEffective(): void {
-    const el = this.gameDataElement();
-    if (!el) return;
-    const newEffectiveMax = el.effectiveMax;
-    if (newEffectiveMax == null) return;
-    if (this._value() !== newEffectiveMax) {
-      this._value.set(newEffectiveMax);
-      this.setUpdateTimer();
-    }
-  }
-
   /**
    * The minimum in force once base and correction are added up, as text; empty when there is none.
    */
@@ -450,61 +369,6 @@ export class GameDataElementComponent {
   }
   set formulaText(value: string) {
     this.setFieldAttribute(DataElementAttribute.FORMULA, value);
-  }
-
-  /** The label a check field in a table carries beside its box. Setting blank text removes it. */
-  get tableCellText(): string {
-    return this.attrText(DataElementAttribute.CELL_TEXT);
-  }
-  set tableCellText(value: string) {
-    this.setFieldAttribute(DataElementAttribute.CELL_TEXT, value);
-  }
-
-  /** The heading of the column this field makes in a table. Setting blank text removes it. */
-  get columnLabelText(): string {
-    return this.attrText(DataElementAttribute.COLUMN_LABEL);
-  }
-  set columnLabelText(value: string) {
-    this.setFieldAttribute(DataElementAttribute.COLUMN_LABEL, value);
-  }
-
-  /**
-   * The heading that gathers this field's column together with its neighbours above a table's
-   * column headings.
-   */
-  get columnGroupText(): string {
-    return this.attrText(DataElementAttribute.COLUMN_GROUP);
-  }
-  set columnGroupText(value: string) {
-    this.setFieldAttribute(DataElementAttribute.COLUMN_GROUP, value);
-  }
-
-  /** The heading over the column of row names while this group or section is shown as a table. */
-  get rowHeaderLabelText(): string {
-    return this.attrText(DataElementAttribute.ROW_HEADER_LABEL);
-  }
-  set rowHeaderLabelText(value: string) {
-    this.setFieldAttribute(DataElementAttribute.ROW_HEADER_LABEL, value);
-  }
-
-  /**
-   * Whether this table field is a gap cell, which makes its column a gap between skill columns in
-   * judgement. Turning it on gives the field a default column heading where it has none.
-   */
-  get isGapCell(): boolean {
-    return this.attrText(DataElementAttribute.CELL_KIND) === 'gap';
-  }
-  set isGapCell(value: boolean) {
-    const element = this.gameDataElement();
-    if (value) {
-      element.setAttribute(DataElementAttribute.CELL_KIND, 'gap');
-      if (!element.getAttribute(DataElementAttribute.COLUMN_LABEL).trim()) {
-        element.setAttribute(DataElementAttribute.COLUMN_LABEL, this.t('feature.dataElement.defaults.gapCellLabel'));
-      }
-    } else {
-      element.removeAttribute(DataElementAttribute.CELL_KIND);
-    }
-    this.objectChange.notifyChanged(element.identifier);
   }
 
   readonly calcResult = computed(() => {
@@ -1116,14 +980,8 @@ export class GameDataElementComponent {
    */
   isTableCellField(): boolean {
     const element = this.gameDataElement();
-    this.objectChange.versionOf(element.identifier)();
-    if (element.fieldRole !== DataElementRole.FIELD) return false;
-
-    const rowElement = element.parent instanceof DataElement ? element.parent : null;
-    const tableElement = rowElement?.parent instanceof DataElement ? rowElement.parent : null;
-    if (rowElement) this.objectChange.versionOf(rowElement.identifier)();
-    if (tableElement) this.objectChange.versionOf(tableElement.identifier)();
-    return rowElement?.fieldRole === DataElementRole.GROUP && tableElement?.viewMode === DataElementViewMode.TABLE;
+    for (const node of tableCellLineage(element)) this.objectChange.versionOf(node.identifier)();
+    return isTableCellFieldShared(element);
   }
 
   /**
@@ -1165,57 +1023,11 @@ export class GameDataElementComponent {
     this.toggleFlag(DataElementAttribute.POPUP);
   }
 
-  /** Whether this resource is shown as a bar on the piece on the table. */
-  isPieceGauge(): boolean {
-    return this.hasFlag(DataElementAttribute.PIECE_GAUGE);
-  }
-
-  /**
-   * Whether this element is a numeric resource, the only kind that can be shown as a bar on the
-   * piece.
-   */
-  canShowPieceGauge(): boolean {
-    return this.gameDataElement().isNumberResource;
-  }
-
-  /**
-   * Whether this resource grows worse as it rises, such as madness, so the bar on the piece reads
-   * the other way round.
-   */
-  isGaugeInverted(): boolean {
-    return this.hasFlag(DataElementAttribute.GAUGE_INVERTED);
-  }
-
-  /**
-   * Turns the reading of this resource as one that grows worse as it rises on or off. Does nothing
-   * for an element that is not a numeric resource.
-   */
-  toggleGaugeInverted(): void {
-    if (!this.canShowPieceGauge()) return;
-    this.toggleFlag(DataElementAttribute.GAUGE_INVERTED);
-  }
-
-  /**
-   * Shows this resource as a bar on the piece, or takes the bar away. Does nothing for an element
-   * that is not a numeric resource.
-   */
-  togglePieceGauge(event?: MouseEvent): void {
-    event?.stopPropagation();
-    if (!this.canShowPieceGauge()) return;
-    this.toggleFlag(DataElementAttribute.PIECE_GAUGE);
-  }
-
   /** Whether this resource is moved with a slider as well as typed, here and in the popup over its piece. */
   hasResourceSlider(): boolean {
     const element = this.gameDataElement();
     this.objectChange.versionOf(element.identifier)();
     return showsResourceSlider(element);
-  }
-
-  /** Moves this resource with a slider as well, or stops. Does nothing for an element that is not a numeric resource. */
-  toggleResourceSlider(): void {
-    if (!this.canShowPieceGauge()) return;
-    this.toggleFlag(DataElementAttribute.RESOURCE_SLIDER);
   }
 
   /** The span the slider runs over, the same the current value may be typed within; null with nothing to slide over. */
@@ -1235,79 +1047,6 @@ export class GameDataElementComponent {
    */
   commitSliderValue(event: Event): void {
     this.currentValue = (event.target as HTMLInputElement).valueAsNumber;
-  }
-
-  /**
-   * Whether this element is a numeric resource, the only kind that can play an effect or a sound
-   * when it changes.
-   */
-  canShowChangeFeedback(): boolean {
-    return this.gameDataElement().isNumberResource;
-  }
-
-  /** Whether a change to this resource plays an effect on the piece. */
-  playsEffectOnChange(): boolean {
-    const element = this.gameDataElement();
-    this.objectChange.versionOf(element.identifier)();
-    return playsEffectOnChange(element);
-  }
-
-  /** Whether a change to this resource plays a sound. */
-  playsSoundOnChange(): boolean {
-    const element = this.gameDataElement();
-    this.objectChange.versionOf(element.identifier)();
-    return playsSoundOnChange(element);
-  }
-
-  /**
-   * Turns the effect played when this resource changes on or off. Does nothing for an element that
-   * is not a numeric resource.
-   */
-  toggleChangeEffect(): void {
-    if (!this.canShowChangeFeedback()) return;
-    const element = this.gameDataElement();
-    element.setAttribute(DataElementAttribute.CHANGE_EFFECT, this.playsEffectOnChange() ? 'false' : 'true');
-    this.objectChange.notifyChanged(element.identifier);
-  }
-
-  /**
-   * Turns the sound played when this resource changes on or off. Does nothing for an element that
-   * is not a numeric resource.
-   */
-  toggleChangeSound(): void {
-    if (!this.canShowChangeFeedback()) return;
-    const element = this.gameDataElement();
-    element.setAttribute(DataElementAttribute.CHANGE_SOUND, this.playsSoundOnChange() ? 'false' : 'true');
-    this.objectChange.notifyChanged(element.identifier);
-  }
-
-  /** Which set of sounds a change to this resource plays. */
-  soundSetOnChange(): ResourceSoundSet {
-    const element = this.gameDataElement();
-    this.objectChange.versionOf(element.identifier)();
-    return soundSetOnChange(element);
-  }
-
-  /**
-   * Chooses the set of sounds a change to this resource plays, anything but `mech` being taken as
-   * `flesh`. Does nothing for an element that is not a numeric resource.
-   */
-  setSoundSetOnChange(value: string): void {
-    if (!this.canShowChangeFeedback()) return;
-    const element = this.gameDataElement();
-    element.setAttribute(DataElementAttribute.CHANGE_SOUND_SET, value === 'mech' ? 'mech' : 'flesh');
-    this.objectChange.notifyChanged(element.identifier);
-  }
-
-  /** Whether this image field's picture is shown at full size in the popup. */
-  isImagePopupOriginal(): boolean {
-    return this.hasFlag(DataElementAttribute.IMAGE_POPUP_ORIGINAL);
-  }
-
-  /** Turns showing this image field's picture at full size in the popup on or off. */
-  toggleImagePopupOriginal(event?: Event): void {
-    event?.stopPropagation();
-    this.toggleFlag(DataElementAttribute.IMAGE_POPUP_ORIGINAL);
   }
 
   /**
@@ -1341,51 +1080,14 @@ export class GameDataElementComponent {
     return this.hasFlag(DataElementAttribute.JUDGE_MODE);
   }
 
-  /** Turns judgement on or off for this table. */
-  toggleJudgeModeEnabled(): void {
-    this.toggleFlag(DataElementAttribute.JUDGE_MODE);
-  }
-
-  /**
-   * How much distance each ticked gap column adds in judgement, as written in the table's settings;
-   * empty counts as 1.
-   */
-  get gapDistanceText(): string {
-    return this.attrText(DataElementAttribute.GAP_DISTANCE);
-  }
-  set gapDistanceText(value: string) {
-    this.setFieldAttribute(DataElementAttribute.GAP_DISTANCE, value);
-  }
-
-  /**
-   * The target a judgement roll starts from before the distance is added, as written in the table's
-   * settings; empty counts as 5.
-   */
-  get baseDifficultyText(): string {
-    return this.attrText(DataElementAttribute.BASE_DIFFICULTY);
-  }
-  set baseDifficultyText(value: string) {
-    this.setFieldAttribute(DataElementAttribute.BASE_DIFFICULTY, value);
-  }
-
   /** Whether distance in judgement runs on from the table's last column round to its first. */
   get loopHorizontal(): boolean {
     return this.attrText(DataElementAttribute.LOOP_HORIZONTAL) === 'true';
   }
-  /** Turns judgement distance running round from the last column to the first on or off. */
-  toggleLoopHorizontal(): void {
-    this.toggleFlag(DataElementAttribute.LOOP_HORIZONTAL);
-  }
-
   /** Whether distance in judgement runs on from the table's last row round to its first. */
   get loopVertical(): boolean {
     return this.attrText(DataElementAttribute.LOOP_VERTICAL) === 'true';
   }
-  /** Turns judgement distance running round from the last row to the first on or off. */
-  toggleLoopVertical(): void {
-    this.toggleFlag(DataElementAttribute.LOOP_VERTICAL);
-  }
-
   /**
    * Whether this element is drawn as a table rather than as rows: out of edit mode, set to show as
    * a table, and with rows and columns to show.
