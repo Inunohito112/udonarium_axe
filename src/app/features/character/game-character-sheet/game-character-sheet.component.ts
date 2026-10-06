@@ -17,7 +17,7 @@ import { ObjectChangeService } from '@axe/application/sync/object-change.service
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { DataElementDragService } from '@axe/application/ui/data-element-drag.service';
 import { ModalService } from '@axe/application/ui/modal.service';
-import { PanelOption, PanelService } from '@axe/application/ui/panel.service';
+import { PanelService } from '@axe/application/ui/panel.service';
 import { buildReorderContextMenu } from '@axe/application/ui/reorder-context-menu';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { ViewportService } from '@axe/application/ui/viewport.service';
@@ -26,7 +26,6 @@ import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { Card } from '@axe/domain/card/card';
 import { CardStack } from '@axe/domain/card/card-stack';
-import { portraitElementAt, portraitNameOf, setPortraitNameOf } from '@axe/domain/character/character-portrait';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import {
   DataElement,
@@ -42,6 +41,7 @@ import { TabletopObject } from '@axe/domain/tabletop/tabletop-object';
 import { Terrain, TERRAIN_FACES, TerrainFace } from '@axe/domain/tabletop/terrain';
 import { TextNote } from '@axe/domain/tabletop/text-note';
 import { CardStackCardListComponent } from '@axe/features/card/card-stack-card-list/card-stack-card-list.component';
+import { CharacterPortraitPanelComponent } from '@axe/features/character/game-character-sheet/character-portrait-panel.component';
 import { cloneTabletopObject } from '@axe/features/character/game-character-sheet/character-sheet-target-helpers';
 import {
   canReorderDetailElement,
@@ -50,7 +50,6 @@ import {
 } from '@axe/features/character/game-character-sheet/detail-element-reorder-helpers';
 import { GameCharacterSettingsTabComponent } from '@axe/features/character/game-character-sheet/game-character-settings-tab.component';
 import { clampInRange, roundOr } from '@axe/features/character/game-character-sheet/numeric-input-helpers';
-import { ImportCharacterImgComponent } from '@axe/features/character/import-character-img/import-character-img.component';
 import { DataElementDeletionService } from '@axe/features/data-element/game-data-element/data-element-deletion.service';
 import { GameDataElementComponent } from '@axe/features/data-element/game-data-element/game-data-element.component';
 import { DisclosureControlComponent } from '@axe/features/disclosure/disclosure-control/disclosure-control.component';
@@ -67,6 +66,7 @@ import { TranslocoModule } from '@jsverse/transloco';
     CardStackCardListComponent,
     DisclosureControlComponent,
     FormsModule,
+    CharacterPortraitPanelComponent,
     GameCharacterSettingsTabComponent,
     GameDataElementComponent,
     SafePipe,
@@ -552,17 +552,6 @@ export class GameCharacterSheetComponent {
     });
   }
 
-  readonly portraitImages = computed(() => {
-    this.objectChange.fileVersion();
-    const char = this.character;
-    if (!char?.imageDataElement) return [];
-    this.objectChange.versionOf(char.identifier)();
-    return char.imageDataElement.children.map((child, index) => {
-      const file = this.imageStorage.get(child.value as string) ?? ImageFile.Empty;
-      return { index, imageFile: file, name: portraitNameOf(child) };
-    });
-  });
-
   private readKomaIndex(char: GameCharacter): number {
     const iconEl = char.detailDataElement?.getFirstElementByName('ICON');
     return iconEl ? (iconEl.currentValue as number) : 0;
@@ -573,20 +562,6 @@ export class GameCharacterSheetComponent {
     if (!char) return 0;
     this.objectChange.versionOf(char.identifier)();
     return this.readKomaIndex(char);
-  });
-
-  readonly portraitName = computed(() => {
-    const char = this.character;
-    if (!char) return '';
-    this.objectChange.versionOf(char.identifier)();
-    return portraitNameOf(portraitElementAt(char, this.readKomaIndex(char)));
-  });
-
-  readonly portraitPosIndex = computed(() => {
-    const char = this.character;
-    if (!char) return 0;
-    this.objectChange.versionOf(char.identifier)();
-    return char.portraitPosition ?? 0;
   });
 
   readonly komaImageFile = computed(() => {
@@ -703,142 +678,8 @@ export class GameCharacterSheetComponent {
   /** Does nothing; the terrain grid checkbox changes the terrain through its own binding. */
   clickGrid() {}
 
-  /**
-   * Chooses which of the character's portraits is its image on the table, from the portrait
-   * thumbnails; the index is held within the portraits it has.
-   */
-  setKomaIndex(index: number) {
-    const char = this.character;
-    if (!char?.imageDataElement) return;
-    char.addExtendData();
-    const iconEl = char.detailDataElement?.getFirstElementByName('ICON');
-    if (!iconEl) return;
-    const max = char.imageDataElement.children.length - 1;
-    iconEl.currentValue = Math.max(0, Math.min(index, max));
-    iconEl.value = max;
-    char.update();
-  }
-
-  /**
-   * Opens the image picker and replaces the picture of the portrait the piece currently shows, or
-   * of the first portrait when that index is out of range.
-   */
-  openKomaImageModal() {
-    const char = this.character;
-    if (!char?.imageDataElement) return;
-    char.addExtendData();
-    this.modalService.open<string>(FileSelecterComponent, { isAllowedEmpty: false }).then((value) => {
-      if (!value || !char.imageDataElement) return;
-      const iconEl = char.detailDataElement?.getFirstElementByName('ICON');
-      const idx = iconEl ? (iconEl.currentValue as number) : 0;
-      const images = char.imageDataElement.children;
-      if (idx >= 0 && idx < images.length) {
-        images[idx].value = value;
-      } else if (images.length > 0) {
-        images[0].value = value;
-      }
-      char.update();
-    });
-  }
-
   /** Names the portrait the piece currently shows, from the name field under the thumbnails. */
-  setPortraitName(event: Event) {
-    const char = this.character;
-    if (!char) return;
-    const element = portraitElementAt(char, this.readKomaIndex(char));
-    if (!element) return;
-    setPortraitNameOf(element, (event.target as HTMLInputElement).value);
-    char.update();
-  }
-
   /** Moves where the character's portrait stands in chat, from the arrows beside the position. */
-  setPortraitPos(pos: number) {
-    const char = this.character;
-    if (!char) return;
-    char.portraitPosition = pos;
-  }
-
-  /**
-   * Opens the image picker and adds the chosen picture as another portrait of the character, from
-   * the add button after the thumbnails.
-   */
-  addPortrait() {
-    const char = this.character;
-    if (!char?.imageDataElement) return;
-    this.modalService.open<string>(FileSelecterComponent, { isAllowedEmpty: false }).then((value) => {
-      if (!value) return;
-      char.imageDataElement!.appendChild(DataElement.create('imageIdentifier', value, { type: 'image' }, ''));
-      const iconEl = char.detailDataElement?.getFirstElementByName('ICON');
-      if (iconEl) iconEl.value = char.imageDataElement!.children.length - 1;
-      char.update();
-    });
-  }
-
-  /**
-   * Opens the image picker and replaces the picture of a portrait, from a click on the large
-   * portrait.
-   */
-  changePortrait(index: number) {
-    const char = this.character;
-    if (!char?.imageDataElement) return;
-    this.modalService.open<string>(FileSelecterComponent, { isAllowedEmpty: false }).then((value) => {
-      if (!value) return;
-      const images = char.imageDataElement!.children;
-      if (index < images.length) {
-        images[index].value = value;
-        char.update();
-      }
-    });
-  }
-
-  /**
-   * Removes a portrait from the character, from the delete button under the thumbnails.
-   *
-   * The last portrait cannot be removed. When the one shown on the table is removed the first
-   * portrait takes its place; otherwise the piece keeps showing the same picture.
-   */
-  removePortrait(index: number) {
-    const char = this.character;
-    if (!char?.imageDataElement) return;
-    const images = char.imageDataElement.children;
-    if (images.length <= 1) return;
-    const el = images[index];
-    if (!el) return;
-    const iconEl = char.detailDataElement?.getFirstElementByName('ICON');
-    if (iconEl) {
-      const komaIdx = iconEl.currentValue as number;
-      if (komaIdx === index) {
-        iconEl.currentValue = 0;
-      } else if (komaIdx > index) {
-        iconEl.currentValue = (komaIdx as number) - 1;
-      }
-      iconEl.value = images.length - 2;
-    }
-    char.imageDataElement.removeChild(el);
-    char.update();
-  }
-
-  /**
-   * Opens a small panel by the pointer for copying another character's pictures onto this one, from
-   * the import button under the portraits.
-   */
-  showImportImages() {
-    const obj = this.tabletopObject;
-    if (!obj) return;
-    const coordinate = this.pointerDeviceService.pointers[0];
-    const option: PanelOption = {
-      left: coordinate.x - 250,
-      top: coordinate.y - 175,
-      width: 350,
-      height: 250,
-    };
-    option.title = this.translateFn('feature.inventory.sheet.imageCopyTitle', {
-      name: (obj as GameCharacter).name,
-    });
-    const component = this.panelService.open<ImportCharacterImgComponent>(ImportCharacterImgComponent, option);
-    component.tabletopObject = obj as GameCharacter;
-  }
-
   /** Does nothing; the checkbox it is bound to changes the range area through its own binding. */
   clickRangeOffSetX() {}
 
