@@ -50,6 +50,7 @@ import {
   type TableColumn as DataElementTableColumn,
   type TableColumnHeaderGroup as DataElementTableColumnHeaderGroup,
 } from '@axe/domain/data/table-layout';
+import { FIELD_TYPE_CATALOG } from '@axe/features/data-element/game-data-element/field-type-catalog';
 import {
   canAcceptChildRole,
   canDropStructureElement,
@@ -564,18 +565,10 @@ export class GameDataElementComponent {
     icons: group.icons,
   }));
 
-  readonly fieldTypeItems: { type: DataElementFieldTypeValue; label: string }[] = [
-    { type: DataElementFieldType.TEXT, label: this.t('feature.dataElement.fieldType.text') },
-    { type: DataElementFieldType.NUMBER, label: this.t('feature.dataElement.fieldType.number') },
-    { type: DataElementFieldType.RESOURCE, label: this.t('feature.dataElement.fieldType.resource') },
-    { type: DataElementFieldType.LONG_TEXT, label: this.t('feature.dataElement.fieldType.longText') },
-    { type: DataElementFieldType.CHECK, label: this.t('feature.dataElement.fieldType.check') },
-    { type: DataElementFieldType.SELECT, label: this.t('feature.dataElement.fieldType.select') },
-    { type: DataElementFieldType.CALC, label: this.t('feature.dataElement.fieldType.calc') },
-    { type: DataElementFieldType.IMAGE, label: this.t('feature.dataElement.fieldType.image') },
-    { type: DataElementFieldType.RANGE_SHAPE, label: this.t('feature.dataElement.fieldType.rangeShape') },
-    { type: DataElementFieldType.EFFECT, label: this.t('feature.dataElement.fieldType.effect') },
-  ];
+  readonly fieldTypeItems: { type: DataElementFieldTypeValue; label: string }[] = FIELD_TYPE_CATALOG.map((entry) => ({
+    type: entry.type,
+    label: this.t(entry.labelKey),
+  }));
 
   /** The effects on offer, held by name so the same row works in any room. */
   readonly effectNames = computed<string[]>(() => this.effectLibrary.presets().map((preset) => preset.name));
