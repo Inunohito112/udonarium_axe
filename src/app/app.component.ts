@@ -26,6 +26,7 @@ import { LegacyScratchMaskMigrationService } from '@axe/application/tabletop/leg
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { TurnOrderService } from '@axe/application/turn/turn-order.service';
+import { BottomSheetService } from '@axe/application/ui/bottom-sheet.service';
 import { ButtonGuideService } from '@axe/application/ui/button-guide.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
@@ -102,6 +103,7 @@ import { CompassComponent } from '@axe/features/widgets/compass/compass.componen
 import { ConnectionQualityComponent } from '@axe/features/widgets/connection-quality/connection-quality.component';
 import { DigitalClockComponent } from '@axe/features/widgets/digital-clock/digital-clock.component';
 import { RenderStatsComponent } from '@axe/features/widgets/render-stats/render-stats.component';
+import { BottomSheetComponent } from '@axe/ui/components/bottom-sheet/bottom-sheet.component';
 import { ConfirmDialogComponent } from '@axe/ui/components/confirm-dialog/confirm-dialog.component';
 import { ContextMenuComponent } from '@axe/ui/components/context-menu/context-menu.component';
 import { UiFabSubmenuComponent } from '@axe/ui/components/fab-submenu/fab-submenu.component';
@@ -521,5 +523,6 @@ ContextMenuService.loadFourWayRadialMenuComponent = () =>
     (m) => m.FourWayRadialMenuComponent
   );
 ModalService.ModalComponentClass = ModalComponent;
+BottomSheetService.frameComponentClass = BottomSheetComponent;
 ConfirmService.dialogComponentClass = ConfirmDialogComponent;
 TabletopActionService.diceCreateDialogComponentClass = DiceSymbolCreateDialogComponent;
