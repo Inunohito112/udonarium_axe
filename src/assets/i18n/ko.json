@@ -58,7 +58,8 @@
       "ownedCharacters": "내 캐릭터 목록",
       "roomSnapshot": "자동 저장",
       "replay": "리플레이",
-      "popOut": "별도 창으로 열기"
+      "popOut": "별도 창으로 열기",
+      "soundSettings": "소리 설정"
     },
     "party": {
       "unnamed": "이름 없는 파티"
@@ -4685,6 +4686,48 @@
         "on": "켜기",
         "off": "끄기"
       }
+    },
+    "soundSettings": {
+      "ownHeading": "내 음량",
+      "ownHint": "나에게만 적용되며 이 브라우저에 저장됩니다. 왼쪽 버튼으로 종류별로 소리를 끌 수 있습니다.",
+      "chatHeading": "채팅 알림음",
+      "roomHeading": "방 음량",
+      "roomHint": "방에 있는 모두에게 적용되며 GM만 바꿀 수 있습니다.",
+      "openAll": "내 소리 설정 모두 열기",
+      "kind": {
+        "audition": {
+          "label": "시청",
+          "hint": "주크박스에서 나만 듣는 소리"
+        },
+        "bgm": {
+          "label": "BGM",
+          "hint": "주크박스의 음악"
+        },
+        "background": {
+          "label": "환경음",
+          "hint": "비, 모닥불 같은 반복음"
+        },
+        "cutIn": {
+          "label": "컷인",
+          "hint": "컷인 음악·장면 소리·동영상"
+        },
+        "notification": {
+          "label": "알림음",
+          "hint": "채팅 알림과 알람"
+        },
+        "handling": {
+          "label": "조작음",
+          "hint": "주사위·카드·말을 움직이는 소리"
+        },
+        "effect": {
+          "label": "연출 효과음",
+          "hint": "맵 연출과 HP 등의 증감"
+        },
+        "se": {
+          "label": "기타 효과음",
+          "hint": "주크박스 SE, 핫바 소리 등"
+        }
+      }
     }
   },
   "app": {
@@ -4743,7 +4786,8 @@
       "widgets": "위젯",
       "foldToolbar": "도구 모음 접기",
       "unfoldToolbar": "도구 모음 펼치기",
-      "buttonGuide": "모든 버튼 이름 표시 (? 키)"
+      "buttonGuide": "모든 버튼 이름 표시 (? 키)",
+      "soundSettings": "소리 설정"
     },
     "roomDataDefault": "룸 데이터"
   },

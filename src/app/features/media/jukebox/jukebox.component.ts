@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { PersonalVolumeService } from '@axe/application/media/personal-volume.service';
+import { PersonalVolumeKind } from '@axe/application/media/personal-volumes';
+import { RoomVolumeService } from '@axe/application/media/room-volume.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
@@ -19,7 +21,6 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { AUDIO_TAG_BGS, AudioTag } from '@axe/domain/media/audio-tag';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { Playlist } from '@axe/domain/media/playlist';
-import { Config } from '@axe/domain/peer/config';
 import { BackgroundSoundPlaybackService } from '@axe/features/media/background-sound-playback.service';
 import {
   buildLibraryTrackMenu,
@@ -28,6 +29,7 @@ import {
 } from '@axe/features/media/jukebox/playlist-context-menu';
 import { formatTrackTime, JukeboxPlaybackService, PlaylistView } from '@axe/features/media/jukebox-playback.service';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
+import { UiVolumeRowComponent } from '@axe/ui/components/volume-row/volume-row.component';
 import { TranslocoModule } from '@jsverse/transloco';
 
 @Component({
@@ -35,7 +37,7 @@ import { TranslocoModule } from '@jsverse/transloco';
   selector: 'app-jukebox',
   templateUrl: './jukebox.component.html',
   host: { class: 'block' },
-  imports: [FormsModule, TranslocoModule],
+  imports: [FormsModule, TranslocoModule, UiVolumeRowComponent],
 })
 export class JukeboxComponent {
   protected readonly isCompact = inject(ViewportService).isCompact;
@@ -55,12 +57,10 @@ export class JukeboxComponent {
   protected readonly playback = inject(JukeboxPlaybackService);
   protected readonly backgroundSounds = inject(BackgroundSoundPlaybackService);
   private readonly personalVolumes = inject(PersonalVolumeService);
+  private readonly roomVolumes = inject(RoomVolumeService);
 
   /** Whether this player may move the room volume, which only the game master may, as with the room's other settings. */
-  readonly canChangeRoomVolume = computed(() => {
-    this.objectChange.trackMyCursor();
-    return this.rolePermission.canEditShared;
-  });
+  readonly canChangeRoomVolume = this.roomVolumes.canChange;
 
   /**
    * The room-wide volume every player's sound is multiplied by, from the room volume slider.
@@ -69,15 +69,27 @@ export class JukeboxComponent {
    * game master may change it. Reads 1 before the config exists.
    */
   get roomVolume(): number {
-    const conf = this.objectStore.get<Config>('Config');
-    return conf ? conf.roomVolume : 1;
+    return this.roomVolumes.volume();
   }
 
   set roomVolume(volume: number) {
-    if (!this.rolePermission.canEditShared) return;
-    const conf = this.objectStore.get<Config>('Config');
-    if (conf) conf.roomVolume = volume;
-    this.jukebox?.setNewVolume();
+    this.roomVolumes.set(volume);
+  }
+
+  /** Whether this player has turned a kind of sound off for themselves. */
+  isMuted(kind: PersonalVolumeKind): boolean {
+    return this.personalVolumes.isMuted(kind);
+  }
+
+  /** Turns a kind of sound off or back on for this player alone, remembered in this browser. */
+  setMuted(kind: PersonalVolumeKind, muted: boolean): void {
+    this.personalVolumes.setMuted(kind, muted);
+  }
+
+  /** Opens the panel holding every one of this player's sound settings, beside the pointer. */
+  openSoundSettings(): void {
+    const coordinate = this.pointerDeviceService.pointers[0];
+    this.roomPanels.open('soundSettings', { left: coordinate.x + 25, top: coordinate.y + 25 });
   }
 
   /**

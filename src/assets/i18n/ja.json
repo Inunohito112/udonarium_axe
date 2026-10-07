@@ -58,7 +58,8 @@
       "ownedCharacters": "所有キャラクター一覧",
       "roomSnapshot": "自動保存",
       "replay": "リプレイ",
-      "popOut": "別のウィンドウで開く"
+      "popOut": "別のウィンドウで開く",
+      "soundSettings": "音の設定"
     },
     "party": {
       "unnamed": "無名のパーティ"
@@ -4409,6 +4410,48 @@
         "on": "オン",
         "off": "オフ"
       }
+    },
+    "soundSettings": {
+      "ownHeading": "自分の音量",
+      "ownHint": "自分にだけ効き、このブラウザに保存されます。左のボタンで種類ごとに音を消せます。",
+      "chatHeading": "チャットの通知音",
+      "roomHeading": "部屋の音量",
+      "roomHint": "部屋の全員に効き、GM だけが変えられます。",
+      "openAll": "自分の音の設定をすべて開く",
+      "kind": {
+        "audition": {
+          "label": "試聴",
+          "hint": "ジュークボックスで自分だけが聞く音"
+        },
+        "bgm": {
+          "label": "BGM",
+          "hint": "ジュークボックスの音楽"
+        },
+        "background": {
+          "label": "環境音",
+          "hint": "雨や焚き火などのループ"
+        },
+        "cutIn": {
+          "label": "カットイン",
+          "hint": "カットインの音楽・場面の音・動画"
+        },
+        "notification": {
+          "label": "通知音",
+          "hint": "チャットの通知とアラーム"
+        },
+        "handling": {
+          "label": "操作音",
+          "hint": "ダイス・カード・コマを動かす音"
+        },
+        "effect": {
+          "label": "演出の効果音",
+          "hint": "マップ演出と HP などの増減"
+        },
+        "se": {
+          "label": "その他の効果音",
+          "hint": "ジュークボックスの SE、ホットバーなど"
+        }
+      }
     }
   },
   "app": {
@@ -4467,7 +4510,8 @@
       "widgets": "ウィジェット",
       "foldToolbar": "ツールバーを畳む",
       "unfoldToolbar": "ツールバーを開く",
-      "buttonGuide": "ボタンの名前をすべて表示（? キー）"
+      "buttonGuide": "ボタンの名前をすべて表示（? キー）",
+      "soundSettings": "音の設定"
     },
     "roomDataDefault": "ルームデータ"
   },

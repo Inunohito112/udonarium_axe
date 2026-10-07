@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
+import { PersonalVolumeService } from '@axe/application/media/personal-volume.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { ContextMenuAction, ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { AudioFile } from '@axe/core/storage/audio-file';
@@ -19,6 +20,7 @@ import { PeerRole } from '@axe/domain/peer/peer-role';
 import { BackgroundSoundPlaybackService } from '@axe/features/media/background-sound-playback.service';
 import { JukeboxComponent } from '@axe/features/media/jukebox/jukebox.component';
 import { JukeboxPlaybackService } from '@axe/features/media/jukebox-playback.service';
+import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { expectPanelDragRecovery, PanelDragTestHostComponent } from '@axe/testing/panel-drag-recovery';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
@@ -79,6 +81,35 @@ describe('JukeboxComponent', () => {
   });
 
   describe('the volumes', () => {
+    it('opens every one of this player’s sound settings from beside their own volumes', async () => {
+      const open = vi.spyOn(TestBed.inject(RoomPanelService), 'open').mockImplementation(() => {});
+      await fixture.whenStable();
+
+      (fixture.nativeElement as HTMLElement)
+        .querySelector<HTMLButtonElement>('[data-testid="jukebox-open-sound-settings"]')!
+        .click();
+
+      expect(open).toHaveBeenCalledWith('soundSettings', expect.anything());
+    });
+
+    it('turns the music off for this player alone from its row, and back on', async () => {
+      vi.spyOn(AudioPlayer, 'setChannelVolume').mockImplementation(() => {});
+      const volumes = TestBed.inject(PersonalVolumeService);
+      await fixture.whenStable();
+      const mute = () =>
+        (fixture.nativeElement as HTMLElement)
+          .querySelector('input[name="bgm-volume"]')!
+          .closest('ui-volume-row')!
+          .querySelector<HTMLButtonElement>('[data-testid="volume-row-mute"]')!;
+
+      mute().click();
+      expect(volumes.isMuted('bgm')).toBe(true);
+
+      await fixture.whenStable();
+      mute().click();
+      expect(volumes.isMuted('bgm')).toBe(false);
+    });
+
     it('sets this player’s own volumes apart from the room’s, saying which is which', async () => {
       const t = TestBed.inject(TRANSLATE_FN);
       await fixture.whenStable();

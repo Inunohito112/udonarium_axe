@@ -8,6 +8,7 @@ import { ChatTabList } from '@axe/domain/chat/chat-tab-list';
 import { SYSTEM_CHAT_TAB_IDENTIFIER } from '@axe/domain/chat/constants';
 import { PresetSound } from '@axe/domain/media/sound-effect';
 import { ChatMessageSettingComponent } from '@axe/features/chat/chat-message-setting/chat-message-setting.component';
+import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 describe('ChatMessageSettingComponent', () => {
@@ -213,6 +214,15 @@ describe('ChatMessageSettingComponent', () => {
       PresetSound.chatNotify1 = '';
       vi.restoreAllMocks();
     });
+  });
+
+  it('opens every one of the reader’s sound settings from the sound section', () => {
+    const open = vi.spyOn(TestBed.inject(RoomPanelService), 'open').mockImplementation(() => {});
+
+    root().querySelector<HTMLButtonElement>('[data-testid="chat-open-sound-settings"]')!.click();
+
+    expect(open).toHaveBeenCalledWith('soundSettings');
+    vi.restoreAllMocks();
   });
 
   it('keeps the scope for next time', () => {

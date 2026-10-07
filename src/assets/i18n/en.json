@@ -58,7 +58,8 @@
       "ownedCharacters": "My characters",
       "roomSnapshot": "Auto Save",
       "replay": "Replay",
-      "popOut": "Open in its own window"
+      "popOut": "Open in its own window",
+      "soundSettings": "Sound settings"
     },
     "party": {
       "unnamed": "Unnamed party"
@@ -4409,6 +4410,48 @@
         "on": "On",
         "off": "Off"
       }
+    },
+    "soundSettings": {
+      "ownHeading": "Your volume",
+      "ownHint": "Only you hear these, and they are saved in this browser. Turn each kind off with the button on the left.",
+      "chatHeading": "Chat notification",
+      "roomHeading": "Room volume",
+      "roomHint": "Applies to everyone in the room; only the GM can change it.",
+      "openAll": "Open all of your sound settings",
+      "kind": {
+        "audition": {
+          "label": "Preview",
+          "hint": "What you preview in the jukebox"
+        },
+        "bgm": {
+          "label": "BGM",
+          "hint": "Music from the jukebox"
+        },
+        "background": {
+          "label": "Ambience",
+          "hint": "Looping rain, fire and the like"
+        },
+        "cutIn": {
+          "label": "Cut-ins",
+          "hint": "Cut-in music, scene sounds and videos"
+        },
+        "notification": {
+          "label": "Notifications",
+          "hint": "Chat notifications and alarms"
+        },
+        "handling": {
+          "label": "Handling",
+          "hint": "Dice, cards and pieces being moved"
+        },
+        "effect": {
+          "label": "Effects",
+          "hint": "Map effects and values going up or down"
+        },
+        "se": {
+          "label": "Other SE",
+          "hint": "Jukebox SE, hotbar sounds and the like"
+        }
+      }
     }
   },
   "app": {
@@ -4467,7 +4510,8 @@
       "widgets": "Widgets",
       "foldToolbar": "Fold the toolbar",
       "unfoldToolbar": "Open the toolbar",
-      "buttonGuide": "Show every button's name (? key)"
+      "buttonGuide": "Show every button's name (? key)",
+      "soundSettings": "Sound settings"
     },
     "roomDataDefault": "Room data"
   },

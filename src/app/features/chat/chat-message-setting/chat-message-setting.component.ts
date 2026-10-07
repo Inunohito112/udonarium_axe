@@ -16,6 +16,7 @@ import { ChatTabList } from '@axe/domain/chat/chat-tab-list';
 import { canRoleViewTab } from '@axe/domain/chat/chat-tab-permission';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { SystemAvatarMenuService } from '@axe/features/chat/system-avatar-menu.service';
+import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { UiChatSoundSettingsComponent } from '@axe/ui/components/chat-sound-settings/chat-sound-settings.component';
 import { SafePipe } from '@axe/ui/pipes/safe.pipe';
 import { TranslocoModule } from '@jsverse/transloco';
@@ -34,6 +35,7 @@ export class ChatMessageSettingComponent {
   private readonly systemAvatarMenu = inject(SystemAvatarMenuService);
   private readonly rolePermission = inject(RolePermissionService);
   private readonly objectChange = inject(ObjectChangeService);
+  private readonly roomPanels = inject(RoomPanelService);
 
   readonly systemAvatarVisible = this.systemAvatar.isVisible;
   readonly speakerAvatarVisible = this.systemAvatar.isSpeakerVisible;
@@ -223,6 +225,11 @@ export class ChatMessageSettingComponent {
     this.chatPrefs.setSimple({ scope: 'all', all: simple ? 1 : 0 });
     for (const tab of this.chatTabList.chatTabs) tab.chatSimpleDispFlag = simple ? 1 : 0;
     this.uiSignalService.notifyChatRedraw();
+  }
+
+  /** Opens the panel holding every one of the reader's sound settings, the chat's note among them. */
+  openSoundSettings(): void {
+    this.roomPanels.open('soundSettings');
   }
 
   /** Shows or hides portraits on one tab. Does nothing for a tab that is gone. */

@@ -238,6 +238,16 @@
       {{ 'feature.chat.messageSetting.sectionSound' | transloco }}
     </h3>
     <ui-chat-sound-settings />
+    <div class="flex justify-end pt-1">
+      <button
+        type="button"
+        class="border-ui-border-panel text-ui-muted hover:bg-ui-hover hover:text-ui-text rounded-ui-sm inline-flex cursor-pointer items-center gap-1 border border-solid bg-transparent px-2 py-1 text-[11px] transition-[background,color] [&_.material-icons]:text-[14px]!"
+        data-testid="chat-open-sound-settings"
+        (click)="openSoundSettings()"
+      >
+        <i class="material-icons">tune</i>{{ 'feature.soundSettings.openAll' | transloco }}
+      </button>
+    </div>
   </section>
 
   <section class="mb-0">
