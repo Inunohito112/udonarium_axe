@@ -75,7 +75,12 @@ export class DataElementTouchDrag {
     const startX = start.clientX;
     const startY = start.clientY;
     const pointerId = start.pointerId;
-    handle.setPointerCapture?.(pointerId);
+    try {
+      handle.setPointerCapture?.(pointerId);
+    } catch {
+      // A pointer the browser no longer knows, such as one already lifted, cannot be captured;
+      // the handle still hears it while the finger stays over it.
+    }
     const options = { signal: this.abort.signal };
     handle.addEventListener(
       'pointermove',
