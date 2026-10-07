@@ -286,10 +286,13 @@ export class Jukebox extends GameObject {
     this._stop();
   }
 
-  /** Applies this peer's own level for every channel, each scaled by the room volume. */
+  /**
+   * Applies this peer's own level for every channel, each scaled by the room's master volume and by
+   * the room's volume for that channel's kind of sound.
+   */
   setNewVolume() {
-    const roomVolume = this.config.roomVolume;
-    for (const type of VOLUME_TYPES) AudioPlayer.setChannelVolume(type, this.levelOf(type) * roomVolume);
+    const config = this.config;
+    for (const type of VOLUME_TYPES) AudioPlayer.setChannelVolume(type, this.levelOf(type) * config.roomScaleFor(type));
   }
 
   /**

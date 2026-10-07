@@ -455,6 +455,26 @@ describe('Jukebox', () => {
       expect(heard(VolumeType.NOTIFICATION)).toBeCloseTo(0.25);
       expect(heard(VolumeType.EFFECT)).toBeCloseTo(0.25);
     });
+
+    it('multiplies in the room’s volume for each kind on top of its overall volume, but not into previews', () => {
+      const heard = channelVolumes();
+      const jukebox = makeJukeboxInRoomAt(0.5);
+      const config = jukebox.config;
+      config.setRoomVolumeOf('bgm', 1.6);
+      config.setRoomVolumeOf('background', 0.5);
+      config.setRoomVolumeOf('handling', 0);
+      jukebox.volume = 0.5;
+      jukebox.auditionVolume = 0.5;
+      jukebox.backgroundVolume = 0.8;
+
+      jukebox.setNewVolume();
+
+      expect(heard(VolumeType.MASTER)).toBeCloseTo(0.4);
+      expect(heard(VolumeType.BACKGROUND)).toBeCloseTo(0.2);
+      expect(heard(VolumeType.HANDLING)).toBe(0);
+      expect(heard(VolumeType.SE)).toBeCloseTo(0.25);
+      expect(heard(VolumeType.AUDITION)).toBeCloseTo(0.25);
+    });
   });
 
   describe('background sounds', () => {

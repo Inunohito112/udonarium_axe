@@ -81,17 +81,18 @@ export class PersonalVolumeService {
   }
 
   /**
-   * Puts each kind's level on its channel, scaled by the room volume. The jukebox is handed the
-   * levels as well, since it puts them back on the channels whenever the room volume changes.
+   * Puts each kind's level on its channel, scaled by the room's master volume and its volume for
+   * that kind. The jukebox is handed the levels as well, since it puts them back on the channels
+   * whenever the room volume changes.
    */
   private apply(): void {
     const jukebox = this.objectStore.get<Jukebox>('Jukebox');
-    const roomVolume = this.objectStore.get<Config>('Config')?.roomVolume ?? 1;
+    const config = this.objectStore.get<Config>('Config');
     for (const kind of PERSONAL_VOLUME_KINDS) {
       const channel = PERSONAL_VOLUME_CHANNELS[kind];
       const level = this.levelOf(kind);
       jukebox?.setLevel(channel, level);
-      AudioPlayer.setChannelVolume(channel, level * roomVolume);
+      AudioPlayer.setChannelVolume(channel, level * (config?.roomScaleFor(channel) ?? 1));
     }
   }
 }

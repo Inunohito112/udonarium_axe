@@ -1,3 +1,4 @@
+import { VolumeType } from '@axe/core/storage/audio-player';
 import { SyncObject, SyncVar } from '@axe/core/sync/decorator';
 import { ObjectContext } from '@axe/core/sync/game-object';
 import { ObjectNode } from '@axe/core/sync/object-node';
@@ -10,6 +11,13 @@ import {
 } from '@axe/domain/character/controller-resource-pick';
 import { asDiceStage, DiceStage } from '@axe/domain/dice/dice-3d/dice-stage';
 import { Jukebox } from '@axe/domain/media/jukebox';
+import {
+  readRoomVolumes,
+  RoomVolumeKind,
+  roomVolumeKindOf,
+  RoomVolumes,
+  writeRoomVolumes,
+} from '@axe/domain/media/room-volumes';
 import { allowsDiagonal, asDiagonalMove, DiagonalMove } from '@axe/domain/tabletop/move/diagonal-move';
 import {
   readRuleFlag,
@@ -31,6 +39,7 @@ import {
 export class Config extends ObjectNode implements InnerXml {
   @SyncVar('_defaultDiceBot') private _defaultDiceBot: string = 'DiceBot';
   @SyncVar('_roomVolume') private _roomVolume: number = 1.0;
+  @SyncVar('_roomKindVolumes') private _roomKindVolumes: string = '';
   @SyncVar('_systemAvatarIdentifier') private _systemAvatarIdentifier: string = '';
   @SyncVar('_systemDiceAvatarIdentifier') private _systemDiceAvatarIdentifier: string = '';
   @SyncVar('_hideSystemAvatar') private _hideSystemAvatar: string = '';
@@ -119,6 +128,34 @@ export class Config extends ObjectNode implements InnerXml {
   }
   set roomVolume(volume: number) {
     this._roomVolume = volume;
+  }
+
+  /**
+   * The room's own volume for each kind of sound, shared by every peer, on top of the master
+   * {@link roomVolume}.
+   *
+   * Full for every kind until the room turns one down, so a room saved before these were there, or
+   * sent by an older version that knows nothing of them, sounds as it did.
+   */
+  get roomVolumes(): RoomVolumes {
+    return readRoomVolumes(this._roomKindVolumes);
+  }
+  set roomVolumes(volumes: RoomVolumes) {
+    this._roomKindVolumes = writeRoomVolumes(volumes);
+  }
+
+  /** Sets the room's volume for one kind of sound, leaving the other kinds as they are. */
+  setRoomVolumeOf(kind: RoomVolumeKind, volume: number): void {
+    this.roomVolumes = { ...this.roomVolumes, [kind]: volume };
+  }
+
+  /**
+   * What the sound on one channel is scaled by in this room: the master room volume times the
+   * room's volume for that channel's kind. Previews take the master room volume alone.
+   */
+  roomScaleFor(type: VolumeType): number {
+    const kind = roomVolumeKindOf(type);
+    return this.roomVolume * (kind ? this.roomVolumes[kind] : 1);
   }
 
   /**
@@ -507,12 +544,13 @@ export class Config extends ObjectNode implements InnerXml {
     this.destroy();
   }
 
-  /** Takes in synced settings, and passes a changed master volume on to the jukebox straight away. */
+  /** Takes in synced settings, and passes a changed room volume on to the jukebox straight away. */
   override apply(context: ObjectContext) {
     const _roomVolume = this._roomVolume;
+    const _roomKindVolumes = this._roomKindVolumes;
     const _defaultDiceBot = this._defaultDiceBot;
     super.apply(context);
-    if (_roomVolume !== this._roomVolume) {
+    if (_roomVolume !== this._roomVolume || _roomKindVolumes !== this._roomKindVolumes) {
       this.jukebox.setNewVolume();
     }
   }

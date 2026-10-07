@@ -351,7 +351,7 @@ export class CutInWindowComponent {
 
   /**
    * The volume the video plays at, from 0 to 100: the cut-in's own, scaled by the listener's cut-in
-   * volume and the room volume, and 0 while this window's sound is off.
+   * volume and the room's volumes for cut-ins, and 0 while this window's sound is off.
    *
    * The video plays in a frame of its own that the audio channels never reach, so the volumes are
    * applied here instead. The listener's volume counts from the half it starts at, so a listener who
@@ -361,8 +361,8 @@ export class CutInWindowComponent {
     if (this.cutIn) this.objectChange.versionOf(this.cutIn.identifier)();
     this.objectChange.versionOf('Config')();
     if (!this.audioEnabledState()) return 0;
-    const roomVolume = this.objectStore.get<Config>('Config')?.roomVolume ?? 1;
-    const scale = (this.personalVolumes.levelOf('cutIn') / DEFAULT_PERSONAL_VOLUMES.cutIn) * roomVolume;
+    const roomScale = this.objectStore.get<Config>('Config')?.roomScaleFor(VolumeType.CUT_IN) ?? 1;
+    const scale = (this.personalVolumes.levelOf('cutIn') / DEFAULT_PERSONAL_VOLUMES.cutIn) * roomScale;
     return Math.min(100, Math.round((this.cutIn?.videoVolume ?? 50) * scale));
   });
 

@@ -68,6 +68,22 @@ describe('PersonalVolumeService', () => {
     expect(jukebox.levelOf(VolumeType.NOTIFICATION)).toBe(0.6);
   });
 
+  it('scales a volume by the room’s volume for its kind as well', () => {
+    const heard = channels();
+    const volumes = reopened();
+    new Config('Config').initialize();
+    const config = ObjectStore.instance.get<Config>('Config')!;
+    config.roomVolume = 0.5;
+    config.setRoomVolumeOf('notification', 1.5);
+    config.setRoomVolumeOf('effect', 0);
+
+    volumes.set('notification', 0.8);
+    volumes.set('effect', 0.8);
+
+    expect(heard(VolumeType.NOTIFICATION)).toBeCloseTo(0.6);
+    expect(heard(VolumeType.EFFECT)).toBe(0);
+  });
+
   it('silences a kind turned off, keeps its volume, and brings it back when turned on', () => {
     const heard = channels();
     const volumes = reopened();
