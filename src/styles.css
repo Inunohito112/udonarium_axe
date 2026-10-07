@@ -2221,6 +2221,29 @@ game-data-element .elm-markdown-view,
 }
 
 /*
+ * A table's row headings stay where they are while the table is scrolled sideways, so it stays plain
+ * which row a cell is on. The headings are tinted over a solid ground, since the cells pass under
+ * them.
+ */
+.elm-view-table :is(thead tr > th:first-child, tbody th) {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  /* A collapsed border is not carried along with a sticky cell, so its edge is painted over too. */
+  box-shadow:
+    -4px 0 0 0 var(--ui-elevated),
+    4px 0 6px -4px rgb(0 0 0 / 0.45);
+}
+
+.elm-view-table tbody th {
+  background-color: var(--ui-elevated);
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--ui-accent-bg) 26%, transparent),
+    color-mix(in srgb, var(--ui-accent-bg) 26%, transparent)
+  );
+}
+
+/*
  * The ± buttons a number has on a sheet, shown on a narrow sheet and on a touch screen, where a
  * value is far quicker moved by a step than typed. A press is only a tap, so a quick run of them
  * is never taken for a double tap that zooms the page.
