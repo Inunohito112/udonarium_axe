@@ -355,7 +355,10 @@
         "unsetActive": "조작 대상 해제",
         "remoteController": "리모컨 열기",
         "partyWith": "{{party}} — 동행: {{names}}",
-        "partyAlone": "{{party}} — 다른 동행자가 없습니다"
+        "partyAlone": "{{party}} — 다른 동행자가 없습니다",
+        "emptyHint": "캐릭터를 자기 것으로 하면 여기서 HP와 MP를 늘리고 줄이거나 시트와 채팅 팔레트를 열 수 있습니다.",
+        "claimableHeading": "오너가 없는 캐릭터",
+        "claim": "내 것으로 하기"
       }
     },
     "gmObjectList": {

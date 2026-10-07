@@ -355,7 +355,10 @@
         "unsetActive": "Clear active character",
         "remoteController": "Open remote controller",
         "partyWith": "{{party}} — with {{names}}",
-        "partyAlone": "{{party}} — no companions yet"
+        "partyAlone": "{{party}} — no companions yet",
+        "emptyHint": "Make a character your own to change its HP and MP here, and open its sheet or chat palette.",
+        "claimableHeading": "Characters with no owner",
+        "claim": "Make mine"
       }
     },
     "gmObjectList": {

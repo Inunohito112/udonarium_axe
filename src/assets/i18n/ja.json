@@ -355,7 +355,10 @@
         "unsetActive": "操作対象を解除",
         "remoteController": "リモートコントローラを開く",
         "partyWith": "{{party}} — 同行: {{names}}",
-        "partyAlone": "{{party}} — ほかに同行者はいません"
+        "partyAlone": "{{party}} — ほかに同行者はいません",
+        "emptyHint": "キャラクターを自分のものにすると、ここからHPやMPを増減したり、シートやチャットパレットを開いたりできます。",
+        "claimableHeading": "オーナーのいないキャラクター",
+        "claim": "自分のものにする"
       }
     },
     "gmObjectList": {

@@ -40,3 +40,11 @@ export function selectControllableCharacters(characters: readonly GameCharacter[
 export function isOnTable(character: GameCharacter): boolean {
   return character.isVisibleOnTable;
 }
+
+/**
+ * The characters on the table nobody has claimed, which a user with no character of their own can
+ * take up from the empty list.
+ */
+export function selectClaimableCharacters(characters: readonly GameCharacter[]): GameCharacter[] {
+  return characters.filter((character) => character.owner.length < 1 && isOnTable(character));
+}
