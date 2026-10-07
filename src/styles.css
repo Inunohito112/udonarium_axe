@@ -2380,6 +2380,15 @@ game-data-element .elm-markdown-view,
     accent-color: var(--ui-accent);
   }
 
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-value-content textarea {
+    height: auto;
+    min-height: calc(3lh + 12px);
+    max-height: calc(14lh + 12px);
+    field-sizing: content;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
   [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-step {
     display: inline-flex;
   }
