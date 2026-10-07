@@ -19,6 +19,8 @@ import {
 import { DataElementDeletionService } from '@axe/features/data-element/game-data-element/data-element-deletion.service';
 import {
   canAcceptChildRole,
+  canDropStructureElement,
+  getElementDepth,
   listMoveTargets,
   type MoveTarget,
 } from '@axe/features/data-element/game-data-element/game-data-element-structure-drop';
@@ -271,6 +273,13 @@ export class DataElementEditService {
   /** Moves an element a step among its siblings, where the structure allows it. */
   move(element: DataElement, move: SiblingMove): void {
     const moved = moveAmongSiblings(element, move);
+    if (moved) this.notify(moved.newParent, element, moved.oldParent);
+  }
+
+  /** Moves an element just before or just after another, where the structure allows it there. */
+  moveBeside(element: DataElement, target: DataElement, side: 'before' | 'after'): void {
+    if (!canDropStructureElement(element, target, side, getElementDepth(target))) return;
+    const moved = moveStructureElement(element, target, side);
     if (moved) this.notify(moved.newParent, element, moved.oldParent);
   }
 

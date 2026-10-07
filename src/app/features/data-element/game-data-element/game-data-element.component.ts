@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, Injector, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  Injector,
+  input,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EffectCastService } from '@axe/application/effect/effect-cast.service';
 import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
@@ -13,6 +24,7 @@ import { DataElementDragService } from '@axe/application/ui/data-element-drag.se
 import { ModalService } from '@axe/application/ui/modal.service';
 import { PanelService } from '@axe/application/ui/panel.service';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
+import { ViewportService } from '@axe/application/ui/viewport.service';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
@@ -54,6 +66,7 @@ import {
   type HeadingIconGroup,
 } from '@axe/features/data-element/game-data-element/data-element-icons';
 import { IN_DATA_ELEMENT_SHEET } from '@axe/features/data-element/game-data-element/data-element-sheet-host';
+import { DataElementTouchDrag } from '@axe/features/data-element/game-data-element/data-element-touch-drag';
 import { FIELD_TYPE_CATALOG } from '@axe/features/data-element/game-data-element/field-type-catalog';
 import {
   canDropStructureElement,
@@ -112,6 +125,7 @@ export const STEP_COMMIT_MS = 450;
     '[class.elm-drop-after]': "structureDropPosition() === 'after'",
     '[class.elm-drop-inside]': "structureDropPosition() === 'inside'",
     '[attr.inert]': "isReadOnly() ? '' : null",
+    '[attr.data-gde-id]': 'gameDataElement().identifier',
   },
 })
 export class GameDataElementComponent {
@@ -129,6 +143,10 @@ export class GameDataElementComponent {
   private readonly rolePermission = inject(RolePermissionService);
   private readonly edit = inject(DataElementEditService);
   private readonly bottomSheet = inject(BottomSheetService);
+  private readonly hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** Whether the screen is a touch screen, where a handle is dragged by the finger rather than the browser. */
+  protected readonly isTouch = inject(ViewportService).isTouch;
+  private touchDrag: DataElementTouchDrag | null = null;
   private readonly injector = inject(Injector);
   /** Whether this row is drawn on a full sheet, which gives it ± buttons and an editor of its own. */
   protected readonly inSheet = inject(IN_DATA_ELEMENT_SHEET, { optional: true }) ?? false;
@@ -482,6 +500,7 @@ export class GameDataElementComponent {
   private updateTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.touchDrag?.cancel());
     effect(() => {
       const element = this.gameDataElement();
       if (element) {
@@ -841,6 +860,28 @@ export class GameDataElementComponent {
   /** Moves this element to the top, up one, down one or to the bottom of the ones beside it. */
   private moveAmongSiblings(move: SiblingMove): void {
     this.edit.move(this.gameDataElement(), move);
+  }
+
+  /**
+   * Starts carrying this row by its handle with a finger or a pen, among the rows beside it. The
+   * browser's own drag, which a mouse uses, does not start from a touch.
+   */
+  onHandlePointerDown(event: PointerEvent): void {
+    if (event.pointerType === 'mouse' || !this.isEdit() || this.isImage() || this.isReadOnly()) return;
+    this.touchDrag?.cancel();
+    this.touchDrag = new DataElementTouchDrag(
+      this.gameDataElement().identifier,
+      event.currentTarget as HTMLElement,
+      this.hostElement.nativeElement,
+      event,
+      {
+        onStart: () => this.pointerDeviceService.cancelPendingContextMenu(),
+        onDrop: (targetId, side) => {
+          const target = this.objectStore.get<DataElement>(targetId);
+          if (target) this.edit.moveBeside(this.gameDataElement(), target, side);
+        },
+      }
+    );
   }
 
   private getDraggedElement(event: DragEvent): DataElement | null {

@@ -2252,6 +2252,38 @@ game-data-element .elm-markdown-view,
  * On a narrow sheet a row being edited keeps only its name and its value, with a "⋯" that opens
  * its editor; the name and the "⋯" stay out of sight everywhere else.
  */
+/*
+ * A row carried by its handle with a finger: the handle keeps the finger from scrolling the page,
+ * the row dims while it is carried, and a line marks where it would land.
+ */
+:is(game-data-element, [game-data-element]) .elm-drag-handle {
+  touch-action: none;
+}
+
+:is(game-data-element, [game-data-element]).elm-touch-dragging {
+  opacity: 0.5;
+}
+
+:is(game-data-element, [game-data-element]):is(.elm-touch-drop-before, .elm-touch-drop-after)::after {
+  content: '';
+  position: absolute;
+  z-index: 10;
+  right: 0;
+  left: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ui-accent);
+  pointer-events: none;
+}
+
+:is(game-data-element, [game-data-element]).elm-touch-drop-before::after {
+  top: -2px;
+}
+
+:is(game-data-element, [game-data-element]).elm-touch-drop-after::after {
+  bottom: -2px;
+}
+
 :is(game-data-element, [game-data-element]) :is(.elm-name-button, .elm-more, .elm-add) {
   display: none;
 }
@@ -2478,6 +2510,15 @@ game-data-element .elm-markdown-view,
 
   [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-group-heading .elm-more .material-icons {
     font-size: 22px;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-drag-handle {
+    width: 40px;
+    height: 40px;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-drag-handle .material-icons {
+    font-size: 20px;
   }
 
   [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-add {
