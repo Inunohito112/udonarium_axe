@@ -23,6 +23,7 @@ import { DiceBot } from '@axe/domain/dice/dice-bot';
 import { createDefaultEffectPresets } from '@axe/domain/effect/builtin-effect-presets';
 import { EffectPresetSet } from '@axe/domain/effect/effect-preset-set';
 import { AudioTag } from '@axe/domain/media/audio-tag';
+import { BackgroundSound } from '@axe/domain/media/background-sound';
 import { createDefaultCutIns } from '@axe/domain/media/builtin-cut-ins';
 import { registerBuiltinMaterials } from '@axe/domain/media/builtin-materials';
 import { CutInLauncher } from '@axe/domain/media/cut-in-launcher';
@@ -118,8 +119,10 @@ export class AppInitializationService {
 
     const jukebox = new Jukebox('Jukebox');
     jukebox.initialize();
-    AudioSharingSystem.instance.preferredIdentifiers = () =>
-      jukebox.audioIdentifier.length > 0 ? [jukebox.audioIdentifier] : [];
+    AudioSharingSystem.instance.preferredIdentifiers = () => [
+      ...(jukebox.audioIdentifier.length > 0 ? [jukebox.audioIdentifier] : []),
+      ...BackgroundSound.playing().map((sound) => sound.audioIdentifier),
+    ];
 
     const playlist = new Playlist('Playlist');
     playlist.initialize();

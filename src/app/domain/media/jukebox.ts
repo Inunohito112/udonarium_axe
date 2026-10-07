@@ -6,7 +6,8 @@ import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { SyncObject, SyncVar } from '@axe/core/sync/decorator';
 import { GameObject, ObjectContext } from '@axe/core/sync/game-object';
 import { ObjectStore } from '@axe/core/sync/object-store';
-import { AudioTag } from '@axe/domain/media/audio-tag';
+import { AUDIO_TAG_BGS, AudioTag } from '@axe/domain/media/audio-tag';
+import { BackgroundSound } from '@axe/domain/media/background-sound';
 import {
   nextShuffleSeed,
   randomShuffleSeed,
@@ -75,12 +76,18 @@ export class Jukebox extends GameObject {
     return chosen instanceof Playlist ? chosen : Playlist.instance;
   }
 
-  /** The tracks the room plays through, as listed: its playlist's, or every BGM in the library while that is empty. */
+  /**
+   * The tracks the room plays through, as listed: its playlist's, or every BGM in the library while
+   * that is empty. Sound effects and background sounds are not music and are left out.
+   */
   get queue(): string[] {
     const entries = this.playlist?.entries ?? [];
     if (entries.length > 0) return [...entries];
     return AudioStorage.instance.audios
-      .filter((audio) => !audio.isHidden && (AudioTag.get(audio.identifier)?.tag ?? 'BGM') !== 'SE')
+      .filter((audio) => {
+        const tag = AudioTag.get(audio.identifier)?.tag ?? 'BGM';
+        return !audio.isHidden && tag !== 'SE' && tag !== AUDIO_TAG_BGS;
+      })
       .map((audio) => audio.identifier);
   }
 
@@ -134,6 +141,15 @@ export class Jukebox extends GameObject {
   }
   set seVolume(seVolume: number) {
     this._seVolume = seVolume;
+  }
+
+  private _backgroundVolume = 0.5;
+  /** This peer's own volume for the room's background sounds, from 0 to 1. Takes effect through `setNewVolume()`. */
+  get backgroundVolume(): number {
+    return this._backgroundVolume;
+  }
+  set backgroundVolume(backgroundVolume: number) {
+    this._backgroundVolume = backgroundVolume;
   }
 
   /** How far into the track this peer's playback is, in seconds. */
@@ -263,23 +279,32 @@ export class Jukebox extends GameObject {
     this._stop();
   }
 
-  /** Applies this peer's music, preview and sound-effect volumes, each scaled by the room volume, to every player. */
+  /**
+   * Applies this peer's music, preview, sound-effect and background volumes, each scaled by the room
+   * volume, to every player.
+   */
   setNewVolume() {
     AudioPlayer.volume = this.volume * this.config.roomVolume;
     AudioPlayer.auditionVolume = this.auditionVolume * this.config.roomVolume;
     AudioPlayer.seVolume = this.seVolume * this.config.roomVolume;
+    AudioPlayer.backgroundVolume = this.backgroundVolume * this.config.roomVolume;
   }
 
   /**
    * Plays a sound for the whole room.
    *
-   * A sound tagged SE is played once over the music on every peer, leaving the track alone.
-   * Anything else becomes the room's track. Nothing happens when the file is missing or not
-   * ready yet. The loop argument is ignored; the repeat mode decides.
+   * A sound tagged SE is played once over the music on every peer, leaving the track alone. One
+   * tagged as a background sound starts looping underneath the music, also leaving the track alone.
+   * Anything else becomes the room's track. Nothing happens when the file is missing or not ready
+   * yet. The loop argument is ignored; the repeat mode decides.
    */
   play(identifier: string, _isLoop: boolean = false) {
     const audio = AudioStorage.instance.get(identifier);
     if (!audio || !audio.isReady) return;
+    if (AudioTag.isBackgroundSound(identifier)) {
+      BackgroundSound.start(identifier);
+      return;
+    }
     if (AudioTag.get(identifier)?.tag === 'SE') {
       this.seIdentifier = identifier;
       this.seTrigger = this.seTrigger + 1;

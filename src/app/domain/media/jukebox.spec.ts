@@ -3,7 +3,9 @@ import { updateAudioResource$ } from '@axe/core/event/domain-events';
 import { AudioFile } from '@axe/core/storage/audio-file';
 import { AudioPlayer, VolumeType } from '@axe/core/storage/audio-player';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
-import { AudioTag } from '@axe/domain/media/audio-tag';
+import { LoopPlayer } from '@axe/core/storage/loop-player';
+import { AUDIO_TAG_BGS, AudioTag } from '@axe/domain/media/audio-tag';
+import { BackgroundSound } from '@axe/domain/media/background-sound';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { Playlist } from '@axe/domain/media/playlist';
 import { Config } from '@axe/domain/peer/config';
@@ -415,6 +417,7 @@ describe('Jukebox', () => {
       const volumeSpy = vi.spyOn(AudioPlayer, 'volume', 'set').mockImplementation(() => {});
       const auditionSpy = vi.spyOn(AudioPlayer, 'auditionVolume', 'set').mockImplementation(() => {});
       const seSpy = vi.spyOn(AudioPlayer, 'seVolume', 'set').mockImplementation(() => {});
+      const backgroundSpy = vi.spyOn(AudioPlayer, 'backgroundVolume', 'set').mockImplementation(() => {});
 
       const jukebox = new Jukebox('Jukebox');
       jukebox.initialize();
@@ -425,12 +428,58 @@ describe('Jukebox', () => {
       jukebox.volume = 0.5;
       jukebox.auditionVolume = 0.6;
       jukebox.seVolume = 0.7;
+      jukebox.backgroundVolume = 0.25;
 
       jukebox.setNewVolume();
 
       expect(volumeSpy).toHaveBeenCalledWith(expect.closeTo(0.4));
       expect(auditionSpy).toHaveBeenCalledWith(expect.closeTo(0.48));
       expect(seSpy).toHaveBeenCalledWith(expect.closeTo(0.56));
+      expect(backgroundSpy).toHaveBeenCalledWith(expect.closeTo(0.2));
+    });
+  });
+
+  describe('background sounds', () => {
+    beforeEach(() => {
+      stubAudioPlayerPlay();
+      stubAudioPlayerStop();
+      vi.spyOn(LoopPlayer.prototype, 'start').mockImplementation(() => {});
+    });
+
+    it('keeps this peer’s background volume, starting at half', () => {
+      const jukebox = new Jukebox();
+      jukebox.initialize();
+      expect(jukebox.backgroundVolume).toBe(0.5);
+
+      jukebox.backgroundVolume = 0.3;
+      expect(jukebox.backgroundVolume).toBe(0.3);
+    });
+
+    it('starts a sound tagged as a background sound looping, and leaves the track alone', () => {
+      const jukebox = new Jukebox();
+      jukebox.initialize();
+      AudioStorage.instance.add(makeReadyAudio('bgm-01'));
+      AudioStorage.instance.add(makeReadyAudio('rain'));
+      AudioTag.create('rain').tag = AUDIO_TAG_BGS;
+      jukebox.play('bgm-01');
+
+      jukebox.play('rain');
+
+      expect(BackgroundSound.of('rain')?.isOn).toBe(true);
+      expect(jukebox.audioIdentifier).toBe('bgm-01');
+      expect(jukebox.isPlaying).toBe(true);
+    });
+
+    it('leaves them out of the music the room goes through while its playlist is empty', () => {
+      const jukebox = new Jukebox();
+      jukebox.initialize();
+      AudioStorage.instance.add(makeReadyAudio('bgm-01'));
+      AudioStorage.instance.add(makeReadyAudio('rain'));
+      AudioStorage.instance.add(makeReadyAudio('door'));
+      AudioTag.create('rain').tag = AUDIO_TAG_BGS;
+      AudioTag.create('door').tag = 'SE';
+
+      expect(jukebox.queue).toEqual(['bgm-01']);
     });
   });
 

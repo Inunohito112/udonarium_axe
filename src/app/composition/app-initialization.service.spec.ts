@@ -1,9 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { AppConfigService } from '@axe/composition/app-config.service';
 import { AppInitializationService } from '@axe/composition/app-initialization.service';
+import { AudioSharingSystem } from '@axe/core/storage/audio-sharing-system';
+import { LoopPlayer } from '@axe/core/storage/loop-player';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { Alarm } from '@axe/domain/alarm/alarm';
 import { DiceBot } from '@axe/domain/dice/dice-bot';
+import { BackgroundSound } from '@axe/domain/media/background-sound';
 import { CutIn } from '@axe/domain/media/cut-in';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { PresetSound, SoundEffect } from '@axe/domain/media/sound-effect';
@@ -69,6 +72,15 @@ describe('AppInitializationService', () => {
       expect(PresetSound.diceRoll2).toBeTruthy();
       expect(PresetSound.cardDraw).toBeTruthy();
       expect(PresetSound.alarm).toBeTruthy();
+    });
+
+    it('sends the files of the music and of the background sounds playing before any other', () => {
+      vi.spyOn(LoopPlayer.prototype, 'start').mockImplementation(() => {});
+      objectStore.get<Jukebox>('Jukebox')!.audioIdentifier = 'bgm';
+      BackgroundSound.start('rain');
+      BackgroundSound.start('fire')!.stop();
+
+      expect(AudioSharingSystem.instance.preferredIdentifiers()).toEqual(['bgm', 'rain']);
     });
 
     it('creates the cursor for this peer', () => {
