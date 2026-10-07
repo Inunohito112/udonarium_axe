@@ -104,6 +104,12 @@ if (typeof globalThis.AudioContext === 'undefined') {
     setTargetAtTime() {
       return this;
     }
+    linearRampToValueAtTime() {
+      return this;
+    }
+    cancelScheduledValues() {
+      return this;
+    }
   }
   class FakeGainNode {
     readonly gain = new FakeAudioParam();
@@ -122,6 +128,19 @@ if (typeof globalThis.AudioContext === 'undefined') {
       return this;
     }
   }
+  class FakeBufferSource {
+    buffer: unknown = null;
+    loop = false;
+    onended: (() => void) | null = null;
+    connect() {
+      return this;
+    }
+    disconnect() {
+      return this;
+    }
+    start() {}
+    stop() {}
+  }
   class FakeAudioContext {
     currentTime = 0;
     destination: object = {};
@@ -139,6 +158,12 @@ if (typeof globalThis.AudioContext === 'undefined') {
     }
     createMediaElementSource() {
       return new FakeMediaElementSource();
+    }
+    createBufferSource() {
+      return new FakeBufferSource();
+    }
+    decodeAudioData(_data: ArrayBuffer, resolve: (buffer: object) => void) {
+      resolve({ duration: 1, length: 44100, numberOfChannels: 2 });
     }
   }
   (globalThis as unknown as Record<string, unknown>)['AudioContext'] = FakeAudioContext;

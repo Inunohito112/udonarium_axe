@@ -8,6 +8,7 @@ export enum VolumeType {
   MASTER,
   AUDITION,
   SE,
+  BACKGROUND,
 }
 
 declare global {
@@ -115,6 +116,34 @@ export class AudioPlayer {
     return AudioPlayer._seGainNode;
   }
 
+  private static _backgroundVolume: number = 0.5;
+  /**
+   * The volume of the background channel, from 0 to 1, which the room's looping background sounds,
+   * such as rain or a crowd, play through underneath the music.
+   */
+  static get backgroundVolume(): number {
+    return AudioPlayer._backgroundVolume;
+  }
+  static set backgroundVolume(backgroundVolume: number) {
+    AudioPlayer._backgroundVolume = backgroundVolume;
+    AudioPlayer.backgroundGainNode.gain.setTargetAtTime(
+      AudioPlayer._backgroundVolume,
+      AudioPlayer.audioContext.currentTime,
+      0.01
+    );
+  }
+
+  private static _backgroundGainNode: GainNode;
+  private static get backgroundGainNode(): GainNode {
+    if (!AudioPlayer._backgroundGainNode) {
+      const backgroundGain = AudioPlayer.audioContext.createGain();
+      backgroundGain.gain.setValueAtTime(AudioPlayer._backgroundVolume, AudioPlayer.audioContext.currentTime);
+      backgroundGain.connect(AudioPlayer.audioContext.destination);
+      AudioPlayer._backgroundGainNode = backgroundGain;
+    }
+    return AudioPlayer._backgroundGainNode;
+  }
+
   /** The master channel gain node, which players on the master volume type connect to. */
   static get rootNode(): AudioNode {
     return AudioPlayer.masterGainNode;
@@ -129,6 +158,10 @@ export class AudioPlayer {
   /** The sound-effect channel gain node, which one-shot effects and SE players connect to. */
   static get seNode(): AudioNode {
     return AudioPlayer.seGainNode;
+  }
+  /** The background channel gain node, which the looping background sounds and background players connect to. */
+  static get backgroundNode(): AudioNode {
+    return AudioPlayer.backgroundGainNode;
   }
 
   private _audioElm: HTMLAudioElement | undefined;
@@ -375,6 +408,8 @@ export class AudioPlayer {
         return AudioPlayer.auditionNode;
       case VolumeType.SE:
         return AudioPlayer.seNode;
+      case VolumeType.BACKGROUND:
+        return AudioPlayer.backgroundNode;
       default:
         return AudioPlayer.rootNode;
     }

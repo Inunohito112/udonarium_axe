@@ -95,9 +95,11 @@ type AudioPlayerPrivateStatic = {
   _masterGainNode: unknown;
   _auditionGainNode: unknown;
   _seGainNode: unknown;
+  _backgroundGainNode: unknown;
   _volume: number;
   _auditionVolume: number;
   _seVolume: number;
+  _backgroundVolume: number;
   cacheMap: Map<string, { url: string; blob: Blob }>;
   MAX_CACHE_SIZE: number;
   MAX_DECODED_BYTES: number;
@@ -121,11 +123,13 @@ function resetStaticState() {
   audioPlayerPrivate._masterGainNode = undefined;
   audioPlayerPrivate._auditionGainNode = undefined;
   audioPlayerPrivate._seGainNode = undefined;
+  audioPlayerPrivate._backgroundGainNode = undefined;
   // written to rather than set through the setters, which would build the gain graph a test
   // has yet to ask for. A test that reads a default has to find one whatever ran before it.
   audioPlayerPrivate._volume = DEFAULT_VOLUME;
   audioPlayerPrivate._auditionVolume = DEFAULT_VOLUME;
   audioPlayerPrivate._seVolume = DEFAULT_VOLUME;
+  audioPlayerPrivate._backgroundVolume = DEFAULT_VOLUME;
   audioPlayerPrivate.cacheMap.clear();
   (AudioPlayer as unknown as { decodedBuffers: Map<string, unknown> }).decodedBuffers.clear();
 }
@@ -269,6 +273,9 @@ describe('AudioPlayer', () => {
     it('the sound effects are two', () => {
       expect(VolumeType.SE).toBe(2);
     });
+    it('the background sounds are three', () => {
+      expect(VolumeType.BACKGROUND).toBe(3);
+    });
   });
 
   // ─── static audioContext ─────────────────────────────────────────────────
@@ -369,6 +376,40 @@ describe('AudioPlayer', () => {
     it('returns the effects gain', () => {
       const node = AudioPlayer.seNode;
       expect(node).toBeDefined();
+    });
+  });
+
+  // ─── static backgroundVolume / backgroundNode ─────────────────────────────
+
+  describe('static backgroundVolume', () => {
+    it('is half by default', () => {
+      expect(AudioPlayer.backgroundVolume).toBe(0.5);
+    });
+
+    it('carries a change through to the background gain', () => {
+      AudioPlayer.backgroundVolume = 0.4;
+      expect(AudioPlayer.backgroundVolume).toBe(0.4);
+      const gainNode = audioCtxMock.createGain.mock.results[0].value as GainNodeMock;
+      expect(gainNode.gain.setTargetAtTime).toHaveBeenCalledWith(0.4, 0, 0.01);
+    });
+  });
+
+  describe('static backgroundNode', () => {
+    it('is a channel of its own, apart from the music and the effects', () => {
+      const node = AudioPlayer.backgroundNode;
+      expect(node).toBe(AudioPlayer.backgroundNode);
+      expect(node).not.toBe(AudioPlayer.rootNode);
+      expect(node).not.toBe(AudioPlayer.seNode);
+    });
+
+    it('is where a player on the background volume type plays through', () => {
+      const player = new AudioPlayer(makeAudioFile({ url: 'blob:bg' }));
+      player.volumeType = VolumeType.BACKGROUND;
+      player.play();
+      const source = audioCtxMock.createMediaElementSource.mock.results[0].value as {
+        connect: ReturnType<typeof vi.fn>;
+      };
+      expect(source.connect).toHaveBeenCalledWith(AudioPlayer.backgroundNode);
     });
   });
 
