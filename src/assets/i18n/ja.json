@@ -1404,7 +1404,10 @@
         "collapseAll": "すべて畳む",
         "expandAll": "すべて開く",
         "moreActions": "その他の操作",
-        "portraitsManageTitle": "立ち絵 - {{name}}"
+        "portraitsManageTitle": "立ち絵 - {{name}}",
+        "sectionJump": "セクションへ移動",
+        "foldSection": "畳む",
+        "unfoldSection": "開く"
       },
       "settingsTab": {
         "inventorySetting": "インベントリ設定",

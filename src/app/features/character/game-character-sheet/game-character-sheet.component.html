@@ -106,6 +106,29 @@
           </div>
 
           <div class="flex min-w-0 flex-1 flex-col gap-1">
+            @if (detailElements().length > 1) {
+              <nav
+                #sectionChips
+                class="bg-ui-surface border-ui-border-panel sticky -top-2 z-10 -mx-2 hidden scrollbar-none gap-1.5 overflow-x-auto border-b border-solid p-2 @max-xl/sheet:flex [&::-webkit-scrollbar]:hidden"
+                [attr.aria-label]="'feature.inventory.sheet.sectionJump' | transloco"
+                data-testid="sheet-section-chips"
+              >
+                @for (section of detailElements(); track section.identifier) {
+                  <button
+                    type="button"
+                    class="border-ui-border-panel bg-ui-elevated text-ui-muted active:bg-ui-hover flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-full border border-solid px-3.5 text-[13px] font-semibold whitespace-nowrap"
+                    [class.border-ui-accent!]="activeSectionId() === section.identifier"
+                    [class.bg-ui-accent-bg!]="activeSectionId() === section.identifier"
+                    [class.text-ui-accent!]="activeSectionId() === section.identifier"
+                    [attr.aria-current]="activeSectionId() === section.identifier ? 'true' : null"
+                    [attr.data-chip-id]="section.identifier"
+                    (click)="jumpToSection(section)"
+                  >
+                    {{ getCardName(section) }}
+                  </button>
+                }
+              </nav>
+            }
             @if (tabletopObject.commonDataElement) {
               <div
                 class="bg-ui-elevated border-ui-border-panel mb-0.5 flex w-full flex-col gap-1.5 rounded-sm border border-solid px-3 py-2.5"
@@ -136,7 +159,8 @@
               <div class="flex min-w-0 flex-row flex-wrap items-stretch justify-start gap-1 pt-1">
                 @for (childElement of detailElements(); track childElement.identifier) {
                   <div
-                    class="bg-ui-elevated border-ui-border-panel text-ui-text box-border max-w-full min-w-50 flex-[1_1_200px] overflow-hidden rounded-sm border border-solid px-2.5 py-2 transition-[outline] duration-100"
+                    class="bg-ui-elevated border-ui-border-panel text-ui-text box-border max-w-full min-w-50 flex-[1_1_200px] scroll-mt-16 overflow-hidden rounded-sm border border-solid px-2.5 py-2 transition-[outline] duration-100 @max-xl/sheet:min-w-0 @max-xl/sheet:rounded-lg @max-xl/sheet:px-3"
+                    [attr.data-card-id]="childElement.identifier"
                     [class.flex-[1_1_100%]!]="
                       isElementEditing(childElement.identifier) || getCardColspan(childElement) === 'full'
                     "
@@ -154,7 +178,12 @@
                     (dragleave)="onDragLeave(childElement.identifier)"
                     (drop)="onDrop($event, childElement.identifier)"
                   >
-                    <div class="border-ui-border-panel mb-1 flex items-center gap-1 border-b border-solid pb-1">
+                    <div
+                      class="border-ui-border-panel mb-1 flex items-center gap-1 border-b border-solid pb-1"
+                      [class.border-b-0]="isCardFolded(childElement)"
+                      [class.mb-0!]="isCardFolded(childElement)"
+                      [class.pb-0!]="isCardFolded(childElement)"
+                    >
                       @if (isElementEditing(childElement.identifier)) {
                         <span
                           class="material-icons text-ui-dim shrink-0 cursor-grab px-0.5 text-base! select-none active:cursor-grabbing"
@@ -166,14 +195,31 @@
                           >drag_indicator</span
                         >
                       }
-                      <span class="text-ui-text flex flex-1 items-center gap-1 truncate text-[0.78em] font-semibold">
+                      <button
+                        type="button"
+                        class="text-ui-text flex min-w-0 flex-1 cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-left text-[0.78em] font-semibold @max-xl/sheet:min-h-10 @max-xl/sheet:text-base"
+                        [attr.aria-expanded]="!isCardFolded(childElement)"
+                        [title]="
+                          (isCardFolded(childElement)
+                            ? 'feature.inventory.sheet.unfoldSection'
+                            : 'feature.inventory.sheet.foldSection'
+                          ) | transloco
+                        "
+                        (click)="toggleCardFold(childElement)"
+                        data-testid="sheet-card-title"
+                      >
+                        <i
+                          class="material-icons text-ui-dim shrink-0 text-[16px]! transition-transform duration-150 @max-xl/sheet:text-[22px]!"
+                          [class.-rotate-90]="isCardFolded(childElement)"
+                          >expand_more</i
+                        >
                         @if (getCardIcon(childElement)) {
-                          <i class="material-icons text-ui-accent shrink-0 text-[13px]!">{{
+                          <i class="material-icons text-ui-accent shrink-0 text-[13px]! @max-xl/sheet:text-[18px]!">{{
                             getCardIcon(childElement)
                           }}</i>
                         }
-                        {{ getCardName(childElement) }}
-                      </span>
+                        <span class="min-w-0 truncate">{{ getCardName(childElement) }}</span>
+                      </button>
                       @if (isElementEditing(childElement.identifier)) {
                         <button
                           class="bg-ui-hover text-ui-muted hover:bg-ui-selected hover:text-ui-text inline-flex size-5.5 min-w-5 cursor-pointer items-center justify-center rounded-[3px] border-none p-0 text-[0.7em] font-bold transition-[background,color] [&_.material-icons]:text-[13px]!"
@@ -210,7 +256,7 @@
                         </button>
                       }
                       <button
-                        class="bg-ui-hover text-ui-muted hover:bg-ui-selected hover:text-ui-text inline-flex size-5.5 cursor-pointer items-center justify-center rounded-[3px] border-none p-0 transition-[background,color] [&_.material-icons]:text-[13px]!"
+                        class="bg-ui-hover text-ui-muted hover:bg-ui-selected hover:text-ui-text inline-flex size-5.5 cursor-pointer items-center justify-center rounded-[3px] border-none p-0 transition-[background,color] @max-xl/sheet:size-10 @max-xl/sheet:rounded-full [&_.material-icons]:text-[13px]! @max-xl/sheet:[&_.material-icons]:text-[20px]!"
                         type="button"
                         [title]="'feature.inventory.sheet.edit' | transloco"
                         (click)="toggleElementEdit(childElement.identifier)"
@@ -220,15 +266,17 @@
                         }}</i>
                       </button>
                     </div>
-                    <div class="box-border table w-full">
-                      <div
-                        class="[&>div]:border-ui-border-panel box-border table-row [&>div]:box-border [&>div]:table-cell [&>div]:border [&>div]:border-solid [&>div]:align-top"
-                        game-data-element
-                        [gameDataElement]="childElement"
-                        [isEdit]="isElementEditing(childElement.identifier)"
-                        [hideSectionTitle]="!isElementEditing(childElement.identifier)"
-                      ></div>
-                    </div>
+                    @if (!isCardFolded(childElement)) {
+                      <div class="box-border table w-full">
+                        <div
+                          class="[&>div]:border-ui-border-panel box-border table-row [&>div]:box-border [&>div]:table-cell [&>div]:border [&>div]:border-solid [&>div]:align-top"
+                          game-data-element
+                          [gameDataElement]="childElement"
+                          [isEdit]="isElementEditing(childElement.identifier)"
+                          [hideSectionTitle]="!isElementEditing(childElement.identifier)"
+                        ></div>
+                      </div>
+                    }
                   </div>
                 }
               </div>

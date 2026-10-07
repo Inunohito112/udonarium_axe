@@ -1404,7 +1404,10 @@
         "collapseAll": "모두 접기",
         "expandAll": "모두 펼치기",
         "moreActions": "기타 작업",
-        "portraitsManageTitle": "입화 - {{name}}"
+        "portraitsManageTitle": "입화 - {{name}}",
+        "sectionJump": "섹션으로 이동",
+        "foldSection": "접기",
+        "unfoldSection": "펼치기"
       },
       "settingsTab": {
         "inventorySetting": "인벤토리 설정",

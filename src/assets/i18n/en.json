@@ -1404,7 +1404,10 @@
         "collapseAll": "Collapse all",
         "expandAll": "Expand all",
         "moreActions": "More actions",
-        "portraitsManageTitle": "Portraits - {{name}}"
+        "portraitsManageTitle": "Portraits - {{name}}",
+        "sectionJump": "Jump to section",
+        "foldSection": "Collapse",
+        "unfoldSection": "Expand"
       },
       "settingsTab": {
         "inventorySetting": "Inventory settings",

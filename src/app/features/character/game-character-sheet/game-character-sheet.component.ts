@@ -1,13 +1,16 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
   effect,
+  ElementRef,
   inject,
   Injector,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SaveDataService } from '@axe/application/file/save-data.service';
@@ -19,8 +22,10 @@ import { BottomSheetService } from '@axe/application/ui/bottom-sheet.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { DataElementDragService } from '@axe/application/ui/data-element-drag.service';
 import { ModalService } from '@axe/application/ui/modal.service';
+import { MotionService } from '@axe/application/ui/motion.service';
 import { PanelService } from '@axe/application/ui/panel.service';
 import { buildReorderContextMenu } from '@axe/application/ui/reorder-context-menu';
+import { SheetViewPreferenceService } from '@axe/application/ui/sheet-view-preference.service';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { ViewportService } from '@axe/application/ui/viewport.service';
 import { ImageFile } from '@axe/core/storage/image-file';
@@ -94,6 +99,14 @@ export class GameCharacterSheetComponent {
   private readonly dataElementDeletion = inject(DataElementDeletionService);
   private readonly bottomSheet = inject(BottomSheetService);
   private readonly injector = inject(Injector);
+  private readonly sheetView = inject(SheetViewPreferenceService);
+  private readonly motion = inject(MotionService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly sectionChips = viewChild<ElementRef<HTMLElement>>('sectionChips');
+  private cardObserver: IntersectionObserver | null = null;
+
+  /** The section the reader is at, which the narrow sheet's row of sections lights up. */
+  readonly activeSectionId = signal<string | null>(null);
 
   readonly isReadOnly = computed(() => {
     this.objectChange.trackMyCursor();
@@ -569,6 +582,40 @@ export class GameCharacterSheetComponent {
     return this.readKomaIndex(char);
   });
 
+  /**
+   * Whether a section's card is folded to its heading. A card open for editing is never folded, so
+   * the reader can see what they are changing.
+   */
+  isCardFolded(card: DataElement): boolean {
+    return !this.isElementEditing(card.identifier) && this.sheetView.isFolded(card.name);
+  }
+
+  /** Folds a section's card to its heading, or opens it, from its heading; this browser remembers. */
+  toggleCardFold(card: DataElement): void {
+    this.sheetView.setFolded(card.name, !this.sheetView.isFolded(card.name));
+  }
+
+  /** Folds every section of the sheet, or opens them all, from the narrow sheet's menu. */
+  setAllCardsFolded(folded: boolean): void {
+    this.sheetView.setAllFolded(
+      this.detailElements().map((card) => card.name),
+      folded
+    );
+  }
+
+  /**
+   * Brings a section's card to the top, from the narrow sheet's row of sections, opening it first
+   * if it is folded.
+   */
+  jumpToSection(card: DataElement): void {
+    if (this.sheetView.isFolded(card.name)) this.sheetView.setFolded(card.name, false);
+    this.activeSectionId.set(card.identifier);
+    queueMicrotask(() => {
+      const target = this.host.nativeElement.querySelector(`[data-card-id="${CSS.escape(card.identifier)}"]`);
+      target?.scrollIntoView({ block: 'start', behavior: this.motion.enabled() ? 'smooth' : 'auto' });
+    });
+  }
+
   /** The character's name, as the narrow sheet's heading shows it. */
   readonly characterName = computed(() => {
     const char = this.character;
@@ -605,6 +652,8 @@ export class GameCharacterSheetComponent {
         portraits: () => this.openPortraitSheet(event),
         copy: () => this.clone(),
         save: () => void this.saveToXML(),
+        collapseAll: () => this.setAllCardsFolded(true),
+        expandAll: () => this.setAllCardsFolded(false),
       },
       this.translateFn
     );
@@ -645,7 +694,43 @@ export class GameCharacterSheetComponent {
       const char = this.character;
       if (char) untracked(() => char.addExtendData());
     });
+    // The row of sections follows the reader down the sheet: whichever card stands under the row
+    // is the one lit up, and the row slides to keep it in sight.
+    effect(() => {
+      this.detailElements();
+      if (this.activeTab() !== 'sheet') return;
+      untracked(() => afterNextRender(() => this.watchCards(), { injector: this.injector }));
+    });
+    effect(() => {
+      const id = this.activeSectionId();
+      const nav = this.sectionChips()?.nativeElement;
+      if (!id || !nav) return;
+      const chip = nav.querySelector<HTMLElement>(`[data-chip-id="${CSS.escape(id)}"]`);
+      if (chip) nav.scrollTo({ left: chip.offsetLeft - (nav.clientWidth - chip.offsetWidth) / 2 });
+    });
+    this.destroyRef.onDestroy(() => this.cardObserver?.disconnect());
     this.destroyRef.onDestroy(() => this.flushCardOwnFaceText());
+  }
+
+  private watchCards(): void {
+    this.cardObserver?.disconnect();
+    const root = this.host.nativeElement.closest('.overflow-auto');
+    if (typeof IntersectionObserver === 'undefined' || !(root instanceof HTMLElement)) return;
+    const showing = new Set<string>();
+    this.cardObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).dataset['cardId'];
+          if (!id) continue;
+          if (entry.isIntersecting) showing.add(id);
+          else showing.delete(id);
+        }
+        const first = this.detailElements().find((card) => showing.has(card.identifier));
+        if (first) this.activeSectionId.set(first.identifier);
+      },
+      { root, rootMargin: '-64px 0px -60% 0px' }
+    );
+    for (const card of this.host.nativeElement.querySelectorAll('[data-card-id]')) this.cardObserver.observe(card);
   }
 
   /** Switches the sheet between reading and editing, from its edit button. */
