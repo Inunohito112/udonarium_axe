@@ -52,14 +52,16 @@
               >{{ trackName() }}</span
             >
           </div>
-          <div class="text-ui-muted mt-0.5 text-[10px] tracking-wider">{{ trackTag() }}</div>
+          <div class="text-ui-muted mt-0.5 text-[10px] tracking-wider">{{ playback.tagLabel(trackTag()) }}</div>
         } @else if (lastTrackName()) {
           <div class="w-full overflow-hidden">
             <span class="text-ui-text inline-block text-[13px] font-semibold whitespace-nowrap opacity-[0.45]">{{
               lastTrackName()
             }}</span>
           </div>
-          <div class="text-ui-muted mt-0.5 text-[10px] tracking-wider opacity-[0.45]">{{ lastTrackTag() }}</div>
+          <div class="text-ui-muted mt-0.5 text-[10px] tracking-wider opacity-[0.45]">
+            {{ playback.tagLabel(lastTrackTag()) }}
+          </div>
         } @else {
           <div class="text-ui-dim text-[12px] font-normal italic">
             {{ 'feature.media.miniJukebox.stopped' | transloco }}
@@ -193,6 +195,30 @@
         <i class="material-icons">queue_music</i>
       </button>
     </div>
+
+    @if (backgroundSounds.playing().length > 0) {
+      <div
+        class="border-ui-border-panel flex min-w-0 items-center gap-1.5 border-t border-solid py-1 pr-2 pl-3"
+        data-testid="mini-jukebox-background-sounds"
+      >
+        <i
+          class="material-icons text-ui-accent shrink-0 text-[14px]!"
+          [title]="'feature.media.jukebox.bgsHeading' | transloco"
+          >waves</i
+        >
+        <span class="text-ui-muted min-w-0 flex-1 truncate text-[11px]">{{ backgroundNames() }}</span>
+        <button
+          type="button"
+          class="text-ui-muted m-0 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 transition-colors hover:bg-(--ui-danger-bg) hover:text-(--ui-danger) [&_.material-icons]:text-[16px]!"
+          (mousedown)="$event.stopPropagation()"
+          (click)="backgroundSounds.stopAll()"
+          [title]="'feature.media.jukebox.bgsStopAll' | transloco"
+          data-testid="mini-jukebox-background-stop-all"
+        >
+          <i class="material-icons">stop</i>
+        </button>
+      </div>
+    }
 
     @if (isPlaylistOpen()) {
       <div

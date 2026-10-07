@@ -20,6 +20,7 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { AudioTag } from '@axe/domain/media/audio-tag';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { Config } from '@axe/domain/peer/config';
+import { BackgroundSoundPlaybackService } from '@axe/features/media/background-sound-playback.service';
 import { formatTrackTime, JukeboxPlaybackService } from '@axe/features/media/jukebox-playback.service';
 import { DraggableDirective } from '@axe/ui/directives/draggable.directive';
 import { TranslocoModule } from '@jsverse/transloco';
@@ -36,6 +37,7 @@ export class MiniJukeboxComponent {
   private readonly audioStorage = inject(AudioStorage);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly playback = inject(JukeboxPlaybackService);
+  protected readonly backgroundSounds = inject(BackgroundSoundPlaybackService);
 
   readonly isPlaylistOpen = signal(false);
   readonly isMinimized = signal(false);
@@ -130,6 +132,15 @@ export class MiniJukeboxComponent {
   });
 
   readonly repeatMode = this.playback.repeatMode;
+
+  /** The names of the background sounds playing, one after another, for the line under the controls. */
+  readonly backgroundNames = computed(() =>
+    this.backgroundSounds
+      .playing()
+      .map((sound) => sound.name)
+      .filter((name) => name.length > 0)
+      .join(' · ')
+  );
 
   readonly artworkUrl = computed(() => {
     this._tick();

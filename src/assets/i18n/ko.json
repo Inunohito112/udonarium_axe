@@ -443,7 +443,7 @@
         "clickToSelect": "또는 여기를 클릭해 선택하세요",
         "maxFileSize": "파일 하나당 10MB까지",
         "note1": "※ \"시청\"은 자신의 스피커에서만 한 번 재생됩니다.",
-        "note2": "※ \"BGM/SE\"는 방에 있는 모두에게 재생됩니다.",
+        "note2": "※ \"BGM/SE/환경음\"은 방에 있는 모두에게 재생됩니다.",
         "note3": "※ 세이브 데이터(zip)에 음악 파일은 포함되지 않습니다.",
         "tagAll": "전체",
         "clickToSelectTouch": "또는 여기를 탭해 선택하세요",
@@ -463,7 +463,16 @@
         "removeFromPlaylistNamed": "\"{{name}}\"에서 빼기",
         "moveToPlaylist": "다른 재생 목록으로 이동",
         "copyToPlaylist": "다른 재생 목록에 복사",
-        "playlistsOfTrack": "재생 목록"
+        "playlistsOfTrack": "재생 목록",
+        "tagBgs": "환경음",
+        "bgsLabel": "환경음",
+        "bgsHeading": "환경음",
+        "bgsPlay": "환경음 재생",
+        "bgsStop": "환경음 정지",
+        "bgsStopAll": "모두 정지",
+        "bgsRoomVolume": "모두 공통 음량",
+        "bgsRoomVolumeOf": "\"{{name}}\" 음량(모두 공통)",
+        "bgsArriving": "수신 중…"
       },
       "miniJukebox": {
         "stopped": "— 정지 중 —",

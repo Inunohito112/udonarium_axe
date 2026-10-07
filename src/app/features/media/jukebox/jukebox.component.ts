@@ -15,10 +15,11 @@ import { AudioPlayer, VolumeType } from '@axe/core/storage/audio-player';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { FileArchiver } from '@axe/core/storage/file-archiver';
 import { ObjectStore } from '@axe/core/sync/object-store';
-import { AudioTag } from '@axe/domain/media/audio-tag';
+import { AUDIO_TAG_BGS, AudioTag } from '@axe/domain/media/audio-tag';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { Playlist } from '@axe/domain/media/playlist';
 import { Config } from '@axe/domain/peer/config';
+import { BackgroundSoundPlaybackService } from '@axe/features/media/background-sound-playback.service';
 import {
   buildLibraryTrackMenu,
   buildPlaylistTrackMenu,
@@ -51,6 +52,7 @@ export class JukeboxComponent {
   private readonly confirm = inject(ConfirmService);
   private readonly t = inject(TRANSLATE_FN);
   protected readonly playback = inject(JukeboxPlaybackService);
+  protected readonly backgroundSounds = inject(BackgroundSoundPlaybackService);
 
   roomVolumeChange = false;
 
@@ -96,6 +98,15 @@ export class JukeboxComponent {
   set seVolume(seVolume: number) {
     if (this.jukebox) this.jukebox.seVolume = seVolume;
     AudioPlayer.seVolume = seVolume * this.roomVolume;
+  }
+
+  /** This player's volume for the room's background sounds, scaled by the room volume; not shared. */
+  get backgroundVolume(): number {
+    return this.jukebox?.backgroundVolume ?? 0.5;
+  }
+  set backgroundVolume(backgroundVolume: number) {
+    if (this.jukebox) this.jukebox.backgroundVolume = backgroundVolume;
+    AudioPlayer.backgroundVolume = backgroundVolume * this.roomVolume;
   }
 
   readonly allTag = computed(() => this.t('feature.media.jukebox.tagAll'));
@@ -200,11 +211,26 @@ export class JukeboxComponent {
     return [this.allTag(), ...sorted];
   });
 
-  static readonly PRESET_TAGS = ['BGM', 'SE'];
+  static readonly PRESET_TAGS = ['BGM', 'SE', AUDIO_TAG_BGS];
 
   /** The tag a track is filed under, which is BGM for a track that was never tagged. */
   getTagOf(audio: AudioFile): string {
     return AudioTag.get(audio.identifier)?.tag || 'BGM';
+  }
+
+  /** Whether a track is tagged to loop underneath the music as a background sound. */
+  isBackgroundSound(audio: AudioFile): boolean {
+    return this.getTagOf(audio) === AUDIO_TAG_BGS;
+  }
+
+  /** Lets this player hear a background sound's room volume while its slider is dragged. */
+  onBackgroundVolumeInput(audioIdentifier: string, event: Event): void {
+    this.backgroundSounds.previewVolume(audioIdentifier, (event.target as HTMLInputElement).valueAsNumber);
+  }
+
+  /** Sets a background sound's volume for the whole room where its slider was let go. */
+  onBackgroundVolumeChange(audioIdentifier: string, event: Event): void {
+    this.backgroundSounds.commitVolume(audioIdentifier, (event.target as HTMLInputElement).valueAsNumber);
   }
 
   /**

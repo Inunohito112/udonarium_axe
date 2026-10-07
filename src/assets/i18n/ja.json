@@ -443,7 +443,7 @@
         "clickToSelect": "またはここをクリックして選択",
         "maxFileSize": "１ファイルにつき10MBまで",
         "note1": "※「試聴」は自分のスピーカーだけで1回再生します。",
-        "note2": "※「BGM/SE」はルーム内全員で再生します。",
+        "note2": "※「BGM/SE/環境音」はルーム内全員で再生します。",
         "note3": "※セーブデータ（zip）に音楽ファイルは含まれません。",
         "tagAll": "全て",
         "clickToSelectTouch": "またはここをタップして選択",
@@ -463,7 +463,16 @@
         "removeFromPlaylistNamed": "「{{name}}」から外す",
         "moveToPlaylist": "別の再生リストへ移す",
         "copyToPlaylist": "別の再生リストにコピー",
-        "playlistsOfTrack": "再生リスト"
+        "playlistsOfTrack": "再生リスト",
+        "tagBgs": "環境音",
+        "bgsLabel": "環境音",
+        "bgsHeading": "環境音",
+        "bgsPlay": "環境音再生",
+        "bgsStop": "環境音停止",
+        "bgsStopAll": "すべて止める",
+        "bgsRoomVolume": "全員共通の音量",
+        "bgsRoomVolumeOf": "「{{name}}」の音量（全員共通）",
+        "bgsArriving": "受信中…"
       },
       "miniJukebox": {
         "stopped": "— 停止中 —",

@@ -6,11 +6,15 @@ import { ContextMenuAction, ContextMenuService } from '@axe/application/ui/conte
 import { AudioFile } from '@axe/core/storage/audio-file';
 import { AudioPlayer } from '@axe/core/storage/audio-player';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
+import { LoopPlayer } from '@axe/core/storage/loop-player';
 import { ObjectStore } from '@axe/core/sync/object-store';
-import { AudioTag } from '@axe/domain/media/audio-tag';
+import { AUDIO_TAG_BGS, AudioTag } from '@axe/domain/media/audio-tag';
+import { BackgroundSound } from '@axe/domain/media/background-sound';
 import { CutInLauncher } from '@axe/domain/media/cut-in-launcher';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { Playlist } from '@axe/domain/media/playlist';
+import { Config } from '@axe/domain/peer/config';
+import { BackgroundSoundPlaybackService } from '@axe/features/media/background-sound-playback.service';
 import { JukeboxComponent } from '@axe/features/media/jukebox/jukebox.component';
 import { JukeboxPlaybackService } from '@axe/features/media/jukebox-playback.service';
 import { expectPanelDragRecovery, PanelDragTestHostComponent } from '@axe/testing/panel-drag-recovery';
@@ -194,6 +198,138 @@ describe('JukeboxComponent', () => {
 
       component.stopBGM(audio);
       expect(stopSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('background sounds', () => {
+    function addBackgroundSound(identifier: string, name: string): AudioFile {
+      const audio = makeReadyAudio(identifier, name);
+      AudioStorage.instance.add(audio);
+      AudioTag.create(identifier).tag = AUDIO_TAG_BGS;
+      return audio;
+    }
+
+    function strip(): HTMLElement | null {
+      return fixture.nativeElement.querySelector('[data-testid="jukebox-background-sounds"]');
+    }
+
+    function rows(): HTMLElement[] {
+      return Array.from(fixture.nativeElement.querySelectorAll('[data-testid="jukebox-background-sound"]'));
+    }
+
+    function slider(value: number): Event {
+      const input = document.createElement('input');
+      input.type = 'range';
+      input.min = '0';
+      input.max = '1';
+      input.step = '0.01';
+      input.value = String(value);
+      return { target: input } as unknown as Event;
+    }
+
+    beforeEach(() => {
+      vi.spyOn(LoopPlayer.prototype, 'start').mockImplementation(() => {});
+      vi.spyOn(LoopPlayer.prototype, 'stop').mockImplementation(() => {});
+    });
+
+    it('shows no strip while none is playing', async () => {
+      addBackgroundSound('rain', 'Rain');
+      await fixture.whenStable();
+
+      expect(strip()).toBeNull();
+    });
+
+    it('lists the ones playing in the order they were started, each with its name', async () => {
+      addBackgroundSound('rain', 'Rain');
+      addBackgroundSound('fire', 'Campfire');
+      BackgroundSound.start('rain')!.startedAt = 100;
+      BackgroundSound.start('fire')!.startedAt = 200;
+      await fixture.whenStable();
+
+      expect(rows().map((row) => row.querySelector('span')?.textContent?.trim())).toEqual(['Rain', 'Campfire']);
+    });
+
+    it('stops one for the room from its row, and the strip goes once none is left', async () => {
+      addBackgroundSound('rain', 'Rain');
+      BackgroundSound.start('rain');
+      await fixture.whenStable();
+
+      rows()[0].querySelector<HTMLButtonElement>('[data-testid="jukebox-background-stop"]')!.click();
+      await fixture.whenStable();
+
+      expect(BackgroundSound.of('rain')!.isOn).toBe(false);
+      expect(strip()).toBeNull();
+    });
+
+    it('stops them all at once', async () => {
+      addBackgroundSound('rain', 'Rain');
+      addBackgroundSound('fire', 'Campfire');
+      BackgroundSound.start('rain');
+      BackgroundSound.start('fire');
+      await fixture.whenStable();
+
+      fixture.nativeElement.querySelector('[data-testid="jukebox-background-stop-all"]').click();
+
+      expect(BackgroundSound.playing()).toEqual([]);
+    });
+
+    it('starts and stops one for the room from the library, leaving the music alone', async () => {
+      const rain = addBackgroundSound('rain', 'Rain');
+      const music = vi.spyOn(component.jukebox, 'play');
+      await fixture.whenStable();
+      const toggle = () =>
+        (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+          '[data-testid="jukebox-background-toggle"]'
+        )!;
+
+      const backgroundSounds = TestBed.inject(BackgroundSoundPlaybackService);
+
+      toggle().click();
+      await fixture.whenStable();
+      expect(backgroundSounds.isPlaying(rain)).toBe(true);
+
+      toggle().click();
+      await fixture.whenStable();
+      expect(backgroundSounds.isPlaying(rain)).toBe(false);
+      expect(music).not.toHaveBeenCalled();
+    });
+
+    it('lets the room volume be heard while its slider is dragged, and shares it once let go', async () => {
+      addBackgroundSound('rain', 'Rain');
+      const sound = BackgroundSound.start('rain')!;
+      const preview = vi.spyOn(sound, 'previewVolume');
+
+      component.onBackgroundVolumeInput('rain', slider(0.3));
+      expect(preview).toHaveBeenCalledWith(0.3);
+      expect(sound.volume).toBe(1);
+
+      component.onBackgroundVolumeChange('rain', slider(0.3));
+      expect(sound.volume).toBe(0.3);
+    });
+
+    it('sets this player’s own background volume, scaled by the room volume', () => {
+      if (!ObjectStore.instance.get<Config>('Config')) new Config('Config').initialize();
+      ObjectStore.instance.get<Config>('Config')!.roomVolume = 0.5;
+      const channel = vi.spyOn(AudioPlayer, 'backgroundVolume', 'set').mockImplementation(() => {});
+
+      component.backgroundVolume = 0.8;
+
+      expect(component.jukebox.backgroundVolume).toBe(0.8);
+      expect(channel).toHaveBeenCalledWith(expect.closeTo(0.4));
+    });
+
+    it('offers the background sounds as a tag of their own, shown by its translated name', async () => {
+      const t = TestBed.inject(TRANSLATE_FN);
+      await fixture.whenStable();
+
+      expect(component.tagList()).toContain(AUDIO_TAG_BGS);
+      const playback = TestBed.inject(JukeboxPlaybackService);
+      expect(playback.tagLabel(AUDIO_TAG_BGS)).toBe(t('feature.media.jukebox.tagBgs'));
+      expect(playback.tagLabel('SE')).toBe('SE');
+      const chips = Array.from(fixture.nativeElement.querySelectorAll('button')).map((button) =>
+        (button as HTMLElement).textContent?.trim()
+      );
+      expect(chips).toContain(t('feature.media.jukebox.tagBgs'));
     });
   });
 

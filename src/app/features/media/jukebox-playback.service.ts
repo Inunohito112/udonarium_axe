@@ -4,7 +4,7 @@ import { ObjectChangeService } from '@axe/application/sync/object-change.service
 import { AudioFile } from '@axe/core/storage/audio-file';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
-import { AudioTag } from '@axe/domain/media/audio-tag';
+import { AUDIO_TAG_BGS, AudioTag } from '@axe/domain/media/audio-tag';
 import { CutInLauncher } from '@axe/domain/media/cut-in-launcher';
 import { Jukebox, RepeatMode } from '@axe/domain/media/jukebox';
 import { Playlist } from '@axe/domain/media/playlist';
@@ -110,6 +110,11 @@ export class JukeboxPlaybackService {
       .map((identifier) => this.audioStorage.get(identifier))
       .filter((audio): audio is AudioFile => audio !== null && !audio.isHidden);
   });
+
+  /** The name a tag is shown under: the background sounds' tag translated, and any other as it is. */
+  tagLabel(tag: string): string {
+    return tag === AUDIO_TAG_BGS ? this.t('feature.media.jukebox.tagBgs') : tag;
+  }
 
   /** The name a playlist goes by: the one it was given, or a stand-in until it has one. */
   labelOf(playlist: Playlist): string {

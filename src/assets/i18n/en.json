@@ -443,7 +443,7 @@
         "clickToSelect": "or click to select",
         "maxFileSize": "Up to 10MB per file",
         "note1": "* Audition plays once through your own speakers only.",
-        "note2": "* BGM/SE plays for everyone in the room.",
+        "note2": "* BGM, SE and ambience play for everyone in the room.",
         "note3": "* Music files are not included in save data (zip).",
         "tagAll": "All",
         "clickToSelectTouch": "or tap here to choose",
@@ -463,7 +463,16 @@
         "removeFromPlaylistNamed": "Remove from \"{{name}}\"",
         "moveToPlaylist": "Move to another playlist",
         "copyToPlaylist": "Copy to another playlist",
-        "playlistsOfTrack": "Playlists"
+        "playlistsOfTrack": "Playlists",
+        "tagBgs": "Ambience",
+        "bgsLabel": "Ambience",
+        "bgsHeading": "Ambience",
+        "bgsPlay": "Play ambience",
+        "bgsStop": "Stop ambience",
+        "bgsStopAll": "Stop all",
+        "bgsRoomVolume": "Volume for everyone",
+        "bgsRoomVolumeOf": "Volume of “{{name}}” for everyone",
+        "bgsArriving": "Receiving…"
       },
       "miniJukebox": {
         "stopped": "— Stopped —",
