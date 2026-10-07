@@ -257,6 +257,7 @@ export default defineConfig({
           items: [
             { text: '画像', link: '/manual/images' },
             { text: 'ジュークボックス', link: '/manual/jukebox' },
+            { text: '音の設定', link: '/manual/sound-settings' },
             { text: 'カットイン', link: '/manual/cut-in' },
             { text: 'マップ演出（エフェクト）', link: '/manual/map-effects' },
             { text: 'ビジュアルノベルモード', link: '/manual/visual-novel' },
