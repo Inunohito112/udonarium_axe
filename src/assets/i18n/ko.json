@@ -2179,6 +2179,7 @@
         "backgroundLayerPlacement": "겹치는 위치",
         "backgroundLayerPlacement_under": "배면(테이블 이미지 아래)",
         "backgroundLayerPlacement_over": "전면(테이블 이미지 위·말 아래)",
+        "backgroundLayerPlacement_backdrop": "뒤쪽(탁자 뒤·카메라를 조금 따라감)",
         "backgroundLayerMoveUp": "뒤로",
         "backgroundLayerMoveDown": "앞으로"
       },

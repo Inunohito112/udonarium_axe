@@ -2179,6 +2179,7 @@
         "backgroundLayerPlacement": "重ね位置",
         "backgroundLayerPlacement_under": "背面（テーブル画像の下）",
         "backgroundLayerPlacement_over": "前面（テーブル画像の上・コマの下）",
+        "backgroundLayerPlacement_backdrop": "奥（卓の後ろ・カメラに少しついてくる）",
         "backgroundLayerMoveUp": "奥へ",
         "backgroundLayerMoveDown": "手前へ"
       },

@@ -2179,6 +2179,7 @@
         "backgroundLayerPlacement": "Which side",
         "backgroundLayerPlacement_under": "Under the table picture",
         "backgroundLayerPlacement_over": "Over it, under the pieces",
+        "backgroundLayerPlacement_backdrop": "Backdrop (behind the table, follows the camera a little)",
         "backgroundLayerMoveUp": "Further back",
         "backgroundLayerMoveDown": "Further forward"
       },
