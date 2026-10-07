@@ -472,7 +472,11 @@
         "bgsStopAll": "모두 정지",
         "bgsRoomVolume": "모두 공통 음량",
         "bgsRoomVolumeOf": "\"{{name}}\" 음량(모두 공통)",
-        "bgsArriving": "수신 중…"
+        "bgsArriving": "수신 중…",
+        "ownVolumeHeading": "내 음량",
+        "ownVolumeNote": "나에게만 적용되며 이 브라우저에 저장됩니다",
+        "roomVolumeHeading": "방 음량",
+        "roomVolumeNote": "방에 있는 모두에게 적용됩니다"
       },
       "miniJukebox": {
         "stopped": "— 정지 중 —",

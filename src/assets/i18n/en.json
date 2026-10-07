@@ -472,7 +472,11 @@
         "bgsStopAll": "Stop all",
         "bgsRoomVolume": "Volume for everyone",
         "bgsRoomVolumeOf": "Volume of “{{name}}” for everyone",
-        "bgsArriving": "Receiving…"
+        "bgsArriving": "Receiving…",
+        "ownVolumeHeading": "Your volume",
+        "ownVolumeNote": "Only you hear it; saved in this browser",
+        "roomVolumeHeading": "Room volume",
+        "roomVolumeNote": "Applies to everyone in the room"
       },
       "miniJukebox": {
         "stopped": "— Stopped —",

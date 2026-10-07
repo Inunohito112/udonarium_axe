@@ -76,6 +76,29 @@ describe('JukeboxComponent', () => {
     });
   });
 
+  describe('the volumes', () => {
+    it('sets this player’s own volumes apart from the room’s, saying which is which', async () => {
+      const t = TestBed.inject(TRANSLATE_FN);
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+      const own = root.querySelector('[data-testid="jukebox-own-volumes"]')!;
+      const room = root.querySelector('[data-testid="jukebox-room-volumes"]')!;
+
+      expect(own.textContent).toContain(t('feature.media.jukebox.ownVolumeHeading'));
+      expect(own.textContent).toContain(t('feature.media.jukebox.ownVolumeNote'));
+      expect(room.textContent).toContain(t('feature.media.jukebox.roomVolumeHeading'));
+      const order = [
+        own,
+        root.querySelector('input[name="background-volume"]')!,
+        room,
+        root.querySelector('input[name="room-volume"]')!,
+      ];
+      for (let i = 1; i < order.length; i++) {
+        expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      }
+    });
+  });
+
   describe('the time beside the seek bar', () => {
     function shownTime(): string {
       return (fixture.nativeElement as HTMLElement).querySelector('[data-testid="jukebox-time"]')!.textContent!.trim();

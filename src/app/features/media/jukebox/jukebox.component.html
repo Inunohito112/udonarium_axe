@@ -244,6 +244,15 @@
   </div>
 
   <div class="bg-ui-panel border-ui-border-panel flex flex-col gap-0 border-b border-solid px-3 py-2">
+    <div class="flex items-baseline gap-1.5 pb-0.5" data-testid="jukebox-own-volumes">
+      <i class="material-icons text-ui-accent w-4 shrink-0 self-center text-center text-[13px]!">person</i>
+      <span class="text-ui-text text-[11px] font-semibold">{{
+        'feature.media.jukebox.ownVolumeHeading' | transloco
+      }}</span>
+      <span class="text-ui-dim min-w-0 truncate text-[10px]">{{
+        'feature.media.jukebox.ownVolumeNote' | transloco
+      }}</span>
+    </div>
     <div class="flex items-center gap-1.5 py-0.75">
       <i
         class="material-icons text-ui-dim w-4 shrink-0 text-center text-[14px]!"
@@ -320,7 +329,17 @@
         step="0.01"
       />
     </div>
-    <div class="border-ui-border-panel mt-1 flex items-center gap-1.5 border-t border-solid pt-1.5">
+    <div class="border-ui-border-panel mt-1.5 border-t border-solid pt-1.5"></div>
+    <div class="flex items-baseline gap-1.5 pb-0.5" data-testid="jukebox-room-volumes">
+      <i class="material-icons text-ui-accent w-4 shrink-0 self-center text-center text-[13px]!">group</i>
+      <span class="text-ui-text text-[11px] font-semibold">{{
+        'feature.media.jukebox.roomVolumeHeading' | transloco
+      }}</span>
+      <span class="text-ui-dim min-w-0 truncate text-[10px]">{{
+        'feature.media.jukebox.roomVolumeNote' | transloco
+      }}</span>
+    </div>
+    <div class="flex items-center gap-1.5 py-0.75">
       <i
         class="material-icons text-ui-dim w-4 shrink-0 text-center text-[14px]!"
         [title]="'feature.media.jukebox.roomTooltip' | transloco"
