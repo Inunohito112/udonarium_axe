@@ -147,6 +147,10 @@
       "up": "Move up",
       "down": "Move down",
       "toBottom": "Move to the bottom"
+    },
+    "sound": {
+      "mute": "Turn {{name}} off",
+      "unmute": "Turn {{name}} on"
     }
   },
   "feature": {

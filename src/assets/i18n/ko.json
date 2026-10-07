@@ -147,6 +147,10 @@
       "up": "한 칸 위로",
       "down": "한 칸 아래로",
       "toBottom": "맨 아래로"
+    },
+    "sound": {
+      "mute": "{{name}} 끄기",
+      "unmute": "{{name}} 켜기"
     }
   },
   "feature": {

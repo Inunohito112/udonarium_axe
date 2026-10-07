@@ -147,6 +147,10 @@
       "up": "ひとつ上へ",
       "down": "ひとつ下へ",
       "toBottom": "いちばん下へ"
+    },
+    "sound": {
+      "mute": "{{name}}を消す",
+      "unmute": "{{name}}を出す"
     }
   },
   "feature": {
