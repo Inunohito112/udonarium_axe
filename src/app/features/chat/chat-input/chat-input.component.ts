@@ -579,7 +579,8 @@ export class ChatInputComponent {
    * composing. While a suggestion is highlighted it asks the parent to apply that instead. The
    * message is emitted under the game system the dice bot hands over for the line, which does not
    * wait for the system's code when the line cannot be a secret roll; the draft, reply and quote are
-   * cleared at once.
+   * cleared at once. The box itself is emptied as well, since an Enter that comes before what was
+   * typed has been drawn leaves the binding holding the empty draft from before, with nothing to change.
    */
   sendChat(event: Event | null) {
     if (event) event.preventDefault();
@@ -613,6 +614,8 @@ export class ChatInputComponent {
       this.chat.emit(composeChatOutgoing({ ...draft, gameSystem }));
     });
     this.text = '';
+    const box = this.textAreaElementRef()?.nativeElement;
+    if (box) box.value = '';
     this.previousWritingLength = this.text.length;
     this.kickCalcFitHeight();
     this.cancelReply();
