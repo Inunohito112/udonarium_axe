@@ -428,7 +428,7 @@ describe('GameTableComponent', () => {
       expect(view.frameStyle['bottom']).toBe('25%');
       expect(view.frameStyle['height']).toBe('100px');
       expect(view.style['background-repeat']).toBe('repeat-x');
-      expect(view.followWidth).toBe('calc(100% + 400px)');
+      expect(view.followStyle['width']).toBe('calc(100% + 400px)');
     });
 
     it('moves each backdrop for the camera by how much it follows, further ones less', () => {
@@ -442,6 +442,17 @@ describe('GameTableComponent', () => {
         'translate3d(-5px, 0px, 0px)',
         'translate3d(-30px, 0px, 0px)',
       ]);
+    });
+
+    it('fades the picture out at its top and its foot, on the part that moves with it', () => {
+      lay();
+      fixture.detectChanges();
+
+      const view = component.backdropLayerViews()[0];
+      expect(view.followStyle['mask-image']).toMatch(/^linear-gradient\(to bottom, transparent 0%/);
+      expect(view.followStyle['mask-image']).toMatch(/transparent 100%\)$/);
+      expect(view.followStyle['-webkit-mask-image']).toBe(view.followStyle['mask-image']);
+      expect(follows()[0].style.getPropertyValue('mask-image')).toContain('linear-gradient');
     });
 
     it('drifts across but never up or down, the picture being laid across only', () => {

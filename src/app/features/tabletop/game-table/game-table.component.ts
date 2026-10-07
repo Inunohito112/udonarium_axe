@@ -155,8 +155,8 @@ interface BackdropLayerView {
   readonly imageUrl: string;
   /** Where the picture stands on the screen and how tall it is drawn. */
   readonly frameStyle: Record<string, string>;
-  /** How wide the part that follows the camera is: the screen and two pictures to spare. */
-  readonly followWidth: string;
+  /** How wide the part that follows the camera is, the screen and two pictures to spare, and how its edges fade. */
+  readonly followStyle: Record<string, string>;
   readonly style: Record<string, string>;
   readonly drifts: boolean;
   /** Where the part that follows the camera is moved for the way the camera stands. */
@@ -169,6 +169,13 @@ interface BackdropLayerView {
  * blown up past this would ask for a sheet of no use to anyone.
  */
 const MAX_BACKDROP_TILE_PX = { width: 4096, height: 4096 };
+
+/**
+ * How a backdrop's picture fades out at its top and its foot, so a picture that is not clear at
+ * its edges does not end in a hard line across the screen. It is laid on the part that follows the
+ * camera, so the fade goes up and down with the picture as the view tilts.
+ */
+const BACKDROP_EDGE_FADE = 'linear-gradient(to bottom, transparent 0%, #000 15%, #000 85%, transparent 100%)';
 
 interface WallView {
   readonly wall: ActiveWall;
@@ -678,7 +685,11 @@ export class GameTableComponent {
           ...(tile ? { height: `${tile.height}px` } : { height: '0px' }),
           ...(layer.opacity < 1 ? { opacity: `${layer.opacity}` } : {}),
         },
-        followWidth: `calc(100% + ${width * 2}px)`,
+        followStyle: {
+          width: `calc(100% + ${width * 2}px)`,
+          'mask-image': BACKDROP_EDGE_FADE,
+          '-webkit-mask-image': BACKDROP_EDGE_FADE,
+        },
         style: {
           'background-image': `url(${image.url})`,
           'background-repeat': 'repeat-x',
