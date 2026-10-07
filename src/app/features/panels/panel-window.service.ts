@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { OverlayLayers } from '@axe/application/ui/overlay-layers';
 import { PanelFrame, PanelService } from '@axe/application/ui/panel.service';
+import { ViewportService } from '@axe/application/ui/viewport.service';
 import { AttachedDocuments } from '@axe/domain/ui/attached-documents';
 import { PanelWindowLayerComponent } from '@axe/features/panels/panel-window-layer.component';
 import { windowRendererFactory } from '@axe/features/panels/window-renderer';
@@ -99,6 +100,7 @@ export class PanelWindowService {
   private readonly appRef = inject(ApplicationRef);
   private readonly environmentInjector = inject(EnvironmentInjector);
   private readonly rendererFactory = inject(RendererFactory2);
+  private readonly viewport = inject(ViewportService);
 
   private readonly windows = new Map<string, OpenWindow>();
 
@@ -114,8 +116,14 @@ export class PanelWindowService {
     this.document.defaultView?.addEventListener('pagehide', () => this.closeAll());
   }
 
-  /** Whether this browser will let a panel out at all. */
+  /**
+   * Whether this browser will let a panel out at all.
+   *
+   * A phone or a tablet opens a window as one more tab, where a panel stands alone with no table
+   * beside it to work with, so a touch screen or a narrow one is not offered the button.
+   */
   get isSupported(): boolean {
+    if (this.viewport.isCompact() || this.viewport.isTouch()) return false;
     return typeof this.document.defaultView?.open === 'function';
   }
 
