@@ -318,6 +318,36 @@
       [disabled]="!canChangeRoomVolume()"
       (valueChange)="roomVolume = $event"
     />
+    <ui-volume-row
+      icon="library_music"
+      [label]="'feature.media.jukebox.bgmLabel' | transloco"
+      name="room-bgm-volume"
+      [value]="roomVolumeOf('bgm')"
+      [max]="2"
+      [canMute]="false"
+      [disabled]="!canChangeRoomVolume()"
+      (valueChange)="setRoomVolumeOf('bgm', $event)"
+    />
+    <ui-volume-row
+      icon="star"
+      [label]="'feature.media.jukebox.seLabel' | transloco"
+      name="room-se-volume"
+      [value]="roomVolumeOf('se')"
+      [max]="2"
+      [canMute]="false"
+      [disabled]="!canChangeRoomVolume()"
+      (valueChange)="setRoomVolumeOf('se', $event)"
+    />
+    <ui-volume-row
+      icon="waves"
+      [label]="'feature.media.jukebox.bgsLabel' | transloco"
+      name="room-background-volume"
+      [value]="roomVolumeOf('background')"
+      [max]="2"
+      [canMute]="false"
+      [disabled]="!canChangeRoomVolume()"
+      (valueChange)="setRoomVolumeOf('background', $event)"
+    />
   </div>
 
   <div class="bg-ui-panel border-ui-border-panel shrink-0 border-b border-solid px-2.5 py-2">

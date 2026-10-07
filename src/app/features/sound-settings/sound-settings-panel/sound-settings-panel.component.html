@@ -52,5 +52,20 @@
       [disabled]="!roomVolumes.canChange()"
       (valueChange)="roomVolumes.set($event)"
     />
+    <div class="border-ui-border-panel my-0.5 border-t border-solid"></div>
+    @for (row of roomRows; track row.kind) {
+      <ui-volume-row
+        [icon]="row.icon"
+        [label]="'feature.soundSettings.kind.' + row.kind + '.label' | transloco"
+        [name]="row.name"
+        labelClass="w-36"
+        [value]="roomVolumes.volumes()[row.kind]"
+        [max]="2"
+        [canMute]="false"
+        [disabled]="!roomVolumes.canChange()"
+        [attr.data-testid]="'sound-settings-room-row-' + row.kind"
+        (valueChange)="roomVolumes.setKind(row.kind, $event)"
+      />
+    }
   </section>
 </div>

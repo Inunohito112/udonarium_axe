@@ -168,6 +168,37 @@ describe('JukeboxComponent', () => {
       expect(config().roomVolume).toBe(0.4);
     });
 
+    it('lists the room’s volume for BGM, SE and background sounds under its overall one', async () => {
+      await fixture.whenStable();
+
+      const names = [
+        ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('input[type="range"]'),
+      ]
+        .map((input) => input.name)
+        .filter((name) => name.startsWith('room-'));
+
+      expect(names).toEqual(['room-volume', 'room-bgm-volume', 'room-se-volume', 'room-background-volume']);
+    });
+
+    it('lets the game master turn the room’s BGM down for everyone, and not a player', async () => {
+      const bgm = () =>
+        (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[name="room-bgm-volume"]')!;
+      PeerCursor.myCursor.role = PeerRole.Player;
+      await fixture.whenStable();
+      component.setRoomVolumeOf('bgm', 0.4);
+      expect(bgm().disabled).toBe(true);
+      expect(config().roomVolumes.bgm).toBe(1);
+
+      PeerCursor.myCursor.role = PeerRole.GameMaster;
+      await fixture.whenStable();
+      component.setRoomVolumeOf('bgm', 0.4);
+      await fixture.whenStable();
+
+      expect(bgm().disabled).toBe(false);
+      expect(config().roomVolumes.bgm).toBe(0.4);
+      expect(bgm().valueAsNumber).toBeCloseTo(0.4);
+    });
+
     it('asks for no tick of its own before the game master can move it', async () => {
       PeerCursor.myCursor.role = PeerRole.GameMaster;
       await fixture.whenStable();

@@ -98,4 +98,43 @@ describe('SoundSettingsPanelComponent', () => {
     expect(slider('room-volume').disabled).toBe(false);
     expect(ObjectStore.instance.get<Config>('Config')!.roomVolume).toBe(1.5);
   });
+
+  it('lists the room’s volume for each kind under its overall one, leaving out previews', async () => {
+    await open();
+
+    const names = [
+      ...root().querySelectorAll<HTMLInputElement>('[data-testid="sound-settings-room"] input[type="range"]'),
+    ].map((input) => input.name);
+
+    expect(names).toEqual([
+      'room-volume',
+      'room-bgm-volume',
+      'room-background-volume',
+      'room-cut-in-volume',
+      'room-notification-volume',
+      'room-handling-volume',
+      'room-effect-volume',
+      'room-se-volume',
+    ]);
+  });
+
+  it('shows the room’s volume for each kind to a player without letting them move it', async () => {
+    await open(PeerRole.Player);
+
+    expect(slider('room-handling-volume').disabled).toBe(true);
+    expect(slider('room-handling-volume').valueAsNumber).toBe(1);
+  });
+
+  it('lets the game master turn one kind down for everyone, leaving the others', async () => {
+    await open(PeerRole.GameMaster);
+
+    slider('room-handling-volume').value = '0.3';
+    slider('room-handling-volume').dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    const config = ObjectStore.instance.get<Config>('Config')!;
+    expect(config.roomVolumes.handling).toBe(0.3);
+    expect(config.roomVolumes.bgm).toBe(1);
+    expect(slider('room-handling-volume').valueAsNumber).toBeCloseTo(0.3);
+  });
 });

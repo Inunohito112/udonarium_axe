@@ -21,6 +21,7 @@ import { ObjectStore } from '@axe/core/sync/object-store';
 import { AUDIO_TAG_BGS, AudioTag } from '@axe/domain/media/audio-tag';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { Playlist } from '@axe/domain/media/playlist';
+import { RoomVolumeKind } from '@axe/domain/media/room-volumes';
 import { BackgroundSoundPlaybackService } from '@axe/features/media/background-sound-playback.service';
 import {
   buildLibraryTrackMenu,
@@ -74,6 +75,16 @@ export class JukeboxComponent {
 
   set roomVolume(volume: number) {
     this.roomVolumes.set(volume);
+  }
+
+  /** The room's volume for one kind of sound, from 0 to 2, which its overall volume scales in turn. */
+  roomVolumeOf(kind: RoomVolumeKind): number {
+    return this.roomVolumes.volumes()[kind];
+  }
+
+  /** Sets the room's volume for one kind of sound for everyone. Only the game master may. */
+  setRoomVolumeOf(kind: RoomVolumeKind, volume: number): void {
+    this.roomVolumes.setKind(kind, volume);
   }
 
   /** Whether this player has turned a kind of sound off for themselves. */

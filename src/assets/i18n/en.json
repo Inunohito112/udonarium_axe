@@ -4421,7 +4421,7 @@
       "ownHint": "Only you hear these, and they are saved in this browser. Turn each kind off with the button on the left.",
       "chatHeading": "Chat notification",
       "roomHeading": "Room volume",
-      "roomHint": "Applies to everyone in the room; only the GM can change it.",
+      "roomHint": "Applies to everyone in the room; only the GM can change it. Each kind is scaled by the overall value as well.",
       "openAll": "Open all of your sound settings",
       "kind": {
         "audition": {
