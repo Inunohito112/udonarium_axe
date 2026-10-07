@@ -2347,7 +2347,7 @@ game-data-element .elm-markdown-view,
  */
 [data-narrow] [data-own-mobile-layout] :is(game-data-element, [game-data-element]) {
   --gde-row-min: 44px;
-  grid-template-columns: minmax(5.25rem, 36%) minmax(0, 1fr);
+  grid-template-columns: minmax(4.5rem, 32%) minmax(0, 1fr);
 }
 
 [data-narrow] [data-own-mobile-layout] :is(game-data-element, [game-data-element]):has(> .elm-value-cell) {
@@ -2441,6 +2441,18 @@ game-data-element .elm-markdown-view,
 
 [data-narrow] [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-resource-view:has(> .elm-step) {
   grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+}
+
+[data-narrow] [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-resource-view {
+  gap: 4px;
+}
+
+[data-narrow] [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-resource-view input {
+  padding-inline: 6px;
+}
+
+[data-narrow] [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-resource-view .elm-step {
+  width: 34px;
 }
 
 [data-narrow] [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-children {
