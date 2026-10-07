@@ -42,6 +42,38 @@
   [ngClass]="[backgroundFilterType ? 'is-filter' : '', backgroundFilterType]"
   [style.background-image]="'url(' + backgroundImage.url + ')' | safe: 'style'"
 ></div>
+<!--
+  The backdrops: pictures laid across the screen behind the table, each moved a little for the
+  camera by the frame that moves the table. Following the camera less is what makes one look further away.
+-->
+@if (backdropLayerViews().length) {
+  <div class="pointer-events-none absolute inset-0 overflow-hidden" data-testid="backdrop-layers">
+    @for (layer of backdropLayerViews(); track layer.identifier) {
+      <div class="absolute inset-x-0" data-testid="backdrop-layer" [ngStyle]="layer.frameStyle">
+        <div
+          class="absolute top-0 left-0 h-full"
+          data-testid="backdrop-layer-follow"
+          [style.width]="layer.followWidth"
+          [appBackdrop]="layer.place"
+        >
+          <div
+            class="absolute inset-0"
+            data-testid="backdrop-layer-sheet"
+            [class.bg-layer-drift]="layer.drifts"
+            [ngStyle]="layer.style"
+          ></div>
+        </div>
+        <img
+          class="pointer-events-none absolute size-0 opacity-0"
+          alt=""
+          data-testid="backdrop-layer-probe"
+          [src]="layer.imageUrl | safe: 'resourceUrl'"
+          (load)="onBackgroundLayerImageLoad(layer.imageIdentifier, $event)"
+        />
+      </div>
+    }
+  </div>
+}
 <div
   class="absolute inset-0 m-auto block size-full touch-manipulation overflow-hidden select-none [-moz-user-drag:none] [-webkit-user-drag:none] perspective-[3000px]"
   [style.perspective]="isOrthographicProjection() ? 'none' : null"

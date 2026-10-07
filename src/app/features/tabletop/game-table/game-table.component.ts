@@ -31,6 +31,7 @@ import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { TerrainBatchService } from '@axe/application/tabletop/terrain-batch.service';
 import { VisionService } from '@axe/application/tabletop/vision.service';
+import { BackdropPlacement } from '@axe/application/ui/backdrop-frame.service';
 import {
   ContextMenuAction,
   ContextMenuRadialGroup,
@@ -53,6 +54,7 @@ import { ImageFile, imageFileEqual } from '@axe/core/storage/image-file';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { PresetSound, SoundEffect } from '@axe/domain/media/sound-effect';
+import { BackdropCamera, backdropOffset } from '@axe/domain/tabletop/backdrop-offset';
 import {
   backgroundScrollAnimation,
   backgroundScrollMargin,
@@ -130,6 +132,7 @@ import {
   wallSilhouetteStyle,
 } from '@axe/features/tabletop/wall-projection';
 import { WhiteBoardComponent } from '@axe/features/tabletop/white-board/white-board.component';
+import { BackdropDirective } from '@axe/ui/directives/backdrop.directive';
 import { TooltipDirective } from '@axe/ui/directives/tooltip.directive';
 import { SafePipe } from '@axe/ui/pipes/safe.pipe';
 import { translateZCss, Z_OFFSET_BACKGROUND_LAYERS_PX, Z_OFFSET_FOREGROUND_LAYERS_PX } from '@axe/ui/tabletop/z-offset';
@@ -144,6 +147,28 @@ interface BackgroundLayerView {
   readonly style: Record<string, string>;
   readonly drifts: boolean;
 }
+
+/** One backdrop as the screen behind the table draws it. */
+interface BackdropLayerView {
+  readonly identifier: string;
+  readonly imageIdentifier: string;
+  readonly imageUrl: string;
+  /** Where the picture stands on the screen and how tall it is drawn. */
+  readonly frameStyle: Record<string, string>;
+  /** How wide the part that follows the camera is: the screen and two pictures to spare. */
+  readonly followWidth: string;
+  readonly style: Record<string, string>;
+  readonly drifts: boolean;
+  /** Where the part that follows the camera is moved for the way the camera stands. */
+  readonly place: BackdropPlacement;
+}
+
+/**
+ * The largest a backdrop's picture is drawn, either way. A backdrop is not held to the board, and
+ * the spare it needs for following the camera and drifting is a picture wide each, so a picture
+ * blown up past this would ask for a sheet of no use to anyone.
+ */
+const MAX_BACKDROP_TILE_PX = { width: 4096, height: 4096 };
 
 interface WallView {
   readonly wall: ActiveWall;
@@ -191,6 +216,7 @@ const NO_BEAM_WALL_GRIDS: readonly BeamWallGrid[] = [];
   templateUrl: './game-table.component.html',
   providers: [GameTableGestureService],
   imports: [
+    BackdropDirective,
     NgClass,
     NgTemplateOutlet,
     TerrainComponent,
@@ -620,7 +646,61 @@ export class GameTableComponent {
     }
   );
 
-  readonly underLayers = computed(() => this.laidLayers().filter((layer) => !layer.placedOver));
+  readonly underLayers = computed(() =>
+    this.laidLayers().filter((layer) => !layer.placedOver && !layer.placedBackdrop)
+  );
+  readonly backdropLayers = computed(() => this.laidLayers().filter((layer) => layer.placedBackdrop));
+
+  /**
+   * What the backdrops behind the table are drawn as, back to front.
+   *
+   * A backdrop is laid across the screen rather than on the board, and only across: a range of
+   * hills is one long picture, and laid upward as well it would stand on its own head. It drifts
+   * across as an under layer does, and the part around the drift is moved for the camera.
+   */
+  readonly backdropLayerViews = computed<readonly BackdropLayerView[]>(() => {
+    this.objectChangeService.fileVersion();
+    const sizes = this.layerNaturalSizes();
+    const moving = this.motion.enabled();
+    return this.backdropLayers().map((layer) => {
+      const tile = backgroundTileSize(sizes.get(layer.imageIdentifier) ?? null, layer.scale, MAX_BACKDROP_TILE_PX);
+      const x = moving ? backgroundScrollAnimation(layer.speedX, tile?.width ?? 0) : null;
+      const scrollsX = !!x && x.durationSeconds > 0;
+      const image = this.imageService.getEmptyOr(layer.imageIdentifier);
+      const width = tile?.width ?? 0;
+      const follow = layer.follow;
+      return {
+        identifier: layer.identifier,
+        imageIdentifier: layer.imageIdentifier,
+        imageUrl: image.url,
+        frameStyle: {
+          bottom: `${+(layer.height * 100).toFixed(2)}%`,
+          ...(tile ? { height: `${tile.height}px` } : { height: '0px' }),
+          ...(layer.opacity < 1 ? { opacity: `${layer.opacity}` } : {}),
+        },
+        followWidth: `calc(100% + ${width * 2}px)`,
+        style: {
+          'background-image': `url(${image.url})`,
+          'background-repeat': 'repeat-x',
+          'background-position': 'left bottom',
+          ...(tile ? { 'background-size': `${tile.width}px ${tile.height}px` } : {}),
+          ...(x && scrollsX
+            ? {
+                '--bg-layer-x-name': 'bgLayerScrollX',
+                '--bg-layer-x-duration': `${x.durationSeconds}s`,
+                '--bg-layer-x-direction': x.reversed ? 'reverse' : 'normal',
+                '--bg-layer-tile-w': `${width}px`,
+              }
+            : {}),
+        },
+        drifts: scrollsX,
+        place: (camera: BackdropCamera) => {
+          const offset = backdropOffset(camera, follow, width);
+          return `translate3d(${offset.x}px, ${offset.y}px, 0px)`;
+        },
+      };
+    });
+  });
   readonly overLayers = computed(() => this.laidLayers().filter((layer) => layer.placedOver));
 
   readonly underLayerViews = computed<readonly BackgroundLayerView[]>(() => this.layerViews(this.underLayers()));
