@@ -169,11 +169,14 @@ export class JukeboxComponent {
   readonly isSeeking = signal(false);
   readonly seekPreview = signal(0);
 
-  /** The position and length of the room's track, read out as `1:23 / 4:56`; a dash while nothing is held. */
+  /**
+   * The position and length of the room's track, read out as `1:23 / 4:56`. Empty while nothing is
+   * held, leaving the space it takes so the seek bar keeps its length when a track starts.
+   */
   readonly timeDisplay = computed(() => {
     this._tick();
     this.objectChange.versionOf('Jukebox')();
-    if (!this.playback.isPlaying() && !this.playback.isPaused()) return '—';
+    if (!this.playback.isPlaying() && !this.playback.isPaused()) return '';
     const duration = this.playback.duration();
     const at = this.isSeeking() ? this.seekPreview() * duration : this.playback.position();
     return `${formatTrackTime(at)} / ${duration > 0 ? formatTrackTime(duration) : '—'}`;

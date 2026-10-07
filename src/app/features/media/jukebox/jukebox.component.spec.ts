@@ -76,6 +76,28 @@ describe('JukeboxComponent', () => {
     });
   });
 
+  describe('the time beside the seek bar', () => {
+    function shownTime(): string {
+      return (fixture.nativeElement as HTMLElement).querySelector('[data-testid="jukebox-time"]')!.textContent!.trim();
+    }
+
+    it('shows nothing while no track is held', async () => {
+      await fixture.whenStable();
+
+      expect(shownTime()).toBe('');
+    });
+
+    it('shows where a held track stands', async () => {
+      const jukebox = component.jukebox;
+      jukebox.audioIdentifier = 'held';
+      jukebox.startTime = 20;
+      jukebox.isPlaying = false;
+      await fixture.whenStable();
+
+      expect(shownTime()).toBe('0:20 / —');
+    });
+  });
+
   describe('dragging the seek bar', () => {
     function seekBarAt(value: number): Event {
       const input = document.createElement('input');
