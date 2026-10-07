@@ -26,13 +26,6 @@ import {
 } from '@axe/domain/data/data-element';
 import { calcSourceIdentifiers, evaluateCalcElement } from '@axe/domain/data/data-element-calc-env';
 import {
-  duplicateDataElement,
-  findElementTemplateHolder,
-  findElementTemplateOwner,
-  readElementTemplates,
-  saveElementTemplate,
-} from '@axe/domain/data/data-element-templates';
-import {
   buildTableColumnHeaderGroups,
   canRenderAsTable as canRenderAsTableShared,
   getRawTableRows,
@@ -50,23 +43,16 @@ import {
   type DataElementActionId,
   toContextMenuActions,
 } from '@axe/features/data-element/game-data-element/data-element-actions';
-import { DataElementDeletionService } from '@axe/features/data-element/game-data-element/data-element-deletion.service';
+import { DataElementEditService } from '@axe/features/data-element/game-data-element/data-element-edit.service';
 import { IN_DATA_ELEMENT_SHEET } from '@axe/features/data-element/game-data-element/data-element-sheet-host';
 import { FIELD_TYPE_CATALOG } from '@axe/features/data-element/game-data-element/field-type-catalog';
 import {
-  canAcceptChildRole,
   canDropStructureElement,
   type DataElementDropPosition,
   resolveDropPosition as resolveDropPositionShared,
 } from '@axe/features/data-element/game-data-element/game-data-element-structure-drop';
 import {
-  createFieldElement,
-  createGroupElement,
-  insertElementAfter,
-  moveAmongSiblings,
   moveStructureElement,
-  type NewElementNames,
-  placeElementTemplate,
   type SiblingMove,
 } from '@axe/features/data-element/game-data-element/game-data-element-structure-ops';
 import { GameDataElementTableViewComponent } from '@axe/features/data-element/game-data-element/game-data-element-table-view.component';
@@ -131,7 +117,7 @@ export class GameDataElementComponent {
   private readonly effectLibrary = inject(EffectLibraryService);
   private readonly effectCast = inject(EffectCastService);
   private readonly rolePermission = inject(RolePermissionService);
-  private readonly deletion = inject(DataElementDeletionService);
+  private readonly edit = inject(DataElementEditService);
   /** Whether this row is drawn on a full sheet, which gives it ± buttons and an editor of its own. */
   protected readonly inSheet = inject(IN_DATA_ELEMENT_SHEET, { optional: true }) ?? false;
 
@@ -585,12 +571,8 @@ export class GameDataElementComponent {
    * element cannot hold a field.
    */
   addElement() {
-    const parentElement = this.gameDataElement();
     if (!this.canAddChildFieldElement()) return;
-
-    const fieldElement = createFieldElement(parentElement, this.newElementNames());
-    parentElement.appendChild(fieldElement);
-    this.notifyStructureChanged(parentElement, fieldElement);
+    this.edit.addFieldInside(this.gameDataElement());
   }
 
   /**
@@ -598,12 +580,7 @@ export class GameDataElementComponent {
    * parent cannot hold a field.
    */
   addSiblingElement() {
-    const parentElement = this.getDataElementParent();
-    if (!parentElement || !canAcceptChildRole(parentElement, DataElementRole.FIELD)) return;
-
-    const fieldElement = createFieldElement(parentElement, this.newElementNames());
-    insertElementAfter(fieldElement, this.gameDataElement(), parentElement);
-    this.notifyStructureChanged(parentElement, fieldElement);
+    this.edit.addFieldAfter(this.gameDataElement());
   }
 
   /**
@@ -611,28 +588,23 @@ export class GameDataElementComponent {
    * this element cannot hold a group.
    */
   addGroupElement() {
-    const parentElement = this.gameDataElement();
     if (!this.canAddChildGroupElement()) return;
-
-    const groupElement = createGroupElement(parentElement, this.newElementNames());
-    parentElement.appendChild(groupElement);
-    this.notifyStructureChanged(parentElement, groupElement);
+    this.edit.addGroupInside(this.gameDataElement());
   }
 
   /** Whether this element may hold a new group, which shows the button for adding one. */
   canAddChildGroupElement(): boolean {
-    return canAcceptChildRole(this.gameDataElement(), DataElementRole.GROUP);
+    return this.edit.canAddGroupInside(this.gameDataElement());
   }
 
   /** Whether this element may hold a new field, which shows the button for adding one inside it. */
   canAddChildFieldElement(): boolean {
-    return canAcceptChildRole(this.gameDataElement(), DataElementRole.FIELD);
+    return this.edit.canAddFieldInside(this.gameDataElement());
   }
 
   /** Whether a new field may go in beside this one, which shows the add row button on a field. */
   canAddSiblingFieldElement(): boolean {
-    const parentElement = this.getDataElementParent();
-    return !!parentElement && canAcceptChildRole(parentElement, DataElementRole.FIELD);
+    return this.edit.canAddFieldAfter(this.gameDataElement());
   }
 
   /**
@@ -640,7 +612,7 @@ export class GameDataElementComponent {
    * long as it has a parent to go into.
    */
   canDuplicateElement(): boolean {
-    return !this.isImage() && this.getDataElementParent() !== null;
+    return !this.isImage() && this.edit.canDuplicate(this.gameDataElement());
   }
 
   /**
@@ -648,14 +620,8 @@ export class GameDataElementComponent {
    * picture in an image list or an element with no parent.
    */
   duplicateElement(): void {
-    const element = this.gameDataElement();
-    const parentElement = this.getDataElementParent();
-    if (!parentElement || this.isImage()) return;
-
-    const copy = duplicateDataElement(element, parentElement);
-    if (!copy) return;
-    insertElementAfter(copy, element, parentElement);
-    this.notifyStructureChanged(parentElement, copy);
+    if (this.isImage()) return;
+    this.edit.duplicate(this.gameDataElement());
   }
 
   /**
@@ -663,10 +629,7 @@ export class GameDataElementComponent {
    * an object that keeps templates, such as a character, rather than inside a saved template.
    */
   canSaveAsTemplate(): boolean {
-    const element = this.gameDataElement();
-    const role = element.fieldRole;
-    if (this.isImage() || (role !== DataElementRole.GROUP && role !== DataElementRole.SECTION)) return false;
-    return findElementTemplateOwner(element) !== null;
+    return !this.isImage() && this.edit.canSaveAsTemplate(this.gameDataElement());
   }
 
   /**
@@ -674,25 +637,13 @@ export class GameDataElementComponent {
    * again from the template menu.
    */
   saveAsTemplate(): void {
-    if (!this.canSaveAsTemplate()) return;
-    const owner = findElementTemplateOwner(this.gameDataElement());
-    if (!owner) return;
-    const template = saveElementTemplate(owner, this.gameDataElement());
-    const holder = template?.parent;
-    if (template && holder instanceof DataElement) this.notifyStructureChanged(holder, template);
-    this.objectChange.notifyChanged(owner.identifier);
+    if (this.canSaveAsTemplate()) this.edit.saveAsTemplate(this.gameDataElement());
   }
 
   readonly elementTemplates = computed<DataElement[]>(() => {
     const element = this.gameDataElement();
     this.objectChange.versionOf(element.identifier)();
-    if (this.isImage() || element.fieldRole === DataElementRole.FIELD) return [];
-    const owner = findElementTemplateOwner(element);
-    if (!owner) return [];
-    this.objectChange.versionOf(owner.identifier)();
-    const holder = findElementTemplateHolder(owner);
-    if (holder) this.objectChange.versionOf(holder.identifier)();
-    return readElementTemplates(owner);
+    return this.isImage() ? [] : this.edit.templatesFor(element);
   });
 
   /**
@@ -703,9 +654,7 @@ export class GameDataElementComponent {
    */
   insertTemplate(template: DataElement): void {
     this.templateMenuOpen.set(false);
-    const placed = placeElementTemplate(template, this.gameDataElement());
-    if (!placed) return;
-    this.notifyStructureChanged(placed.parent, placed.element);
+    this.edit.insertTemplate(template, this.gameDataElement());
   }
 
   /**
@@ -714,17 +663,8 @@ export class GameDataElementComponent {
    */
   deleteTemplate(template: DataElement, event: Event): void {
     event.stopPropagation();
-    const holder = template.parent;
-    template.destroy();
-    if (holder instanceof DataElement) this.notifyStructureChanged(holder);
+    this.edit.deleteTemplate(template);
     if (this.elementTemplates().length < 1) this.templateMenuOpen.set(false);
-  }
-
-  private newElementNames(): NewElementNames {
-    return {
-      field: this.t('feature.dataElement.defaults.newTag'),
-      group: this.t('feature.dataElement.defaults.newGroup'),
-    };
   }
 
   /**
@@ -900,9 +840,7 @@ export class GameDataElementComponent {
 
   /** Moves this element to the top, up one, down one or to the bottom of the ones beside it. */
   private moveAmongSiblings(move: SiblingMove): void {
-    const element = this.gameDataElement();
-    const moved = moveAmongSiblings(element, move);
-    if (moved) this.notifyStructureChanged(moved.newParent, element, moved.oldParent ?? undefined);
+    this.edit.move(this.gameDataElement(), move);
   }
 
   private getDraggedElement(event: DragEvent): DataElement | null {
@@ -942,18 +880,12 @@ export class GameDataElementComponent {
   }
 
   private notifyStructureChanged(...elements: (DataElement | undefined)[]): void {
-    const notifiedIds = new Set<string>();
-    for (const element of elements) {
-      if (!element || notifiedIds.has(element.identifier)) continue;
-      element.update();
-      this.objectChange.notifyChanged(element.identifier);
-      notifiedIds.add(element.identifier);
-    }
+    this.edit.notify(...elements);
   }
 
   /** Destroys this element and everything under it, leaving a notice that offers to put it back. */
   deleteElement() {
-    this.deletion.delete(this.gameDataElement());
+    this.edit.delete(this.gameDataElement());
   }
 
   /**
@@ -980,9 +912,7 @@ export class GameDataElementComponent {
    * settings.
    */
   setElementFieldType(fieldType: DataElementFieldTypeValue) {
-    const element = this.gameDataElement();
-    element.setFieldType(fieldType);
-    element.setAttribute('type', DataElement.dataTypeFromFieldType(fieldType));
+    this.edit.setFieldType(this.gameDataElement(), fieldType);
     this.fieldOptionsOpen.set(false);
   }
 
@@ -1042,9 +972,7 @@ export class GameDataElementComponent {
    */
   copyReferencePath(event?: MouseEvent): void {
     event?.stopPropagation();
-    const referencePath = DataElement.formatReferencePath(this.gameDataElement());
-    if (!referencePath) return;
-    void navigator.clipboard?.writeText(referencePath);
+    this.edit.copyReference(this.gameDataElement());
   }
 
   private hasFlag(attribute: string): boolean {
@@ -1072,7 +1000,7 @@ export class GameDataElementComponent {
   togglePopupDataElement(event?: MouseEvent): void {
     event?.stopPropagation();
     if (this.isImage()) return;
-    this.toggleFlag(DataElementAttribute.POPUP);
+    this.edit.togglePopup(this.gameDataElement());
   }
 
   /** Whether this resource is moved with a slider as well as typed, here and in the popup over its piece. */
@@ -1118,10 +1046,7 @@ export class GameDataElementComponent {
 
   /** Switches this group or section between showing as a table and showing as rows. */
   toggleTableViewMode(): void {
-    if (!this.canToggleTableViewMode()) return;
-    const element = this.gameDataElement();
-    element.setViewMode(this.isTableViewMode() ? DataElementViewMode.NORMAL : DataElementViewMode.TABLE);
-    this.objectChange.notifyChanged(element.identifier);
+    if (this.canToggleTableViewMode()) this.edit.toggleTableView(this.gameDataElement());
   }
 
   /**
