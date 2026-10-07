@@ -4,6 +4,7 @@ import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { SwitchPressService } from '@axe/application/tabletop/switch-press.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
+import { BackdropFrameService } from '@axe/application/ui/backdrop-frame.service';
 import { BillboardFrameService } from '@axe/application/ui/billboard-frame.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { marqueeApply, selectByRect } from '@axe/application/ui/rect-hit-test';
@@ -27,6 +28,7 @@ export class GameTableGestureService {
   private readonly pointerDeviceService = inject(PointerDeviceService);
   private readonly uiSignalService = inject(UiSignalService);
   private readonly billboardFrame = inject(BillboardFrameService);
+  private readonly backdropFrame = inject(BackdropFrameService);
   private readonly selectionSignalService = inject(SelectionSignalService);
   private readonly tabletopService = inject(TabletopService);
   private readonly coordinateService = inject(CoordinateService);
@@ -180,6 +182,13 @@ export class GameTableGestureService {
     this.gameTableEl.style.transform = `${projectionScale}translateZ(${tz}px) translateY(${ty}px) translateX(${tx}px) rotateY(${ry}deg) rotateX(${rx}deg) rotateZ(${rz}deg)`;
 
     this.coordinateService.invalidateTabletopTransform();
+    // The backdrops follow a move of the view as well as a turn, so they are told every frame.
+    this.backdropFrame.apply({
+      rotateX: this.viewRotateX,
+      rotateZ: this.viewRotateZ,
+      positionX: this.viewPositionX,
+      positionY: this.viewPositionY,
+    });
 
     if (!this.turned) return;
     this.turned = false;
