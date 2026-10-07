@@ -23,15 +23,20 @@
     <disclosure-control [object]="disclosable" />
   }
   @if (character; as char) {
-    <div class="@container/sheet flex w-full flex-col gap-0">
+    <div
+      #sheetRoot
+      class="group/sheet flex w-full flex-col gap-0"
+      [attr.data-narrow]="narrowLayout() ? '' : null"
+      [attr.data-compact]="compactEditing() ? '' : null"
+    >
       <div
-        class="border-ui-border-panel [&_button]:bg-ui-elevated [&_button]:border-ui-border-panel [&_button]:text-ui-muted [&_button]:hover:bg-ui-hover [&_button]:hover:text-ui-text [&_button]:rounded-ui-sm mb-1 flex flex-wrap items-center gap-1 border-b border-solid px-1.5 pt-1.5 pb-1 @max-xl/sheet:hidden [&_button]:inline-flex [&_button]:cursor-pointer [&_button]:items-center [&_button]:gap-0.75 [&_button]:border [&_button]:border-solid [&_button]:px-2 [&_button]:py-0.75 [&_button]:text-[0.8em] [&_button]:whitespace-nowrap [&_button]:transition-[background,color]"
+        class="border-ui-border-panel [&_button]:bg-ui-elevated [&_button]:border-ui-border-panel [&_button]:text-ui-muted [&_button]:hover:bg-ui-hover [&_button]:hover:text-ui-text [&_button]:rounded-ui-sm mb-1 flex flex-wrap items-center gap-1 border-b border-solid px-1.5 pt-1.5 pb-1 group-data-[narrow]/sheet:hidden [&_button]:inline-flex [&_button]:cursor-pointer [&_button]:items-center [&_button]:gap-0.75 [&_button]:border [&_button]:border-solid [&_button]:px-2 [&_button]:py-0.75 [&_button]:text-[0.8em] [&_button]:whitespace-nowrap [&_button]:transition-[background,color]"
       >
         <button (click)="clone()">{{ 'feature.inventory.sheet.copy' | transloco }}</button>
         <button (click)="saveToXML()">{{ 'feature.inventory.sheet.save' | transloco }}</button>
       </div>
       <div
-        class="hidden items-center gap-3 px-3 pt-3 pb-2 @max-xl/sheet:flex"
+        class="hidden items-center gap-3 px-3 pt-3 pb-2 group-data-[narrow]/sheet:flex"
         data-own-mobile-layout
         data-testid="sheet-compact-header"
       >
@@ -97,11 +102,11 @@
 
       @if (activeTab() === 'sheet') {
         <div
-          class="grid grid-cols-[180px_1fr] items-start gap-3 px-2.5 pt-2.5 @max-xl/sheet:grid-cols-1 @max-xl/sheet:px-2"
+          class="grid grid-cols-[180px_1fr] items-start gap-3 px-2.5 pt-2.5 group-data-[narrow]/sheet:grid-cols-1 group-data-[narrow]/sheet:px-2"
           [attr.inert]="isReadOnly() ? '' : null"
           data-own-mobile-layout
         >
-          <div class="flex w-45 min-w-0 shrink-0 flex-col gap-1.5 overflow-hidden @max-xl/sheet:hidden">
+          <div class="flex w-45 min-w-0 shrink-0 flex-col gap-1.5 overflow-hidden group-data-[narrow]/sheet:hidden">
             <character-portrait-panel [character]="character" />
           </div>
 
@@ -109,7 +114,7 @@
             @if (detailElements().length > 1) {
               <nav
                 #sectionChips
-                class="bg-ui-surface border-ui-border-panel sticky -top-2 z-10 -mx-2 hidden scrollbar-none gap-1.5 overflow-x-auto border-b border-solid p-2 @max-xl/sheet:flex [&::-webkit-scrollbar]:hidden"
+                class="bg-ui-surface border-ui-border-panel sticky -top-2 z-10 -mx-2 hidden scrollbar-none gap-1.5 overflow-x-auto border-b border-solid p-2 group-data-[narrow]/sheet:flex [&::-webkit-scrollbar]:hidden"
                 [attr.aria-label]="'feature.inventory.sheet.sectionJump' | transloco"
                 data-testid="sheet-section-chips"
               >
@@ -159,7 +164,7 @@
               <div class="flex min-w-0 flex-row flex-wrap items-stretch justify-start gap-1 pt-1">
                 @for (childElement of detailElements(); track childElement.identifier) {
                   <div
-                    class="bg-ui-elevated border-ui-border-panel text-ui-text box-border max-w-full min-w-50 flex-[1_1_200px] scroll-mt-16 overflow-hidden rounded-sm border border-solid px-2.5 py-2 transition-[outline] duration-100 @max-xl/sheet:min-w-0 @max-xl/sheet:rounded-lg @max-xl/sheet:px-3"
+                    class="bg-ui-elevated border-ui-border-panel text-ui-text box-border max-w-full min-w-50 flex-[1_1_200px] scroll-mt-16 overflow-hidden rounded-sm border border-solid px-2.5 py-2 transition-[outline] duration-100 group-data-[narrow]/sheet:min-w-0 group-data-[narrow]/sheet:basis-full group-data-[narrow]/sheet:rounded-lg group-data-[narrow]/sheet:px-3"
                     [attr.data-card-id]="childElement.identifier"
                     [class.flex-[1_1_100%]!]="
                       isElementEditing(childElement.identifier) || getCardColspan(childElement) === 'full'
@@ -197,7 +202,7 @@
                       }
                       <button
                         type="button"
-                        class="text-ui-text flex min-w-0 flex-1 cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-left text-[0.78em] font-semibold @max-xl/sheet:min-h-10 @max-xl/sheet:text-base"
+                        class="text-ui-text flex min-w-0 flex-1 cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-left text-[0.78em] font-semibold group-data-[compact]/sheet:min-h-10 group-data-[compact]/sheet:text-base"
                         [attr.aria-expanded]="!isCardFolded(childElement)"
                         [title]="
                           (isCardFolded(childElement)
@@ -209,20 +214,21 @@
                         data-testid="sheet-card-title"
                       >
                         <i
-                          class="material-icons text-ui-dim shrink-0 text-[16px]! transition-transform duration-150 @max-xl/sheet:text-[22px]!"
+                          class="material-icons text-ui-dim shrink-0 text-[16px]! transition-transform duration-150 group-data-[compact]/sheet:text-[22px]!"
                           [class.-rotate-90]="isCardFolded(childElement)"
                           >expand_more</i
                         >
                         @if (getCardIcon(childElement)) {
-                          <i class="material-icons text-ui-accent shrink-0 text-[13px]! @max-xl/sheet:text-[18px]!">{{
-                            getCardIcon(childElement)
-                          }}</i>
+                          <i
+                            class="material-icons text-ui-accent shrink-0 text-[13px]! group-data-[compact]/sheet:text-[18px]!"
+                            >{{ getCardIcon(childElement) }}</i
+                          >
                         }
                         <span class="min-w-0 truncate">{{ getCardName(childElement) }}</span>
                       </button>
                       @if (isElementEditing(childElement.identifier)) {
                         <button
-                          class="bg-ui-hover text-ui-muted hover:bg-ui-selected hover:text-ui-text inline-flex size-5.5 min-w-5 cursor-pointer items-center justify-center rounded-[3px] border-none p-0 text-[0.7em] font-bold transition-[background,color] @max-xl/sheet:hidden [&_.material-icons]:text-[13px]!"
+                          class="bg-ui-hover text-ui-muted hover:bg-ui-selected hover:text-ui-text inline-flex size-5.5 min-w-5 cursor-pointer items-center justify-center rounded-[3px] border-none p-0 text-[0.7em] font-bold transition-[background,color] group-data-[compact]/sheet:hidden [&_.material-icons]:text-[13px]!"
                           type="button"
                           [title]="'feature.inventory.sheet.cycleColspanTitle' | transloco"
                           (click)="cycleCardColspan(childElement)"
@@ -234,7 +240,7 @@
                           }}</span>
                         </button>
                         <button
-                          class="bg-ui-hover text-ui-muted hover:bg-ui-selected hover:text-ui-text inline-flex size-5.5 cursor-pointer items-center justify-center rounded-[3px] border-none p-0 transition-[background,color] @max-xl/sheet:hidden [&_.material-icons]:text-[13px]!"
+                          class="bg-ui-hover text-ui-muted hover:bg-ui-selected hover:text-ui-text inline-flex size-5.5 cursor-pointer items-center justify-center rounded-[3px] border-none p-0 transition-[background,color] group-data-[compact]/sheet:hidden [&_.material-icons]:text-[13px]!"
                           [class.bg-ui-accent-bg!]="isPopupDataElement(childElement)"
                           [class.text-ui-accent!]="isPopupDataElement(childElement)"
                           [class.hover:bg-[color-mix(in_srgb,var(--ui-accent)_24%,transparent)]!]="
@@ -247,7 +253,7 @@
                           <i class="material-icons">open_in_new</i>
                         </button>
                         <button
-                          class="bg-ui-danger hover:bg-ui-danger-hover inline-flex size-5.5 cursor-pointer items-center justify-center rounded-[3px] border-none p-0 text-white transition-[background] @max-xl/sheet:hidden [&_.material-icons]:text-[13px]!"
+                          class="bg-ui-danger hover:bg-ui-danger-hover inline-flex size-5.5 cursor-pointer items-center justify-center rounded-[3px] border-none p-0 text-white transition-[background] group-data-[compact]/sheet:hidden [&_.material-icons]:text-[13px]!"
                           type="button"
                           [title]="'feature.inventory.sheet.deleteItemTitle' | transloco"
                           (click)="deleteTopLevelElement(childElement.identifier)"
@@ -255,7 +261,7 @@
                           <i class="material-icons">delete</i>
                         </button>
                         <button
-                          class="text-ui-muted active:bg-ui-hover hidden size-10 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 @max-xl/sheet:inline-flex [&_.material-icons]:text-[22px]!"
+                          class="text-ui-muted active:bg-ui-hover hidden size-10 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 group-data-[compact]/sheet:inline-flex [&_.material-icons]:text-[22px]!"
                           type="button"
                           [attr.aria-label]="
                             'feature.dataElement.editor.open' | transloco: { name: getCardName(childElement) }
@@ -267,7 +273,7 @@
                         </button>
                       }
                       <button
-                        class="bg-ui-hover text-ui-muted hover:bg-ui-selected hover:text-ui-text inline-flex size-5.5 cursor-pointer items-center justify-center rounded-[3px] border-none p-0 transition-[background,color] @max-xl/sheet:size-10 @max-xl/sheet:rounded-full [&_.material-icons]:text-[13px]! @max-xl/sheet:[&_.material-icons]:text-[20px]!"
+                        class="bg-ui-hover text-ui-muted hover:bg-ui-selected hover:text-ui-text inline-flex size-5.5 cursor-pointer items-center justify-center rounded-[3px] border-none p-0 transition-[background,color] group-data-[compact]/sheet:size-10 group-data-[compact]/sheet:rounded-full [&_.material-icons]:text-[13px]! group-data-[compact]/sheet:[&_.material-icons]:text-[20px]!"
                         type="button"
                         [title]="'feature.inventory.sheet.edit' | transloco"
                         (click)="toggleElementEdit(childElement.identifier)"

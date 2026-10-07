@@ -67,6 +67,9 @@ import { FileSelecterComponent } from '@axe/ui/components/file-selecter/file-sel
 import { SafePipe } from '@axe/ui/pipes/safe.pipe';
 import { TranslocoModule } from '@jsverse/transloco';
 
+/** The width, in rem, a character sheet folds to one column below. */
+const NARROW_SHEET_REM = 36;
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'game-character-sheet',
@@ -106,6 +109,24 @@ export class GameCharacterSheetComponent {
   private readonly motion = inject(MotionService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly sectionChips = viewChild<ElementRef<HTMLElement>>('sectionChips');
+  private readonly sheetRoot = viewChild<ElementRef<HTMLElement>>('sheetRoot');
+  private readonly isTouch = inject(ViewportService).isTouch;
+  /** Whether the sheet is narrower than 36rem. */
+  private readonly isNarrow = signal(false);
+
+  /**
+   * Whether the sheet lays itself out for a phone: one column under a heading of its own, with a
+   * row of its sections. So it does where it is narrower than 36rem, and on a phone held either
+   * way, where a sheet turned on its side has the width but not the height for the wide layout.
+   */
+  readonly narrowLayout = computed(() => this.isNarrow() || this.isCompact());
+
+  /**
+   * Whether the sheet's rows are edited through their editors rather than the buttons beside them:
+   * where the sheet lays itself out for a phone, or on a touch screen at any width, where a 20px
+   * button is too small for a finger.
+   */
+  readonly compactEditing = computed(() => this.narrowLayout() || this.isTouch());
   private cardObserver: IntersectionObserver | null = null;
 
   /** The section the reader is at, which the narrow sheet's row of sections lights up. */
@@ -723,6 +744,16 @@ export class GameCharacterSheetComponent {
       if (chip) nav.scrollTo({ left: chip.offsetLeft - (nav.clientWidth - chip.offsetWidth) / 2 });
     });
     this.destroyRef.onDestroy(() => this.cardObserver?.disconnect());
+    effect((onCleanup) => {
+      const root = this.sheetRoot()?.nativeElement;
+      if (!root || typeof ResizeObserver === 'undefined') return;
+      const observer = new ResizeObserver(([entry]) => {
+        const rem = parseFloat(getComputedStyle(root.ownerDocument.documentElement).fontSize) || 16;
+        this.isNarrow.set(entry.contentRect.width < NARROW_SHEET_REM * rem);
+      });
+      observer.observe(root);
+      onCleanup(() => observer.disconnect());
+    });
     this.destroyRef.onDestroy(() => this.flushCardOwnFaceText());
   }
 
