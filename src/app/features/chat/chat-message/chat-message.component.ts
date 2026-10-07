@@ -44,6 +44,7 @@ import { TextNote } from '@axe/domain/tabletop/text-note';
 import { encodeVnEmote, vnBodyOf, vnEmoteOf } from '@axe/domain/visual-novel/vn-emote';
 import { ChatComposeService } from '@axe/features/chat/chat-compose.service';
 import { buildChatMessageContextMenu } from '@axe/features/chat/chat-message/chat-message-context-menu';
+import { isChatTextHidden, readableChatText } from '@axe/features/chat/chat-message/chat-readable-text';
 import { formatChatTickerMessage } from '@axe/features/chat/chat-ticker/chat-ticker-layout';
 import { SystemAvatarMenuService } from '@axe/features/chat/system-avatar-menu.service';
 import { vnEmoteLabels } from '@axe/features/visual-novel/visual-novel-emote-label';
@@ -51,7 +52,7 @@ import { DiceRollStageComponent } from '@axe/ui/components/dice-roll-stage/dice-
 import { ChatColorStylePipe } from '@axe/ui/pipes/chat-color-style.pipe';
 import { LinkifyPipe } from '@axe/ui/pipes/linkify.pipe';
 import { SafePipe } from '@axe/ui/pipes/safe.pipe';
-import { decorateChatStyleText, splitRubyNotation } from '@axe/ui/text-decoration/decorate-chat-text';
+import { decorateChatStyleText } from '@axe/ui/text-decoration/decorate-chat-text';
 import { TranslocoModule } from '@jsverse/transloco';
 
 @Component({
@@ -309,20 +310,9 @@ export class ChatMessageComponent {
     return { reachesLine: true, inside: allInside ? selection.toString() : '' };
   }
 
-  /**
-   * The words of a line as this reader is shown them, or nothing where they are kept from the reader.
-   *
-   * A notice from the room is read in the reader's language. Ruby comes out as the words with their
-   * reading after them in brackets, since plain text cannot set a reading over its words, and the
-   * log saved from chat keeps the reading as well.
-   */
+  /** The words of a line as this reader is shown them, or nothing where they are kept from the reader. */
   private readableText(message: ChatMessage): string {
-    if (this.isSecret() && !message.isSendFromSelf && !this.canRevealSecret) return '';
-    const text = this.isSystemMessage ? decodeI18nMessage(message.text, this.t) : (message.text ?? '');
-    return splitRubyNotation(vnBodyOf(message.vnEmote, text))
-      .map((part) => (part.reading.length > 0 ? `${part.text}（${part.reading}）` : part.text))
-      .join('')
-      .trim();
+    return readableChatText(message, isChatTextHidden(message, this.canRevealSecret), this.t);
   }
 
   private copyText(text: string): void {
