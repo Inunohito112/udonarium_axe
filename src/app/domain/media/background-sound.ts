@@ -6,6 +6,7 @@ import { LoopPlayer } from '@axe/core/storage/loop-player';
 import { SyncObject, SyncVar } from '@axe/core/sync/decorator';
 import { GameObject, ObjectContext } from '@axe/core/sync/game-object';
 import { ObjectStore } from '@axe/core/sync/object-store';
+import { backgroundSoundLevel } from '@axe/domain/media/background-sound-level';
 
 /**
  * One of the room's background sounds, such as rain or a crowd, which loops underneath the music
@@ -54,19 +55,21 @@ export class BackgroundSound extends GameObject {
    */
   static start(audioIdentifier: string): BackgroundSound | null {
     if (audioIdentifier.length < 1) return null;
-    let sound = BackgroundSound.of(audioIdentifier);
-    if (!sound) {
-      sound = new BackgroundSound(BackgroundSound.identifierOf(audioIdentifier));
-      sound.audioIdentifier = audioIdentifier;
-      sound.initialize();
+    const known = BackgroundSound.of(audioIdentifier);
+    if (known) {
+      GameObject.batch(() => {
+        known.isPlaying = true;
+        known.startedAt = Date.now();
+      });
+      known.follow();
+      return known;
     }
-    const started = sound;
-    GameObject.batch(() => {
-      started.isPlaying = true;
-      started.startedAt = Date.now();
-    });
-    started.follow();
-    return started;
+    const sound = new BackgroundSound(BackgroundSound.identifierOf(audioIdentifier));
+    sound.audioIdentifier = audioIdentifier;
+    sound.isPlaying = true;
+    sound.startedAt = Date.now();
+    sound.initialize();
+    return sound;
   }
 
   /** The background sounds playing in the room, in the order they were started. */
@@ -96,10 +99,7 @@ export class BackgroundSound extends GameObject {
    * included, reads as full volume rather than as silence.
    */
   get level(): number {
-    const raw: unknown = this.volume;
-    if (raw === null || raw === undefined || raw === '') return 1;
-    const level = Number(raw);
-    return Number.isFinite(level) ? Math.min(1, Math.max(0, level)) : 1;
+    return backgroundSoundLevel(this.volume);
   }
 
   /** The sound, or null when its file is not in this peer's storage. */

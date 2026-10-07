@@ -91,6 +91,20 @@ describe('BackgroundSound', () => {
       expect(players.start).toHaveBeenCalledWith(audio, 1, BackgroundSound.FADE_MS);
     });
 
+    it('sends a new one to the room once, already playing', () => {
+      fakeLoopPlayers();
+      AudioStorage.instance.add(makeAudio('rain'));
+      const sent = vi.spyOn(ObjectStore.instance, 'update');
+
+      BackgroundSound.start('rain');
+
+      const contexts = sent.mock.calls
+        .map(([arg]) => arg)
+        .filter((arg): arg is ObjectContext => typeof arg !== 'string' && arg.identifier === 'bgs_rain');
+      expect(contexts).toHaveLength(1);
+      expect(contexts[0].syncData).toMatchObject({ audioIdentifier: 'rain', isPlaying: true });
+    });
+
     it('starts the same one again rather than making a second, keeping the room volume', () => {
       fakeLoopPlayers();
       AudioStorage.instance.add(makeAudio('rain'));
