@@ -67,6 +67,9 @@ import { FileSelecterComponent } from '@axe/ui/components/file-selecter/file-sel
 import { SafePipe } from '@axe/ui/pipes/safe.pipe';
 import { TranslocoModule } from '@jsverse/transloco';
 
+/** How long a section picked from the row of sections stays lit while the sheet scrolls to it. */
+const CHOSEN_SECTION_HOLD_MS = 1200;
+
 /** The width, in rem, a character sheet folds to one column below. */
 const NARROW_SHEET_REM = 36;
 
@@ -128,6 +131,8 @@ export class GameCharacterSheetComponent {
    */
   readonly compactEditing = computed(() => this.narrowLayout() || this.isTouch());
   private cardObserver: IntersectionObserver | null = null;
+  /** Until when the section picked from the row of sections stays lit, while the sheet scrolls to it. */
+  private chosenSectionUntil = 0;
 
   /** The section the reader is at, which the narrow sheet's row of sections lights up. */
   readonly activeSectionId = signal<string | null>(null);
@@ -634,6 +639,7 @@ export class GameCharacterSheetComponent {
   jumpToSection(card: DataElement): void {
     if (this.sheetView.isFolded(card.name)) this.sheetView.setFolded(card.name, false);
     this.activeSectionId.set(card.identifier);
+    this.chosenSectionUntil = performance.now() + CHOSEN_SECTION_HOLD_MS;
     queueMicrotask(() => {
       const target = this.host.nativeElement.querySelector(`[data-card-id="${CSS.escape(card.identifier)}"]`);
       target?.scrollIntoView({ block: 'start', behavior: this.motion.enabled() ? 'smooth' : 'auto' });
@@ -770,8 +776,13 @@ export class GameCharacterSheetComponent {
           if (entry.isIntersecting) showing.add(id);
           else showing.delete(id);
         }
-        const first = this.detailElements().find((card) => showing.has(card.identifier));
-        if (first) this.activeSectionId.set(first.identifier);
+        if (performance.now() < this.chosenSectionUntil) return;
+        const showingCards = this.detailElements().filter((card) => showing.has(card.identifier));
+        // At the very bottom a short last section can never reach the top, so the last one in view
+        // is the one being read.
+        const atBottom = root.scrollTop + root.clientHeight >= root.scrollHeight - 2;
+        const current = atBottom ? showingCards.at(-1) : showingCards[0];
+        if (current) this.activeSectionId.set(current.identifier);
       },
       { root, rootMargin: '-64px 0px -60% 0px' }
     );
