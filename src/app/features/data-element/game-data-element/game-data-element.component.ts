@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, Injector, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EffectCastService } from '@axe/application/effect/effect-cast.service';
 import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
@@ -7,6 +7,7 @@ import { PointerDeviceService } from '@axe/application/input/pointer-device.serv
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { RangeShapeInvokeService } from '@axe/application/tabletop/range-shape-invoke.service';
+import { BottomSheetService } from '@axe/application/ui/bottom-sheet.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { DataElementDragService } from '@axe/application/ui/data-element-drag.service';
 import { ModalService } from '@axe/application/ui/modal.service';
@@ -58,6 +59,7 @@ import {
 import { GameDataElementTableViewComponent } from '@axe/features/data-element/game-data-element/game-data-element-table-view.component';
 import {
   escapeHtml,
+  fieldHasOptions,
   isTableCellField as isTableCellFieldShared,
   isUrlText,
   tableCellLineage,
@@ -118,6 +120,8 @@ export class GameDataElementComponent {
   private readonly effectCast = inject(EffectCastService);
   private readonly rolePermission = inject(RolePermissionService);
   private readonly edit = inject(DataElementEditService);
+  private readonly bottomSheet = inject(BottomSheetService);
+  private readonly injector = inject(Injector);
   /** Whether this row is drawn on a full sheet, which gives it ± buttons and an editor of its own. */
   protected readonly inSheet = inject(IN_DATA_ELEMENT_SHEET, { optional: true }) ?? false;
 
@@ -756,6 +760,23 @@ export class GameDataElementComponent {
     this.contextMenuService.open(this.pointerDeviceService.pointers[0], actions, this.gameDataElement().name);
   }
 
+  /**
+   * Opens this row's editor in a sheet from the bottom, from its name or its "⋯" on a narrow sheet,
+   * where its buttons have no room beside it.
+   */
+  openEditor(event?: Event, options: { focusName?: boolean } = {}): void {
+    const element = this.gameDataElement();
+    const host = event?.currentTarget instanceof Element ? event.currentTarget : null;
+    void import('@axe/features/data-element/data-element-editor/data-element-field-editor.component').then((m) =>
+      this.bottomSheet.open(m.DataElementFieldEditorComponent, {
+        title: this.t('feature.dataElement.editor.fieldTitle'),
+        inputs: { element, focusName: options.focusName ?? false },
+        host,
+        injector: this.injector,
+      })
+    );
+  }
+
   /** The actions of this field row, in the order its bar shows them. */
   fieldActions(): DataElementAction[] {
     return buildFieldActions({
@@ -927,15 +948,9 @@ export class GameDataElementComponent {
    */
   shouldShowFieldOptions(): boolean {
     if (!this.isEdit() || this.isImage()) return false;
-    const fieldType = this.gameDataElement().fieldType;
-    return (
-      this.isTableCellField() ||
-      fieldType === DataElementFieldType.SELECT ||
-      fieldType === DataElementFieldType.NUMBER ||
-      fieldType === DataElementFieldType.RESOURCE ||
-      fieldType === DataElementFieldType.CALC ||
-      fieldType === DataElementFieldType.IMAGE
-    );
+    const element = this.gameDataElement();
+    for (const node of tableCellLineage(element)) this.objectChange.versionOf(node.identifier)();
+    return fieldHasOptions(element);
   }
 
   /**

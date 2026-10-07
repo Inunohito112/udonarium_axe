@@ -4703,7 +4703,20 @@
       "undo": "元に戻す"
     },
     "stepDown": "{{name}}を1減らす",
-    "stepUp": "{{name}}を1増やす"
+    "stepUp": "{{name}}を1増やす",
+    "editor": {
+      "name": "名前",
+      "type": "種別",
+      "order": "並び",
+      "nameEmpty": "名前を入れてください",
+      "back": "戻る",
+      "moveToHint": "「{{name}}」の移動先を選んでください",
+      "referenceCopied": "「{{path}}」をコピーしました",
+      "fieldTitle": "項目の設定",
+      "groupTitle": "グループの設定",
+      "sectionTitle": "セクションの設定",
+      "open": "「{{name}}」の設定を開く"
+    }
   },
   "ui": {
     "openUrl": {

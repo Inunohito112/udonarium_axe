@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
@@ -16,6 +16,17 @@ import {
   tableCellLineage,
 } from '@axe/features/data-element/game-data-element/game-data-element-utils';
 import { TranslocoModule } from '@jsverse/transloco';
+
+/** How the settings sit beside a row on a wide sheet: small, two to a line. */
+const INLINE_CLASSES =
+  'elm-field-options [&_label]:text-ui-muted [&_span]:text-ui-dim [&_input]:bg-ui-input [&_textarea]:bg-ui-input col-span-full mt-1.5 grid grid-cols-2 gap-x-1.5 gap-y-1 border border-[color-mix(in_srgb,var(--gde-row-border)_75%,transparent)] p-1.5 [background:color-mix(in_srgb,var(--ui-input-bg)_72%,transparent)] [&_input]:w-full [&_input]:min-w-0 [&_input]:rounded-(--gde-radius-control) [&_input]:border [&_input]:border-(--gde-row-border) [&_input[type=checkbox]]:m-0 [&_input[type=checkbox]]:size-3.5! [&_label]:grid [&_label]:min-w-0 [&_label]:items-center [&_label]:gap-1 [&_label]:text-[0.86em] [&_span]:whitespace-nowrap [&_textarea]:min-h-[3.2em] [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:resize-y [&_textarea]:rounded-(--gde-radius-control) [&_textarea]:border [&_textarea]:border-(--gde-row-border)';
+
+/**
+ * How the settings sit in the editor sheet a narrow sheet opens: one to a line, as tall as a
+ * fingertip, with text at 16px.
+ */
+const SHEET_CLASSES =
+  'elm-field-options grid grid-cols-1 gap-y-1 [&_label]:flex [&_label]:min-h-12 [&_label]:items-center [&_label]:justify-between [&_label]:gap-3 [&_label]:border-b [&_label]:border-solid [&_label]:border-ui-border-panel [&_label]:py-1 [&_label]:text-[15px] [&_label]:text-ui-text [&_span]:shrink-0 [&_span]:text-ui-muted [&_input:not([type=checkbox])]:h-10 [&_input:not([type=checkbox])]:w-36 [&_input:not([type=checkbox])]:min-w-0 [&_input:not([type=checkbox])]:rounded-lg [&_input:not([type=checkbox])]:border [&_input:not([type=checkbox])]:border-solid [&_input:not([type=checkbox])]:border-ui-border-panel [&_input:not([type=checkbox])]:bg-ui-input [&_input:not([type=checkbox])]:px-3 [&_input:not([type=checkbox])]:text-base [&_input:not([type=checkbox])]:text-ui-text [&_input[type=checkbox]]:size-6 [&_input[type=checkbox]]:accent-(--ui-accent) [&_select]:h-10 [&_select]:w-36 [&_select]:rounded-lg [&_select]:border [&_select]:border-solid [&_select]:border-ui-border-panel [&_select]:bg-ui-input [&_select]:px-2 [&_select]:text-base [&_select]:text-ui-text [&_label:has(textarea)]:flex-col [&_label:has(textarea)]:items-stretch [&_textarea]:min-h-24 [&_textarea]:w-full [&_textarea]:rounded-lg [&_textarea]:border [&_textarea]:border-solid [&_textarea]:border-ui-border-panel [&_textarea]:bg-ui-input [&_textarea]:p-3 [&_textarea]:text-base [&_textarea]:text-ui-text';
 
 /**
  * The settings of one sheet row, or of a group or section shown as a table.
@@ -38,6 +49,10 @@ export class GameDataElementFieldOptionsComponent {
   readonly element = input.required<DataElement>();
   /** Whether these are the settings of a field, or of a group or section shown as a table. */
   readonly kind = input<'field' | 'container'>('field');
+  /** Whether the settings sit beside a row on a wide sheet, or fill the editor sheet of a narrow one. */
+  readonly variant = input<'inline' | 'sheet'>('inline');
+
+  protected readonly wrapperClass = computed(() => (this.variant() === 'sheet' ? SHEET_CLASSES : INLINE_CLASSES));
 
   readonly soundSetOptions = RESOURCE_SOUND_SET_OPTIONS;
 

@@ -2248,6 +2248,14 @@ game-data-element .elm-markdown-view,
  * value is far quicker moved by a step than typed. A press is only a tap, so a quick run of them
  * is never taken for a double tap that zooms the page.
  */
+/*
+ * On a narrow sheet a row being edited keeps only its name and its value, with a "⋯" that opens
+ * its editor; the name and the "⋯" stay out of sight everywhere else.
+ */
+:is(game-data-element, [game-data-element]) :is(.elm-name-button, .elm-more) {
+  display: none;
+}
+
 :is(game-data-element, [game-data-element]) .elm-step {
   display: none;
   flex: none;
@@ -2391,6 +2399,53 @@ game-data-element .elm-markdown-view,
 
   [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-step {
     display: inline-flex;
+  }
+
+  [data-own-mobile-layout]
+    :is(game-data-element, [game-data-element])
+    :is(.elm-name-cell .elm-name-input, .elm-row-actions) {
+    display: none;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-name-button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    color: var(--ui-text);
+    font-size: 14px;
+    text-align: left;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-name-button span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-more {
+    display: inline-flex;
+    grid-row: 1;
+    grid-column: 2;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 9999px;
+    color: var(--ui-text-muted);
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-more .material-icons {
+    font-size: 22px;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-value-content.gde-editing {
+    max-height: none;
+    overflow: visible;
   }
 
   [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-resource-view:has(> .elm-step) {

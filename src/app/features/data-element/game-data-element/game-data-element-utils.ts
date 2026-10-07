@@ -1,4 +1,4 @@
-import { DataElement, DataElementRole, DataElementViewMode } from '@axe/domain/data/data-element';
+import { DataElement, DataElementFieldType, DataElementRole, DataElementViewMode } from '@axe/domain/data/data-element';
 
 /**
  * Escapes a sheet value for use as HTML, so what somebody typed shows as written rather than as
@@ -37,4 +37,20 @@ export function isTableCellField(element: DataElement): boolean {
   if (element.fieldRole !== DataElementRole.FIELD) return false;
   const [, row, table] = tableCellLineage(element);
   return row?.fieldRole === DataElementRole.GROUP && table?.viewMode === DataElementViewMode.TABLE;
+}
+
+const KINDS_WITH_OPTIONS: ReadonlySet<string> = new Set([
+  DataElementFieldType.SELECT,
+  DataElementFieldType.NUMBER,
+  DataElementFieldType.RESOURCE,
+  DataElementFieldType.CALC,
+  DataElementFieldType.IMAGE,
+]);
+
+/**
+ * Whether a field has settings of its own to open: a cell of a table, or a select, number,
+ * resource, calculated or image field.
+ */
+export function fieldHasOptions(element: DataElement): boolean {
+  return isTableCellField(element) || KINDS_WITH_OPTIONS.has(element.fieldType);
 }

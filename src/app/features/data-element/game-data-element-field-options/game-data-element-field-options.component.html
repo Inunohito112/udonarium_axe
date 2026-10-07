@@ -1,7 +1,5 @@
 @if (kind() === 'field') {
-  <div
-    class="elm-field-options [&_label]:text-ui-muted [&_span]:text-ui-dim [&_input]:bg-ui-input [&_textarea]:bg-ui-input col-span-full mt-1.5 grid grid-cols-2 gap-x-1.5 gap-y-1 border border-[color-mix(in_srgb,var(--gde-row-border)_75%,transparent)] p-1.5 [background:color-mix(in_srgb,var(--ui-input-bg)_72%,transparent)] [&_input]:w-full [&_input]:min-w-0 [&_input]:rounded-(--gde-radius-control) [&_input]:border [&_input]:border-(--gde-row-border) [&_input[type='checkbox']]:m-0 [&_input[type='checkbox']]:size-3.5! [&_label]:grid [&_label]:min-w-0 [&_label]:items-center [&_label]:gap-1 [&_label]:text-[0.86em] [&_span]:whitespace-nowrap [&_textarea]:min-h-[3.2em] [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:resize-y [&_textarea]:rounded-(--gde-radius-control) [&_textarea]:border [&_textarea]:border-(--gde-row-border)"
-  >
+  <div [class]="wrapperClass()">
     @if (fieldType() === 'select') {
       <label class="col-span-full grid-cols-[auto_minmax(8rem,1fr)]">
         <span>{{ 'feature.dataElement.field.choices' | transloco }}</span>
@@ -188,9 +186,7 @@
     }
   </div>
 } @else {
-  <div
-    class="elm-field-options [&_label]:text-ui-muted [&_span]:text-ui-dim [&_input]:bg-ui-input [&_textarea]:bg-ui-input col-span-full mt-1.5 grid grid-cols-2 gap-x-1.5 gap-y-1 border border-[color-mix(in_srgb,var(--gde-row-border)_75%,transparent)] p-1.5 [background:color-mix(in_srgb,var(--ui-input-bg)_72%,transparent)] [&_input]:w-full [&_input]:min-w-0 [&_input]:rounded-(--gde-radius-control) [&_input]:border [&_input]:border-(--gde-row-border) [&_input[type='checkbox']]:m-0 [&_input[type='checkbox']]:size-3.5! [&_label]:grid [&_label]:min-w-0 [&_label]:items-center [&_label]:gap-1 [&_label]:text-[0.86em] [&_span]:whitespace-nowrap [&_textarea]:min-h-[3.2em] [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:resize-y [&_textarea]:rounded-(--gde-radius-control) [&_textarea]:border [&_textarea]:border-(--gde-row-border)"
-  >
+  <div [class]="wrapperClass()">
     <label class="col-span-full grid-cols-[auto_minmax(3.8rem,1fr)]">
       <span>{{ 'feature.dataElement.field.rowHeader' | transloco }}</span>
       <input

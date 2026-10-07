@@ -4284,7 +4284,20 @@
         "undo": "되돌리기"
       },
       "stepDown": "{{name}} 1 감소",
-      "stepUp": "{{name}} 1 증가"
+      "stepUp": "{{name}} 1 증가",
+      "editor": {
+        "name": "이름",
+        "type": "종류",
+        "order": "순서",
+        "nameEmpty": "이름을 입력하세요",
+        "back": "뒤로",
+        "moveToHint": "「{{name}}」을(를) 옮길 곳을 고르세요",
+        "referenceCopied": "「{{path}}」을(를) 복사했습니다",
+        "fieldTitle": "항목 설정",
+        "groupTitle": "그룹 설정",
+        "sectionTitle": "섹션 설정",
+        "open": "「{{name}}」 설정 열기"
+      }
     },
     "whiteBoard": {
       "defaultName": "화이트보드",

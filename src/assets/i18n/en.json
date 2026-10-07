@@ -4703,7 +4703,20 @@
       "undo": "Undo"
     },
     "stepDown": "Decrease {{name}} by 1",
-    "stepUp": "Increase {{name}} by 1"
+    "stepUp": "Increase {{name}} by 1",
+    "editor": {
+      "name": "Name",
+      "type": "Type",
+      "order": "Order",
+      "nameEmpty": "Enter a name",
+      "back": "Back",
+      "moveToHint": "Choose where to move “{{name}}”",
+      "referenceCopied": "Copied “{{path}}”",
+      "fieldTitle": "Item settings",
+      "groupTitle": "Group settings",
+      "sectionTitle": "Section settings",
+      "open": "Open the settings of “{{name}}”"
+    }
   },
   "ui": {
     "openUrl": {
