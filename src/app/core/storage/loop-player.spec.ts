@@ -70,7 +70,7 @@ function makeAudio(opts: { identifier?: string; blob?: Blob | null; url?: string
   return audio;
 }
 
-type AudioPlayerStatics = { _audioContext: unknown; _backgroundGainNode: unknown };
+type AudioPlayerStatics = { _audioContext: unknown; channels: Map<unknown, unknown> };
 
 describe('LoopPlayer', () => {
   let context: ReturnType<typeof makeContext>;
@@ -87,7 +87,7 @@ describe('LoopPlayer', () => {
     vi.stubGlobal('webkitAudioContext', AudioContextCtor);
     const statics = AudioPlayer as unknown as AudioPlayerStatics;
     statics._audioContext = undefined;
-    statics._backgroundGainNode = undefined;
+    statics.channels.clear();
   };
 
   /** The gain node the player made for itself, which comes after the background channel's own. */
@@ -122,7 +122,7 @@ describe('LoopPlayer', () => {
     vi.restoreAllMocks();
     const statics = AudioPlayer as unknown as AudioPlayerStatics;
     statics._audioContext = undefined;
-    statics._backgroundGainNode = undefined;
+    statics.channels.clear();
   });
 
   describe('a small file', () => {

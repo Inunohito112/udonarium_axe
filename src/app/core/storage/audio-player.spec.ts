@@ -92,14 +92,7 @@ function makeAudioElm(): AudioElmMock {
 
 type AudioPlayerPrivateStatic = {
   _audioContext: unknown;
-  _masterGainNode: unknown;
-  _auditionGainNode: unknown;
-  _seGainNode: unknown;
-  _backgroundGainNode: unknown;
-  _volume: number;
-  _auditionVolume: number;
-  _seVolume: number;
-  _backgroundVolume: number;
+  channels: Map<VolumeType, unknown>;
   cacheMap: Map<string, { url: string; blob: Blob }>;
   MAX_CACHE_SIZE: number;
   MAX_DECODED_BYTES: number;
@@ -111,8 +104,6 @@ type AudioPlayerPrivateInstance = {
   _audioElm?: unknown;
 };
 
-const DEFAULT_VOLUME = 0.5;
-
 const audioPlayerPrivate = AudioPlayer as unknown as AudioPlayerPrivateStatic;
 const asAudioPlayerPrivate = (player: AudioPlayer): AudioPlayerPrivateInstance =>
   player as unknown as AudioPlayerPrivateInstance;
@@ -120,16 +111,9 @@ const asAudioPlayerPrivate = (player: AudioPlayer): AudioPlayerPrivateInstance =
 function resetStaticState() {
   // reset the static fields so nothing leaks between tests
   audioPlayerPrivate._audioContext = undefined;
-  audioPlayerPrivate._masterGainNode = undefined;
-  audioPlayerPrivate._auditionGainNode = undefined;
-  audioPlayerPrivate._seGainNode = undefined;
-  audioPlayerPrivate._backgroundGainNode = undefined;
-  // written to rather than set through the setters, which would build the gain graph a test
-  // has yet to ask for. A test that reads a default has to find one whatever ran before it.
-  audioPlayerPrivate._volume = DEFAULT_VOLUME;
-  audioPlayerPrivate._auditionVolume = DEFAULT_VOLUME;
-  audioPlayerPrivate._seVolume = DEFAULT_VOLUME;
-  audioPlayerPrivate._backgroundVolume = DEFAULT_VOLUME;
+  // Emptied rather than set through the setters, which would build the gain graph a test has yet
+  // to ask for. A test that reads a default has to find one whatever ran before it.
+  audioPlayerPrivate.channels.clear();
   audioPlayerPrivate.cacheMap.clear();
   (AudioPlayer as unknown as { decodedBuffers: Map<string, unknown> }).decodedBuffers.clear();
 }
@@ -275,6 +259,11 @@ describe('AudioPlayer', () => {
     });
     it('the background sounds are three', () => {
       expect(VolumeType.BACKGROUND).toBe(3);
+    });
+    it('the kinds split off from the sound effects come after, in a fixed order', () => {
+      expect([VolumeType.CUT_IN, VolumeType.NOTIFICATION, VolumeType.HANDLING, VolumeType.EFFECT]).toEqual([
+        4, 5, 6, 7,
+      ]);
     });
   });
 
@@ -712,7 +701,70 @@ describe('AudioPlayer', () => {
 
   // ─── static play (playBufferAsync) ───────────────────────────────────────
 
+  describe('channels', () => {
+    const ALL = [
+      VolumeType.MASTER,
+      VolumeType.AUDITION,
+      VolumeType.SE,
+      VolumeType.BACKGROUND,
+      VolumeType.CUT_IN,
+      VolumeType.NOTIFICATION,
+      VolumeType.HANDLING,
+      VolumeType.EFFECT,
+    ];
+
+    it('gives every kind a channel of its own, running to the speakers', () => {
+      const nodes = ALL.map((type) => AudioPlayer.channelNode(type));
+
+      expect(new Set(nodes).size).toBe(ALL.length);
+      for (const node of nodes) {
+        expect((node as unknown as GainNodeMock).connect).toHaveBeenCalledWith(audioCtxMock.destination);
+      }
+    });
+
+    it('starts every channel at half', () => {
+      expect(ALL.map((type) => AudioPlayer.channelVolume(type))).toEqual(ALL.map(() => 0.5));
+    });
+
+    it('glides one channel to a new volume and leaves the others alone', () => {
+      AudioPlayer.setChannelVolume(VolumeType.HANDLING, 0.3);
+
+      expect(AudioPlayer.channelVolume(VolumeType.HANDLING)).toBe(0.3);
+      expect(AudioPlayer.channelVolume(VolumeType.SE)).toBe(0.5);
+      const node = AudioPlayer.channelNode(VolumeType.HANDLING) as unknown as GainNodeMock;
+      expect(node.gain.setTargetAtTime).toHaveBeenCalledWith(0.3, 0, 0.01);
+    });
+
+    it('is the same node the named accessors give', () => {
+      expect(AudioPlayer.rootNode).toBe(AudioPlayer.channelNode(VolumeType.MASTER));
+      expect(AudioPlayer.seNode).toBe(AudioPlayer.channelNode(VolumeType.SE));
+      expect(AudioPlayer.backgroundNode).toBe(AudioPlayer.channelNode(VolumeType.BACKGROUND));
+    });
+  });
+
   describe('static play()', () => {
+    async function connectedChannel(): Promise<unknown> {
+      let gain: GainNodeMock | undefined;
+      await vi.waitFor(() => {
+        const source = audioCtxMock.createBufferSource.mock.results[0]?.value as AudioBufferSourceNodeMock | undefined;
+        expect(source?.start).toHaveBeenCalled();
+        gain = source!.connect.mock.calls[0][0] as GainNodeMock;
+      });
+      return gain!.connect.mock.calls[0][0];
+    }
+
+    it('plays through the sound-effect channel unless given another kind', async () => {
+      AudioPlayer.play(makeAudioFile({ blob: new Blob(['x']), identifier: 'kind-se' }), 0.5);
+
+      expect(await connectedChannel()).toBe(AudioPlayer.seNode);
+    });
+
+    it('plays through the channel of the kind it is given', async () => {
+      AudioPlayer.play(makeAudioFile({ blob: new Blob(['x']), identifier: 'kind-handling' }), 0.5, VolumeType.HANDLING);
+
+      expect(await connectedChannel()).toBe(AudioPlayer.channelNode(VolumeType.HANDLING));
+    });
+
     it('starts a buffer source when there are bytes', async () => {
       const blob = new Blob(['audio-data']);
       const af = makeAudioFile({ blob, identifier: 'sp1' });

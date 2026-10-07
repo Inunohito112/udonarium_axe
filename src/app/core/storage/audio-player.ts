@@ -4,12 +4,35 @@ import { AudioFile, AudioState } from '@axe/core/storage/audio-file';
 import * as FileReaderUtil from '@axe/core/storage/file-reader-util';
 import { PERF_SE_DECODE, perfCounters } from '@axe/core/util/perf-counters';
 
+/**
+ * The channels sound plays through, each with a volume of its own that the listener sets.
+ *
+ * Music, previews, sound effects and background sounds came first. Cut-ins, notifications, the
+ * sounds of handling things on the table, and the sounds of effects were split off from the sound
+ * effects so that each can be turned down or off on its own.
+ */
 export enum VolumeType {
   MASTER,
   AUDITION,
   SE,
   BACKGROUND,
+  CUT_IN,
+  NOTIFICATION,
+  HANDLING,
+  EFFECT,
 }
+
+/** Every channel, in the order of `VolumeType`. */
+export const VOLUME_TYPES: readonly VolumeType[] = [
+  VolumeType.MASTER,
+  VolumeType.AUDITION,
+  VolumeType.SE,
+  VolumeType.BACKGROUND,
+  VolumeType.CUT_IN,
+  VolumeType.NOTIFICATION,
+  VolumeType.HANDLING,
+  VolumeType.EFFECT,
+];
 
 declare global {
   interface Window {
@@ -35,133 +58,108 @@ export class AudioPlayer {
     return AudioPlayer._audioContext;
   }
 
-  private static _volume: number = 0.5;
-  /**
-   * The volume of the master channel, from 0 to 1, which players use unless given another volume
-   * type.
-   *
-   * Setting it glides the channel to the new level over a few milliseconds rather than jumping.
-   */
-  static get volume(): number {
-    return AudioPlayer._volume;
-  }
-  static set volume(volume: number) {
-    AudioPlayer._volume = volume;
-    AudioPlayer.masterGainNode.gain.setTargetAtTime(AudioPlayer._volume, AudioPlayer.audioContext.currentTime, 0.01);
+  private static readonly channels = new Map<VolumeType, { volume: number; node?: GainNode }>();
+
+  private static channel(type: VolumeType): { volume: number; node?: GainNode } {
+    let channel = AudioPlayer.channels.get(type);
+    if (!channel) {
+      channel = { volume: 0.5 };
+      AudioPlayer.channels.set(type, channel);
+    }
+    return channel;
   }
 
-  private static _auditionVolume: number = 0.5;
+  /** The volume of one channel, from 0 to 1, which is half until it is set. */
+  static channelVolume(type: VolumeType): number {
+    return AudioPlayer.channel(type).volume;
+  }
+
+  /**
+   * Sets the volume of one channel, from 0 to 1, for everything playing through it and all that plays
+   * through it later.
+   *
+   * The channel glides to the new level over a few milliseconds rather than jumping.
+   */
+  static setChannelVolume(type: VolumeType, volume: number): void {
+    AudioPlayer.channel(type).volume = volume;
+    AudioPlayer.channelNode(type).gain.setTargetAtTime(volume, AudioPlayer.audioContext.currentTime, 0.01);
+  }
+
+  /**
+   * The gain node of one channel, which the players and sounds of that kind connect to. Each channel
+   * runs straight to the speakers, so one channel's volume never touches another's.
+   */
+  static channelNode(type: VolumeType): GainNode {
+    const channel = AudioPlayer.channel(type);
+    if (!channel.node) {
+      const context = AudioPlayer.audioContext;
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(channel.volume, context.currentTime);
+      gain.connect(context.destination);
+      channel.node = gain;
+    }
+    return channel.node;
+  }
+
+  /** The volume of the master channel, from 0 to 1, which players use unless given another volume type. */
+  static get volume(): number {
+    return AudioPlayer.channelVolume(VolumeType.MASTER);
+  }
+  static set volume(volume: number) {
+    AudioPlayer.setChannelVolume(VolumeType.MASTER, volume);
+  }
+
   /**
    * The volume of the audition channel, from 0 to 1, which the preview players of the jukebox and
    * of the cut-in music picker play through, on this device alone.
-   *
-   * The jukebox sets it from its audition slider scaled by the room volume. The channel runs straight
-   * to the speakers, so the master volume does not touch it.
    */
   static get auditionVolume(): number {
-    return AudioPlayer._auditionVolume;
+    return AudioPlayer.channelVolume(VolumeType.AUDITION);
   }
   static set auditionVolume(auditionVolume: number) {
-    AudioPlayer._auditionVolume = auditionVolume;
-    AudioPlayer.auditionGainNode.gain.setTargetAtTime(
-      AudioPlayer._auditionVolume,
-      AudioPlayer.audioContext.currentTime,
-      0.01
-    );
+    AudioPlayer.setChannelVolume(VolumeType.AUDITION, auditionVolume);
   }
 
-  private static _masterGainNode: GainNode;
-  private static get masterGainNode(): GainNode {
-    if (!AudioPlayer._masterGainNode) {
-      const masterGain = AudioPlayer.audioContext.createGain();
-      masterGain.gain.setValueAtTime(AudioPlayer._volume, AudioPlayer.audioContext.currentTime);
-      masterGain.connect(AudioPlayer.audioContext.destination);
-      AudioPlayer._masterGainNode = masterGain;
-    }
-    return AudioPlayer._masterGainNode;
-  }
-
-  private static _auditionGainNode: GainNode;
-  private static get auditionGainNode(): GainNode {
-    if (!AudioPlayer._auditionGainNode) {
-      const auditionGain = AudioPlayer.audioContext.createGain();
-      auditionGain.gain.setValueAtTime(AudioPlayer._auditionVolume, AudioPlayer.audioContext.currentTime);
-      auditionGain.connect(AudioPlayer.audioContext.destination);
-      AudioPlayer._auditionGainNode = auditionGain;
-    }
-    return AudioPlayer._auditionGainNode;
-  }
-
-  private static _seVolume: number = 0.5;
   /**
-   * The volume of the sound-effect channel, from 0 to 1, which every one-shot effect from `play`
-   * and `playSE` goes through, along with players set to the SE volume type.
+   * The volume of the sound-effect channel, from 0 to 1, which one-shot effects play through unless
+   * given another kind, along with `playSE` and players set to the SE volume type.
    */
   static get seVolume(): number {
-    return AudioPlayer._seVolume;
+    return AudioPlayer.channelVolume(VolumeType.SE);
   }
   static set seVolume(seVolume: number) {
-    AudioPlayer._seVolume = seVolume;
-    AudioPlayer.seGainNode.gain.setTargetAtTime(AudioPlayer._seVolume, AudioPlayer.audioContext.currentTime, 0.01);
+    AudioPlayer.setChannelVolume(VolumeType.SE, seVolume);
   }
 
-  private static _seGainNode: GainNode;
-  private static get seGainNode(): GainNode {
-    if (!AudioPlayer._seGainNode) {
-      const seGain = AudioPlayer.audioContext.createGain();
-      seGain.gain.setValueAtTime(AudioPlayer._seVolume, AudioPlayer.audioContext.currentTime);
-      seGain.connect(AudioPlayer.audioContext.destination);
-      AudioPlayer._seGainNode = seGain;
-    }
-    return AudioPlayer._seGainNode;
-  }
-
-  private static _backgroundVolume: number = 0.5;
   /**
    * The volume of the background channel, from 0 to 1, which the room's looping background sounds,
    * such as rain or a crowd, play through underneath the music.
    */
   static get backgroundVolume(): number {
-    return AudioPlayer._backgroundVolume;
+    return AudioPlayer.channelVolume(VolumeType.BACKGROUND);
   }
   static set backgroundVolume(backgroundVolume: number) {
-    AudioPlayer._backgroundVolume = backgroundVolume;
-    AudioPlayer.backgroundGainNode.gain.setTargetAtTime(
-      AudioPlayer._backgroundVolume,
-      AudioPlayer.audioContext.currentTime,
-      0.01
-    );
-  }
-
-  private static _backgroundGainNode: GainNode;
-  private static get backgroundGainNode(): GainNode {
-    if (!AudioPlayer._backgroundGainNode) {
-      const backgroundGain = AudioPlayer.audioContext.createGain();
-      backgroundGain.gain.setValueAtTime(AudioPlayer._backgroundVolume, AudioPlayer.audioContext.currentTime);
-      backgroundGain.connect(AudioPlayer.audioContext.destination);
-      AudioPlayer._backgroundGainNode = backgroundGain;
-    }
-    return AudioPlayer._backgroundGainNode;
+    AudioPlayer.setChannelVolume(VolumeType.BACKGROUND, backgroundVolume);
   }
 
   /** The master channel gain node, which players on the master volume type connect to. */
   static get rootNode(): AudioNode {
-    return AudioPlayer.masterGainNode;
+    return AudioPlayer.channelNode(VolumeType.MASTER);
   }
   /**
    * The audition channel gain node, which players on the audition volume type connect to: the
    * preview players of the jukebox and of the cut-in music picker.
    */
   static get auditionNode(): AudioNode {
-    return AudioPlayer.auditionGainNode;
+    return AudioPlayer.channelNode(VolumeType.AUDITION);
   }
   /** The sound-effect channel gain node, which one-shot effects and SE players connect to. */
   static get seNode(): AudioNode {
-    return AudioPlayer.seGainNode;
+    return AudioPlayer.channelNode(VolumeType.SE);
   }
   /** The background channel gain node, which the looping background sounds and background players connect to. */
   static get backgroundNode(): AudioNode {
-    return AudioPlayer.backgroundGainNode;
+    return AudioPlayer.channelNode(VolumeType.BACKGROUND);
   }
 
   private _audioElm: HTMLAudioElement | undefined;
@@ -283,13 +281,13 @@ export class AudioPlayer {
   }
 
   /**
-   * Plays the audio once as a sound effect at the given volume and forgets about it.
+   * Plays the audio once at the given volume, through the channel of its kind, and forgets about it.
    *
-   * Nothing is kept to stop it with or to report it as playing; use `playSE` for an
-   * effect that may need stopping.
+   * It goes through the sound-effect channel unless given another kind. Nothing is kept to stop it
+   * with or to report it as playing; use `playSE` for an effect that may need stopping.
    */
-  static play(audio: AudioFile, volume: number = 1.0) {
-    this.playBufferAsync(audio, volume);
+  static play(audio: AudioFile, volume: number = 1.0, type: VolumeType = VolumeType.SE) {
+    this.playBufferAsync(audio, volume, type);
   }
 
   /**
@@ -403,26 +401,17 @@ export class AudioPlayer {
   }
 
   private getConnectingAudioNode() {
-    switch (this.volumeType) {
-      case VolumeType.AUDITION:
-        return AudioPlayer.auditionNode;
-      case VolumeType.SE:
-        return AudioPlayer.seNode;
-      case VolumeType.BACKGROUND:
-        return AudioPlayer.backgroundNode;
-      default:
-        return AudioPlayer.rootNode;
-    }
+    return AudioPlayer.channelNode(this.volumeType);
   }
 
-  private static async playBufferAsync(audio: AudioFile, volume: number = 1.0) {
+  private static async playBufferAsync(audio: AudioFile, volume: number, type: VolumeType) {
     const source = await AudioPlayer.createBufferSourceAsync(audio);
     if (!source) return;
 
     const gain = AudioPlayer.audioContext.createGain();
     gain.gain.setValueAtTime(volume, AudioPlayer.audioContext.currentTime);
 
-    gain.connect(AudioPlayer.seNode);
+    gain.connect(AudioPlayer.channelNode(type));
     source.connect(gain);
 
     source.onended = () => {
