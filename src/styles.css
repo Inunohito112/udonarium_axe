@@ -2443,6 +2443,43 @@ game-data-element .elm-markdown-view,
     font-size: 22px;
   }
 
+  [data-own-mobile-layout]
+    :is(game-data-element, [game-data-element])
+    .elm-group-heading
+    :is(.elm-icon-picker, .elm-name-input, .elm-heading-actions) {
+    display: none;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-group-heading[data-depth='0'] {
+    display: none;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-group-heading .elm-name-button {
+    gap: 6px;
+    padding-left: 0;
+    color: inherit;
+    font-size: inherit;
+    font-weight: 600;
+  }
+
+  [data-own-mobile-layout]
+    :is(game-data-element, [game-data-element])
+    .elm-group-heading
+    .elm-name-button
+    .material-icons {
+    font-size: 18px;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-group-heading .elm-more {
+    flex: none;
+    margin: -6px -4px -6px 0;
+    color: var(--ui-text-muted);
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-group-heading .elm-more .material-icons {
+    font-size: 22px;
+  }
+
   [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-value-content.gde-editing {
     max-height: none;
     overflow: visible;

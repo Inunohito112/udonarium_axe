@@ -4674,7 +4674,7 @@
       "saveTemplate": "Save as template",
       "addFromTemplate": "Add from template",
       "deleteTemplate": "Delete template",
-      "moveTo": "Move to group…"
+      "moveTo": "Move to…"
     },
     "defaults": {
       "newGroup": "Group",
@@ -4715,7 +4715,12 @@
       "fieldTitle": "Item settings",
       "groupTitle": "Group settings",
       "sectionTitle": "Section settings",
-      "open": "Open the settings of “{{name}}”"
+      "open": "Open the settings of “{{name}}”",
+      "view": "Show as",
+      "addField": "Add item",
+      "addFieldHint": "Choose the type of the item to add to “{{name}}”",
+      "templateSaved": "Saved “{{name}}” as a template",
+      "deleteGroup": "Delete this group"
     }
   },
   "ui": {

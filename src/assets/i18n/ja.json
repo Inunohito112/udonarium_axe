@@ -4674,7 +4674,7 @@
       "saveTemplate": "テンプレートとして保存",
       "addFromTemplate": "テンプレートから追加",
       "deleteTemplate": "テンプレートを削除",
-      "moveTo": "グループへ移動…"
+      "moveTo": "移動先を選ぶ…"
     },
     "defaults": {
       "newGroup": "グループ",
@@ -4715,7 +4715,12 @@
       "fieldTitle": "項目の設定",
       "groupTitle": "グループの設定",
       "sectionTitle": "セクションの設定",
-      "open": "「{{name}}」の設定を開く"
+      "open": "「{{name}}」の設定を開く",
+      "view": "表示",
+      "addField": "項目を追加",
+      "addFieldHint": "「{{name}}」に足す項目の種別を選んでください",
+      "templateSaved": "「{{name}}」をテンプレートとして保存しました",
+      "deleteGroup": "このグループを削除"
     }
   },
   "ui": {

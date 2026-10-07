@@ -34,25 +34,11 @@
       <h3 class="text-ui-muted m-0 mb-1.5 text-[13px] font-semibold" [id]="idPrefix + '-type'">
         {{ 'feature.dataElement.editor.type' | transloco }}
       </h3>
-      <div class="grid grid-cols-5 gap-1.5" role="radiogroup" [attr.aria-labelledby]="idPrefix + '-type'">
-        @for (type of types; track type.type) {
-          <button
-            type="button"
-            role="radio"
-            class="border-ui-border-panel bg-ui-elevated text-ui-muted active:bg-ui-hover flex min-h-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-solid px-0.5 py-1.5 text-[11px] leading-tight"
-            [class.border-ui-accent!]="state().fieldType === type.type"
-            [class.bg-ui-accent-bg!]="state().fieldType === type.type"
-            [class.text-ui-accent!]="state().fieldType === type.type"
-            [class.font-semibold]="state().fieldType === type.type"
-            [attr.aria-checked]="state().fieldType === type.type"
-            [attr.data-type]="type.type"
-            (click)="setType(type.type)"
-          >
-            <i class="material-icons text-[22px]!">{{ type.icon }}</i>
-            <span class="max-w-full truncate">{{ type.labelKey | transloco }}</span>
-          </button>
-        }
-      </div>
+      <data-element-type-grid
+        [selected]="state().fieldType"
+        [labelledBy]="idPrefix + '-type'"
+        (picked)="setType($event)"
+      />
     </section>
 
     @if (state().hasOptions) {

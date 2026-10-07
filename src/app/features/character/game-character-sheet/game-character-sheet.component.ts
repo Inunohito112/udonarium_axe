@@ -58,6 +58,7 @@ import {
 } from '@axe/features/character/game-character-sheet/detail-element-reorder-helpers';
 import { GameCharacterSettingsTabComponent } from '@axe/features/character/game-character-sheet/game-character-settings-tab.component';
 import { clampInRange, roundOr } from '@axe/features/character/game-character-sheet/numeric-input-helpers';
+import { openDataElementEditor } from '@axe/features/data-element/data-element-editor/open-data-element-editor';
 import { DataElementDeletionService } from '@axe/features/data-element/game-data-element/data-element-deletion.service';
 import { IN_DATA_ELEMENT_SHEET } from '@axe/features/data-element/game-data-element/data-element-sheet-host';
 import { GameDataElementComponent } from '@axe/features/data-element/game-data-element/game-data-element.component';
@@ -615,6 +616,17 @@ export class GameCharacterSheetComponent {
     queueMicrotask(() => {
       const target = this.host.nativeElement.querySelector(`[data-card-id="${CSS.escape(card.identifier)}"]`);
       target?.scrollIntoView({ block: 'start', behavior: this.motion.enabled() ? 'smooth' : 'auto' });
+    });
+  }
+
+  /**
+   * Opens a section's editor in a sheet from the bottom, from the "⋯" on its card on a narrow
+   * sheet, which holds what the card's small buttons hold on a wide one.
+   */
+  openSectionEditor(card: DataElement, event?: Event): void {
+    openDataElementEditor(this.bottomSheet, this.translateFn, card, {
+      host: event?.currentTarget instanceof Element ? event.currentTarget : null,
+      injector: this.injector,
     });
   }
 

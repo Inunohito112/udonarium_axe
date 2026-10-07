@@ -36,6 +36,7 @@ import {
   type TableColumn as DataElementTableColumn,
   type TableColumnHeaderGroup as DataElementTableColumnHeaderGroup,
 } from '@axe/domain/data/table-layout';
+import { openDataElementEditor } from '@axe/features/data-element/data-element-editor/open-data-element-editor';
 import {
   buildContainerActions,
   buildFieldActions,
@@ -45,6 +46,10 @@ import {
   toContextMenuActions,
 } from '@axe/features/data-element/game-data-element/data-element-actions';
 import { DataElementEditService } from '@axe/features/data-element/game-data-element/data-element-edit.service';
+import {
+  HEADING_ICON_GROUPS,
+  type HeadingIconGroup,
+} from '@axe/features/data-element/game-data-element/data-element-icons';
 import { IN_DATA_ELEMENT_SHEET } from '@axe/features/data-element/game-data-element/data-element-sheet-host';
 import { FIELD_TYPE_CATALOG } from '@axe/features/data-element/game-data-element/field-type-catalog';
 import {
@@ -438,53 +443,7 @@ export class GameDataElementComponent {
   readonly iconPickerOpen = signal(false);
   readonly templateMenuOpen = signal(false);
 
-  static readonly ICON_GROUPS: { labelKey: string; icons: string[] }[] = [
-    {
-      labelKey: 'feature.dataElement.iconGroup.character',
-      icons: [
-        'person',
-        'face',
-        'account_circle',
-        'groups',
-        'man',
-        'woman',
-        'child_care',
-        'elderly',
-        'back_hand',
-        'accessibility',
-        'roller_skating',
-      ],
-    },
-    {
-      labelKey: 'feature.dataElement.iconGroup.combat',
-      icons: [
-        'shield',
-        'security',
-        'gavel',
-        'sports_martial_arts',
-        'local_fire_department',
-        'bolt',
-        'whatshot',
-        'flash_on',
-      ],
-    },
-    {
-      labelKey: 'feature.dataElement.iconGroup.status',
-      icons: ['favorite', 'health_and_safety', 'star', 'grade', 'bar_chart', 'trending_up', 'speed', 'military_tech'],
-    },
-    {
-      labelKey: 'feature.dataElement.iconGroup.item',
-      icons: ['inventory_2', 'backpack', 'category', 'sell', 'local_pharmacy', 'build', 'key', 'lock'],
-    },
-    {
-      labelKey: 'feature.dataElement.iconGroup.magic',
-      icons: ['auto_awesome', 'flare', 'nights_stay', 'wb_sunny', 'blur_on', 'casino', 'psychology', 'emoji_events'],
-    },
-    {
-      labelKey: 'feature.dataElement.iconGroup.memo',
-      icons: ['info', 'note', 'description', 'edit_note', 'comment', 'chat', 'sticky_note_2', 'assignment'],
-    },
-  ];
+  static readonly ICON_GROUPS: readonly HeadingIconGroup[] = HEADING_ICON_GROUPS;
 
   readonly iconGroups = GameDataElementComponent.ICON_GROUPS.map((group) => ({
     label: this.t(group.labelKey),
@@ -765,16 +724,11 @@ export class GameDataElementComponent {
    * where its buttons have no room beside it.
    */
   openEditor(event?: Event, options: { focusName?: boolean } = {}): void {
-    const element = this.gameDataElement();
-    const host = event?.currentTarget instanceof Element ? event.currentTarget : null;
-    void import('@axe/features/data-element/data-element-editor/data-element-field-editor.component').then((m) =>
-      this.bottomSheet.open(m.DataElementFieldEditorComponent, {
-        title: this.t('feature.dataElement.editor.fieldTitle'),
-        inputs: { element, focusName: options.focusName ?? false },
-        host,
-        injector: this.injector,
-      })
-    );
+    openDataElementEditor(this.bottomSheet, this.t, this.gameDataElement(), {
+      host: event?.currentTarget instanceof Element ? event.currentTarget : null,
+      injector: this.injector,
+      focusName: options.focusName,
+    });
   }
 
   /** The actions of this field row, in the order its bar shows them. */

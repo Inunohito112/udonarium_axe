@@ -34,6 +34,9 @@ import {
   siblingMoveTarget,
 } from '@axe/features/data-element/game-data-element/game-data-element-structure-ops';
 
+/** The attribute a group or section heading keeps its mark in. */
+export const HEADING_ICON_ATTRIBUTE = 'cs-icon';
+
 /** Why a new name was turned away, or that it was taken. */
 export type RenameResult = 'renamed' | 'unchanged' | 'empty' | 'duplicate';
 
@@ -107,6 +110,19 @@ export class DataElementEditService {
     element.setFieldType(fieldType);
     element.setAttribute('type', DataElement.dataTypeFromFieldType(fieldType));
     this.notify(element);
+  }
+
+  /** The mark a group or section heading wears; empty for none. */
+  iconOf(element: DataElement): string {
+    return String(element.getAttribute(HEADING_ICON_ATTRIBUTE) ?? '');
+  }
+
+  /** Gives a group or section heading a mark, or takes it away with the empty name. */
+  setIcon(element: DataElement, icon: string): void {
+    const name = icon.trim();
+    if (name) element.setAttribute(HEADING_ICON_ATTRIBUTE, name);
+    else element.removeAttribute(HEADING_ICON_ATTRIBUTE);
+    this.objectChange.notifyChanged(element.identifier);
   }
 
   /** Whether an element is shown in its piece's popup. */

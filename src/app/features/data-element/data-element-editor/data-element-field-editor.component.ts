@@ -17,8 +17,8 @@ import { ObjectChangeService } from '@axe/application/sync/object-change.service
 import { BottomSheetRef } from '@axe/application/ui/bottom-sheet.service';
 import { SnackbarService } from '@axe/application/ui/snackbar.service';
 import { DataElement, type DataElementFieldTypeValue } from '@axe/domain/data/data-element';
+import { DataElementTypeGridComponent } from '@axe/features/data-element/data-element-editor/data-element-type-grid.component';
 import { DataElementEditService } from '@axe/features/data-element/game-data-element/data-element-edit.service';
-import { FIELD_TYPE_CATALOG } from '@axe/features/data-element/game-data-element/field-type-catalog';
 import type { MoveTarget } from '@axe/features/data-element/game-data-element/game-data-element-structure-drop';
 import type { SiblingMove } from '@axe/features/data-element/game-data-element/game-data-element-structure-ops';
 import {
@@ -49,7 +49,7 @@ let nextEditorId = 0;
   selector: 'data-element-field-editor',
   templateUrl: './data-element-field-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GameDataElementFieldOptionsComponent, TranslocoModule],
+  imports: [DataElementTypeGridComponent, GameDataElementFieldOptionsComponent, TranslocoModule],
   host: { class: 'block' },
 })
 export class DataElementFieldEditorComponent {
@@ -67,7 +67,6 @@ export class DataElementFieldEditorComponent {
   /** The row being edited, which a copy or a new row below takes the place of. */
   protected readonly current = linkedSignal(() => this.element());
   protected readonly view = signal<'main' | 'moveTo'>('main');
-  protected readonly types = FIELD_TYPE_CATALOG;
   protected readonly moves = MOVES;
   protected readonly idPrefix = `field-editor-${nextEditorId++}`;
 
