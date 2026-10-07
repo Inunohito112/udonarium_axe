@@ -56,13 +56,17 @@ export class JukeboxComponent {
   protected readonly backgroundSounds = inject(BackgroundSoundPlaybackService);
   private readonly personalVolumes = inject(PersonalVolumeService);
 
-  roomVolumeChange = false;
+  /** Whether this player may move the room volume, which only the game master may, as with the room's other settings. */
+  readonly canChangeRoomVolume = computed(() => {
+    this.objectChange.trackMyCursor();
+    return this.rolePermission.canEditShared;
+  });
 
   /**
    * The room-wide volume every player's sound is multiplied by, from the room volume slider.
    *
-   * It lives in the room's synced config, so changing it changes what everyone hears. Reads 1 before
-   * the config exists.
+   * It lives in the room's synced config, so changing it changes what everyone hears, and only the
+   * game master may change it. Reads 1 before the config exists.
    */
   get roomVolume(): number {
     const conf = this.objectStore.get<Config>('Config');
@@ -70,6 +74,7 @@ export class JukeboxComponent {
   }
 
   set roomVolume(volume: number) {
+    if (!this.rolePermission.canEditShared) return;
     const conf = this.objectStore.get<Config>('Config');
     if (conf) conf.roomVolume = volume;
     this.jukebox?.setNewVolume();

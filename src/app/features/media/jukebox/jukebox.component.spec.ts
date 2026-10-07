@@ -14,6 +14,8 @@ import { CutInLauncher } from '@axe/domain/media/cut-in-launcher';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { Playlist } from '@axe/domain/media/playlist';
 import { Config } from '@axe/domain/peer/config';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { BackgroundSoundPlaybackService } from '@axe/features/media/background-sound-playback.service';
 import { JukeboxComponent } from '@axe/features/media/jukebox/jukebox.component';
 import { JukeboxPlaybackService } from '@axe/features/media/jukebox-playback.service';
@@ -96,6 +98,53 @@ describe('JukeboxComponent', () => {
       for (let i = 1; i < order.length; i++) {
         expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       }
+    });
+  });
+
+  describe('the room volume', () => {
+    function roomSlider(): HTMLInputElement {
+      return (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[name="room-volume"]')!;
+    }
+
+    function config(): Config {
+      if (!ObjectStore.instance.get<Config>('Config')) new Config('Config').initialize();
+      return ObjectStore.instance.get<Config>('Config')!;
+    }
+
+    beforeEach(() => {
+      PeerCursor.createMyCursor();
+      config().roomVolume = 1;
+      vi.spyOn(AudioPlayer, 'volume', 'set').mockImplementation(() => {});
+      vi.spyOn(AudioPlayer, 'auditionVolume', 'set').mockImplementation(() => {});
+      vi.spyOn(AudioPlayer, 'seVolume', 'set').mockImplementation(() => {});
+      vi.spyOn(AudioPlayer, 'backgroundVolume', 'set').mockImplementation(() => {});
+    });
+
+    it('is left alone for a player, who cannot move it', async () => {
+      PeerCursor.myCursor.role = PeerRole.Player;
+      await fixture.whenStable();
+
+      component.roomVolume = 0.4;
+
+      expect(roomSlider().disabled).toBe(true);
+      expect(config().roomVolume).toBe(1);
+    });
+
+    it('is moved by the game master, for the whole room', async () => {
+      PeerCursor.myCursor.role = PeerRole.GameMaster;
+      await fixture.whenStable();
+
+      component.roomVolume = 0.4;
+
+      expect(roomSlider().disabled).toBe(false);
+      expect(config().roomVolume).toBe(0.4);
+    });
+
+    it('asks for no tick of its own before the game master can move it', async () => {
+      PeerCursor.myCursor.role = PeerRole.GameMaster;
+      await fixture.whenStable();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('input[name="room-volume-change"]')).toBeNull();
     });
   });
 

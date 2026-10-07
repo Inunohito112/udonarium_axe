@@ -423,8 +423,7 @@
         "bgmLabel": "BGM",
         "seLabel": "SE",
         "roomLabel": "全体",
-        "roomTooltip": "全体（GM制御）",
-        "roomGmTooltip": "全プレイヤー共通 GM制御",
+        "roomTooltip": "全体（GM だけ）",
         "tabLibrary": "ライブラリ",
         "tabPlaylist": "再生リスト",
         "tagDisabled": "再生リスト登録中はタグ変更できません",
@@ -476,7 +475,7 @@
         "ownVolumeHeading": "自分の音量",
         "ownVolumeNote": "自分にだけ効き、このブラウザに保存されます",
         "roomVolumeHeading": "部屋の音量",
-        "roomVolumeNote": "部屋の全員に効きます"
+        "roomVolumeNote": "部屋の全員に効き、GM だけが変えられます"
       },
       "miniJukebox": {
         "stopped": "— 停止中 —",
