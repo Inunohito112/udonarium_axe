@@ -51,6 +51,7 @@ import {
   toContextMenuActions,
 } from '@axe/features/data-element/game-data-element/data-element-actions';
 import { DataElementDeletionService } from '@axe/features/data-element/game-data-element/data-element-deletion.service';
+import { IN_DATA_ELEMENT_SHEET } from '@axe/features/data-element/game-data-element/data-element-sheet-host';
 import { FIELD_TYPE_CATALOG } from '@axe/features/data-element/game-data-element/field-type-catalog';
 import {
   canAcceptChildRole,
@@ -75,6 +76,7 @@ import {
   isUrlText,
   tableCellLineage,
 } from '@axe/features/data-element/game-data-element/game-data-element-utils';
+import { canStep, numericInputMode, stepValue } from '@axe/features/data-element/game-data-element/value-stepper';
 import { GameDataElementFieldOptionsComponent } from '@axe/features/data-element/game-data-element-field-options/game-data-element-field-options.component';
 import { GameDataElementRangeShapeComponent } from '@axe/features/data-element/game-data-element-range-shape/game-data-element-range-shape.component';
 import { FileSelecterComponent } from '@axe/ui/components/file-selecter/file-selecter.component';
@@ -83,6 +85,9 @@ import { LinkifyPipe } from '@axe/ui/pipes/linkify.pipe';
 import { SafePipe } from '@axe/ui/pipes/safe.pipe';
 import { TranslocoModule } from '@jsverse/transloco';
 import { NgOptionComponent, NgSelectComponent } from '@ng-select/ng-select';
+
+/** How long after the last press of a ± its change is written, so a run of presses is one change. */
+export const STEP_COMMIT_MS = 450;
 
 @Component({
   selector: 'game-data-element, [game-data-element]',
@@ -127,6 +132,8 @@ export class GameDataElementComponent {
   private readonly effectCast = inject(EffectCastService);
   private readonly rolePermission = inject(RolePermissionService);
   private readonly deletion = inject(DataElementDeletionService);
+  /** Whether this row is drawn on a full sheet, which gives it ± buttons and an editor of its own. */
+  protected readonly inSheet = inject(IN_DATA_ELEMENT_SHEET, { optional: true }) ?? false;
 
   readonly isReadOnly = computed(() => {
     this.objectChange.trackMyCursor();
@@ -310,6 +317,60 @@ export class GameDataElementComponent {
       this._currentValue.set(clamped);
       this.setUpdateTimer();
     }
+  }
+
+  /**
+   * Whether this row shows ± buttons beside its number: on a sheet, while it is read rather than
+   * edited. The buttons themselves show only on a narrow sheet or a touch screen.
+   */
+  showsSteppers(): boolean {
+    return this.inSheet && !this.isEdit() && !this.isImage();
+  }
+
+  /** The keyboard a number box asks a phone for, given the lowest it may go. */
+  inputModeFor(min: string): 'decimal' | null {
+    return numericInputMode(min);
+  }
+
+  /** Whether a ± on a number would change it, so one against its bound is greyed out. */
+  canStepValue(delta: number): boolean {
+    return (
+      !this.isValueLocked() && canStep(this._value(), delta, { min: this.valueMinAttr(), max: this.valueMaxAttr() })
+    );
+  }
+
+  /** Whether a ± on what is left of a resource would change it. */
+  canStepCurrentValue(delta: number): boolean {
+    return (
+      !this.isValueLocked() &&
+      canStep(this._currentValue(), delta, { min: this.currentValueMinAttr(), max: this.currentValueMaxAttr() })
+    );
+  }
+
+  /**
+   * Moves a number one step from its ± button.
+   *
+   * The change is written a moment after the last press, so a run of presses reaches the room, and
+   * the piece, as one change rather than one for every press.
+   */
+  stepNumberValue(delta: number): void {
+    if (this.isValueLocked()) return;
+    const next = stepValue(this._value(), delta, { min: this.valueMinAttr(), max: this.valueMaxAttr() });
+    if (next === null) return;
+    this._value.set(next);
+    this.setUpdateTimer(STEP_COMMIT_MS);
+  }
+
+  /** Moves what is left of a resource one step from its ± button, written as one change after a run of presses. */
+  stepCurrentValue(delta: number): void {
+    if (this.isValueLocked()) return;
+    const next = stepValue(this._currentValue(), delta, {
+      min: this.currentValueMinAttr(),
+      max: this.currentValueMaxAttr(),
+    });
+    if (next === null) return;
+    this._currentValue.set(next);
+    this.setUpdateTimer(STEP_COMMIT_MS);
   }
 
   private clampNumeric(input: number | string, minStr: string, maxStr: string): number | string {
@@ -1123,7 +1184,7 @@ export class GameDataElementComponent {
     this._value.set(object.value);
   }
 
-  private setUpdateTimer() {
+  private setUpdateTimer(delayMs = 66) {
     clearTimeout(this.updateTimer ?? undefined);
     this.updateTimer = setTimeout(() => {
       const element = this.gameDataElement();
@@ -1138,7 +1199,7 @@ export class GameDataElementComponent {
       if (element.currentValue !== this.currentValue) element.currentValue = this.currentValue;
       if (element.value !== this.value) element.value = this.value;
       this.updateTimer = null;
-    }, 66);
+    }, delayMs);
   }
 
   private isDuplicateElementName(name: string, element: DataElement): boolean {

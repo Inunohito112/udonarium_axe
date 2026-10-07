@@ -13,7 +13,11 @@ import {
   DataElementType,
   DataElementViewMode,
 } from '@axe/domain/data/data-element';
-import { GameDataElementComponent } from '@axe/features/data-element/game-data-element/game-data-element.component';
+import { IN_DATA_ELEMENT_SHEET } from '@axe/features/data-element/game-data-element/data-element-sheet-host';
+import {
+  GameDataElementComponent,
+  STEP_COMMIT_MS,
+} from '@axe/features/data-element/game-data-element/game-data-element.component';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 function createDragEvent(clientY: number = 15): DragEvent {
@@ -1315,5 +1319,124 @@ describe('GameDataElementComponent', () => {
       option.click();
       expect(field.getAttribute(DataElementAttribute.RESOURCE_SLIDER)).toBe('');
     });
+  });
+});
+
+describe('GameDataElementComponent on a sheet', () => {
+  let component: GameDataElementComponent;
+  let fixture: ComponentFixture<GameDataElementComponent>;
+
+  function show(element: DataElement, options: { inSheet?: boolean; isEdit?: boolean } = {}): HTMLElement {
+    TestBed.configureTestingModule({
+      imports: [GameDataElementComponent],
+      providers: [
+        ...TEST_PROVIDERS,
+        ...(options.inSheet === false ? [] : [{ provide: IN_DATA_ELEMENT_SHEET, useValue: true }]),
+      ],
+    });
+    fixture = TestBed.createComponent(GameDataElementComponent);
+    component = fixture.componentInstance;
+    fixture.componentRef.setInput('isEdit', options.isEdit ?? false);
+    fixture.componentRef.setInput('gameDataElement', element);
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function hp(current = 12): DataElement {
+    const field = DataElement.create('HP', 20, {
+      [DataElementAttribute.ROLE]: DataElementRole.FIELD,
+      [DataElementAttribute.FIELD_TYPE]: DataElementFieldType.RESOURCE,
+      type: DataElementType.NUMBER_RESOURCE,
+    });
+    field.currentValue = current;
+    return field;
+  }
+
+  const press = (host: HTMLElement, testId: string) =>
+    (host.querySelector(`[data-testid="${testId}"]`) as HTMLButtonElement).click();
+
+  it('puts ± beside a resource read on a sheet', () => {
+    const host = show(hp());
+
+    expect(host.querySelector('[data-testid="step-down"]')).not.toBeNull();
+    expect(host.querySelector('[data-testid="step-up"]')).not.toBeNull();
+  });
+
+  it('puts none beside a row outside a sheet, or one being edited', () => {
+    expect(show(hp(), { inSheet: false }).querySelector('[data-testid="step-down"]')).toBeNull();
+    TestBed.resetTestingModule();
+    expect(show(hp(), { isEdit: true }).querySelector('[data-testid="step-down"]')).toBeNull();
+  });
+
+  it('writes a run of presses as one change, once the presses stop', () => {
+    vi.useFakeTimers();
+    try {
+      const field = hp(12);
+      const host = show(field);
+      const writes = vi.fn();
+      const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), 'currentValue');
+      Object.defineProperty(field, 'currentValue', {
+        configurable: true,
+        get: () => descriptor!.get!.call(field),
+        set: (value) => {
+          writes(value);
+          descriptor!.set!.call(field, value);
+        },
+      });
+
+      press(host, 'step-down');
+      vi.advanceTimersByTime(200);
+      press(host, 'step-down');
+      vi.advanceTimersByTime(200);
+      press(host, 'step-down');
+      expect(component.currentValue).toBe(9);
+      expect(writes).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(STEP_COMMIT_MS);
+
+      expect(writes).toHaveBeenCalledTimes(1);
+      expect(Number(descriptor!.get!.call(field))).toBe(9);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('greys out the + of a resource at its maximum', () => {
+    const host = show(hp(20));
+    fixture.detectChanges();
+
+    expect((host.querySelector('[data-testid="step-up"]') as HTMLButtonElement).disabled).toBe(true);
+    expect((host.querySelector('[data-testid="step-down"]') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('steps a number within its bounds', () => {
+    vi.useFakeTimers();
+    try {
+      const field = DataElement.create('筋力', 5, {
+        [DataElementAttribute.ROLE]: DataElementRole.FIELD,
+        [DataElementAttribute.FIELD_TYPE]: DataElementFieldType.NUMBER,
+        min: '0',
+        max: '6',
+      });
+      const host = show(field);
+
+      press(host, 'step-up');
+      press(host, 'step-up');
+      vi.advanceTimersByTime(STEP_COMMIT_MS);
+
+      expect(Number(field.value)).toBe(6);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('asks a phone for the number pad where the value never goes below zero', () => {
+    const field = DataElement.create('筋力', 5, {
+      [DataElementAttribute.ROLE]: DataElementRole.FIELD,
+      [DataElementAttribute.FIELD_TYPE]: DataElementFieldType.NUMBER,
+      min: '0',
+    });
+
+    expect(show(field).querySelector('input[name="data-value"]')?.getAttribute('inputmode')).toBe('decimal');
   });
 });

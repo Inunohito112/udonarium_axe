@@ -4701,7 +4701,9 @@
       "deleted": "Deleted “{{name}}”",
       "deletedUnnamed": "Deleted an item",
       "undo": "Undo"
-    }
+    },
+    "stepDown": "Decrease {{name}} by 1",
+    "stepUp": "Increase {{name}} by 1"
   },
   "ui": {
     "openUrl": {

@@ -4701,7 +4701,9 @@
       "deleted": "「{{name}}」を削除しました",
       "deletedUnnamed": "項目を削除しました",
       "undo": "元に戻す"
-    }
+    },
+    "stepDown": "{{name}}を1減らす",
+    "stepUp": "{{name}}を1増やす"
   },
   "ui": {
     "openUrl": {

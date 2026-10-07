@@ -59,6 +59,7 @@ import {
 import { GameCharacterSettingsTabComponent } from '@axe/features/character/game-character-sheet/game-character-settings-tab.component';
 import { clampInRange, roundOr } from '@axe/features/character/game-character-sheet/numeric-input-helpers';
 import { DataElementDeletionService } from '@axe/features/data-element/game-data-element/data-element-deletion.service';
+import { IN_DATA_ELEMENT_SHEET } from '@axe/features/data-element/game-data-element/data-element-sheet-host';
 import { GameDataElementComponent } from '@axe/features/data-element/game-data-element/game-data-element.component';
 import { DisclosureControlComponent } from '@axe/features/disclosure/disclosure-control/disclosure-control.component';
 import { FileSelecterComponent } from '@axe/ui/components/file-selecter/file-selecter.component';
@@ -70,6 +71,7 @@ import { TranslocoModule } from '@jsverse/transloco';
   selector: 'game-character-sheet',
   templateUrl: './game-character-sheet.component.html',
   host: { class: 'block' },
+  providers: [{ provide: IN_DATA_ELEMENT_SHEET, useValue: true }],
   imports: [
     CardStackCardListComponent,
     DisclosureControlComponent,

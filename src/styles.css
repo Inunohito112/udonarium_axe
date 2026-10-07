@@ -2221,6 +2221,55 @@ game-data-element .elm-markdown-view,
 }
 
 /*
+ * The ± buttons a number has on a sheet, shown on a narrow sheet and on a touch screen, where a
+ * value is far quicker moved by a step than typed. A press is only a tap, so a quick run of them
+ * is never taken for a double tap that zooms the page.
+ */
+:is(game-data-element, [game-data-element]) .elm-step {
+  display: none;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 38px;
+  padding: 0;
+  border-radius: 8px;
+  background: var(--ui-elevated);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-panel-border) 80%, transparent);
+  color: var(--ui-text);
+  touch-action: manipulation;
+}
+
+:is(game-data-element, [game-data-element]) .elm-step:active:not(:disabled) {
+  background: var(--ui-accent-bg);
+  color: var(--ui-accent);
+}
+
+:is(game-data-element, [game-data-element]) .elm-step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+:is(game-data-element, [game-data-element]) .elm-step .material-icons {
+  font-size: 20px;
+}
+
+/* A resource's ± go either side of what is left and what it can reach: − 12 / 20 +. */
+:is(game-data-element, [game-data-element]) .elm-resource-view .elm-step {
+  width: 36px;
+}
+
+@media (pointer: coarse) {
+  :is(game-data-element, [game-data-element]) .elm-step {
+    display: inline-flex;
+  }
+
+  :is(game-data-element, [game-data-element]) .elm-resource-view:has(> .elm-step) {
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  }
+}
+
+/*
  * A character sheet narrower than 36rem, such as one on a phone, lays its rows out for a finger.
  *
  * A row is as tall as a fingertip, its label reads at 13px beside its value, and a value that can
@@ -2306,6 +2355,14 @@ game-data-element .elm-markdown-view,
     height: 24px;
     margin: 0;
     accent-color: var(--ui-accent);
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-step {
+    display: inline-flex;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-resource-view:has(> .elm-step) {
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
   }
 
   [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-children {

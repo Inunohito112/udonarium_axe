@@ -4282,7 +4282,9 @@
         "deleted": "「{{name}}」을(를) 삭제했습니다",
         "deletedUnnamed": "항목을 삭제했습니다",
         "undo": "되돌리기"
-      }
+      },
+      "stepDown": "{{name}} 1 감소",
+      "stepUp": "{{name}} 1 증가"
     },
     "whiteBoard": {
       "defaultName": "화이트보드",
