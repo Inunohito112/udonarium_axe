@@ -1,7 +1,7 @@
 import { updateAudioResource$ } from '@axe/core/event/domain-events';
 import { onFirstUserInteraction } from '@axe/core/input/user-interaction-unlock';
 import { AudioFile } from '@axe/core/storage/audio-file';
-import { AudioPlayer, VolumeType } from '@axe/core/storage/audio-player';
+import { AudioPlayer, VOLUME_TYPES, VolumeType } from '@axe/core/storage/audio-player';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { SyncObject, SyncVar } from '@axe/core/sync/decorator';
 import { GameObject, ObjectContext } from '@axe/core/sync/game-object';
@@ -112,44 +112,51 @@ export class Jukebox extends GameObject {
     return ObjectStore.instance.get<Config>('Config')!;
   }
 
-  private _volume = 0.5;
+  private readonly levels = new Map<VolumeType, number>();
+
   /**
-   * This peer's own music volume, from 0 to 1. It is not shared with the room.
-   *
-   * Setting it changes nothing audible until `setNewVolume()` is called.
+   * This peer's own level for one channel, from 0 to 1, which is half until it is set. It is not
+   * shared with the room, and changes nothing audible until `setNewVolume()` is called.
    */
+  levelOf(type: VolumeType): number {
+    return this.levels.get(type) ?? 0.5;
+  }
+
+  /** Sets this peer's own level for one channel, from 0 to 1. Takes effect through `setNewVolume()`. */
+  setLevel(type: VolumeType, level: number): void {
+    this.levels.set(type, level);
+  }
+
+  /** This peer's own music volume, from 0 to 1. Takes effect through `setNewVolume()`. */
   get volume(): number {
-    return this._volume;
+    return this.levelOf(VolumeType.MASTER);
   }
   set volume(volume: number) {
-    this._volume = volume;
+    this.setLevel(VolumeType.MASTER, volume);
   }
 
-  private _auditionVolume = 0.5;
   /** This peer's own volume for previewing a track, from 0 to 1. Takes effect through `setNewVolume()`. */
-  get auditionVolume() {
-    return this._auditionVolume;
+  get auditionVolume(): number {
+    return this.levelOf(VolumeType.AUDITION);
   }
-  set auditionVolume(_auditionVolume: number) {
-    this._auditionVolume = _auditionVolume;
+  set auditionVolume(auditionVolume: number) {
+    this.setLevel(VolumeType.AUDITION, auditionVolume);
   }
 
-  private _seVolume = 0.5;
   /** This peer's own sound-effect volume, from 0 to 1. Takes effect through `setNewVolume()`. */
   get seVolume(): number {
-    return this._seVolume;
+    return this.levelOf(VolumeType.SE);
   }
   set seVolume(seVolume: number) {
-    this._seVolume = seVolume;
+    this.setLevel(VolumeType.SE, seVolume);
   }
 
-  private _backgroundVolume = 0.5;
   /** This peer's own volume for the room's background sounds, from 0 to 1. Takes effect through `setNewVolume()`. */
   get backgroundVolume(): number {
-    return this._backgroundVolume;
+    return this.levelOf(VolumeType.BACKGROUND);
   }
   set backgroundVolume(backgroundVolume: number) {
-    this._backgroundVolume = backgroundVolume;
+    this.setLevel(VolumeType.BACKGROUND, backgroundVolume);
   }
 
   /** How far into the track this peer's playback is, in seconds. */
@@ -279,15 +286,10 @@ export class Jukebox extends GameObject {
     this._stop();
   }
 
-  /**
-   * Applies this peer's music, preview, sound-effect and background volumes, each scaled by the room
-   * volume, to every player.
-   */
+  /** Applies this peer's own level for every channel, each scaled by the room volume. */
   setNewVolume() {
-    AudioPlayer.volume = this.volume * this.config.roomVolume;
-    AudioPlayer.auditionVolume = this.auditionVolume * this.config.roomVolume;
-    AudioPlayer.seVolume = this.seVolume * this.config.roomVolume;
-    AudioPlayer.backgroundVolume = this.backgroundVolume * this.config.roomVolume;
+    const roomVolume = this.config.roomVolume;
+    for (const type of VOLUME_TYPES) AudioPlayer.setChannelVolume(type, this.levelOf(type) * roomVolume);
   }
 
   /**

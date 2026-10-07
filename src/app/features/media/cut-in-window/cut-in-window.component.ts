@@ -12,6 +12,8 @@ import {
 } from '@angular/core';
 import { YouTubePlayer } from '@angular/youtube-player';
 import { type CutInSoundHandle, CutInSoundService } from '@axe/application/media/cut-in-sound.service';
+import { PersonalVolumeService } from '@axe/application/media/personal-volume.service';
+import { DEFAULT_PERSONAL_VOLUMES } from '@axe/application/media/personal-volumes';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { ModalService } from '@axe/application/ui/modal.service';
 import { PanelService } from '@axe/application/ui/panel.service';
@@ -20,12 +22,12 @@ import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { ImageFile } from '@axe/core/storage/image-file';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
-import { AudioTag } from '@axe/domain/media/audio-tag';
 import { CutIn, cutInPanelChrome } from '@axe/domain/media/cut-in';
 import { CutInLauncher } from '@axe/domain/media/cut-in-launcher';
 import { CutInLayer } from '@axe/domain/media/cut-in-layer';
 import { cutInPlaybackMs } from '@axe/domain/media/cut-in-playback-window';
 import { CutInScene } from '@axe/domain/media/cut-in-scene';
+import { Config } from '@axe/domain/peer/config';
 import { CutInStageComponent } from '@axe/features/media/cut-in-stage/cut-in-stage.component';
 import { SafePipe } from '@axe/ui/pipes/safe.pipe';
 
@@ -49,6 +51,7 @@ export class CutInWindowComponent {
   private readonly imageStorage = inject(ImageStorage);
   private readonly objectChange = inject(ObjectChangeService);
   private readonly cutInSound = inject(CutInSoundService);
+  private readonly personalVolumes = inject(PersonalVolumeService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly cutInArea = viewChild<ElementRef<HTMLDivElement>>('cutInArea');
@@ -258,8 +261,7 @@ export class CutInWindowComponent {
 
     const audio = this.cutIn.audio;
     if (audio && this.audioEnabled) {
-      const isSE = AudioTag.get(this.cutIn.audioIdentifier)?.tag === 'SE';
-      this.audioPlayer.volumeType = isSE ? VolumeType.SE : VolumeType.MASTER;
+      this.audioPlayer.volumeType = VolumeType.CUT_IN;
       this.audioPlayer.loop = this.cutIn.isLoop;
       if (!this.cutIn.videoId) {
         this.audioPlayer.play(audio);
@@ -347,9 +349,21 @@ export class CutInWindowComponent {
     return this._videoId;
   }
 
+  /**
+   * The volume the video plays at, from 0 to 100: the cut-in's own, scaled by the listener's cut-in
+   * volume and the room volume, and 0 while this window's sound is off.
+   *
+   * The video plays in a frame of its own that the audio channels never reach, so the volumes are
+   * applied here instead. The listener's volume counts from the half it starts at, so a listener who
+   * has not touched it hears the video as the cut-in sets it.
+   */
   readonly videoVolumeSig = computed(() => {
     if (this.cutIn) this.objectChange.versionOf(this.cutIn.identifier)();
-    return this.audioEnabledState() ? (this.cutIn?.videoVolume ?? 50) : 0;
+    this.objectChange.versionOf('Config')();
+    if (!this.audioEnabledState()) return 0;
+    const roomVolume = this.objectStore.get<Config>('Config')?.roomVolume ?? 1;
+    const scale = (this.personalVolumes.levelOf('cutIn') / DEFAULT_PERSONAL_VOLUMES.cutIn) * roomVolume;
+    return Math.min(100, Math.round((this.cutIn?.videoVolume ?? 50) * scale));
   });
 
   /** The volume the video plays at, which is 0 while this window's sound is off. */

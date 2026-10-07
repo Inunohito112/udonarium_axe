@@ -16,6 +16,7 @@ import { PieceOverlayPreferenceService } from '@axe/application/ui/piece-overlay
 import { TabletopOverlapService } from '@axe/application/ui/tabletop-overlap.service';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { ViewModePreferenceService } from '@axe/application/ui/view-mode-preference.service';
+import { VolumeType } from '@axe/core/storage/audio-player';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { PERF_HEX_PEDESTAL_OUTLINE, perfCounters } from '@axe/core/util/perf-counters';
@@ -1400,8 +1401,10 @@ describe('GameCharacterComponent', () => {
       const objectChange = TestBed.inject(ObjectChangeService);
       const hp = DataElement.findElementByReference(character.rootDataElement!, 'HP')!;
       const played: string[] = [];
-      vi.spyOn(SoundEffect, 'playLocal').mockImplementation((arg) => {
+      const kinds: (VolumeType | undefined)[] = [];
+      vi.spyOn(SoundEffect, 'playLocal').mockImplementation((arg, kind) => {
         played.push(typeof arg === 'string' ? arg : arg.identifier);
+        kinds.push(kind);
       });
 
       try {
@@ -1420,6 +1423,7 @@ describe('GameCharacterComponent', () => {
         await fixture.whenStable();
 
         expect(played).toEqual([PresetSound.damageSmall, PresetSound.damageMedium, PresetSound.damageLarge]);
+        expect(kinds).toEqual([VolumeType.EFFECT, VolumeType.EFFECT, VolumeType.EFFECT]);
       } finally {
         character.destroy();
       }

@@ -4,7 +4,7 @@ import { PointerDeviceService } from '@axe/application/input/pointer-device.serv
 import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { ContextMenuAction, ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { AudioFile } from '@axe/core/storage/audio-file';
-import { AudioPlayer } from '@axe/core/storage/audio-player';
+import { AudioPlayer, VolumeType } from '@axe/core/storage/audio-player';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { LoopPlayer } from '@axe/core/storage/loop-player';
 import { ObjectStore } from '@axe/core/sync/object-store';
@@ -114,10 +114,7 @@ describe('JukeboxComponent', () => {
     beforeEach(() => {
       PeerCursor.createMyCursor();
       config().roomVolume = 1;
-      vi.spyOn(AudioPlayer, 'volume', 'set').mockImplementation(() => {});
-      vi.spyOn(AudioPlayer, 'auditionVolume', 'set').mockImplementation(() => {});
-      vi.spyOn(AudioPlayer, 'seVolume', 'set').mockImplementation(() => {});
-      vi.spyOn(AudioPlayer, 'backgroundVolume', 'set').mockImplementation(() => {});
+      vi.spyOn(AudioPlayer, 'setChannelVolume').mockImplementation(() => {});
     });
 
     it('is left alone for a player, who cannot move it', async () => {
@@ -404,12 +401,12 @@ describe('JukeboxComponent', () => {
     it('sets this player’s own background volume, scaled by the room volume', () => {
       if (!ObjectStore.instance.get<Config>('Config')) new Config('Config').initialize();
       ObjectStore.instance.get<Config>('Config')!.roomVolume = 0.5;
-      const channel = vi.spyOn(AudioPlayer, 'backgroundVolume', 'set').mockImplementation(() => {});
+      const channel = vi.spyOn(AudioPlayer, 'setChannelVolume').mockImplementation(() => {});
 
       component.backgroundVolume = 0.8;
 
       expect(component.jukebox.backgroundVolume).toBe(0.8);
-      expect(channel).toHaveBeenCalledWith(expect.closeTo(0.4));
+      expect(channel).toHaveBeenCalledWith(VolumeType.BACKGROUND, expect.closeTo(0.4));
     });
 
     it('offers the background sounds as a tag of their own, shown by its translated name', async () => {

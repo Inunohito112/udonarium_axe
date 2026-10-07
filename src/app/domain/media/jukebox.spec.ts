@@ -412,19 +412,24 @@ describe('Jukebox', () => {
   });
 
   describe('setNewVolume()', () => {
-    it('multiplies the room volume into the player volume', () => {
-      // The volume setter reaches for an audio context, so it is stubbed.
-      const volumeSpy = vi.spyOn(AudioPlayer, 'volume', 'set').mockImplementation(() => {});
-      const auditionSpy = vi.spyOn(AudioPlayer, 'auditionVolume', 'set').mockImplementation(() => {});
-      const seSpy = vi.spyOn(AudioPlayer, 'seVolume', 'set').mockImplementation(() => {});
-      const backgroundSpy = vi.spyOn(AudioPlayer, 'backgroundVolume', 'set').mockImplementation(() => {});
+    function channelVolumes() {
+      // The channel setter reaches for an audio context, so it is stubbed.
+      const set = vi.spyOn(AudioPlayer, 'setChannelVolume').mockImplementation(() => {});
+      return (type: VolumeType) => set.mock.calls.filter(([called]) => called === type).at(-1)?.[1];
+    }
 
+    function makeJukeboxInRoomAt(roomVolume: number): Jukebox {
       const jukebox = new Jukebox('Jukebox');
       jukebox.initialize();
       const config = new Config('Config');
       config.initialize();
-      config.roomVolume = 0.8;
+      config.roomVolume = roomVolume;
+      return jukebox;
+    }
 
+    it('multiplies the room volume into this peer’s level for each channel', () => {
+      const heard = channelVolumes();
+      const jukebox = makeJukeboxInRoomAt(0.8);
       jukebox.volume = 0.5;
       jukebox.auditionVolume = 0.6;
       jukebox.seVolume = 0.7;
@@ -432,10 +437,23 @@ describe('Jukebox', () => {
 
       jukebox.setNewVolume();
 
-      expect(volumeSpy).toHaveBeenCalledWith(expect.closeTo(0.4));
-      expect(auditionSpy).toHaveBeenCalledWith(expect.closeTo(0.48));
-      expect(seSpy).toHaveBeenCalledWith(expect.closeTo(0.56));
-      expect(backgroundSpy).toHaveBeenCalledWith(expect.closeTo(0.2));
+      expect(heard(VolumeType.MASTER)).toBeCloseTo(0.4);
+      expect(heard(VolumeType.AUDITION)).toBeCloseTo(0.48);
+      expect(heard(VolumeType.SE)).toBeCloseTo(0.56);
+      expect(heard(VolumeType.BACKGROUND)).toBeCloseTo(0.2);
+    });
+
+    it('carries the channels split off from the sound effects too, at half until set', () => {
+      const heard = channelVolumes();
+      const jukebox = makeJukeboxInRoomAt(0.5);
+      jukebox.setLevel(VolumeType.HANDLING, 0);
+
+      jukebox.setNewVolume();
+
+      expect(heard(VolumeType.HANDLING)).toBe(0);
+      expect(heard(VolumeType.CUT_IN)).toBeCloseTo(0.25);
+      expect(heard(VolumeType.NOTIFICATION)).toBeCloseTo(0.25);
+      expect(heard(VolumeType.EFFECT)).toBeCloseTo(0.25);
     });
   });
 
