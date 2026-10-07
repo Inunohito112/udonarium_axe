@@ -2252,7 +2252,7 @@ game-data-element .elm-markdown-view,
  * On a narrow sheet a row being edited keeps only its name and its value, with a "⋯" that opens
  * its editor; the name and the "⋯" stay out of sight everywhere else.
  */
-:is(game-data-element, [game-data-element]) :is(.elm-name-button, .elm-more) {
+:is(game-data-element, [game-data-element]) :is(.elm-name-button, .elm-more, .elm-add) {
   display: none;
 }
 
@@ -2478,6 +2478,31 @@ game-data-element .elm-markdown-view,
 
   [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-group-heading .elm-more .material-icons {
     font-size: 22px;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 44px;
+    margin: 6px 0 4px;
+    border: 1px dashed color-mix(in srgb, var(--ui-accent) 55%, transparent);
+    border-radius: 10px;
+    background: var(--ui-accent-bg);
+    color: var(--ui-accent);
+    font-size: 14px;
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-add--secondary {
+    border-color: color-mix(in srgb, var(--ui-panel-border) 90%, transparent);
+    background: transparent;
+    color: var(--ui-text-muted);
+  }
+
+  [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-add .material-icons {
+    font-size: 20px;
   }
 
   [data-own-mobile-layout] :is(game-data-element, [game-data-element]) .elm-value-content.gde-editing {

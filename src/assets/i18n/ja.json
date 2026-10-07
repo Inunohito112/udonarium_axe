@@ -4720,7 +4720,8 @@
       "addField": "項目を追加",
       "addFieldHint": "「{{name}}」に足す項目の種別を選んでください",
       "templateSaved": "「{{name}}」をテンプレートとして保存しました",
-      "deleteGroup": "このグループを削除"
+      "deleteGroup": "このグループを削除",
+      "addGroup": "グループを追加"
     }
   },
   "ui": {

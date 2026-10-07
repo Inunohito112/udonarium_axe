@@ -706,6 +706,24 @@
               [style.--gde-depth]="depth() + 1"
             ></div>
           }
+          @if (isEdit() && inSheet && !isImage()) {
+            @if (canAddChildFieldElement()) {
+              <button type="button" class="elm-add" (click)="openAddField($event)" data-testid="group-add-field">
+                <i class="material-icons">add</i>
+                <span>{{ 'feature.dataElement.editor.addField' | transloco }}</span>
+              </button>
+            } @else if (canAddChildGroupElement()) {
+              <button
+                type="button"
+                class="elm-add elm-add--secondary"
+                (click)="addGroupAndEdit($event)"
+                data-testid="group-add-group"
+              >
+                <i class="material-icons">create_new_folder</i>
+                <span>{{ 'feature.dataElement.editor.addGroup' | transloco }}</span>
+              </button>
+            }
+          }
         </div>
       }
     </div>

@@ -36,7 +36,10 @@ import {
   type TableColumn as DataElementTableColumn,
   type TableColumnHeaderGroup as DataElementTableColumnHeaderGroup,
 } from '@axe/domain/data/table-layout';
-import { openDataElementEditor } from '@axe/features/data-element/data-element-editor/open-data-element-editor';
+import {
+  openAddFieldPicker,
+  openDataElementEditor,
+} from '@axe/features/data-element/data-element-editor/open-data-element-editor';
 import {
   buildContainerActions,
   buildFieldActions,
@@ -728,6 +731,28 @@ export class GameDataElementComponent {
       host: event?.currentTarget instanceof Element ? event.currentTarget : null,
       injector: this.injector,
       focusName: options.focusName,
+    });
+  }
+
+  /**
+   * Opens the choice of kind for a field to add at the end of this group, from the "+" a narrow
+   * sheet puts there; the field's editor takes over once a kind is picked.
+   */
+  openAddField(event?: Event): void {
+    openAddFieldPicker(this.bottomSheet, this.t, this.gameDataElement(), {
+      host: event?.currentTarget instanceof Element ? event.currentTarget : null,
+      injector: this.injector,
+    });
+  }
+
+  /** Adds a group at the end of this section and opens its editor with the name ready to be typed over. */
+  addGroupAndEdit(event?: Event): void {
+    const group = this.edit.addGroupInside(this.gameDataElement());
+    if (!group) return;
+    openDataElementEditor(this.bottomSheet, this.t, group, {
+      host: event?.currentTarget instanceof Element ? event.currentTarget : null,
+      injector: this.injector,
+      focusName: true,
     });
   }
 

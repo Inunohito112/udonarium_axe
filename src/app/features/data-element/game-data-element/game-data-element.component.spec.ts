@@ -1439,4 +1439,19 @@ describe('GameDataElementComponent on a sheet', () => {
 
     expect(show(field).querySelector('input[name="data-value"]')?.getAttribute('inputmode')).toBe('decimal');
   });
+  it('puts an add at the end of a group being edited on a sheet, and none outside a sheet', () => {
+    const group = DataElement.create('基本', '', { [DataElementAttribute.ROLE]: DataElementRole.GROUP });
+    group.appendChild(DataElement.create('HP', 10, { [DataElementAttribute.ROLE]: DataElementRole.FIELD }));
+
+    expect(show(group, { isEdit: true }).querySelector('[data-testid="group-add-field"]')).not.toBeNull();
+    TestBed.resetTestingModule();
+    expect(show(group, { isEdit: true, inSheet: false }).querySelector('[data-testid="group-add-field"]')).toBeNull();
+  });
+
+  it('opens the editor from the name or the "⋯" of a row being edited on a sheet', () => {
+    const host = show(hp(), { isEdit: true });
+
+    expect(host.querySelector('[data-testid="row-name-button"]')).not.toBeNull();
+    expect(host.querySelector('[data-testid="row-more"]')).not.toBeNull();
+  });
 });

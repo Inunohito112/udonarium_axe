@@ -4720,7 +4720,8 @@
       "addField": "Add item",
       "addFieldHint": "Choose the type of the item to add to “{{name}}”",
       "templateSaved": "Saved “{{name}}” as a template",
-      "deleteGroup": "Delete this group"
+      "deleteGroup": "Delete this group",
+      "addGroup": "Add group"
     }
   },
   "ui": {

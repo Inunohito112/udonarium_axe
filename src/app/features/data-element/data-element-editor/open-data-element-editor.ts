@@ -40,3 +40,23 @@ export function openDataElementEditor(
     })
   );
 }
+
+/**
+ * Opens the choice of kind for a field about to be added at the end of a group, from the "+" a
+ * narrow sheet puts there.
+ */
+export function openAddFieldPicker(
+  bottomSheet: BottomSheetService,
+  t: TranslateFn,
+  container: DataElement,
+  options: { host?: Element | null; injector?: Injector } = {}
+): void {
+  void import('@axe/features/data-element/data-element-editor/data-element-add-field.component').then((m) =>
+    bottomSheet.open(m.DataElementAddFieldComponent, {
+      title: t('feature.dataElement.editor.addField'),
+      inputs: { container },
+      host: options.host,
+      injector: options.injector,
+    })
+  );
+}

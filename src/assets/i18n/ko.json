@@ -4301,7 +4301,8 @@
         "addField": "항목 추가",
         "addFieldHint": "「{{name}}」에 추가할 항목의 종류를 고르세요",
         "templateSaved": "「{{name}}」을(를) 템플릿으로 저장했습니다",
-        "deleteGroup": "이 그룹 삭제"
+        "deleteGroup": "이 그룹 삭제",
+        "addGroup": "그룹 추가"
       }
     },
     "whiteBoard": {
