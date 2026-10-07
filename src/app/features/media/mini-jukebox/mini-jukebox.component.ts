@@ -12,14 +12,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { PersonalVolumeService } from '@axe/application/media/personal-volume.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { AudioFile } from '@axe/core/storage/audio-file';
-import { AudioPlayer } from '@axe/core/storage/audio-player';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { AudioTag } from '@axe/domain/media/audio-tag';
 import { Jukebox } from '@axe/domain/media/jukebox';
-import { Config } from '@axe/domain/peer/config';
 import { BackgroundSoundPlaybackService } from '@axe/features/media/background-sound-playback.service';
 import { formatTrackTime, JukeboxPlaybackService } from '@axe/features/media/jukebox-playback.service';
 import { DraggableDirective } from '@axe/ui/directives/draggable.directive';
@@ -38,6 +37,7 @@ export class MiniJukeboxComponent {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly playback = inject(JukeboxPlaybackService);
   protected readonly backgroundSounds = inject(BackgroundSoundPlaybackService);
+  private readonly personalVolumes = inject(PersonalVolumeService);
 
   readonly isPlaylistOpen = signal(false);
   readonly isMinimized = signal(false);
@@ -96,10 +96,6 @@ export class MiniJukeboxComponent {
 
   private get jukebox(): Jukebox | null {
     return this.objectStore.get<Jukebox>('Jukebox') ?? null;
-  }
-
-  private get config(): Config | null {
-    return this.objectStore.get<Config>('Config') ?? null;
   }
 
   readonly isPlaying = this.playback.isPlaying;
@@ -267,16 +263,15 @@ export class MiniJukeboxComponent {
   }
 
   /**
-   * The music volume from the player's slider, 0.5 until one is set.
+   * The music volume from the player's slider, the same one the jukebox panel sets.
    *
-   * Setting it changes what this browser plays at, scaled by the room volume; it is not sent to
-   * other peers.
+   * Setting it changes what this browser plays at, scaled by the room volume, and is remembered in
+   * this browser; it is not sent to other peers.
    */
   get volume(): number {
-    return this.jukebox?.volume ?? 0.5;
+    return this.personalVolumes.get('bgm');
   }
   set volume(v: number) {
-    if (this.jukebox) this.jukebox.volume = v;
-    AudioPlayer.volume = v * (this.config?.roomVolume ?? 1);
+    this.personalVolumes.set('bgm', v);
   }
 }

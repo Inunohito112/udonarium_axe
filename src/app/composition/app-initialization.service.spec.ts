@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { PERSONAL_VOLUME_STORAGE_KEY } from '@axe/application/media/personal-volumes';
 import { AppConfigService } from '@axe/composition/app-config.service';
 import { AppInitializationService } from '@axe/composition/app-initialization.service';
 import { AudioSharingSystem } from '@axe/core/storage/audio-sharing-system';
@@ -37,6 +38,20 @@ describe('AppInitializationService', () => {
 
   it('should be created', () => {
     expect(service).toBeTruthy();
+  });
+
+  it('hands the volumes this browser remembers to the jukebox as it starts', () => {
+    localStorage.setItem(PERSONAL_VOLUME_STORAGE_KEY, JSON.stringify({ bgm: 0.2, background: 0.3 }));
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
+    vi.spyOn(TestBed.inject(AppConfigService), 'initialize').mockImplementation(() => {});
+
+    TestBed.inject(AppInitializationService).initialize();
+
+    const jukebox = TestBed.inject(ObjectStore).get<Jukebox>('Jukebox')!;
+    expect(jukebox.volume).toBe(0.2);
+    expect(jukebox.backgroundVolume).toBe(0.3);
+    expect(jukebox.seVolume).toBe(0.5);
   });
 
   describe('initialize()', () => {

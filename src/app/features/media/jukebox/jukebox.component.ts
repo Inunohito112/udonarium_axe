@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signa
 import { FormsModule } from '@angular/forms';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
+import { PersonalVolumeService } from '@axe/application/media/personal-volume.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
@@ -53,6 +54,7 @@ export class JukeboxComponent {
   private readonly t = inject(TRANSLATE_FN);
   protected readonly playback = inject(JukeboxPlaybackService);
   protected readonly backgroundSounds = inject(BackgroundSoundPlaybackService);
+  private readonly personalVolumes = inject(PersonalVolumeService);
 
   roomVolumeChange = false;
 
@@ -73,40 +75,39 @@ export class JukeboxComponent {
     this.jukebox?.setNewVolume();
   }
 
-  /** This player's own BGM volume, applied to the player at once scaled by the room volume; not shared. */
+  /**
+   * This player's own BGM volume, heard at once scaled by the room volume. Not shared, and
+   * remembered in this browser like the other volumes of this player's own.
+   */
   get volume(): number {
-    return this.jukebox?.volume ?? 0.5;
+    return this.personalVolumes.get('bgm');
   }
   set volume(volume: number) {
-    if (this.jukebox) this.jukebox.volume = volume;
-    AudioPlayer.volume = volume * this.roomVolume;
+    this.personalVolumes.set('bgm', volume);
   }
 
-  /** This player's volume for previewing a track alone, scaled by the room volume; not shared. */
+  /** This player's volume for previewing a track alone. */
   get auditionVolume(): number {
-    return this.jukebox?.auditionVolume ?? 0.5;
+    return this.personalVolumes.get('audition');
   }
   set auditionVolume(auditionVolume: number) {
-    if (this.jukebox) this.jukebox.auditionVolume = auditionVolume;
-    AudioPlayer.auditionVolume = auditionVolume * this.roomVolume;
+    this.personalVolumes.set('audition', auditionVolume);
   }
 
-  /** This player's sound-effect volume, scaled by the room volume; not shared. */
+  /** This player's sound-effect volume. */
   get seVolume(): number {
-    return this.jukebox?.seVolume ?? 0.5;
+    return this.personalVolumes.get('se');
   }
   set seVolume(seVolume: number) {
-    if (this.jukebox) this.jukebox.seVolume = seVolume;
-    AudioPlayer.seVolume = seVolume * this.roomVolume;
+    this.personalVolumes.set('se', seVolume);
   }
 
-  /** This player's volume for the room's background sounds, scaled by the room volume; not shared. */
+  /** This player's volume for the room's background sounds. */
   get backgroundVolume(): number {
-    return this.jukebox?.backgroundVolume ?? 0.5;
+    return this.personalVolumes.get('background');
   }
   set backgroundVolume(backgroundVolume: number) {
-    if (this.jukebox) this.jukebox.backgroundVolume = backgroundVolume;
-    AudioPlayer.backgroundVolume = backgroundVolume * this.roomVolume;
+    this.personalVolumes.set('background', backgroundVolume);
   }
 
   readonly allTag = computed(() => this.t('feature.media.jukebox.tagAll'));

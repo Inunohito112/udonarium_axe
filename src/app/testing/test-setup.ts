@@ -14,6 +14,7 @@ import { basename, join, resolve } from 'path';
 
 Logger.setLevel(LogLevel.NONE);
 
+import { PERSONAL_VOLUME_STORAGE_KEY } from '@axe/application/media/personal-volumes';
 import { COMPASS_FACE_STORAGE_KEY } from '@axe/application/ui/compass-face.service';
 import { LOCAL_MODE_STORAGE_KEY } from '@axe/application/ui/local-mode-preference.service';
 import { PIECE_OVERLAY_STORAGE_KEY } from '@axe/application/ui/piece-overlay-preference.service';
@@ -387,6 +388,7 @@ function forgetSeatPreferences(): void {
   localStorage.removeItem(TOOLBAR_FOLD_STORAGE_KEY);
   localStorage.removeItem(PIECE_OVERLAY_STORAGE_KEY);
   localStorage.removeItem(COMPASS_FACE_STORAGE_KEY);
+  localStorage.removeItem(PERSONAL_VOLUME_STORAGE_KEY);
 }
 
 beforeAll(async () => {
