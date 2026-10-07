@@ -397,6 +397,20 @@ chat-message > div > div {
     box-shadow 120ms ease-out;
 }
 
+/* チャット検索（chat-search-marks.ts）。見つかった語はCSS Custom Highlight APIで印を付け、
+   いま立っている発言の語だけ色を変える。どちらのテーマでも読めるよう文字は黒に固定する。 */
+::highlight(chat-search) {
+  background-color: #fde047;
+  color: #111;
+}
+::highlight(chat-search-current) {
+  background-color: #fb923c;
+  color: #111;
+}
+chat-message[data-chat-search-current] > div > div {
+  box-shadow: inset 3px 0 0 var(--ui-accent);
+}
+
 /* overview-panelの独自のテーブル表示。.overview-tableを親のマーカーにする。
    .overview-table-*系のサブマーカーは、overview-panel.component.spec.tsがquerySelectorの対象として
    参照している（例: .overview-table, .overview-table-column--gap, .overview-table-row-heading--group）。

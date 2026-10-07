@@ -2875,6 +2875,16 @@
         "writingOthers": "외 {{count}}명 입력 중",
         "titleWithCount": "{{title}} ({{count}})"
       },
+      "search": {
+        "button": "검색",
+        "open": "채팅 검색 (Ctrl+F)",
+        "placeholder": "이 탭에서 검색",
+        "count": "{{current}} / {{total}}",
+        "none": "결과 없음",
+        "older": "이전 발언으로 (Enter)",
+        "newer": "다음 발언으로 (Shift+Enter)",
+        "close": "닫기 (Esc)"
+      },
       "input": {
         "you": "(당신)",
         "everyone": "전원",

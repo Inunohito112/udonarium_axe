@@ -176,7 +176,11 @@
                 </div>
               </div>
             } @else if (!isSecret() || chatMessage.isSendFromSelf || canRevealSecret) {
-              <span #messageBody [innerHTML]="escapeHtmlAndRuby(chatMessage.text) | linkify | safe"></span>
+              <span
+                #messageBody
+                data-chat-search-text
+                [innerHTML]="escapeHtmlAndRuby(chatMessage.text) | linkify | safe"
+              ></span>
               @for (badge of emoteBadges(); track $index) {
                 <span
                   class="rounded-ui bg-ui-accent-bg text-ui-accent ml-1 px-1 align-middle text-[10px] whitespace-nowrap"
@@ -302,7 +306,11 @@
                   </span>
                 </span>
               } @else if (!isSecret() || chatMessage.isSendFromSelf || canRevealSecret) {
-                <span #messageBody [innerHTML]="escapeHtmlAndRuby(chatMessage.text) | linkify | safe"></span>
+                <span
+                  #messageBody
+                  data-chat-search-text
+                  [innerHTML]="escapeHtmlAndRuby(chatMessage.text) | linkify | safe"
+                ></span>
                 @for (badge of emoteBadges(); track $index) {
                   <span
                     class="rounded-ui bg-ui-accent-bg text-ui-accent ml-1 px-1 align-middle text-[10px] whitespace-nowrap"

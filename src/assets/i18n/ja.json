@@ -2875,6 +2875,16 @@
         "writingOthers": "他 {{count}} 人 入力中",
         "titleWithCount": "{{title}}（{{count}}）"
       },
+      "search": {
+        "button": "検索",
+        "open": "チャットを検索（Ctrl+F）",
+        "placeholder": "このタブを検索",
+        "count": "{{current}} / {{total}}",
+        "none": "見つかりません",
+        "older": "前の発言へ（Enter）",
+        "newer": "次の発言へ（Shift+Enter）",
+        "close": "閉じる（Esc）"
+      },
       "input": {
         "you": "（あなた）",
         "everyone": "全員",

@@ -2875,6 +2875,16 @@
         "writingOthers": "{{count}} more typing",
         "titleWithCount": "{{title}} ({{count}})"
       },
+      "search": {
+        "button": "Search",
+        "open": "Search the chat (Ctrl+F)",
+        "placeholder": "Search this tab",
+        "count": "{{current}} / {{total}}",
+        "none": "No matches",
+        "older": "Earlier line (Enter)",
+        "newer": "Later line (Shift+Enter)",
+        "close": "Close (Esc)"
+      },
       "input": {
         "you": " (you)",
         "everyone": "Everyone",
