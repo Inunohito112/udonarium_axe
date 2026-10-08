@@ -11,31 +11,24 @@ updates:
       prefix: chore
       include: scope
     ignore:
+      # ワークフローとこの環境はNode 24で動いているので、型のメジャーは最新を追わずに手で決める。
       - dependency-name: '@types/node'
         update-types:
           - version-update:semver-major
+      # 10は@semantic-release/release-notes-generator 14が使うconventional-changelog-writerより新しい
+      # 版を前提にしていて、組み合わせるとリリースノートとCHANGELOGが見出しだけの空になる。
+      # release-notes-generatorが追いつくまで止める。
       - dependency-name: conventional-changelog-conventionalcommits
         update-types:
           - version-update:semver-major
+      # AngularはTypeScriptの対応範囲をマイナー単位で決めている（22は>=6.0 <6.1）。Angularが受けるまで止める。
       - dependency-name: typescript
         update-types:
           - version-update:semver-major
-      # 22.1.5〜22.1.xの@angular/buildはunit-testビルダーがsetupFilesを適用しなくなり、
-      # happy-domに無いWebRTCを補うスタブが走らないまま@skyway-sdk/coreを読み込んで
-      # 全specが落ちた。22.2.0では直っているのを確かめたうえで、package.jsonの完全一致の固定を22.2.0へ移している。
-      # 提案は止めたままにして、ng testが通ることを見てから手で上げる。
-      - dependency-name: '@angular/build'
-      - dependency-name: '@angular/cli'
-      # vitest 5は@angular/buildが受け付けない（peerはvitest ^4.0.8。22.1.7でも同じ）。
-      # ng testはそのビルダー越しに走るので、上げるとnpm installの時点で解決しない。
-      # Angular側がvitest 5を受けるまでは提案も止める。
-      - dependency-name: vitest
-        update-types:
-          - version-update:semver-major
-      - dependency-name: '@vitest/coverage-v8'
-        update-types:
-          - version-update:semver-major
     groups:
+      # Angularのフレームワーク・コンパイラ・ビルドツールは互いを同じ版で求めるので、本番依存と開発依存に
+      # またがっていても1つのPRで上げる。種類別のグループに割ると、どちらのPRも単独ではnpm ciが解決しない
+      # （#139と#144がそうだった）。下の2つのグループからは外しておく。
       angular:
         patterns:
           - '@angular/*'
@@ -47,12 +40,21 @@ updates:
         update-types:
           - minor
           - patch
+        exclude-patterns:
+          - '@angular/*'
+          - '@angular-*'
+          - 'ng-*'
+          - '@ng-*'
       development-minor-patch:
         dependency-type: development
         update-types:
           - minor
           - patch
-
+        exclude-patterns:
+          - '@angular/*'
+          - '@angular-*'
+          - 'ng-*'
+          - '@ng-*'
   - package-ecosystem: github-actions
     directory: /
     schedule:
