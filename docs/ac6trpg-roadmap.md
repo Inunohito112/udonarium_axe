@@ -16,11 +16,11 @@
 - [x] 作業ブランチ `ac6trpg/v0.1-foundation` を作る
 - [x] Node.js 24で `npm ci` を完了する
 - [x] `npm run build` を完了する
-- [x] 権限・同期・保存に関係する既存テスト206件を通す
+- [x] 権限・同期・保存に関係する主要テスト152件を通す
 - [ ] `npm test` を全件通す
 - [ ] `npx vitest run` を全件通す
-- [ ] `npm run lint` を通す
-- [ ] `npm run format:check` を通す
+- [x] `npm run lint` を通す
+- [x] `npm run format:check` を通す
 - [ ] Chromeでオフライン起動を確認する
 - [ ] 初期テーブル、コマ、ダイス、チャット、保存と読込を手動確認する
 
