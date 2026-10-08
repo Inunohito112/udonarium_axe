@@ -6,6 +6,7 @@ import {
   LOOP_FROM_MEMORY_MAX_FILE_BYTES,
   LoopPlayer,
 } from '@axe/core/storage/loop-player';
+import { loopTaggedWavBlob } from '@axe/testing/loop-tagged-audio';
 
 type ParamMock = {
   value: number;
@@ -18,6 +19,8 @@ type GainMock = { gain: ParamMock; connect: ReturnType<typeof vi.fn>; disconnect
 type SourceMock = {
   buffer: unknown;
   loop: boolean;
+  loopStart?: number;
+  loopEnd?: number;
   connect: ReturnType<typeof vi.fn>;
   disconnect: ReturnType<typeof vi.fn>;
   start: ReturnType<typeof vi.fn>;
@@ -44,6 +47,7 @@ function makeParam(): ParamMock {
 function makeContext(decodedLength = 44100) {
   return {
     currentTime: 0,
+    sampleRate: 48000,
     destination: {},
     resume: vi.fn().mockResolvedValue(undefined),
     createGain: vi.fn((): GainMock => ({ gain: makeParam(), connect: vi.fn(), disconnect: vi.fn() })),
@@ -170,6 +174,39 @@ describe('LoopPlayer', () => {
       expect(elements[0].src).toBe('blob:big');
       expect(elements[0].play).toHaveBeenCalledOnce();
       expect(context.decodeAudioData).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('a file that names where it loops', () => {
+    // A second long at 8000 samples a second, with the part from a quarter to three quarters going round.
+    const loop = { start: 2000, end: 5999 };
+
+    it('goes round between the points it names', async () => {
+      const player = new LoopPlayer();
+      player.start(makeAudio({ blob: loopTaggedWavBlob(loop) }), 1, 0);
+
+      await vi.waitFor(() => expect(sources()).toHaveLength(1));
+      expect(sources()[0]).toMatchObject({ loop: true, loopStart: 0.25, loopEnd: 0.75 });
+    });
+
+    it('is decoded to go round between them even when it is large', async () => {
+      const large = loopTaggedWavBlob(loop, { frames: 600_000 });
+      expect(large.size).toBeGreaterThan(LOOP_FROM_MEMORY_MAX_FILE_BYTES);
+      const player = new LoopPlayer();
+      player.start(makeAudio({ blob: large }), 1, 0);
+
+      await vi.waitFor(() => expect(sources()).toHaveLength(1));
+      expect(sources()[0]).toMatchObject({ loopStart: 0.25, loopEnd: 0.75 });
+      expect(elements).toHaveLength(0);
+    });
+
+    it('goes round whole when it names none', async () => {
+      const player = new LoopPlayer();
+      player.start(makeAudio({ blob: loopTaggedWavBlob(null) }), 1, 0);
+
+      await vi.waitFor(() => expect(sources()).toHaveLength(1));
+      expect(sources()[0].loop).toBe(true);
+      expect(sources()[0].loopStart).toBeUndefined();
     });
   });
 

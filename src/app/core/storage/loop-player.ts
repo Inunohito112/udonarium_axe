@@ -1,5 +1,6 @@
 import { Logger } from '@axe/core/logging/logger';
 import { AudioFile } from '@axe/core/storage/audio-file';
+import { loopPointsFitInMemory, loopRegionOf, readAudioLoopPoints } from '@axe/core/storage/audio-loop-points';
 import { AudioPlayer } from '@axe/core/storage/audio-player';
 import * as FileReaderUtil from '@axe/core/storage/file-reader-util';
 
@@ -17,8 +18,10 @@ const VOLUME_GLIDE_S = 0.08;
  *
  * A small file is decoded and looped from memory, which joins its end to its start without the gap
  * an `<audio>` element leaves at the seam. A large one is streamed through an element, since
- * decoding it whole would take many times the memory of the file. Fades run on the audio clock, so
- * one started in a tab that is then put in the background still finishes.
+ * decoding it whole would take many times the memory of the file. A file that names where it loops
+ * is decoded whatever its size, within what memory allows, and goes round between those points.
+ * Fades run on the audio clock, so one started in a tab that is then put in the background still
+ * finishes.
  */
 export class LoopPlayer {
   private _gain: GainNode | null = null;
@@ -118,13 +121,17 @@ export class LoopPlayer {
   }
 
   private async startAsync(audio: AudioFile, fadeInMs: number, attempt: number): Promise<void> {
-    const buffer = await LoopPlayer.decodeForLoopAsync(audio);
+    const decoded = await LoopPlayer.decodeForLoopAsync(audio);
     if (attempt !== this.attempt) return;
     const context = AudioPlayer.audioContext;
-    if (buffer) {
+    if (decoded) {
       const source = context.createBufferSource();
-      source.buffer = buffer;
+      source.buffer = decoded.buffer;
       source.loop = true;
+      if (decoded.region) {
+        source.loopStart = decoded.region.start;
+        source.loopEnd = decoded.region.end;
+      }
       source.connect(this.gain);
       this.source = source;
       this.fadeIn(fadeInMs);
@@ -187,16 +194,28 @@ export class LoopPlayer {
     }
   }
 
-  /** The sound decoded for looping from memory, or null when it should be streamed instead. */
-  private static async decodeForLoopAsync(audio: AudioFile): Promise<AudioBuffer | null> {
+  /**
+   * The sound decoded for looping from memory, with the part that goes round where its file names
+   * one, or null when it should be streamed instead.
+   */
+  private static async decodeForLoopAsync(
+    audio: AudioFile
+  ): Promise<{ buffer: AudioBuffer; region: { start: number; end: number } | null } | null> {
     const blob = audio.blob;
-    if (!blob || blob.size > LOOP_FROM_MEMORY_MAX_FILE_BYTES) return null;
+    if (!blob) return null;
     try {
       const data = await FileReaderUtil.readAsArrayBufferAsync(blob);
+      const points = readAudioLoopPoints(new Uint8Array(data));
+      const followsPoints =
+        points !== null && loopPointsFitInMemory(points, AudioPlayer.audioContext.sampleRate, blob.size);
+      if (!followsPoints && blob.size > LOOP_FROM_MEMORY_MAX_FILE_BYTES) return null;
       const buffer = await new Promise<AudioBuffer>((resolve, reject) =>
         AudioPlayer.audioContext.decodeAudioData(data, resolve, reject)
       );
-      return buffer.length * buffer.numberOfChannels * 4 > LOOP_FROM_MEMORY_MAX_DECODED_BYTES ? null : buffer;
+      if (followsPoints) return { buffer, region: loopRegionOf(points, buffer.duration) };
+      return buffer.length * buffer.numberOfChannels * 4 > LOOP_FROM_MEMORY_MAX_DECODED_BYTES
+        ? null
+        : { buffer, region: null };
     } catch (reason) {
       Logger.warn('[LoopPlayer] デコード失敗', reason);
       return null;
