@@ -347,6 +347,29 @@ describe('FileArchiver', () => {
       expect(announced[0].files.map((file) => file.name)).toEqual(['long.ogg', 'huge.png']);
     });
 
+    it('takes sounds of every kind it knows from inside an archive', async () => {
+      const archive = zipSync({
+        'a.m4a': new Uint8Array([1]),
+        'b.opus': new Uint8Array([2]),
+        'c.oga': new Uint8Array([3]),
+        'd.flac': new Uint8Array([4]),
+        'e.aac': new Uint8Array([5]),
+      });
+
+      await FileArchiver.instance.load([new File([archive.slice()], 'sounds.zip', { type: 'application/zip' })]);
+
+      const taken = vi
+        .mocked(AudioStorage.instance.addAsync)
+        .mock.calls.map(([file]) => [(file as File).name, file.type]);
+      expect(taken).toEqual([
+        ['a.m4a', 'audio/mp4'],
+        ['b.opus', 'audio/ogg'],
+        ['c.oga', 'audio/ogg'],
+        ['d.flac', 'audio/flac'],
+        ['e.aac', 'audio/aac'],
+      ]);
+    });
+
     it('says nothing when everything fits', async () => {
       await FileArchiver.instance.load([sized('short.ogg', 'audio/ogg', 1000)]);
 
