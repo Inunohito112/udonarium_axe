@@ -31,7 +31,7 @@ OGGは、Safari 18.4（macOS 15.4・iOS 18.4）より前のSafariとiPhoneでは
 
 読み取れる書き方は次の2つです。
 
-- OGG（VorbisとOpus）とM4Aの`LOOPSTART`・`LOOPLENGTH`タグ（`LOOPLENGTH`の代わりに`LOOPEND`でも読めます）。RPGツクールと同じ書き方で、値はサンプル数です
+- OGG（VorbisとOpus）・FLAC・M4Aの`LOOPSTART`・`LOOPLENGTH`タグ（`LOOPLENGTH`の代わりに`LOOPEND`でも読めます）。RPGツクールと同じ書き方で、値はサンプル数です
 - WAVの`smpl`チャンクにある最初のループ
 
 区間をくり返すために、曲を丸ごとメモリに読み込みます。そのため、最初に流すときは鳴り始めるまで少し待つことがあります。8分ほどを超える長い曲と、ファイルをまだ読み込み終えていない曲は、これまでどおり曲全体をくり返します。古い版を使っている参加者の画面でも、曲全体をくり返します。
