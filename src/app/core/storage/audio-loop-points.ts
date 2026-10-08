@@ -2,9 +2,10 @@
  * Where a track's file asks to be looped, read from the file itself.
  *
  * Game music is often made with an introduction that plays once and a part after it that goes
- * round, and the file names the part that goes round. An Ogg file (Vorbis or Opus) and an MP4 or
- * M4A file name it with the tags `LOOPSTART` and `LOOPLENGTH` (or `LOOPEND`), counted in samples,
- * as the RPG Maker series reads them; a WAV file names it with the first loop of its `smpl` chunk.
+ * round, and the file names the part that goes round. An Ogg file (Vorbis or Opus), a FLAC file
+ * and an MP4 or M4A file name it with the tags `LOOPSTART` and `LOOPLENGTH` (or `LOOPEND`), counted
+ * in samples, as the RPG Maker series reads them; a WAV file names it with the first loop of its
+ * `smpl` chunk.
  */
 export interface AudioLoopPoints {
   /** Where the part that goes round starts, in seconds. */
@@ -30,6 +31,8 @@ const LOOP_POINTS_MAX_FILE_BYTES_UNKNOWN_LENGTH = 8 * 1024 * 1024;
 export function readAudioLoopPoints(bytes: Uint8Array): AudioLoopPoints | null {
   try {
     if (fourCc(bytes, 0) === 'OggS') return readOgg(bytes);
+    const flacAt = afterId3(bytes);
+    if (fourCc(bytes, flacAt) === 'fLaC') return readFlac(bytes, flacAt + 4);
     if (fourCc(bytes, 0) === 'RIFF' && fourCc(bytes, 8) === 'WAVE') return readWav(bytes);
     if (fourCc(bytes, 4) === 'ftyp') return readMp4(bytes);
   } catch {
@@ -179,6 +182,46 @@ function granuleOf(bytes: Uint8Array, at: number): number | null {
   const high = u32le(bytes, at + 4);
   if (low === 0xffffffff && high === 0xffffffff) return null;
   return high * 0x100000000 + low;
+}
+
+// ─── FLAC ────────────────────────────────────────────────────────────────────
+
+const FLAC_STREAMINFO = 0;
+const FLAC_VORBIS_COMMENT = 4;
+
+/** Reads the metadata blocks after the `fLaC` marker: the stream's rate and length, and its comments. */
+function readFlac(bytes: Uint8Array, from: number): AudioLoopPoints | null {
+  let sampleRate = 0;
+  let channels = 0;
+  let totalSamples = 0;
+  let tags = new Map<string, string>();
+  let at = from;
+  for (let isLast = false; !isLast && at + 4 <= bytes.length;) {
+    const header = bytes[at];
+    isLast = (header & 0x80) !== 0;
+    const type = header & 0x7f;
+    const length = (bytes[at + 1] << 16) | (bytes[at + 2] << 8) | bytes[at + 3];
+    const body = at + 4;
+    if (body + length > bytes.length) break;
+    if (type === FLAC_STREAMINFO && length >= 18) {
+      sampleRate = (bytes[body + 10] << 12) | (bytes[body + 11] << 4) | (bytes[body + 12] >> 4);
+      channels = ((bytes[body + 12] >> 1) & 0x07) + 1;
+      totalSamples = (bytes[body + 13] & 0x0f) * 0x100000000 + u32be(bytes, body + 14);
+    } else if (type === FLAC_VORBIS_COMMENT) {
+      tags = vorbisComments(bytes.subarray(body, body + length), 0);
+    }
+    at = body + length;
+  }
+  const duration = sampleRate > 0 && totalSamples > 0 ? totalSamples / sampleRate : null;
+  return loopFromTags(tags, sampleRate, duration, channels || null);
+}
+
+/** Where a file starts once an ID3v2 tag put in front of it, as some tools do, is passed over. */
+function afterId3(bytes: Uint8Array): number {
+  if (ascii(bytes, 0, 3) !== 'ID3' || bytes.length < 10) return 0;
+  const size = ((bytes[6] & 0x7f) << 21) | ((bytes[7] & 0x7f) << 14) | ((bytes[8] & 0x7f) << 7) | (bytes[9] & 0x7f);
+  const hasFooter = (bytes[5] & 0x10) !== 0;
+  return 10 + size + (hasFooter ? 10 : 0);
 }
 
 // ─── WAV ─────────────────────────────────────────────────────────────────────

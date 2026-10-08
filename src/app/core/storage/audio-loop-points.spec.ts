@@ -86,6 +86,29 @@ function opusFile(entries: string[], { preSkip = 312, samples = 48000 * 5 } = {}
   return oggStream([head, comments(text('OpusTags'), entries)], samples + preSkip);
 }
 
+// ─── FLAC ────────────────────────────────────────────────────────────────────
+
+/** A FLAC file's metadata at 16 bits a sample, with its comments when given, and an ID3 tag in front if asked. */
+function flacFile(entries: string[] | null, { rate = 44100, channels = 2, samples = 441000, id3 = false } = {}) {
+  const info = new Uint8Array(34);
+  info.set(u16be(4096), 0);
+  info.set(u16be(4096), 2);
+  info[10] = (rate >> 12) & 0xff;
+  info[11] = (rate >> 4) & 0xff;
+  info[12] = ((rate & 0x0f) << 4) | ((channels - 1) << 1);
+  info[13] = (15 << 4) | (Math.floor(samples / 0x100000000) & 0x0f);
+  info.set(u32be(samples >>> 0), 14);
+  const block = (type: number, last: boolean, body: Uint8Array) =>
+    join([(last ? 0x80 : 0) | type, (body.length >> 16) & 0xff, (body.length >> 8) & 0xff, body.length & 0xff], body);
+  const file = join(
+    text('fLaC'),
+    block(0, entries === null, info),
+    entries ? block(4, true, comments(new Uint8Array(), entries)) : new Uint8Array(),
+    [0xff, 0xf8]
+  );
+  return id3 ? join(text('ID3'), [4, 0, 0, 0, 0, 0, 20], new Uint8Array(20), file) : file;
+}
+
 // ─── MP4 ─────────────────────────────────────────────────────────────────────
 
 function box(type: string, ...children: (Uint8Array | number[])[]): Uint8Array {
@@ -177,6 +200,29 @@ describe('reading where a track asks to be looped', () => {
         duration: 5,
         channels: 2,
       });
+    });
+  });
+
+  describe('from a FLAC file', () => {
+    it('reads LOOPSTART and LOOPLENGTH from its comments, with its rate and length from its stream info', () => {
+      expect(readAudioLoopPoints(flacFile(['LOOPSTART=44100', 'LOOPLENGTH=88200']))).toEqual({
+        start: 1,
+        end: 3,
+        duration: 10,
+        channels: 2,
+      });
+    });
+
+    it('reads it past an ID3 tag put in front of the file', () => {
+      expect(readAudioLoopPoints(flacFile(['LOOPSTART=48000'], { rate: 48000, id3: true }))).toMatchObject({
+        start: 1,
+        end: null,
+      });
+    });
+
+    it('asks for no loop without the tags, or without comments at all', () => {
+      expect(readAudioLoopPoints(flacFile(['TITLE=森']))).toBeNull();
+      expect(readAudioLoopPoints(flacFile(null))).toBeNull();
     });
   });
 
