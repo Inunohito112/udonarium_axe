@@ -12,3 +12,6 @@ export const AC6TRPG_CONFIG = {
 
 /** ブラウザのタブに表示するタイトル。 */
 export const AC6TRPG_BROWSER_TITLE = `${AC6TRPG_CONFIG.appName} v${AC6TRPG_CONFIG.version} (Axe v${AC6TRPG_CONFIG.upstream.version})`;
+
+/** ゲーム画面内に常時表示する、短いバージョン表記。 */
+export const AC6TRPG_VERSION_LABEL = `${AC6TRPG_CONFIG.appName} v${AC6TRPG_CONFIG.version} / Base: Axe v${AC6TRPG_CONFIG.upstream.version}`;

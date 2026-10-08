@@ -50,7 +50,7 @@ import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { ReloadCheck } from '@axe/domain/peer/reload-check';
 import { MENU_SURFACES } from '@axe/domain/ui/menu-command';
 import { RoomPanelName } from '@axe/domain/ui/room-panel';
-import { AC6TRPG_BROWSER_TITLE } from '@axe/features/ac6trpg/ac6trpg-config';
+import { AC6TRPG_BROWSER_TITLE, AC6TRPG_VERSION_LABEL } from '@axe/features/ac6trpg/ac6trpg-config';
 import { AlarmEventHandlerService } from '@axe/features/alarm/alarm-event-handler.service';
 import { ButtonGuideEventHandlerService } from '@axe/features/button-guide/button-guide-event-handler.service';
 import { CardStackListImageComponent } from '@axe/features/card/card-stack-list-img/card-stack-list-img.component';
@@ -177,6 +177,7 @@ const FAB_MARGIN_PX = 12;
   host: { '(window:resize)': 'measureFabSides()' },
 })
 export class AppComponent {
+  protected readonly ac6trpgVersionLabel = AC6TRPG_VERSION_LABEL;
   // Built with the shell, whether or not anything shows them: each dresses the page in this
   // seat's setting as it starts, before the first screen is drawn.
   private readonly theme = inject(ThemeService);

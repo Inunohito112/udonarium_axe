@@ -11,7 +11,7 @@ import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { MENU_SURFACES, menuCommandOf } from '@axe/domain/ui/menu-command';
 import { parseMenuLayout } from '@axe/domain/ui/menu-layout';
-import { AC6TRPG_BROWSER_TITLE } from '@axe/features/ac6trpg/ac6trpg-config';
+import { AC6TRPG_BROWSER_TITLE, AC6TRPG_VERSION_LABEL } from '@axe/features/ac6trpg/ac6trpg-config';
 import { MenuCommandService } from '@axe/features/menu/menu-command.service';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
@@ -62,6 +62,11 @@ describe('AppComponent', () => {
 
     it('identifies the AC6TRPG and upstream Axe versions in the browser title', () => {
       expect(TestBed.inject(Title).getTitle()).toBe(AC6TRPG_BROWSER_TITLE);
+    });
+
+    it('shows both versions on the game screen', () => {
+      const label: HTMLElement = fixture.nativeElement.querySelector('[data-testid="ac6trpg-version"]');
+      expect(label.textContent?.trim()).toBe(AC6TRPG_VERSION_LABEL);
     });
 
     it('is on the drawer button, which is no part of any arrangement', () => {

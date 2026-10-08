@@ -1,4 +1,4 @@
-import { AC6TRPG_BROWSER_TITLE, AC6TRPG_CONFIG } from '@axe/features/ac6trpg/ac6trpg-config';
+import { AC6TRPG_BROWSER_TITLE, AC6TRPG_CONFIG, AC6TRPG_VERSION_LABEL } from '@axe/features/ac6trpg/ac6trpg-config';
 import { version as upstreamAxeVersion } from '@pkg';
 
 describe('AC6TRPG_CONFIG', () => {
@@ -9,5 +9,9 @@ describe('AC6TRPG_CONFIG', () => {
 
   it('builds a browser title that identifies both versions', () => {
     expect(AC6TRPG_BROWSER_TITLE).toBe(`AC6TRPG Axe v0.1.0 (Axe v${upstreamAxeVersion})`);
+  });
+
+  it('builds a compact version label for the game screen', () => {
+    expect(AC6TRPG_VERSION_LABEL).toBe(`AC6TRPG Axe v0.1.0 / Base: Axe v${upstreamAxeVersion}`);
   });
 });
