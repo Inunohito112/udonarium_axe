@@ -14,6 +14,7 @@ import { basename, join, resolve } from 'path';
 
 Logger.setLevel(LogLevel.NONE);
 
+import { PERSONAL_VOLUME_STORAGE_KEY } from '@axe/application/media/personal-volumes';
 import { COMPASS_FACE_STORAGE_KEY } from '@axe/application/ui/compass-face.service';
 import { LOCAL_MODE_STORAGE_KEY } from '@axe/application/ui/local-mode-preference.service';
 import { PIECE_OVERLAY_STORAGE_KEY } from '@axe/application/ui/piece-overlay-preference.service';
@@ -104,6 +105,12 @@ if (typeof globalThis.AudioContext === 'undefined') {
     setTargetAtTime() {
       return this;
     }
+    linearRampToValueAtTime() {
+      return this;
+    }
+    cancelScheduledValues() {
+      return this;
+    }
   }
   class FakeGainNode {
     readonly gain = new FakeAudioParam();
@@ -122,6 +129,19 @@ if (typeof globalThis.AudioContext === 'undefined') {
       return this;
     }
   }
+  class FakeBufferSource {
+    buffer: unknown = null;
+    loop = false;
+    onended: (() => void) | null = null;
+    connect() {
+      return this;
+    }
+    disconnect() {
+      return this;
+    }
+    start() {}
+    stop() {}
+  }
   class FakeAudioContext {
     currentTime = 0;
     destination: object = {};
@@ -139,6 +159,12 @@ if (typeof globalThis.AudioContext === 'undefined') {
     }
     createMediaElementSource() {
       return new FakeMediaElementSource();
+    }
+    createBufferSource() {
+      return new FakeBufferSource();
+    }
+    decodeAudioData(_data: ArrayBuffer, resolve: (buffer: object) => void) {
+      resolve({ duration: 1, length: 44100, numberOfChannels: 2 });
     }
   }
   (globalThis as unknown as Record<string, unknown>)['AudioContext'] = FakeAudioContext;
@@ -362,6 +388,7 @@ function forgetSeatPreferences(): void {
   localStorage.removeItem(TOOLBAR_FOLD_STORAGE_KEY);
   localStorage.removeItem(PIECE_OVERLAY_STORAGE_KEY);
   localStorage.removeItem(COMPASS_FACE_STORAGE_KEY);
+  localStorage.removeItem(PERSONAL_VOLUME_STORAGE_KEY);
 }
 
 beforeAll(async () => {

@@ -1,12 +1,21 @@
 import {
   ccfoliaRoomDropped$,
   type CcfoliaRoomDroppedEvent,
+  filesTooLarge$,
+  type FilesTooLargeEvent,
   imageDropped$,
   type ImageDroppedEvent,
   xmlLoaded$,
 } from '@axe/core/event/domain-events';
 import { Network } from '@axe/core/index';
-import { FileArchiver, isXmlCandidateFile } from '@axe/core/storage/file-archiver';
+import { AudioFile } from '@axe/core/storage/audio-file';
+import { AudioStorage } from '@axe/core/storage/audio-storage';
+import {
+  FileArchiver,
+  isXmlCandidateFile,
+  MAX_LOADED_AUDIO_BYTES,
+  MAX_LOADED_IMAGE_BYTES,
+} from '@axe/core/storage/file-archiver';
 import { ImageFile } from '@axe/core/storage/image-file';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { ObjectStore } from '@axe/core/sync/object-store';
@@ -284,6 +293,87 @@ describe('FileArchiver', () => {
       const result = await FileArchiver.instance.loadImages([imageFile('a.png')]);
 
       expect(result.images).toHaveLength(1);
+    });
+  });
+
+  describe('files too large to take', () => {
+    let announced: FilesTooLargeEvent[];
+    let off: () => void;
+
+    function sized(name: string, type: string, bytes: number): File {
+      const file = new File([new Uint8Array([1])], name, { type });
+      Object.defineProperty(file, 'size', { value: bytes });
+      return file;
+    }
+
+    beforeEach(() => {
+      announced = [];
+      off = filesTooLarge$.subscribe((event) => announced.push(event));
+      vi.spyOn(AudioStorage.instance, 'addAsync').mockImplementation((file) =>
+        Promise.resolve(AudioFile.createEmpty(`audio-${(file as File).name}`))
+      );
+      vi.spyOn(ImageStorage.instance, 'addAsync').mockImplementation((file) =>
+        Promise.resolve(ImageFile.createEmpty(`image-${(file as File).name}`))
+      );
+    });
+
+    afterEach(() => off());
+
+    it('names the sounds and pictures it left out, together, once the load is done', async () => {
+      await FileArchiver.instance.load([
+        sized('long.ogg', 'audio/ogg', MAX_LOADED_AUDIO_BYTES + 1),
+        sized('short.ogg', 'audio/ogg', 1000),
+        sized('huge.png', 'image/png', MAX_LOADED_IMAGE_BYTES + 1),
+      ]);
+
+      expect(announced).toEqual([
+        {
+          files: [
+            { name: 'long.ogg', kind: 'audio', limitBytes: MAX_LOADED_AUDIO_BYTES },
+            { name: 'huge.png', kind: 'image', limitBytes: MAX_LOADED_IMAGE_BYTES },
+          ],
+        },
+      ]);
+      expect(AudioStorage.instance.addAsync).toHaveBeenCalledTimes(1);
+    });
+
+    it('names a sound left out from inside an archive along with the rest', async () => {
+      const archive = zipSync({ 'long.ogg': new Uint8Array(MAX_LOADED_AUDIO_BYTES + 1) });
+      const zipFile = new File([archive.slice()], 'sounds.zip', { type: 'application/zip' });
+
+      await FileArchiver.instance.load([zipFile, sized('huge.png', 'image/png', MAX_LOADED_IMAGE_BYTES + 1)]);
+
+      expect(announced).toHaveLength(1);
+      expect(announced[0].files.map((file) => file.name)).toEqual(['long.ogg', 'huge.png']);
+    });
+
+    it('takes sounds of every kind it knows from inside an archive', async () => {
+      const archive = zipSync({
+        'a.m4a': new Uint8Array([1]),
+        'b.opus': new Uint8Array([2]),
+        'c.oga': new Uint8Array([3]),
+        'd.flac': new Uint8Array([4]),
+        'e.aac': new Uint8Array([5]),
+      });
+
+      await FileArchiver.instance.load([new File([archive.slice()], 'sounds.zip', { type: 'application/zip' })]);
+
+      const taken = vi
+        .mocked(AudioStorage.instance.addAsync)
+        .mock.calls.map(([file]) => [(file as File).name, file.type]);
+      expect(taken).toEqual([
+        ['a.m4a', 'audio/mp4'],
+        ['b.opus', 'audio/ogg'],
+        ['c.oga', 'audio/ogg'],
+        ['d.flac', 'audio/flac'],
+        ['e.aac', 'audio/aac'],
+      ]);
+    });
+
+    it('says nothing when everything fits', async () => {
+      await FileArchiver.instance.load([sized('short.ogg', 'audio/ogg', 1000)]);
+
+      expect(announced).toEqual([]);
     });
   });
 

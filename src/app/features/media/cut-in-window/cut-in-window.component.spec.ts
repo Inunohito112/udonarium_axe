@@ -1,6 +1,7 @@
 import { ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CutInSoundService } from '@axe/application/media/cut-in-sound.service';
+import { PersonalVolumeService } from '@axe/application/media/personal-volume.service';
 import { PanelService } from '@axe/application/ui/panel.service';
 import { AudioFile } from '@axe/core/storage/audio-file';
 import { AudioPlayer, VolumeType } from '@axe/core/storage/audio-player';
@@ -117,6 +118,24 @@ describe('CutInWindowComponent', () => {
       expect(component.videoVolume).toBe(50);
     });
 
+    it('follows the listener’s own cut-in volume, counting from the half it starts at', () => {
+      vi.spyOn(AudioPlayer, 'setChannelVolume').mockImplementation(() => {});
+      const volumes = TestBed.inject(PersonalVolumeService);
+      const cutIn = new CutIn('personal-volume-test');
+      cutIn.initialize();
+      cutIn.videoVolume = 60;
+      component.cutIn = cutIn;
+
+      volumes.set('cutIn', 0.25);
+      expect(component.videoVolume).toBe(30);
+
+      volumes.set('cutIn', 1);
+      expect(component.videoVolume).toBe(100);
+
+      volumes.setMuted('cutIn', true);
+      expect(component.videoVolume).toBe(0);
+    });
+
     it('mutes a replicated face that does not own the audio', () => {
       const cutIn = new CutIn('muted-replica-test');
       cutIn.initialize();
@@ -129,7 +148,7 @@ describe('CutInWindowComponent', () => {
   });
 
   describe('which volume a cut-in plays through', () => {
-    it('plays a sound-effect-tagged cut-in through the effects volume', () => {
+    it('plays a sound-effect-tagged cut-in through the cut-in volume, not the effects', () => {
       vi.spyOn(AudioPlayer.prototype, 'play').mockImplementation(() => {});
       vi.spyOn(AudioPlayer.prototype, 'stop').mockImplementation(() => {});
       AudioStorage.instance.add(makeReadyAudio('cutin-se'));
@@ -143,10 +162,10 @@ describe('CutInWindowComponent', () => {
 
       component.startCutIn();
 
-      expect(component.audioPlayer.volumeType).toBe(VolumeType.SE);
+      expect(component.audioPlayer.volumeType).toBe(VolumeType.CUT_IN);
     });
 
-    it('plays any other through the master volume', () => {
+    it('plays any other through the cut-in volume, not the music', () => {
       vi.spyOn(AudioPlayer.prototype, 'play').mockImplementation(() => {});
       vi.spyOn(AudioPlayer.prototype, 'stop').mockImplementation(() => {});
       AudioStorage.instance.add(makeReadyAudio('cutin-bgm'));
@@ -158,7 +177,7 @@ describe('CutInWindowComponent', () => {
 
       component.startCutIn();
 
-      expect(component.audioPlayer.volumeType).toBe(VolumeType.MASTER);
+      expect(component.audioPlayer.volumeType).toBe(VolumeType.CUT_IN);
     });
 
     it('does not play attached audio on a replicated face', () => {

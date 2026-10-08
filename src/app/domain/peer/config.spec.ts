@@ -1,5 +1,9 @@
 import { TestBed } from '@angular/core/testing';
+import { VolumeType } from '@axe/core/storage/audio-player';
+import { ObjectContext } from '@axe/core/sync/game-object';
 import { waitZeroTimeout } from '@axe/core/util/zero-timeout';
+import { Jukebox } from '@axe/domain/media/jukebox';
+import { DEFAULT_ROOM_VOLUMES } from '@axe/domain/media/room-volumes';
 import { Config } from '@axe/domain/peer/config';
 
 describe('Config', () => {
@@ -52,6 +56,78 @@ describe('Config', () => {
     it('returns the value it is given', () => {
       Config.instance.roomVolume = 0.5;
       expect(Config.instance.roomVolume).toBe(0.5);
+    });
+  });
+
+  describe('the room’s volume for each kind of sound', () => {
+    const setNewVolume = vi.fn();
+
+    function attributesOf(context: ObjectContext): Record<string, unknown> {
+      return context.syncData['attributes'] as Record<string, unknown>;
+    }
+
+    beforeEach(() => {
+      setNewVolume.mockClear();
+      vi.spyOn(Config.instance, 'jukebox', 'get').mockReturnValue({ setNewVolume } as unknown as Jukebox);
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it('starts at full for every kind', () => {
+      expect(Config.instance.roomVolumes).toEqual(DEFAULT_ROOM_VOLUMES);
+    });
+
+    it('sets one kind, leaving the others as they are', () => {
+      Config.instance.setRoomVolumeOf('bgm', 0.5);
+      Config.instance.setRoomVolumeOf('handling', 0);
+
+      expect(Config.instance.roomVolumes).toEqual({ ...DEFAULT_ROOM_VOLUMES, bgm: 0.5, handling: 0 });
+    });
+
+    it('scales each channel by the master room volume and its own kind, and previews by the master alone', () => {
+      Config.instance.roomVolume = 0.5;
+      Config.instance.setRoomVolumeOf('bgm', 1.6);
+      Config.instance.setRoomVolumeOf('effect', 0);
+
+      expect(Config.instance.roomScaleFor(VolumeType.MASTER)).toBeCloseTo(0.8);
+      expect(Config.instance.roomScaleFor(VolumeType.EFFECT)).toBe(0);
+      expect(Config.instance.roomScaleFor(VolumeType.SE)).toBe(0.5);
+      expect(Config.instance.roomScaleFor(VolumeType.AUDITION)).toBe(0.5);
+    });
+
+    it('reads full for every kind from an older version that sends none', () => {
+      Config.instance.setRoomVolumeOf('bgm', 0.5);
+      const older = Config.instance.toContext();
+      delete attributesOf(older)['_roomKindVolumes'];
+      older.majorVersion += 1;
+
+      Config.instance.apply(older);
+
+      expect(Config.instance.roomVolumes).toEqual(DEFAULT_ROOM_VOLUMES);
+      expect(Config.instance.roomScaleFor(VolumeType.MASTER)).toBe(1);
+    });
+
+    it('keeps the volumes when an older version that passed them along sends the config back', () => {
+      Config.instance.setRoomVolumeOf('background', 0.3);
+      const passedAlong = Config.instance.toContext();
+      attributesOf(passedAlong)['_roomVolume'] = 0.8;
+      passedAlong.majorVersion += 1;
+
+      Config.instance.apply(passedAlong);
+
+      expect(Config.instance.roomVolume).toBe(0.8);
+      expect(Config.instance.roomVolumes.background).toBe(0.3);
+    });
+
+    it('puts a change from another peer on the jukebox straight away', () => {
+      const changed = Config.instance.toContext();
+      attributesOf(changed)['_roomKindVolumes'] = '{"bgm":0.2}';
+      changed.majorVersion += 1;
+
+      Config.instance.apply(changed);
+
+      expect(setNewVolume).toHaveBeenCalled();
+      expect(Config.instance.roomVolumes.bgm).toBe(0.2);
     });
   });
 

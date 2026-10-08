@@ -70,6 +70,7 @@ const FEATURE_DEPENDENCIES: Record<string, readonly string[]> = {
   'room-archive': [],
   'room-settings': ['room-archive', 'skin'],
   skin: [],
+  'sound-settings': [],
   'status-ailment': [],
   'streaming-overlay': [],
   tabletop: ['card', 'character', 'coin', 'dice', 'disclosure', 'effect', 'lobby', 'map-editor', 'replay'],

@@ -58,7 +58,8 @@
       "ownedCharacters": "내 캐릭터 목록",
       "roomSnapshot": "자동 저장",
       "replay": "리플레이",
-      "popOut": "별도 창으로 열기"
+      "popOut": "별도 창으로 열기",
+      "soundSettings": "소리 설정"
     },
     "party": {
       "unnamed": "이름 없는 파티"
@@ -147,6 +148,10 @@
       "up": "한 칸 위로",
       "down": "한 칸 아래로",
       "toBottom": "맨 아래로"
+    },
+    "sound": {
+      "mute": "{{name}} 끄기",
+      "unmute": "{{name}} 켜기"
     }
   },
   "feature": {
@@ -355,7 +360,10 @@
         "unsetActive": "조작 대상 해제",
         "remoteController": "리모컨 열기",
         "partyWith": "{{party}} — 동행: {{names}}",
-        "partyAlone": "{{party}} — 다른 동행자가 없습니다"
+        "partyAlone": "{{party}} — 다른 동행자가 없습니다",
+        "emptyHint": "캐릭터를 자기 것으로 하면 여기서 HP와 MP를 늘리고 줄이거나 시트와 채팅 팔레트를 열 수 있습니다.",
+        "claimableHeading": "오너가 없는 캐릭터",
+        "claim": "내 것으로 하기"
       }
     },
     "gmObjectList": {
@@ -420,8 +428,7 @@
         "bgmLabel": "BGM",
         "seLabel": "SE",
         "roomLabel": "전체",
-        "roomTooltip": "전체(GM 제어)",
-        "roomGmTooltip": "모든 플레이어 공통 GM 제어",
+        "roomTooltip": "전체(GM만)",
         "tabLibrary": "라이브러리",
         "tabPlaylist": "재생 목록",
         "tagDisabled": "재생 목록에 등록된 동안에는 태그를 바꿀 수 없습니다",
@@ -440,7 +447,7 @@
         "clickToSelect": "또는 여기를 클릭해 선택하세요",
         "maxFileSize": "파일 하나당 10MB까지",
         "note1": "※ \"시청\"은 자신의 스피커에서만 한 번 재생됩니다.",
-        "note2": "※ \"BGM/SE\"는 방에 있는 모두에게 재생됩니다.",
+        "note2": "※ \"BGM/SE/환경음\"은 방에 있는 모두에게 재생됩니다.",
         "note3": "※ 세이브 데이터(zip)에 음악 파일은 포함되지 않습니다.",
         "tagAll": "전체",
         "clickToSelectTouch": "또는 여기를 탭해 선택하세요",
@@ -460,7 +467,20 @@
         "removeFromPlaylistNamed": "\"{{name}}\"에서 빼기",
         "moveToPlaylist": "다른 재생 목록으로 이동",
         "copyToPlaylist": "다른 재생 목록에 복사",
-        "playlistsOfTrack": "재생 목록"
+        "playlistsOfTrack": "재생 목록",
+        "tagBgs": "환경음",
+        "bgsLabel": "환경음",
+        "bgsHeading": "환경음",
+        "bgsPlay": "환경음 재생",
+        "bgsStop": "환경음 정지",
+        "bgsStopAll": "모두 정지",
+        "bgsRoomVolume": "모두 공통 음량",
+        "bgsRoomVolumeOf": "\"{{name}}\" 음량(모두 공통)",
+        "bgsArriving": "수신 중…",
+        "ownVolumeHeading": "내 음량",
+        "ownVolumeNote": "나에게만 적용되며 이 브라우저에 저장됩니다",
+        "roomVolumeHeading": "방 음량",
+        "roomVolumeNote": "방에 있는 모두에게 적용되며 GM만 바꿀 수 있습니다"
       },
       "miniJukebox": {
         "stopped": "— 정지 중 —",
@@ -1399,7 +1419,15 @@
         "defaultGroupName": "그룹",
         "defaultTagName": "태그",
         "imageCopyTitle": "{{name}}에 이미지 복제",
-        "portraitClickHintTouch": "탭해서 이미지 교체"
+        "portraitClickHintTouch": "탭해서 이미지 교체",
+        "portraitsManage": "입화",
+        "collapseAll": "모두 접기",
+        "expandAll": "모두 펼치기",
+        "moreActions": "기타 작업",
+        "portraitsManageTitle": "입화 - {{name}}",
+        "sectionJump": "섹션으로 이동",
+        "foldSection": "접기",
+        "unfoldSection": "펼치기"
       },
       "settingsTab": {
         "inventorySetting": "인벤토리 설정",
@@ -1510,6 +1538,13 @@
         "clearSecret": "숨김 해제",
         "makeSecretHint": "체크한 이미지를 GM 외의 목록에서 숨깁니다",
         "secretMark": "숨긴 이미지"
+      },
+      "tooLarge": {
+        "one": "「{{name}}」은(는) 너무 커서 불러오지 못했습니다({{limits}})",
+        "many": "「{{name}}」 외 {{count}}개는 너무 커서 불러오지 못했습니다({{limits}})",
+        "audioLimit": "음원은 {{mb}}MB까지",
+        "imageLimit": "이미지는 {{mb}}MB까지",
+        "separator": ", "
       }
     },
     "character": {
@@ -2138,7 +2173,7 @@
         "recommendedView_flat": "2D (위에서 보기)",
         "recommendedViewHint": "이 테이블을 어느 쪽으로 보는 것이 좋은지를 나타냅니다. FAB의 시점이 \"자동\"인 사람은 이를 따르고, 직접 3D/2D를 고른 사람은 그대로 유지됩니다.",
         "sectionBackgroundLayers": "레이어",
-        "backgroundLayerHint": "테이블 이미지의 아래, 또는 위를 흐릅니다. 뒤에서부터 겹쳐지며 아래 레이어가 비쳐 보입니다. 이미지는 상하좌우로 이어 붙이며, 판면 밖으로 나간 부분은 잘립니다.",
+        "backgroundLayerHint": "테이블 이미지의 아래, 또는 위를 흐릅니다. 뒤에서부터 겹쳐지며 아래 레이어가 비쳐 보입니다. 이미지는 상하좌우로 이어 붙이며, 판면 밖으로 나간 부분은 잘립니다. 배치를 뒤쪽으로 하면 탁자 뒤 화면 전체에 가로로 긴 그림을 이어 붙이고, 카메라를 돌리거나 움직이면 조금 따라옵니다. 반응이 작을수록 멀리, 클수록 가까이 보이므로 여러 장 겹치면 깊이가 생깁니다.",
         "backgroundLayerAdd": "+ 레이어 추가",
         "backgroundLayerRemove": "삭제",
         "backgroundLayerImage": "이미지 선택",
@@ -2146,13 +2181,18 @@
         "backgroundLayerSpeedY": "세로 속도",
         "backgroundLayerOpacity": "불투명도",
         "backgroundLayerScale": "확대율",
-        "backgroundLayerIndexUnder": "배면 {{index}}",
-        "backgroundLayerIndexOver": "전면 {{index}}",
         "backgroundLayerPlacement": "겹치는 위치",
         "backgroundLayerPlacement_under": "배면(테이블 이미지 아래)",
         "backgroundLayerPlacement_over": "전면(테이블 이미지 위·말 아래)",
+        "backgroundLayerPlacement_backdrop": "뒤쪽(탁자 뒤·카메라를 조금 따라감)",
         "backgroundLayerMoveUp": "뒤로",
-        "backgroundLayerMoveDown": "앞으로"
+        "backgroundLayerMoveDown": "앞으로",
+        "backgroundLayerIndex_under": "배면 {{index}}",
+        "backgroundLayerIndex_over": "전면 {{index}}",
+        "backgroundLayerIndex_backdrop": "뒤쪽 {{index}}",
+        "backgroundLayerFollow": "카메라 반응",
+        "backgroundLayerHeight": "높이",
+        "backgroundLayerSpeedYBackdrop": "뒤쪽 레이어는 가로로만 이어 붙이므로 세로로 흐르지 않습니다"
       },
       "displayCalibration": {
         "title": "화면 실제 크기 맞추기",
@@ -2841,6 +2881,16 @@
         "noTarget": "대상이 선택되지 않았습니다",
         "writingOthers": "외 {{count}}명 입력 중",
         "titleWithCount": "{{title}} ({{count}})"
+      },
+      "search": {
+        "button": "검색",
+        "open": "채팅 검색 (Ctrl+F)",
+        "placeholder": "이 탭에서 검색",
+        "count": "{{current}} / {{total}}",
+        "none": "결과 없음",
+        "older": "이전 발언으로 (Enter)",
+        "newer": "다음 발언으로 (Shift+Enter)",
+        "close": "닫기 (Esc)"
       },
       "input": {
         "you": "(당신)",
@@ -3697,6 +3747,8 @@
         "effectFrom": "{{actor}}이(가) {{caster}}에게서 {{targets}}(으)로 〈{{effect}}〉을(를) 날렸습니다",
         "bgmStart": "{{actor}}이(가) BGM을 {{target}}(으)로 바꿨습니다",
         "bgmStop": "{{actor}}이(가) BGM을 멈췄습니다",
+        "bgsStart": "{{actor}}이(가) 환경음 {{target}}을(를) 틀었습니다",
+        "bgsStop": "{{actor}}이(가) 환경음 {{target}}을(를) 멈췄습니다",
         "vnScene": "{{actor}}이(가) 장면을 {{target}}(으)로 바꿨습니다",
         "vnSceneClear": "{{actor}}이(가) 장면의 배경을 뗐습니다",
         "vnPlayhead": "{{actor}}이(가) 이야기를 진행했습니다",
@@ -3829,7 +3881,7 @@
         "paused": "탭이 뒤에 있는 동안 브라우저가 내보내기를 멈췄습니다. 화면에 띄워 두면 이어서 진행합니다.",
         "realtime": "이 브라우저에서는 길이만큼 시간이 걸립니다(내보내는 동안 열어 두세요)",
         "withEffects": "효과음 넣기",
-        "withMusic": "BGM 넣기",
+        "withMusic": "BGM과 환경음 넣기",
         "round": "라운드 {{round}}",
         "turn": "{{name}}의 차례",
         "roundTurn": "라운드 {{round}} · {{name}}의 차례",
@@ -4246,7 +4298,8 @@
         "duplicate": "복제",
         "saveTemplate": "템플릿으로 저장",
         "addFromTemplate": "템플릿에서 추가",
-        "deleteTemplate": "템플릿 삭제"
+        "deleteTemplate": "템플릿 삭제",
+        "moveTo": "이동할 곳 고르기…"
       },
       "defaults": {
         "newGroup": "그룹",
@@ -4268,6 +4321,32 @@
         "distance": "거리: {{distance}}",
         "chatNote": "{{target}}({{source}}에서 {{distance}})",
         "sendToChat": "채팅에 입력"
+      },
+      "deletion": {
+        "deleted": "「{{name}}」을(를) 삭제했습니다",
+        "deletedUnnamed": "항목을 삭제했습니다",
+        "undo": "되돌리기"
+      },
+      "stepDown": "{{name}} 1 감소",
+      "stepUp": "{{name}} 1 증가",
+      "editor": {
+        "name": "이름",
+        "type": "종류",
+        "order": "순서",
+        "nameEmpty": "이름을 입력하세요",
+        "back": "뒤로",
+        "moveToHint": "「{{name}}」을(를) 옮길 곳을 고르세요",
+        "referenceCopied": "「{{path}}」을(를) 복사했습니다",
+        "fieldTitle": "항목 설정",
+        "groupTitle": "그룹 설정",
+        "sectionTitle": "섹션 설정",
+        "open": "「{{name}}」 설정 열기",
+        "view": "표시",
+        "addField": "항목 추가",
+        "addFieldHint": "「{{name}}」에 추가할 항목의 종류를 고르세요",
+        "templateSaved": "「{{name}}」을(를) 템플릿으로 저장했습니다",
+        "deleteGroup": "이 그룹 삭제",
+        "addGroup": "그룹 추가"
       }
     },
     "whiteBoard": {
@@ -4629,6 +4708,48 @@
         "on": "켜기",
         "off": "끄기"
       }
+    },
+    "soundSettings": {
+      "ownHeading": "내 음량",
+      "ownHint": "나에게만 적용되며 이 브라우저에 저장됩니다. 왼쪽 버튼으로 종류별로 소리를 끌 수 있습니다.",
+      "chatHeading": "채팅 알림음",
+      "roomHeading": "방 음량",
+      "roomHint": "방에 있는 모두에게 적용되며 GM만 바꿀 수 있습니다. 종류별 값에는 전체 값이 한 번 더 곱해집니다.",
+      "openAll": "내 소리 설정 모두 열기",
+      "kind": {
+        "audition": {
+          "label": "시청",
+          "hint": "주크박스에서 나만 듣는 소리"
+        },
+        "bgm": {
+          "label": "BGM",
+          "hint": "주크박스의 음악"
+        },
+        "background": {
+          "label": "환경음",
+          "hint": "비, 모닥불 같은 반복음"
+        },
+        "cutIn": {
+          "label": "컷인",
+          "hint": "컷인 음악·장면 소리·동영상"
+        },
+        "notification": {
+          "label": "알림음",
+          "hint": "채팅 알림과 알람"
+        },
+        "handling": {
+          "label": "조작음",
+          "hint": "주사위·카드·말을 움직이는 소리"
+        },
+        "effect": {
+          "label": "연출 효과음",
+          "hint": "맵 연출과 HP 등의 증감"
+        },
+        "se": {
+          "label": "기타 효과음",
+          "hint": "주크박스 SE, 핫바 소리 등"
+        }
+      }
     }
   },
   "app": {
@@ -4687,7 +4808,8 @@
       "widgets": "위젯",
       "foldToolbar": "도구 모음 접기",
       "unfoldToolbar": "도구 모음 펼치기",
-      "buttonGuide": "모든 버튼 이름 표시 (? 키)"
+      "buttonGuide": "모든 버튼 이름 표시 (? 키)",
+      "soundSettings": "소리 설정"
     },
     "roomDataDefault": "룸 데이터"
   },

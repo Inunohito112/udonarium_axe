@@ -58,7 +58,8 @@
       "ownedCharacters": "所有キャラクター一覧",
       "roomSnapshot": "自動保存",
       "replay": "リプレイ",
-      "popOut": "別のウィンドウで開く"
+      "popOut": "別のウィンドウで開く",
+      "soundSettings": "音の設定"
     },
     "party": {
       "unnamed": "無名のパーティ"
@@ -147,6 +148,10 @@
       "up": "ひとつ上へ",
       "down": "ひとつ下へ",
       "toBottom": "いちばん下へ"
+    },
+    "sound": {
+      "mute": "{{name}}を消す",
+      "unmute": "{{name}}を出す"
     }
   },
   "feature": {
@@ -355,7 +360,10 @@
         "unsetActive": "操作対象を解除",
         "remoteController": "リモートコントローラを開く",
         "partyWith": "{{party}} — 同行: {{names}}",
-        "partyAlone": "{{party}} — ほかに同行者はいません"
+        "partyAlone": "{{party}} — ほかに同行者はいません",
+        "emptyHint": "キャラクターを自分のものにすると、ここからHPやMPを増減したり、シートやチャットパレットを開いたりできます。",
+        "claimableHeading": "オーナーのいないキャラクター",
+        "claim": "自分のものにする"
       }
     },
     "gmObjectList": {
@@ -420,8 +428,7 @@
         "bgmLabel": "BGM",
         "seLabel": "SE",
         "roomLabel": "全体",
-        "roomTooltip": "全体（GM制御）",
-        "roomGmTooltip": "全プレイヤー共通 GM制御",
+        "roomTooltip": "全体（GM だけ）",
         "tabLibrary": "ライブラリ",
         "tabPlaylist": "再生リスト",
         "tagDisabled": "再生リスト登録中はタグ変更できません",
@@ -440,7 +447,7 @@
         "clickToSelect": "またはここをクリックして選択",
         "maxFileSize": "１ファイルにつき10MBまで",
         "note1": "※「試聴」は自分のスピーカーだけで1回再生します。",
-        "note2": "※「BGM/SE」はルーム内全員で再生します。",
+        "note2": "※「BGM/SE/環境音」はルーム内全員で再生します。",
         "note3": "※セーブデータ（zip）に音楽ファイルは含まれません。",
         "tagAll": "全て",
         "clickToSelectTouch": "またはここをタップして選択",
@@ -460,7 +467,20 @@
         "removeFromPlaylistNamed": "「{{name}}」から外す",
         "moveToPlaylist": "別の再生リストへ移す",
         "copyToPlaylist": "別の再生リストにコピー",
-        "playlistsOfTrack": "再生リスト"
+        "playlistsOfTrack": "再生リスト",
+        "tagBgs": "環境音",
+        "bgsLabel": "環境音",
+        "bgsHeading": "環境音",
+        "bgsPlay": "環境音再生",
+        "bgsStop": "環境音停止",
+        "bgsStopAll": "すべて止める",
+        "bgsRoomVolume": "全員共通の音量",
+        "bgsRoomVolumeOf": "「{{name}}」の音量（全員共通）",
+        "bgsArriving": "受信中…",
+        "ownVolumeHeading": "自分の音量",
+        "ownVolumeNote": "自分にだけ効き、このブラウザに保存されます",
+        "roomVolumeHeading": "部屋の音量",
+        "roomVolumeNote": "部屋の全員に効き、GM だけが変えられます"
       },
       "miniJukebox": {
         "stopped": "— 停止中 —",
@@ -1399,7 +1419,15 @@
         "defaultGroupName": "グループ",
         "defaultTagName": "タグ",
         "imageCopyTitle": "{{name}}への画像複製",
-        "portraitClickHintTouch": "タップして画像を差し替え"
+        "portraitClickHintTouch": "タップして画像を差し替え",
+        "portraitsManage": "立ち絵",
+        "collapseAll": "すべて畳む",
+        "expandAll": "すべて開く",
+        "moreActions": "その他の操作",
+        "portraitsManageTitle": "立ち絵 - {{name}}",
+        "sectionJump": "セクションへ移動",
+        "foldSection": "畳む",
+        "unfoldSection": "開く"
       },
       "settingsTab": {
         "inventorySetting": "インベントリ設定",
@@ -1510,6 +1538,13 @@
         "clearSecret": "秘匿を解除",
         "makeSecretHint": "チェックした画像を GM 以外の一覧から隠します",
         "secretMark": "秘匿画像"
+      },
+      "tooLarge": {
+        "one": "「{{name}}」は大きすぎるため読み込めませんでした（{{limits}}）",
+        "many": "「{{name}}」ほか{{count}}件は大きすぎるため読み込めませんでした（{{limits}}）",
+        "audioLimit": "音源は{{mb}}MBまで",
+        "imageLimit": "画像は{{mb}}MBまで",
+        "separator": "、"
       }
     },
     "character": {
@@ -2138,7 +2173,7 @@
         "recommendedView_flat": "2D（真上から見る）",
         "recommendedViewHint": "この卓をどちらで見るのが良いかを示します。FABの視点が「自動」の人はこれに従い、自分で3D／2Dを選んだ人はその選択のままです。",
         "sectionBackgroundLayers": "レイヤー",
-        "backgroundLayerHint": "テーブル画像の下、または上を流れます。奥から順に重なり、下のレイヤーが透けて見えます。画像は上下左右に敷き詰められ、盤面からはみ出した分は切り取られます。",
+        "backgroundLayerHint": "テーブル画像の下、または上を流れます。奥から順に重なり、下のレイヤーが透けて見えます。画像は上下左右に敷き詰められ、盤面からはみ出した分は切り取られます。重ね位置を「奥」にすると、卓の後ろの画面いっぱいに横長の絵を横につなげて並べ、カメラを回したり動かしたりすると少しだけついてきます。反応が小さいほど遠く、大きいほど近くに見えるので、何枚か重ねると奥行きが出ます。",
         "backgroundLayerAdd": "＋ レイヤーを追加",
         "backgroundLayerRemove": "削除",
         "backgroundLayerImage": "画像を選ぶ",
@@ -2146,13 +2181,18 @@
         "backgroundLayerSpeedY": "縦の速さ",
         "backgroundLayerOpacity": "不透明度",
         "backgroundLayerScale": "拡大率",
-        "backgroundLayerIndexUnder": "背面 {{index}}",
-        "backgroundLayerIndexOver": "前面 {{index}}",
         "backgroundLayerPlacement": "重ね位置",
         "backgroundLayerPlacement_under": "背面（テーブル画像の下）",
         "backgroundLayerPlacement_over": "前面（テーブル画像の上・コマの下）",
+        "backgroundLayerPlacement_backdrop": "奥（卓の後ろ・カメラに少しついてくる）",
         "backgroundLayerMoveUp": "奥へ",
-        "backgroundLayerMoveDown": "手前へ"
+        "backgroundLayerMoveDown": "手前へ",
+        "backgroundLayerIndex_under": "背面 {{index}}",
+        "backgroundLayerIndex_over": "前面 {{index}}",
+        "backgroundLayerIndex_backdrop": "奥 {{index}}",
+        "backgroundLayerFollow": "カメラへの反応",
+        "backgroundLayerHeight": "高さ",
+        "backgroundLayerSpeedYBackdrop": "奥のレイヤーは横にだけつなげて並べるので、縦には流れません"
       },
       "displayCalibration": {
         "title": "画面の実寸を合わせる",
@@ -2841,6 +2881,16 @@
         "noTarget": "対象が未選択です",
         "writingOthers": "他 {{count}} 人 入力中",
         "titleWithCount": "{{title}}（{{count}}）"
+      },
+      "search": {
+        "button": "検索",
+        "open": "チャットを検索（Ctrl+F）",
+        "placeholder": "このタブを検索",
+        "count": "{{current}} / {{total}}",
+        "none": "見つかりません",
+        "older": "前の発言へ（Enter）",
+        "newer": "次の発言へ（Shift+Enter）",
+        "close": "閉じる（Esc）"
       },
       "input": {
         "you": "（あなた）",
@@ -3697,6 +3747,8 @@
         "effectFrom": "{{actor}} が {{caster}} から {{targets}} へ〈{{effect}}〉を放った",
         "bgmStart": "{{actor}} が BGM を {{target}} に変えた",
         "bgmStop": "{{actor}} が BGM を止めた",
+        "bgsStart": "{{actor}} が環境音 {{target}} を流した",
+        "bgsStop": "{{actor}} が環境音 {{target}} を止めた",
         "vnScene": "{{actor}} が場面を {{target}} に切り替えた",
         "vnSceneClear": "{{actor}} が場面の背景を外した",
         "vnPlayhead": "{{actor}} が語りを進めた",
@@ -3827,7 +3879,7 @@
         "paused": "タブが裏に回っていたあいだ、ブラウザーが書き出しを止めていました。表示しているあいだは続きから進みます。",
         "realtime": "このブラウザでは尺と同じだけ時間がかかります（書き出し中は開いたままにしてください）",
         "withEffects": "効果音を入れる",
-        "withMusic": "BGM を入れる",
+        "withMusic": "BGM と環境音を入れる",
         "round": "ラウンド {{round}}",
         "turn": "{{name}} の手番",
         "roundTurn": "ラウンド {{round}}・{{name}} の手番",
@@ -4380,6 +4432,48 @@
         "on": "オン",
         "off": "オフ"
       }
+    },
+    "soundSettings": {
+      "ownHeading": "自分の音量",
+      "ownHint": "自分にだけ効き、このブラウザに保存されます。左のボタンで種類ごとに音を消せます。",
+      "chatHeading": "チャットの通知音",
+      "roomHeading": "部屋の音量",
+      "roomHint": "部屋の全員に効き、GM だけが変えられます。種類ごとの値には、さらに全体の値が掛かります。",
+      "openAll": "自分の音の設定をすべて開く",
+      "kind": {
+        "audition": {
+          "label": "試聴",
+          "hint": "ジュークボックスで自分だけが聞く音"
+        },
+        "bgm": {
+          "label": "BGM",
+          "hint": "ジュークボックスの音楽"
+        },
+        "background": {
+          "label": "環境音",
+          "hint": "雨や焚き火などのループ"
+        },
+        "cutIn": {
+          "label": "カットイン",
+          "hint": "カットインの音楽・場面の音・動画"
+        },
+        "notification": {
+          "label": "通知音",
+          "hint": "チャットの通知とアラーム"
+        },
+        "handling": {
+          "label": "操作音",
+          "hint": "ダイス・カード・コマを動かす音"
+        },
+        "effect": {
+          "label": "演出の効果音",
+          "hint": "マップ演出と HP などの増減"
+        },
+        "se": {
+          "label": "その他の効果音",
+          "hint": "ジュークボックスの SE、ホットバーなど"
+        }
+      }
     }
   },
   "app": {
@@ -4438,7 +4532,8 @@
       "widgets": "ウィジェット",
       "foldToolbar": "ツールバーを畳む",
       "unfoldToolbar": "ツールバーを開く",
-      "buttonGuide": "ボタンの名前をすべて表示（? キー）"
+      "buttonGuide": "ボタンの名前をすべて表示（? キー）",
+      "soundSettings": "音の設定"
     },
     "roomDataDefault": "ルームデータ"
   },
@@ -4665,7 +4760,8 @@
       "duplicate": "複製",
       "saveTemplate": "テンプレートとして保存",
       "addFromTemplate": "テンプレートから追加",
-      "deleteTemplate": "テンプレートを削除"
+      "deleteTemplate": "テンプレートを削除",
+      "moveTo": "移動先を選ぶ…"
     },
     "defaults": {
       "newGroup": "グループ",
@@ -4687,6 +4783,32 @@
       "distance": "距離: {{distance}}",
       "chatNote": "{{target}}（{{source}}から{{distance}}）",
       "sendToChat": "チャットに入力"
+    },
+    "deletion": {
+      "deleted": "「{{name}}」を削除しました",
+      "deletedUnnamed": "項目を削除しました",
+      "undo": "元に戻す"
+    },
+    "stepDown": "{{name}}を1減らす",
+    "stepUp": "{{name}}を1増やす",
+    "editor": {
+      "name": "名前",
+      "type": "種別",
+      "order": "並び",
+      "nameEmpty": "名前を入れてください",
+      "back": "戻る",
+      "moveToHint": "「{{name}}」の移動先を選んでください",
+      "referenceCopied": "「{{path}}」をコピーしました",
+      "fieldTitle": "項目の設定",
+      "groupTitle": "グループの設定",
+      "sectionTitle": "セクションの設定",
+      "open": "「{{name}}」の設定を開く",
+      "view": "表示",
+      "addField": "項目を追加",
+      "addFieldHint": "「{{name}}」に足す項目の種別を選んでください",
+      "templateSaved": "「{{name}}」をテンプレートとして保存しました",
+      "deleteGroup": "このグループを削除",
+      "addGroup": "グループを追加"
     }
   },
   "ui": {

@@ -58,7 +58,8 @@
       "ownedCharacters": "My characters",
       "roomSnapshot": "Auto Save",
       "replay": "Replay",
-      "popOut": "Open in its own window"
+      "popOut": "Open in its own window",
+      "soundSettings": "Sound settings"
     },
     "party": {
       "unnamed": "Unnamed party"
@@ -147,6 +148,10 @@
       "up": "Move up",
       "down": "Move down",
       "toBottom": "Move to the bottom"
+    },
+    "sound": {
+      "mute": "Turn {{name}} off",
+      "unmute": "Turn {{name}} on"
     }
   },
   "feature": {
@@ -355,7 +360,10 @@
         "unsetActive": "Clear active character",
         "remoteController": "Open remote controller",
         "partyWith": "{{party}} — with {{names}}",
-        "partyAlone": "{{party}} — no companions yet"
+        "partyAlone": "{{party}} — no companions yet",
+        "emptyHint": "Make a character your own to change its HP and MP here, and open its sheet or chat palette.",
+        "claimableHeading": "Characters with no owner",
+        "claim": "Make mine"
       }
     },
     "gmObjectList": {
@@ -420,8 +428,7 @@
         "bgmLabel": "BGM",
         "seLabel": "SE",
         "roomLabel": "Room",
-        "roomTooltip": "Room volume (GM)",
-        "roomGmTooltip": "Shared GM control",
+        "roomTooltip": "Room (GM only)",
         "tabLibrary": "Library",
         "tabPlaylist": "Playlist",
         "tagDisabled": "Cannot change tag while in playlist",
@@ -440,7 +447,7 @@
         "clickToSelect": "or click to select",
         "maxFileSize": "Up to 10MB per file",
         "note1": "* Audition plays once through your own speakers only.",
-        "note2": "* BGM/SE plays for everyone in the room.",
+        "note2": "* BGM, SE and ambience play for everyone in the room.",
         "note3": "* Music files are not included in save data (zip).",
         "tagAll": "All",
         "clickToSelectTouch": "or tap here to choose",
@@ -460,7 +467,20 @@
         "removeFromPlaylistNamed": "Remove from \"{{name}}\"",
         "moveToPlaylist": "Move to another playlist",
         "copyToPlaylist": "Copy to another playlist",
-        "playlistsOfTrack": "Playlists"
+        "playlistsOfTrack": "Playlists",
+        "tagBgs": "Ambience",
+        "bgsLabel": "Ambience",
+        "bgsHeading": "Ambience",
+        "bgsPlay": "Play ambience",
+        "bgsStop": "Stop ambience",
+        "bgsStopAll": "Stop all",
+        "bgsRoomVolume": "Volume for everyone",
+        "bgsRoomVolumeOf": "Volume of “{{name}}” for everyone",
+        "bgsArriving": "Receiving…",
+        "ownVolumeHeading": "Your volume",
+        "ownVolumeNote": "Only you hear it; saved in this browser",
+        "roomVolumeHeading": "Room volume",
+        "roomVolumeNote": "Applies to everyone in the room; only the GM can change it"
       },
       "miniJukebox": {
         "stopped": "— Stopped —",
@@ -1399,7 +1419,15 @@
         "defaultSectionName": "Section",
         "defaultGroupName": "Group",
         "defaultTagName": "Tag",
-        "portraitClickHintTouch": "Tap to replace the image"
+        "portraitClickHintTouch": "Tap to replace the image",
+        "portraitsManage": "Portraits",
+        "collapseAll": "Collapse all",
+        "expandAll": "Expand all",
+        "moreActions": "More actions",
+        "portraitsManageTitle": "Portraits - {{name}}",
+        "sectionJump": "Jump to section",
+        "foldSection": "Collapse",
+        "unfoldSection": "Expand"
       },
       "settingsTab": {
         "inventorySetting": "Inventory settings",
@@ -1510,6 +1538,13 @@
         "clearSecret": "Give up",
         "makeSecretHint": "Keeps the ticked pictures out of everyone else’s lists",
         "secretMark": "Kept back"
+      },
+      "tooLarge": {
+        "one": "“{{name}}” was not loaded because it is too large ({{limits}})",
+        "many": "“{{name}}” and {{count}} more were not loaded because they are too large ({{limits}})",
+        "audioLimit": "sounds up to {{mb}} MB",
+        "imageLimit": "images up to {{mb}} MB",
+        "separator": ", "
       }
     },
     "character": {
@@ -2138,7 +2173,7 @@
         "recommendedView_flat": "2D (seen from above)",
         "recommendedViewHint": "How this table is best read. Readers whose view is set to auto are given it; readers who picked 3D or 2D keep what they picked.",
         "sectionBackgroundLayers": "Layers",
-        "backgroundLayerHint": "These drift under a table drawn on a transparent picture, or over it. They stack from the back, and each shows whatever is beneath it. A picture is laid edge to edge, and whatever reaches past the board is cut off.",
+        "backgroundLayerHint": "These drift under a table drawn on a transparent picture, or over it. They stack from the back, and each shows whatever is beneath it. A picture is laid edge to edge, and whatever reaches past the board is cut off. Set the placement to Backdrop to lay a long picture across the whole screen behind the table; it follows the camera a little as the view turns or moves. The less it follows, the further away it looks, so a few stacked together give depth.",
         "backgroundLayerAdd": "+ Add a layer",
         "backgroundLayerRemove": "Remove",
         "backgroundLayerImage": "Choose a picture",
@@ -2146,13 +2181,18 @@
         "backgroundLayerSpeedY": "Up and down",
         "backgroundLayerOpacity": "Opacity",
         "backgroundLayerScale": "Scale",
-        "backgroundLayerIndexUnder": "Under {{index}}",
-        "backgroundLayerIndexOver": "Over {{index}}",
         "backgroundLayerPlacement": "Which side",
         "backgroundLayerPlacement_under": "Under the table picture",
         "backgroundLayerPlacement_over": "Over it, under the pieces",
+        "backgroundLayerPlacement_backdrop": "Backdrop (behind the table, follows the camera a little)",
         "backgroundLayerMoveUp": "Further back",
-        "backgroundLayerMoveDown": "Further forward"
+        "backgroundLayerMoveDown": "Further forward",
+        "backgroundLayerIndex_under": "Under {{index}}",
+        "backgroundLayerIndex_over": "Over {{index}}",
+        "backgroundLayerIndex_backdrop": "Backdrop {{index}}",
+        "backgroundLayerFollow": "Follows camera",
+        "backgroundLayerHeight": "Height",
+        "backgroundLayerSpeedYBackdrop": "A backdrop is laid across only, so it does not drift up or down"
       },
       "displayCalibration": {
         "title": "Measure this screen",
@@ -2841,6 +2881,16 @@
         "noTarget": "No target selected",
         "writingOthers": "{{count}} more typing",
         "titleWithCount": "{{title}} ({{count}})"
+      },
+      "search": {
+        "button": "Search",
+        "open": "Search the chat (Ctrl+F)",
+        "placeholder": "Search this tab",
+        "count": "{{current}} / {{total}}",
+        "none": "No matches",
+        "older": "Earlier line (Enter)",
+        "newer": "Later line (Shift+Enter)",
+        "close": "Close (Esc)"
       },
       "input": {
         "you": " (you)",
@@ -3697,6 +3747,8 @@
         "effectFrom": "{{actor}} cast {{effect}} from {{caster}} at {{targets}}",
         "bgmStart": "{{actor}} put on {{target}}",
         "bgmStop": "{{actor}} stopped the music",
+        "bgsStart": "{{actor}} started the ambience {{target}}",
+        "bgsStop": "{{actor}} stopped the ambience {{target}}",
         "vnScene": "{{actor}} changed the scene to {{target}}",
         "vnSceneClear": "{{actor}} cleared the backdrop",
         "vnPlayhead": "{{actor}} moved the story on",
@@ -3827,7 +3879,7 @@
         "paused": "The browser paused the export while this tab was in the background. It carries on while the tab is in view.",
         "realtime": "On this browser the export runs in real time — keep this tab open until it finishes",
         "withEffects": "Include sound effects",
-        "withMusic": "Include music",
+        "withMusic": "Include music and ambience",
         "round": "Round {{round}}",
         "turn": "{{name}}'s turn",
         "roundTurn": "Round {{round}} · {{name}}'s turn",
@@ -4380,6 +4432,48 @@
         "on": "On",
         "off": "Off"
       }
+    },
+    "soundSettings": {
+      "ownHeading": "Your volume",
+      "ownHint": "Only you hear these, and they are saved in this browser. Turn each kind off with the button on the left.",
+      "chatHeading": "Chat notification",
+      "roomHeading": "Room volume",
+      "roomHint": "Applies to everyone in the room; only the GM can change it. Each kind is scaled by the overall value as well.",
+      "openAll": "Open all of your sound settings",
+      "kind": {
+        "audition": {
+          "label": "Preview",
+          "hint": "What you preview in the jukebox"
+        },
+        "bgm": {
+          "label": "BGM",
+          "hint": "Music from the jukebox"
+        },
+        "background": {
+          "label": "Ambience",
+          "hint": "Looping rain, fire and the like"
+        },
+        "cutIn": {
+          "label": "Cut-ins",
+          "hint": "Cut-in music, scene sounds and videos"
+        },
+        "notification": {
+          "label": "Notifications",
+          "hint": "Chat notifications and alarms"
+        },
+        "handling": {
+          "label": "Handling",
+          "hint": "Dice, cards and pieces being moved"
+        },
+        "effect": {
+          "label": "Effects",
+          "hint": "Map effects and values going up or down"
+        },
+        "se": {
+          "label": "Other SE",
+          "hint": "Jukebox SE, hotbar sounds and the like"
+        }
+      }
     }
   },
   "app": {
@@ -4438,7 +4532,8 @@
       "widgets": "Widgets",
       "foldToolbar": "Fold the toolbar",
       "unfoldToolbar": "Open the toolbar",
-      "buttonGuide": "Show every button's name (? key)"
+      "buttonGuide": "Show every button's name (? key)",
+      "soundSettings": "Sound settings"
     },
     "roomDataDefault": "Room data"
   },
@@ -4665,7 +4760,8 @@
       "duplicate": "Duplicate",
       "saveTemplate": "Save as template",
       "addFromTemplate": "Add from template",
-      "deleteTemplate": "Delete template"
+      "deleteTemplate": "Delete template",
+      "moveTo": "Move to…"
     },
     "defaults": {
       "newGroup": "Group",
@@ -4687,6 +4783,32 @@
       "distance": "Distance: {{distance}}",
       "chatNote": "{{target}} (from {{source}}, {{distance}})",
       "sendToChat": "Send to chat"
+    },
+    "deletion": {
+      "deleted": "Deleted “{{name}}”",
+      "deletedUnnamed": "Deleted an item",
+      "undo": "Undo"
+    },
+    "stepDown": "Decrease {{name}} by 1",
+    "stepUp": "Increase {{name}} by 1",
+    "editor": {
+      "name": "Name",
+      "type": "Type",
+      "order": "Order",
+      "nameEmpty": "Enter a name",
+      "back": "Back",
+      "moveToHint": "Choose where to move “{{name}}”",
+      "referenceCopied": "Copied “{{path}}”",
+      "fieldTitle": "Item settings",
+      "groupTitle": "Group settings",
+      "sectionTitle": "Section settings",
+      "open": "Open the settings of “{{name}}”",
+      "view": "Show as",
+      "addField": "Add item",
+      "addFieldHint": "Choose the type of the item to add to “{{name}}”",
+      "templateSaved": "Saved “{{name}}” as a template",
+      "deleteGroup": "Delete this group",
+      "addGroup": "Add group"
     }
   },
   "ui": {

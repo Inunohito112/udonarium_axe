@@ -15,6 +15,16 @@
       }
     </div>
 
+    @if (searchOpen()) {
+      <chat-search-bar
+        class="absolute top-1 right-1 z-20 w-80 max-w-[calc(100%-0.5rem)]"
+        [tab]="chatTab()"
+        [log]="logScroll"
+        [reveal]="revealLine"
+        (closed)="closeSearch()"
+      />
+    }
+
     @if (chatTabRef()?.writingSpeakers()?.length) {
       @let writingSpeakersList = chatTabRef()!.writingSpeakers();
       @let writingOverflow = writingSpeakersList.length - 2;
@@ -81,6 +91,18 @@
         <div
           class="border-ui-border-panel ml-auto flex shrink-0 items-center gap-0.5 border-l border-solid pl-1.5 @max-[500px]:pl-1 @max-[340px]:ml-0"
         >
+          <button
+            type="button"
+            class="text-ui-titlebar-muted hover:border-ui-border-panel hover:bg-ui-hover hover:text-ui-titlebar-text m-0 flex cursor-pointer items-center justify-center gap-0.5 rounded-full border border-solid border-transparent bg-transparent px-1.5 py-0.75 text-[11px] transition-colors hover:shadow-none @max-[500px]:h-6.5 @max-[500px]:w-7 @max-[500px]:p-0.5"
+            [class.text-ui-accent!]="searchOpen()"
+            [title]="'feature.chat.search.open' | transloco"
+            [attr.aria-pressed]="searchOpen()"
+            data-testid="chat-search-toggle"
+            (click)="toggleSearch()"
+          >
+            <i class="material-icons align-middle text-[12px]!">search</i>
+            <span class="text-[11px] @max-[500px]:hidden">{{ 'feature.chat.search.button' | transloco }}</span>
+          </button>
           <button
             type="button"
             class="text-ui-titlebar-muted hover:border-ui-border-panel hover:bg-ui-hover hover:text-ui-titlebar-text m-0 flex cursor-pointer items-center justify-center gap-0.5 rounded-full border border-solid border-transparent bg-transparent px-1.5 py-0.75 text-[11px] transition-colors hover:shadow-none @max-[500px]:h-6.5 @max-[500px]:w-7 @max-[500px]:p-0.5"

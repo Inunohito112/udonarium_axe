@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signa
 import { FormsModule } from '@angular/forms';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
+import { PersonalVolumeService } from '@axe/application/media/personal-volume.service';
+import { PersonalVolumeKind } from '@axe/application/media/personal-volumes';
+import { RoomVolumeService } from '@axe/application/media/room-volume.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
@@ -15,10 +18,11 @@ import { AudioPlayer, VolumeType } from '@axe/core/storage/audio-player';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
 import { FileArchiver } from '@axe/core/storage/file-archiver';
 import { ObjectStore } from '@axe/core/sync/object-store';
-import { AudioTag } from '@axe/domain/media/audio-tag';
+import { AUDIO_TAG_BGS, AudioTag } from '@axe/domain/media/audio-tag';
 import { Jukebox } from '@axe/domain/media/jukebox';
 import { Playlist } from '@axe/domain/media/playlist';
-import { Config } from '@axe/domain/peer/config';
+import { RoomVolumeKind } from '@axe/domain/media/room-volumes';
+import { BackgroundSoundPlaybackService } from '@axe/features/media/background-sound-playback.service';
 import {
   buildLibraryTrackMenu,
   buildPlaylistTrackMenu,
@@ -26,6 +30,7 @@ import {
 } from '@axe/features/media/jukebox/playlist-context-menu';
 import { formatTrackTime, JukeboxPlaybackService, PlaylistView } from '@axe/features/media/jukebox-playback.service';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
+import { UiVolumeRowComponent } from '@axe/ui/components/volume-row/volume-row.component';
 import { TranslocoModule } from '@jsverse/transloco';
 
 @Component({
@@ -33,7 +38,7 @@ import { TranslocoModule } from '@jsverse/transloco';
   selector: 'app-jukebox',
   templateUrl: './jukebox.component.html',
   host: { class: 'block' },
-  imports: [FormsModule, TranslocoModule],
+  imports: [FormsModule, TranslocoModule, UiVolumeRowComponent],
 })
 export class JukeboxComponent {
   protected readonly isCompact = inject(ViewportService).isCompact;
@@ -51,51 +56,86 @@ export class JukeboxComponent {
   private readonly confirm = inject(ConfirmService);
   private readonly t = inject(TRANSLATE_FN);
   protected readonly playback = inject(JukeboxPlaybackService);
+  protected readonly backgroundSounds = inject(BackgroundSoundPlaybackService);
+  private readonly personalVolumes = inject(PersonalVolumeService);
+  private readonly roomVolumes = inject(RoomVolumeService);
 
-  roomVolumeChange = false;
+  /** Whether this player may move the room volume, which only the game master may, as with the room's other settings. */
+  readonly canChangeRoomVolume = this.roomVolumes.canChange;
 
   /**
    * The room-wide volume every player's sound is multiplied by, from the room volume slider.
    *
-   * It lives in the room's synced config, so changing it changes what everyone hears. Reads 1 before
-   * the config exists.
+   * It lives in the room's synced config, so changing it changes what everyone hears, and only the
+   * game master may change it. Reads 1 before the config exists.
    */
   get roomVolume(): number {
-    const conf = this.objectStore.get<Config>('Config');
-    return conf ? conf.roomVolume : 1;
+    return this.roomVolumes.volume();
   }
 
   set roomVolume(volume: number) {
-    const conf = this.objectStore.get<Config>('Config');
-    if (conf) conf.roomVolume = volume;
-    this.jukebox?.setNewVolume();
+    this.roomVolumes.set(volume);
   }
 
-  /** This player's own BGM volume, applied to the player at once scaled by the room volume; not shared. */
+  /** The room's volume for one kind of sound, from 0 to 2, which its overall volume scales in turn. */
+  roomVolumeOf(kind: RoomVolumeKind): number {
+    return this.roomVolumes.volumes()[kind];
+  }
+
+  /** Sets the room's volume for one kind of sound for everyone. Only the game master may. */
+  setRoomVolumeOf(kind: RoomVolumeKind, volume: number): void {
+    this.roomVolumes.setKind(kind, volume);
+  }
+
+  /** Whether this player has turned a kind of sound off for themselves. */
+  isMuted(kind: PersonalVolumeKind): boolean {
+    return this.personalVolumes.isMuted(kind);
+  }
+
+  /** Turns a kind of sound off or back on for this player alone, remembered in this browser. */
+  setMuted(kind: PersonalVolumeKind, muted: boolean): void {
+    this.personalVolumes.setMuted(kind, muted);
+  }
+
+  /** Opens the panel holding every one of this player's sound settings, beside the pointer. */
+  openSoundSettings(): void {
+    const coordinate = this.pointerDeviceService.pointers[0];
+    this.roomPanels.open('soundSettings', { left: coordinate.x + 25, top: coordinate.y + 25 });
+  }
+
+  /**
+   * This player's own BGM volume, heard at once scaled by the room volume. Not shared, and
+   * remembered in this browser like the other volumes of this player's own.
+   */
   get volume(): number {
-    return this.jukebox?.volume ?? 0.5;
+    return this.personalVolumes.get('bgm');
   }
   set volume(volume: number) {
-    if (this.jukebox) this.jukebox.volume = volume;
-    AudioPlayer.volume = volume * this.roomVolume;
+    this.personalVolumes.set('bgm', volume);
   }
 
-  /** This player's volume for previewing a track alone, scaled by the room volume; not shared. */
+  /** This player's volume for previewing a track alone. */
   get auditionVolume(): number {
-    return this.jukebox?.auditionVolume ?? 0.5;
+    return this.personalVolumes.get('audition');
   }
   set auditionVolume(auditionVolume: number) {
-    if (this.jukebox) this.jukebox.auditionVolume = auditionVolume;
-    AudioPlayer.auditionVolume = auditionVolume * this.roomVolume;
+    this.personalVolumes.set('audition', auditionVolume);
   }
 
-  /** This player's sound-effect volume, scaled by the room volume; not shared. */
+  /** This player's sound-effect volume. */
   get seVolume(): number {
-    return this.jukebox?.seVolume ?? 0.5;
+    return this.personalVolumes.get('se');
   }
   set seVolume(seVolume: number) {
-    if (this.jukebox) this.jukebox.seVolume = seVolume;
-    AudioPlayer.seVolume = seVolume * this.roomVolume;
+    this.personalVolumes.set('se', seVolume);
+  }
+
+  /** This player's volume for the room's background sounds. */
+  get backgroundVolume(): number {
+    return this.personalVolumes.get('background');
+  }
+  set backgroundVolume(backgroundVolume: number) {
+    this.personalVolumes.set('background', backgroundVolume);
   }
 
   readonly allTag = computed(() => this.t('feature.media.jukebox.tagAll'));
@@ -157,11 +197,14 @@ export class JukeboxComponent {
   readonly isSeeking = signal(false);
   readonly seekPreview = signal(0);
 
-  /** The position and length of the room's track, read out as `1:23 / 4:56`; a dash while nothing is held. */
+  /**
+   * The position and length of the room's track, read out as `1:23 / 4:56`. Empty while nothing is
+   * held, leaving the space it takes so the seek bar keeps its length when a track starts.
+   */
   readonly timeDisplay = computed(() => {
     this._tick();
     this.objectChange.versionOf('Jukebox')();
-    if (!this.playback.isPlaying() && !this.playback.isPaused()) return '—';
+    if (!this.playback.isPlaying() && !this.playback.isPaused()) return '';
     const duration = this.playback.duration();
     const at = this.isSeeking() ? this.seekPreview() * duration : this.playback.position();
     return `${formatTrackTime(at)} / ${duration > 0 ? formatTrackTime(duration) : '—'}`;
@@ -200,11 +243,26 @@ export class JukeboxComponent {
     return [this.allTag(), ...sorted];
   });
 
-  static readonly PRESET_TAGS = ['BGM', 'SE'];
+  static readonly PRESET_TAGS = ['BGM', 'SE', AUDIO_TAG_BGS];
 
   /** The tag a track is filed under, which is BGM for a track that was never tagged. */
   getTagOf(audio: AudioFile): string {
     return AudioTag.get(audio.identifier)?.tag || 'BGM';
+  }
+
+  /** Whether a track is tagged to loop underneath the music as a background sound. */
+  isBackgroundSound(audio: AudioFile): boolean {
+    return this.getTagOf(audio) === AUDIO_TAG_BGS;
+  }
+
+  /** Lets this player hear a background sound's room volume while its slider is dragged. */
+  onBackgroundVolumeInput(audioIdentifier: string, event: Event): void {
+    this.backgroundSounds.previewVolume(audioIdentifier, (event.target as HTMLInputElement).valueAsNumber);
+  }
+
+  /** Sets a background sound's volume for the whole room where its slider was let go. */
+  onBackgroundVolumeChange(audioIdentifier: string, event: Event): void {
+    this.backgroundSounds.commitVolume(audioIdentifier, (event.target as HTMLInputElement).valueAsNumber);
   }
 
   /**

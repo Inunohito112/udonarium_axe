@@ -5,7 +5,6 @@ import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { PanelOption, PanelService } from '@axe/application/ui/panel.service';
 import { AudioPlayer, VolumeType } from '@axe/core/storage/audio-player';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
-import { AudioTag } from '@axe/domain/media/audio-tag';
 import { CutIn, cutInPanelChrome } from '@axe/domain/media/cut-in';
 import { asCutInMultiDirectionMode } from '@axe/domain/tabletop/cut-in-multi-direction';
 import { makeCutInMultiDirectionLayout } from '@axe/features/media/cut-in-multi-direction-layout';
@@ -36,8 +35,7 @@ export class CutInEventHandlerService {
       } else {
         const audio = this.audioStorage.get(cutIn.audioIdentifier);
         if (audio) {
-          const isSE = AudioTag.get(cutIn.audioIdentifier)?.tag === 'SE';
-          this.soundOnlyPlayer.volumeType = isSE ? VolumeType.SE : VolumeType.MASTER;
+          this.soundOnlyPlayer.volumeType = VolumeType.CUT_IN;
           this.soundOnlyPlayer.loop = false;
           this.soundOnlyPlayer.play(audio);
         }

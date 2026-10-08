@@ -14,11 +14,16 @@ test.describe('スマートフォンで開くコマの簡易表示', () => {
     const sheet = page.locator('game-character-sheet');
     await expect(sheet).toBeVisible({ timeout: 10000 });
 
-    // The HP row is the first resource of the first section, whose settings open from its tune button.
+    // The HP row is the first resource of the first section. On a phone its settings are in the
+    // editor its "⋯" opens.
     await sheet.getByRole('button', { name: 'edit', exact: true }).first().tap();
-    await sheet.getByRole('button', { name: 'tune', exact: true }).first().tap();
-    await sheet.locator('input[name="data-resource-slider"]').first().tap();
-    await expect(sheet.locator('input[name="data-resource-slider"]').first()).toBeChecked();
+    await sheet.getByTestId('row-more').first().tap();
+    const editor = page.getByTestId('field-editor');
+    await expect(editor).toBeVisible();
+    await editor.locator('input[name="data-resource-slider"]').tap();
+    await expect(editor.locator('input[name="data-resource-slider"]')).toBeChecked();
+    await page.getByTestId('bottom-sheet-close').tap();
+    await expect(editor).toHaveCount(0);
     await sheet.getByRole('button', { name: 'edit_off', exact: true }).first().tap();
     await sheet.getByTestId('resource-slider').first().fill('5');
     await page

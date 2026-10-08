@@ -455,6 +455,9 @@ const AUDIO_EXTENSION_OF_TYPE: Readonly<Record<string, string>> = {
   'audio/mp4': 'm4a',
   'audio/x-m4a': 'm4a',
   'audio/ogg': 'ogg',
+  'audio/opus': 'opus',
+  'audio/flac': 'flac',
+  'audio/x-flac': 'flac',
 };
 
 /**

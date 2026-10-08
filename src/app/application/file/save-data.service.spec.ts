@@ -388,6 +388,23 @@ describe('SaveDataService', () => {
       expect(packed(['bgm-1']).map((file) => file.name)).toEqual(['battle.mp3']);
     });
 
+    it('keeps an Opus, Ogg audio or FLAC name as it is, which reads back as a sound', () => {
+      hold('bgm-1', 'rain.opus', new Blob(['opus'], { type: 'audio/ogg' }));
+      hold('bgm-2', 'wind.oga', new Blob(['oga'], { type: 'audio/ogg' }));
+      hold('bgm-3', 'hall.flac', new Blob(['flac'], { type: 'audio/flac' }));
+
+      const files = packed(['bgm-1', 'bgm-2', 'bgm-3']);
+
+      expect(files.map((file) => file.name)).toEqual(['rain.opus', 'wind.oga', 'hall.flac']);
+      expect(files.map((file) => file.type)).toEqual(['audio/ogg', 'audio/ogg', 'audio/flac']);
+    });
+
+    it('gives a FLAC without a sound extension its own', () => {
+      hold('bgm-1', 'hall', new Blob(['flac'], { type: 'audio/flac' }));
+
+      expect(packed(['bgm-1']).map((file) => file.name)).toEqual(['hall.flac']);
+    });
+
     it('numbers a sound whose name another has taken, so neither is lost', () => {
       hold('bgm-1', 'theme.mp3', new Blob(['one'], { type: 'audio/mpeg' }));
       hold('bgm-2', 'Theme.mp3', new Blob(['two'], { type: 'audio/mpeg' }));

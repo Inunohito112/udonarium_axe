@@ -193,9 +193,15 @@ test.describe('音楽パネル(Jukebox)', () => {
     await expect(fileInput).toBeAttached();
   });
 
-  test('全体音量の変更有効化チェックボックスが存在すること', async ({ page }) => {
-    const checkbox = page.locator('app-jukebox input[name="room-volume-change"]');
-    await expect(checkbox).toBeVisible();
+  test('部屋の音量（全体・BGM・SE・環境音）は GM だけが動かせること', async ({ page }) => {
+    const names = ['room-volume', 'room-bgm-volume', 'room-se-volume', 'room-background-volume'];
+    const sliders = names.map((name) => page.locator(`app-jukebox input[name="${name}"]`));
+    for (const slider of sliders) await expect(slider).toBeDisabled();
+
+    const connection = page.locator('ui-panel').filter({ hasText: '接続情報' });
+    await connection.getByRole('button', { name: /^\s*GM\s*$/ }).click();
+
+    for (const slider of sliders) await expect(slider).toBeEnabled();
   });
 });
 

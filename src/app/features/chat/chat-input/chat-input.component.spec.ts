@@ -342,6 +342,21 @@ describe('ChatInputComponent', () => {
       expect(component.text).toBe('');
     });
 
+    it('empties the box when Enter comes before the typing has been drawn', async () => {
+      fixture.componentRef.setInput('canSpeak', true);
+      await fixture.whenStable();
+      const box = (fixture.nativeElement as HTMLElement).querySelector<HTMLTextAreaElement>('textarea.chat-input')!;
+      const outgoing = sent();
+
+      box.value = '雑談1';
+      box.dispatchEvent(new Event('input'));
+      box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+      await fixture.whenStable();
+
+      expect((await outgoing).text).toBe('雑談1');
+      expect(box.value).toBe('');
+    });
+
     it('hands the line to the dice bot, which decides whether it must wait for the system', async () => {
       fixture.detectChanges();
       component.text = 'こんにちは';

@@ -257,6 +257,7 @@ export default defineConfig({
           items: [
             { text: '画像', link: '/manual/images' },
             { text: 'ジュークボックス', link: '/manual/jukebox' },
+            { text: '音の設定', link: '/manual/sound-settings' },
             { text: 'カットイン', link: '/manual/cut-in' },
             { text: 'マップ演出（エフェクト）', link: '/manual/map-effects' },
             { text: 'ビジュアルノベルモード', link: '/manual/visual-novel' },
@@ -279,6 +280,7 @@ export default defineConfig({
           text: 'リリースノート',
           items: [
             { text: '一覧', link: '/release-notes/' },
+            { text: 'v1.62.0', link: '/release-notes/v1.62.0' },
             { text: 'v1.61.1', link: '/release-notes/v1.61.1' },
             { text: 'v1.61.0', link: '/release-notes/v1.61.0' },
             { text: 'v1.60.0', link: '/release-notes/v1.60.0' },

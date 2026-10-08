@@ -575,6 +575,95 @@ describe('ChatWindowComponent', () => {
     });
   });
 
+  describe('finding words in the tab', () => {
+    const searchBox = () =>
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('[data-testid="chat-search-input"]');
+
+    function controlF(target: EventTarget): KeyboardEvent {
+      const event = new KeyboardEvent('keydown', {
+        key: 'f',
+        code: 'KeyF',
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      target.dispatchEvent(event);
+      return event;
+    }
+
+    beforeEach(() => {
+      document.body.appendChild(fixture.nativeElement);
+      fixture.detectChanges();
+    });
+
+    afterEach(() => {
+      component.stopListeningForSearch();
+      (fixture.nativeElement as HTMLElement).remove();
+    });
+
+    it('opens on Ctrl+F inside the window, in place of the browser’s find, with the caret in it', async () => {
+      const event = controlF(fixture.nativeElement);
+      await fixture.whenStable();
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(searchBox()).not.toBeNull();
+      expect(document.activeElement).toBe(searchBox());
+    });
+
+    it('puts the caret back in the box on Ctrl+F while it is open', async () => {
+      component.openSearch();
+      await fixture.whenStable();
+      (fixture.nativeElement as HTMLElement).focus();
+
+      controlF(fixture.nativeElement);
+      await fixture.whenStable();
+
+      expect(document.activeElement).toBe(searchBox());
+    });
+
+    it('closes on Escape and hands the keyboard back to the window', async () => {
+      component.openSearch();
+      await fixture.whenStable();
+
+      searchBox()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      await fixture.whenStable();
+
+      expect(component.searchOpen()).toBe(false);
+      expect(searchBox()).toBeNull();
+      expect((fixture.nativeElement as HTMLElement).contains(document.activeElement)).toBe(true);
+    });
+
+    it('opens on Ctrl+F from elsewhere while the pointer is over the window, and not once it has left', async () => {
+      fixture.nativeElement.dispatchEvent(new Event('pointerenter'));
+      const over = controlF(document.body);
+      await fixture.whenStable();
+      expect(over.defaultPrevented).toBe(true);
+      expect(component.searchOpen()).toBe(true);
+
+      component.closeSearch();
+      fixture.nativeElement.dispatchEvent(new Event('pointerleave'));
+      const away = controlF(document.body);
+      await fixture.whenStable();
+      expect(away.defaultPrevented).toBe(false);
+      expect(component.searchOpen()).toBe(false);
+    });
+
+    it('opens and closes from its button', async () => {
+      const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+        '[data-testid="chat-search-toggle"]'
+      )!;
+
+      button.click();
+      await fixture.whenStable();
+      expect(searchBox()).not.toBeNull();
+      expect(button.getAttribute('aria-pressed')).toBe('true');
+
+      button.click();
+      await fixture.whenStable();
+      expect(searchBox()).toBeNull();
+    });
+  });
+
   describe('moving between tabs by keyboard', () => {
     function pressControlArrow(direction: number): void {
       const event = new KeyboardEvent('keydown', {

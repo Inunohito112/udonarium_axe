@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HeldPieceService } from '@axe/application/tabletop/held-piece.service';
 import { MovePlanService } from '@axe/application/tabletop/move-plan.service';
 import { TabletopDisplayService } from '@axe/application/tabletop/tabletop-display.service';
+import { BackdropFrameService } from '@axe/application/ui/backdrop-frame.service';
 import { ContextMenuAction, ContextMenuService, ContextMenuType } from '@axe/application/ui/context-menu.service';
 import { DisplayCalibrationService } from '@axe/application/ui/display-calibration.service';
 import { MobileLayoutService } from '@axe/application/ui/mobile-layout.service';
@@ -382,6 +383,86 @@ describe('GameTableComponent', () => {
       ) as HTMLElement;
 
       expect(wrapper.style.getPropertyValue('mask')).toBe(component.tableSurfaceStyle()['mask']);
+    });
+  });
+
+  describe('what stands behind the table as a backdrop', () => {
+    const root = () => fixture.nativeElement as HTMLElement;
+    const follows = (): HTMLElement[] =>
+      Array.from(root().querySelectorAll<HTMLElement>('[data-testid="backdrop-layer-follow"]'));
+
+    const lay = (options: Partial<{ follow: number; height: number; speedX: number; speedY: number }> = {}) => {
+      const layer = new TableBackgroundLayer();
+      layer.initialize();
+      layer.imageIdentifier = ImageStorage.instance.add('hills.png').identifier;
+      layer.placement = 'backdrop';
+      if (options.follow !== undefined) layer.cameraFollow = options.follow;
+      if (options.height !== undefined) layer.backdropHeight = options.height;
+      layer.speedX = options.speedX ?? 0;
+      layer.speedY = options.speedY ?? 0;
+      component.currentTable.appendChild(layer);
+      (
+        component as unknown as { onBackgroundLayerImageLoad(id: string, event: Event): void }
+      ).onBackgroundLayerImageLoad(layer.imageIdentifier, {
+        target: { naturalWidth: 200, naturalHeight: 100 },
+      } as unknown as Event);
+      return layer;
+    };
+
+    it('draws a backdrop outside the table’s own space, and not among the layers under the board', () => {
+      lay();
+      fixture.detectChanges();
+
+      const backdrop = root().querySelector('[data-testid="backdrop-layer"]');
+      expect(backdrop).not.toBeNull();
+      expect(backdrop!.closest('#app-game-table')).toBeNull();
+      expect(component.underLayerViews()).toEqual([]);
+      expect(root().querySelector('[data-testid="background-layers"]')).toBeNull();
+    });
+
+    it('lays the picture across only, its foot standing at the height it was given', () => {
+      lay({ height: 0.25 });
+      fixture.detectChanges();
+
+      const view = component.backdropLayerViews()[0];
+      expect(view.frameStyle['bottom']).toBe('25%');
+      expect(view.frameStyle['height']).toBe('100px');
+      expect(view.style['background-repeat']).toBe('repeat-x');
+      expect(view.followStyle['width']).toBe('calc(100% + 400px)');
+    });
+
+    it('moves each backdrop for the camera by how much it follows, further ones less', () => {
+      lay({ follow: 0.1 });
+      lay({ follow: 0.6 });
+      fixture.detectChanges();
+
+      TestBed.inject(BackdropFrameService).apply({ rotateX: 50, rotateZ: 90, positionX: 0, positionY: 0 });
+
+      expect(follows().map((element) => element.style.transform)).toEqual([
+        'translate3d(-5px, 0px, 0px)',
+        'translate3d(-30px, 0px, 0px)',
+      ]);
+    });
+
+    it('fades the picture out at its top and its foot, on the part that moves with it', () => {
+      lay();
+      fixture.detectChanges();
+
+      const view = component.backdropLayerViews()[0];
+      expect(view.followStyle['mask-image']).toMatch(/^linear-gradient\(to bottom, transparent 0%/);
+      expect(view.followStyle['mask-image']).toMatch(/transparent 100%\)$/);
+      expect(view.followStyle['-webkit-mask-image']).toBe(view.followStyle['mask-image']);
+      expect(follows()[0].style.getPropertyValue('mask-image')).toContain('linear-gradient');
+    });
+
+    it('drifts across but never up or down, the picture being laid across only', () => {
+      lay({ speedX: 100, speedY: 100 });
+      fixture.detectChanges();
+
+      const view = component.backdropLayerViews()[0];
+      expect(view.drifts).toBe(true);
+      expect(view.style['--bg-layer-x-name']).toBe('bgLayerScrollX');
+      expect(view.style['--bg-layer-y-name']).toBeUndefined();
     });
   });
 

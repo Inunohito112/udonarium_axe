@@ -49,6 +49,7 @@ import { transientSignal } from '@axe/application/ui/transient-signal';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { callResourceChange, resourceChange$ } from '@axe/core/event/domain-events';
 import { getPeerContext } from '@axe/core/network/peer-context-source';
+import { VolumeType } from '@axe/core/storage/audio-player';
 import { imageFileEqual } from '@axe/core/storage/image-file';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { BuffBadge, toBuffBadges } from '@axe/domain/character/buff-badge';
@@ -1405,7 +1406,9 @@ export class GameCharacterComponent {
     const loudest = loudestChange(heard);
     // One line is heard, so all three of what is heard come from it. Taken apart, a point of
     // damage alongside a large heal would play as a large hurt, in the heal's own voice.
-    if (loudest) SoundEffect.playLocal(resourceChangeSound(loudest.kind, loudest.ratio, loudest.soundSet));
+    if (loudest) {
+      SoundEffect.playLocal(resourceChangeSound(loudest.kind, loudest.ratio, loudest.soundSet), VolumeType.EFFECT);
+    }
 
     const shown = entries.filter((entry) => entry.playsEffect);
     const char = this.gameCharacter();

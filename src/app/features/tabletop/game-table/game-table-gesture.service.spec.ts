@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { SwitchPressService } from '@axe/application/tabletop/switch-press.service';
+import { BackdropFrameService } from '@axe/application/ui/backdrop-frame.service';
 import { SwitchNoticeService } from '@axe/application/ui/switch-notice.service';
 import { UiSignalService } from '@axe/application/ui/ui-signal.service';
 import { GameTableGestureService } from '@axe/features/tabletop/game-table/game-table-gesture.service';
@@ -108,6 +109,14 @@ describe('GameTableGestureService', () => {
 
       expect(gameTableEl.style.transform).toContain('translateX(140.0000px)');
       expect(rotation()).toBeNull();
+    });
+
+    it('moves the backdrops for a slide of the view alone, in the frame the table moves in', async () => {
+      const backdrops = vi.spyOn(TestBed.inject(BackdropFrameService), 'apply');
+      service.setTransform(40, 0, 0, 0, 0, 0);
+      await nextFrame();
+
+      expect(backdrops).toHaveBeenCalledWith({ rotateX: 50, rotateZ: 10, positionX: 140, positionY: 0 });
     });
 
     it('lets go of the gestures it listens with when the table goes', () => {

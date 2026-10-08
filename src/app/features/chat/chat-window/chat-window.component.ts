@@ -41,6 +41,8 @@ import { ChatInputComponent } from '@axe/features/chat/chat-input/chat-input.com
 import { editsTextInPlace } from '@axe/features/chat/chat-input/chat-input-helpers';
 import { ChatMessageSettingComponent } from '@axe/features/chat/chat-message-setting/chat-message-setting.component';
 import { ChatPortraitComponent } from '@axe/features/chat/chat-portrait/chat-portrait.component';
+import { isChatSearchShortcut } from '@axe/features/chat/chat-search/chat-search';
+import { ChatSearchBarComponent } from '@axe/features/chat/chat-search/chat-search-bar.component';
 import { ChatStreamPanelService } from '@axe/features/chat/chat-stream/chat-stream-panel.service';
 import { ChatTabComponent } from '@axe/features/chat/chat-tab/chat-tab.component';
 import { ChatTabSettingComponent } from '@axe/features/chat/chat-tab-setting/chat-tab-setting.component';
@@ -72,12 +74,16 @@ const AT_BOTTOM_THRESHOLD_PX = 8;
     SafePipe,
     TranslocoModule,
     ChatTabStripComponent,
+    ChatSearchBarComponent,
   ],
   host: {
     class: 'block h-full min-h-0 min-w-0',
     tabindex: '-1',
     '(keydown.control.arrowleft)': 'switchTabByKey($event, -1)',
     '(keydown.control.arrowright)': 'switchTabByKey($event, 1)',
+    '(keydown)': 'onWindowKeydown($event)',
+    '(pointerenter)': 'listenForSearchWhileHovered()',
+    '(pointerleave)': 'stopListeningForSearch()',
   },
   // One of these to a window, so answering a line in this one puts the caret in this one.
   providers: [ChatComposeService],
@@ -142,6 +148,75 @@ export class ChatWindowComponent {
 
   private readonly logScroll = viewChild.required<ElementRef<HTMLDivElement>>('logScroll');
   readonly chatTabRef = viewChild(ChatTabComponent);
+  private readonly searchBar = viewChild(ChatSearchBarComponent);
+
+  /** Whether the box that finds words in the tab is open. */
+  readonly searchOpen = signal(false);
+
+  /** Brings a line the search lands on into view, through the tab drawing the log. */
+  readonly revealLine = (message: ChatMessage): Promise<HTMLElement | null> =>
+    this.chatTabRef()?.reveal(message) ?? Promise.resolve(null);
+
+  /**
+   * Ctrl+F (⌘F on a Mac) inside the window opens its search in place of the browser's find, which
+   * cannot see the lines of a long log that are not drawn.
+   */
+  onWindowKeydown(event: KeyboardEvent): void {
+    if (!isChatSearchShortcut(event)) return;
+    event.preventDefault();
+    this.openSearch();
+  }
+
+  /** Opens the search, or puts the caret back in it with what is typed picked out. */
+  openSearch(): void {
+    const bar = this.searchBar();
+    if (bar) {
+      bar.focus();
+      return;
+    }
+    this.searchOpen.set(true);
+    afterNextRender(() => this.searchBar()?.focus(), { injector: this.injector });
+  }
+
+  /** Closes the search, takes its marks away, and hands the keyboard back to the chat input. */
+  closeSearch(): void {
+    this.searchOpen.set(false);
+    const host = this.hostElement.nativeElement;
+    (host.querySelector<HTMLElement>('textarea.chat-input') ?? host).focus();
+  }
+
+  /** Opens the search from its button, or closes it when it is open. */
+  toggleSearch(): void {
+    if (this.searchOpen()) this.closeSearch();
+    else this.openSearch();
+  }
+
+  private searchKeysDocument: Document | null = null;
+
+  /**
+   * While the pointer is over the window, Ctrl+F opens its search even though the keyboard is
+   * elsewhere, as it is after a click on the table. The window's own key handler sees it first when
+   * the keyboard is in the window.
+   */
+  listenForSearchWhileHovered(): void {
+    const document = this.hostElement.nativeElement.ownerDocument;
+    if (this.searchKeysDocument === document) return;
+    this.stopListeningForSearch();
+    document.addEventListener('keydown', this.onHoveredKeydown);
+    this.searchKeysDocument = document;
+  }
+
+  /** Leaves Ctrl+F to the browser again once the pointer has left the window. */
+  stopListeningForSearch(): void {
+    this.searchKeysDocument?.removeEventListener('keydown', this.onHoveredKeydown);
+    this.searchKeysDocument = null;
+  }
+
+  private readonly onHoveredKeydown = (event: KeyboardEvent): void => {
+    if (event.defaultPrevented || !isChatSearchShortcut(event)) return;
+    event.preventDefault();
+    this.openSearch();
+  };
 
   /**
    * Bound to the window rather than to the input: a tab nobody may speak in renders no textarea,
@@ -307,6 +382,7 @@ export class ChatWindowComponent {
     });
     this.panelService.activated$.subscribe(() => this.onPanelShown(), this.destroyRef);
     this.destroyRef.onDestroy(() => {
+      this.stopListeningForSearch();
       if (this.scrollListener && this.panelService.scrollablePanel) {
         this.panelService.scrollablePanel.removeEventListener('scroll', this.scrollListener);
       }

@@ -26,6 +26,7 @@ import { LegacyScratchMaskMigrationService } from '@axe/application/tabletop/leg
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { TurnOrderService } from '@axe/application/turn/turn-order.service';
+import { BottomSheetService } from '@axe/application/ui/bottom-sheet.service';
 import { ButtonGuideService } from '@axe/application/ui/button-guide.service';
 import { ConfirmService } from '@axe/application/ui/confirm.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
@@ -63,6 +64,7 @@ import { DiceChatEventHandlerService } from '@axe/features/dice/dice-chat-event-
 import { DiceSymbolCreateDialogComponent } from '@axe/features/dice/dice-symbol-create-dialog/dice-symbol-create-dialog.component';
 import { DiceThrowEventHandlerService } from '@axe/features/dice/dice-throw-event-handler.service';
 import { EffectChatEventHandlerService } from '@axe/features/effect/effect-chat-event-handler.service';
+import { FilesTooLargeEventHandlerService } from '@axe/features/file/files-too-large/files-too-large-event-handler.service';
 import { GmToolbarComponent } from '@axe/features/gm-tools/gm-toolbar/gm-toolbar.component';
 import { NpcDragGhostComponent } from '@axe/features/gm-tools/npc-bar/npc-drag-ghost.component';
 import { HotbarBarComponent } from '@axe/features/hotbar/hotbar-bar/hotbar-bar.component';
@@ -102,11 +104,13 @@ import { CompassComponent } from '@axe/features/widgets/compass/compass.componen
 import { ConnectionQualityComponent } from '@axe/features/widgets/connection-quality/connection-quality.component';
 import { DigitalClockComponent } from '@axe/features/widgets/digital-clock/digital-clock.component';
 import { RenderStatsComponent } from '@axe/features/widgets/render-stats/render-stats.component';
+import { BottomSheetComponent } from '@axe/ui/components/bottom-sheet/bottom-sheet.component';
 import { ConfirmDialogComponent } from '@axe/ui/components/confirm-dialog/confirm-dialog.component';
 import { ContextMenuComponent } from '@axe/ui/components/context-menu/context-menu.component';
 import { UiFabSubmenuComponent } from '@axe/ui/components/fab-submenu/fab-submenu.component';
 import { UiFabSubmenuButtonComponent } from '@axe/ui/components/fab-submenu/fab-submenu-button.component';
 import { ModalComponent } from '@axe/ui/components/modal/modal.component';
+import { SnackbarComponent } from '@axe/ui/components/snackbar/snackbar.component';
 import { UIPanelComponent } from '@axe/ui/components/ui-panel/ui-panel.component';
 import { DraggableDirective } from '@axe/ui/directives/draggable.directive';
 import { ReloadNoticeDirective } from '@axe/ui/directives/reload-notice.directive';
@@ -157,6 +161,7 @@ const FAB_MARGIN_PX = 12;
     InviteJoinComponent,
     StreamingOverlayComponent,
     SwitchNoticeComponent,
+    SnackbarComponent,
     ChatTickerComponent,
     UiFabSubmenuComponent,
     UiFabSubmenuButtonComponent,
@@ -429,6 +434,7 @@ export class AppComponent {
     inject(RoomArchiveEventHandlerService);
     inject(ReplayEventHandlerService);
     inject(ImageDropEventHandlerService);
+    inject(FilesTooLargeEventHandlerService);
     inject(MovePlanEventHandlerService);
     inject(CcfoliaRoomImportEventHandlerService);
     inject(FogMemoryWriterService);
@@ -521,5 +527,6 @@ ContextMenuService.loadFourWayRadialMenuComponent = () =>
     (m) => m.FourWayRadialMenuComponent
   );
 ModalService.ModalComponentClass = ModalComponent;
+BottomSheetService.frameComponentClass = BottomSheetComponent;
 ConfirmService.dialogComponentClass = ConfirmDialogComponent;
 TabletopActionService.diceCreateDialogComponentClass = DiceSymbolCreateDialogComponent;
