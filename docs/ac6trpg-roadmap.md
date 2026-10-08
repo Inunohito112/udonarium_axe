@@ -17,8 +17,8 @@
 - [x] Node.js 24で `npm ci` を完了する
 - [x] `npm run build` を完了する
 - [x] 権限・同期・保存に関係する主要テスト152件を通す
-- [ ] `npm test` を全件通す
-- [ ] `npx vitest run` を全件通す
+- [x] `npm test` で全1035ファイルを通す（14,211件成功、1件スキップ）
+- [x] `npx vitest run` で全1035ファイルを通す（14,211件成功、1件スキップ）
 - [x] `npm run lint` を通す
 - [x] `npm run format:check` を通す
 - [x] Windowsのブラウザでオフライン起動を確認する
