@@ -185,6 +185,7 @@ describe('Jukebox', () => {
       const player = (jukebox as unknown as { audioPlayer: AudioPlayer }).audioPlayer;
       expect(player.volumeType).toBe(VolumeType.MASTER);
       expect(player.loop).toBe(true);
+      expect(player.followsLoopPoints).toBe(true);
       expect(playSpy).toHaveBeenCalledOnce();
     });
 
@@ -975,6 +976,25 @@ describe('Jukebox', () => {
         jukebox.apply(restarted);
 
         expect(seekSpy).toHaveBeenCalledWith(0);
+      });
+
+      it('fades in a player that follows loop points as well when another peer moves the track', () => {
+        addReady('a');
+        const jukebox = makeJukebox();
+        jukebox.apply(jukebox.toContext());
+        const playing = jukebox.toContext();
+        playing.syncData = { ...playing.syncData, audioIdentifier: 'a', isPlaying: true, startTime: 0 };
+        jukebox.apply(playing);
+        vi.spyOn(AudioPlayer.prototype, 'currentTime', 'get').mockReturnValue(10);
+        const before = (jukebox as unknown as { audioPlayer: AudioPlayer }).audioPlayer;
+
+        const moved = jukebox.toContext();
+        moved.syncData = { ...moved.syncData, startTime: 30, seekCount: (jukebox.seekCount ?? 0) + 1 };
+        jukebox.apply(moved);
+
+        const after = (jukebox as unknown as { audioPlayer: AudioPlayer }).audioPlayer;
+        expect(after).not.toBe(before);
+        expect(after.followsLoopPoints).toBe(true);
       });
 
       it('takes no seek from an older version that sends no count', () => {

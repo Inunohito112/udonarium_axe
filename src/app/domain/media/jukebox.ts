@@ -347,12 +347,24 @@ export class Jukebox extends GameObject {
       this.playAfterFileUpdate(startAt);
       return;
     }
-    const isSE = AudioTag.get(this.audioIdentifier)?.tag === 'SE';
-    this.audioPlayer.volumeType = isSE ? VolumeType.SE : VolumeType.MASTER;
-    this.audioPlayer.loop = !isSE && this.repeatMode === 'one';
-    this.audioPlayer.onEnded = isSE ? null : () => this.onTrackNaturallyEnded();
+    this.prepare(this.audioPlayer);
     this.audioPlayer.play(this.audio);
     if (startAt > 0) this.audioPlayer.seekTo(startAt);
+  }
+
+  /**
+   * Sets a player up for the room's track: a track tagged SE plays once through the sound-effect
+   * channel, and anything else plays as music, moving on when it ends and going round on repeat one.
+   *
+   * Music follows the loop points its file names, so a track with an introduction plays it once and
+   * then goes round the part after it while on repeat one, and plays to its end otherwise.
+   */
+  private prepare(player: AudioPlayer): void {
+    const isSE = AudioTag.get(this.audioIdentifier)?.tag === 'SE';
+    player.volumeType = isSE ? VolumeType.SE : VolumeType.MASTER;
+    player.followsLoopPoints = !isSE;
+    player.loop = !isSE && this.repeatMode === 'one';
+    player.onEnded = isSE ? null : () => this.onTrackNaturallyEnded();
   }
 
   /** Stops the room's track and clears it, for every peer. */
@@ -398,11 +410,8 @@ export class Jukebox extends GameObject {
     fading.onEnded = null;
     this.fadingPlayer = fading;
 
-    const isSE = AudioTag.get(this.audioIdentifier)?.tag === 'SE';
     const newPlayer = new AudioPlayer();
-    newPlayer.volumeType = isSE ? VolumeType.SE : VolumeType.MASTER;
-    newPlayer.loop = !isSE && this.repeatMode === 'one';
-    newPlayer.onEnded = isSE ? null : () => this.onTrackNaturallyEnded();
+    this.prepare(newPlayer);
     newPlayer.volume = 0;
     newPlayer.play(this.audio);
     newPlayer.seekTo(time);
@@ -422,10 +431,7 @@ export class Jukebox extends GameObject {
     this.audioUpdateCleanup = updateAudioResource$.subscribe(() => {
       if (!this.audio || !this.audio.isReady) return;
       this.unregisterEvent();
-      const isSE = AudioTag.get(this.audioIdentifier)?.tag === 'SE';
-      this.audioPlayer.volumeType = isSE ? VolumeType.SE : VolumeType.MASTER;
-      this.audioPlayer.loop = !isSE && this.repeatMode === 'one';
-      this.audioPlayer.onEnded = isSE ? null : () => this.onTrackNaturallyEnded();
+      this.prepare(this.audioPlayer);
       this.audioPlayer.play(this.audio);
       if (startAt > 0) this.audioPlayer.seekTo(startAt);
     });

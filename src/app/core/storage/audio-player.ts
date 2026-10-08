@@ -1,7 +1,9 @@
 import { USER_GESTURE_EVENTS } from '@axe/core/input/user-interaction-unlock';
 import { Logger } from '@axe/core/logging/logger';
 import { AudioFile, AudioState } from '@axe/core/storage/audio-file';
+import { loopPointsFitInMemory, loopRegionOf, readAudioLoopPoints } from '@axe/core/storage/audio-loop-points';
 import * as FileReaderUtil from '@axe/core/storage/file-reader-util';
+import { LoopPointTrack } from '@axe/core/storage/loop-point-track';
 import { PERF_SE_DECODE, perfCounters } from '@axe/core/util/perf-counters';
 
 /**
@@ -43,6 +45,14 @@ declare global {
 
 type AudioCache = { url: string; blob: Blob };
 type DecodedEntry = { decoding: Promise<AudioBuffer | null>; bytes?: number };
+type DecodedLoopTrack = { buffer: AudioBuffer; region: { start: number; end: number } };
+
+/** What was asked of a player while its track was still being read and decoded, to apply once it starts. */
+type PendingStart = {
+  position: number;
+  paused: boolean;
+  fade: { target: number; durationMs: number; requestedAt: number } | null;
+};
 
 export class AudioPlayer {
   private static _audioContext: AudioContext;
@@ -190,6 +200,19 @@ export class AudioPlayer {
   volumeType: VolumeType = VolumeType.MASTER;
   onEnded: (() => void) | null = null;
 
+  /**
+   * Whether a track whose file names where it loops is played from memory, going round between
+   * those points while the player loops and playing on to its end while it does not.
+   *
+   * Off, as it starts, every track streams through an `<audio>` element and loops whole. A track
+   * that names no loop, that is too long to hold in memory, or whose file is not on this device yet
+   * streams either way.
+   */
+  followsLoopPoints = false;
+
+  private track: LoopPointTrack | null = null;
+  private pending: PendingStart | null = null;
+
   private _volume: number = 1;
   private _loop: boolean = false;
 
@@ -199,22 +222,29 @@ export class AudioPlayer {
    * It can be set before anything has played and carries over once the player starts.
    */
   get volume(): number {
+    if (this.track) return this.track.volume;
+    if (this.pending) return this._volume;
     return this._audioElm?.volume ?? this._volume;
   }
   set volume(volume: number) {
     this._volume = volume;
+    if (this.track) this.track.volume = volume;
     if (this._audioElm) this._audioElm.volume = volume;
   }
   /** Whether the track starts again when it ends; like the volume, it can be set before anything plays. */
   get loop(): boolean {
+    if (this.track || this.pending) return this._loop;
     return this._audioElm?.loop ?? this._loop;
   }
   set loop(loop: boolean) {
     this._loop = loop;
+    if (this.track) this.track.loop = loop;
     if (this._audioElm) this._audioElm.loop = loop;
   }
   /** Whether nothing is playing, which is also true before the player has played anything. */
   get paused(): boolean {
+    if (this.pending) return this.pending.paused;
+    if (this.track) return !this.track.isPlaying;
     return this._audioElm?.paused ?? true;
   }
 
@@ -232,6 +262,8 @@ export class AudioPlayer {
 
   /** The playback position in seconds, or 0 before anything has played. */
   get currentTime(): number {
+    if (this.pending) return this.pending.position;
+    if (this.track) return this.track.position;
     return this._audioElm?.currentTime ?? 0;
   }
 
@@ -240,6 +272,8 @@ export class AudioPlayer {
    * while the track is still loading.
    */
   get duration(): number {
+    if (this.pending) return NaN;
+    if (this.track) return this.track.duration;
     return this._audioElm?.duration ?? 0;
   }
 
@@ -261,6 +295,8 @@ export class AudioPlayer {
       AudioPlayer.cacheMap.delete(identifier);
     }
     AudioPlayer.decodedBuffers.delete(identifier);
+    AudioPlayer.loopTracks.delete(identifier);
+    AudioPlayer.loopFollowable.delete(identifier);
   }
 
   /** Forgets every fetched copy and decoded sound effect, revoking the cached object URLs. */
@@ -270,6 +306,8 @@ export class AudioPlayer {
     }
     AudioPlayer.cacheMap.clear();
     AudioPlayer.decodedBuffers.clear();
+    AudioPlayer.loopTracks.clear();
+    AudioPlayer.loopFollowable.clear();
   }
 
   private static evictCacheIfNeeded() {
@@ -297,6 +335,9 @@ export class AudioPlayer {
    * link-only audio the bytes are also fetched into a cache in the background so later plays load
    * locally. A browser refusing to start playback is logged, not thrown, and a refusal for want of
    * a gesture is kept as `isAwaitingGesture` until the next play.
+   *
+   * While the player follows loop points, a track whose file may name some is read first, and
+   * decoded when it does; what is asked of the player meanwhile is kept and applied once it starts.
    */
   play(audio?: AudioFile) {
     this.stop();
@@ -304,7 +345,16 @@ export class AudioPlayer {
     this._isAwaitingGesture = false;
     if (audio !== undefined) this.audio = audio;
     if (!this.audio) return;
+    if (this.followsLoopPoints && AudioPlayer.mayLoopBetweenPoints(this.audio)) {
+      this.pending = { position: 0, paused: false, fade: null };
+      void this.playBetweenLoopPointsAsync(this.audio, attempt);
+      return;
+    }
+    this.playThroughElement(attempt);
+  }
 
+  private playThroughElement(attempt: number): void {
+    if (!this.audio) return;
     let url = this.audio.url;
 
     if (this.audio.state === AudioState.URL) {
@@ -327,9 +377,40 @@ export class AudioPlayer {
     });
   }
 
+  private async playBetweenLoopPointsAsync(audio: AudioFile, attempt: number): Promise<void> {
+    const looped = await AudioPlayer.loopTrackAsync(audio);
+    const pending = this.pending;
+    if (attempt !== this.playAttempt || !pending) return;
+    this.pending = null;
+    if (!looped) {
+      this.playThroughElement(attempt);
+      if (pending.position > 0) this.seekTo(pending.position);
+      if (pending.paused) this.pause();
+    } else {
+      const track = new LoopPointTrack(
+        AudioPlayer.audioContext,
+        looped.buffer,
+        looped.region,
+        this.getConnectingAudioNode(),
+        this._volume,
+        this._loop
+      );
+      track.onEnded = () => this.onEnded?.();
+      this.track = track;
+      if (pending.paused) track.seek(pending.position);
+      else track.start(pending.position);
+    }
+    if (pending.fade) {
+      const remaining = pending.fade.durationMs - (performance.now() - pending.fade.requestedAt);
+      void this.fadeVolumeTo(pending.fade.target, Math.max(0, remaining));
+    }
+  }
+
   /** Pauses playback where it is, keeping the position; does nothing before anything has played. */
   pause() {
-    this._audioElm?.pause();
+    if (this.pending) this.pending.paused = true;
+    else if (this.track) this.track.pause();
+    else this._audioElm?.pause();
   }
 
   /**
@@ -339,6 +420,14 @@ export class AudioPlayer {
    * ignore a position set earlier.
    */
   seekTo(time: number) {
+    if (this.pending) {
+      this.pending.position = time;
+      return;
+    }
+    if (this.track) {
+      this.track.seek(time);
+      return;
+    }
     if (!this._audioElm) return;
     // Some browsers ignore currentTime before HAVE_METADATA; defer to the loadedmetadata event.
     if (this._audioElm.readyState >= 1) {
@@ -360,6 +449,14 @@ export class AudioPlayer {
    * played yet, no real change or no duration, the volume is set and the promise resolves at once.
    */
   fadeVolumeTo(target: number, durationMs: number): Promise<void> {
+    if (this.pending) {
+      this.pending.fade = { target, durationMs, requestedAt: performance.now() };
+      return new Promise((resolve) => setTimeout(resolve, Math.max(0, durationMs)));
+    }
+    if (this.track) {
+      this._volume = target;
+      return this.track.fadeTo(target, durationMs);
+    }
     if (!this._audioElm) return Promise.resolve();
     const audioElm = this._audioElm;
     const startVol = audioElm.volume;
@@ -392,6 +489,11 @@ export class AudioPlayer {
   stop() {
     this.playAttempt++;
     this._isAwaitingGesture = false;
+    this.pending = null;
+    if (this.track) {
+      this.track.dispose();
+      this.track = null;
+    }
     if (!this._audioElm) return;
     this._audioElm.pause();
     this._audioElm.currentTime = 0;
@@ -599,6 +701,72 @@ export class AudioPlayer {
         (error) => reject(error)
       );
     });
+  }
+
+  /**
+   * Whether each track's file names loop points that can be followed, once its file has been read.
+   * A track known to name none streams at once rather than being read again.
+   */
+  private static readonly loopFollowable = new Map<string, boolean>();
+
+  /**
+   * The tracks decoded to loop between their points, by the audio they came from, the most recently
+   * played last. A decoded track takes many times the memory of its file, so only the last two are
+   * kept, which is enough for one track to cross-fade into itself and to go back to the one before.
+   */
+  private static readonly loopTracks = new Map<string, Promise<DecodedLoopTrack | null>>();
+  private static readonly MAX_LOOP_TRACKS = 2;
+
+  /** Whether a track may name loop points worth reading for: its file is on this device and not known to name none. */
+  private static mayLoopBetweenPoints(audio: AudioFile): boolean {
+    if (AudioPlayer.loopFollowable.get(audio.identifier) === false) return false;
+    return AudioPlayer.blobOf(audio) !== null;
+  }
+
+  private static blobOf(audio: AudioFile): Blob | null {
+    return audio.blob ?? AudioPlayer.cacheMap.get(audio.identifier)?.blob ?? null;
+  }
+
+  private static loopTrackAsync(audio: AudioFile): Promise<DecodedLoopTrack | null> {
+    const identifier = audio.identifier;
+    const kept = AudioPlayer.loopTracks.get(identifier);
+    const entry = kept ?? AudioPlayer.decodeLoopTrackAsync(audio);
+    AudioPlayer.loopTracks.delete(identifier);
+    AudioPlayer.loopTracks.set(identifier, entry);
+    while (AudioPlayer.loopTracks.size > AudioPlayer.MAX_LOOP_TRACKS) {
+      const oldest = AudioPlayer.loopTracks.keys().next().value;
+      if (typeof oldest !== 'string') break;
+      AudioPlayer.loopTracks.delete(oldest);
+    }
+    return entry;
+  }
+
+  /**
+   * Reads where a track's file asks to loop and decodes it to loop there, or null, remembered, when
+   * the file names no loop, the track is too long to hold in memory, or it cannot be decoded.
+   */
+  private static async decodeLoopTrackAsync(audio: AudioFile): Promise<DecodedLoopTrack | null> {
+    const identifier = audio.identifier;
+    const blob = AudioPlayer.blobOf(audio);
+    let looped: DecodedLoopTrack | null = null;
+    try {
+      if (blob) {
+        const data = await FileReaderUtil.readAsArrayBufferAsync(blob);
+        const points = readAudioLoopPoints(new Uint8Array(data));
+        if (points && loopPointsFitInMemory(points, AudioPlayer.audioContext.sampleRate, blob.size)) {
+          const buffer = await new Promise<AudioBuffer>((resolve, reject) =>
+            AudioPlayer.audioContext.decodeAudioData(data, resolve, reject)
+          );
+          const region = loopRegionOf(points, buffer.duration);
+          if (region) looped = { buffer, region };
+        }
+      }
+    } catch (reason) {
+      Logger.warn('[AudioPlayer] ループ位置の読み込み失敗', reason);
+    }
+    AudioPlayer.loopFollowable.set(identifier, looped !== null);
+    if (!looped) AudioPlayer.loopTracks.delete(identifier);
+    return looped;
   }
 
   private static async getBlobAsync(audio: AudioFile): Promise<Blob> {
