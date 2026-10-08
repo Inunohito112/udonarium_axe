@@ -1538,6 +1538,13 @@
         "clearSecret": "秘匿を解除",
         "makeSecretHint": "チェックした画像を GM 以外の一覧から隠します",
         "secretMark": "秘匿画像"
+      },
+      "tooLarge": {
+        "one": "「{{name}}」は大きすぎるため読み込めませんでした（{{limits}}）",
+        "many": "「{{name}}」ほか{{count}}件は大きすぎるため読み込めませんでした（{{limits}}）",
+        "audioLimit": "音源は{{mb}}MBまで",
+        "imageLimit": "画像は{{mb}}MBまで",
+        "separator": "、"
       }
     },
     "character": {

@@ -64,6 +64,7 @@ import { DiceChatEventHandlerService } from '@axe/features/dice/dice-chat-event-
 import { DiceSymbolCreateDialogComponent } from '@axe/features/dice/dice-symbol-create-dialog/dice-symbol-create-dialog.component';
 import { DiceThrowEventHandlerService } from '@axe/features/dice/dice-throw-event-handler.service';
 import { EffectChatEventHandlerService } from '@axe/features/effect/effect-chat-event-handler.service';
+import { FilesTooLargeEventHandlerService } from '@axe/features/file/files-too-large/files-too-large-event-handler.service';
 import { GmToolbarComponent } from '@axe/features/gm-tools/gm-toolbar/gm-toolbar.component';
 import { NpcDragGhostComponent } from '@axe/features/gm-tools/npc-bar/npc-drag-ghost.component';
 import { HotbarBarComponent } from '@axe/features/hotbar/hotbar-bar/hotbar-bar.component';
@@ -433,6 +434,7 @@ export class AppComponent {
     inject(RoomArchiveEventHandlerService);
     inject(ReplayEventHandlerService);
     inject(ImageDropEventHandlerService);
+    inject(FilesTooLargeEventHandlerService);
     inject(MovePlanEventHandlerService);
     inject(CcfoliaRoomImportEventHandlerService);
     inject(FogMemoryWriterService);

@@ -88,6 +88,17 @@ export interface CcfoliaRoomDroppedEvent {
   entries: ArchiveEntries;
 }
 
+/** A file a load left out for being larger than its kind may be, with the limit it went over. */
+export interface FileTooLarge {
+  name: string;
+  kind: 'image' | 'audio';
+  limitBytes: number;
+}
+
+export interface FilesTooLargeEvent {
+  files: FileTooLarge[];
+}
+
 export interface LoadConfigEvent {
   config: unknown;
 }
@@ -147,6 +158,7 @@ export const fileLoaded$ = new EventChannel<void>();
 export const xmlLoaded$ = new EventChannel<XmlLoadedEvent>();
 export const imageDropped$ = new EventChannel<ImageDroppedEvent>();
 export const ccfoliaRoomDropped$ = new EventChannel<CcfoliaRoomDroppedEvent>();
+export const filesTooLarge$ = new EventChannel<FilesTooLargeEvent>();
 // The configuration load can emit before the app component subscribes, so this channel is
 // sticky: without it the event is missed and the peer id stays unset.
 export const loadConfig$ = new StickyEventChannel<LoadConfigEvent>();
@@ -235,6 +247,10 @@ export function emitImageDropped(event: ImageDroppedEvent) {
 /** Announces that a CCFOLIA room archive was dropped, with its unzipped entries, for import. */
 export function emitCcfoliaRoomDropped(event: CcfoliaRoomDroppedEvent) {
   ccfoliaRoomDropped$.emit(event);
+}
+/** Announces the files a load left out for being too large, once the whole load is done. */
+export function emitFilesTooLarge(event: FilesTooLargeEvent) {
+  filesTooLarge$.emit(event);
 }
 /** Announces that the app config loaded; the channel is sticky, so late subscribers still get it. */
 export function emitLoadConfig(event: LoadConfigEvent) {

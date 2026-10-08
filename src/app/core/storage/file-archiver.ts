@@ -1,4 +1,11 @@
-import { emitCcfoliaRoomDropped, emitFileLoaded, emitImageDropped, emitXmlLoaded } from '@axe/core/event/domain-events';
+import {
+  emitCcfoliaRoomDropped,
+  emitFileLoaded,
+  emitFilesTooLarge,
+  emitImageDropped,
+  emitXmlLoaded,
+  type FileTooLarge,
+} from '@axe/core/event/domain-events';
 import { Network } from '@axe/core/index';
 import { Logger } from '@axe/core/logging/logger';
 import { AudioStorage } from '@axe/core/storage/audio-storage';
@@ -26,6 +33,11 @@ interface LoadGuard extends GameObject {
 }
 
 const MEGA_BYTE = 1024 * 1024;
+
+/** The largest image a load takes in. */
+export const MAX_LOADED_IMAGE_BYTES = 2 * MEGA_BYTE;
+/** The largest sound a load takes in. */
+export const MAX_LOADED_AUDIO_BYTES = 10 * MEGA_BYTE;
 const DROP_STACK_OFFSET = 20;
 const XML_MIME_TYPE = 'text/xml';
 const INTERNAL_DRAG_TYPE = 'application/x-axe-internal-drag';
@@ -69,9 +81,6 @@ export class FileArchiver {
   get reloadCheck(): LoadGuard | null {
     return ObjectStore.instance.get<LoadGuard>('ReloadCheck');
   }
-
-  private maxImageSize = 2 * MEGA_BYTE;
-  private maxAudioSize = 10 * MEGA_BYTE;
 
   private callbackOnDragStart: ((this: HTMLElement, e: DragEvent) => void) | null = null;
   private callbackOnDragEnter: ((this: HTMLElement, e: DragEvent) => void) | null = null;
@@ -151,18 +160,23 @@ export class FileArchiver {
    * Loads files as if dropped: images and audio into their stores, XML as room or object data, and
    * zips by loading what is inside.
    *
-   * Images over 2 MB and audio over 10 MB are skipped with a warning. Given a drop point, each
-   * image is announced for placing on the table, the next one offset a little from the last. Images
-   * inside a zip are not placed, and a zip exported as a CCFOLIA room is handed on whole instead.
+   * Images over 2 MB and audio over 10 MB are left out, those inside a zip included, and once the
+   * load is done they are announced together, so the reader learns why they did not appear. Given
+   * a drop point, each image is announced for placing on the table, the next one offset a little
+   * from the last. Images inside a zip are not placed, and a zip exported as a CCFOLIA room is
+   * handed on whole instead.
    */
   async load(files: File[] | FileList, dropPoint?: { x: number; y: number }): Promise<void> {
-    await this.loadFiles(files, dropPoint, true);
+    const tooLarge: FileTooLarge[] = [];
+    await this.loadFiles(files, dropPoint, true, tooLarge);
+    if (tooLarge.length > 0) emitFilesTooLarge({ files: tooLarge });
   }
 
   private async loadFiles(
     files: File[] | FileList,
     dropPoint: { x: number; y: number } | undefined,
-    placesDroppedImages: boolean
+    placesDroppedImages: boolean,
+    tooLarge: FileTooLarge[]
   ): Promise<void> {
     if (!files) return;
     const loadFiles: File[] = files instanceof FileList ? toArrayOfFileList(files) : files;
@@ -170,11 +184,11 @@ export class FileArchiver {
     let droppedImageCount = 0;
     for (const file of loadFiles) {
       const imageDropPoint = placesDroppedImages ? this.offsetDropPoint(dropPoint, droppedImageCount) : undefined;
-      const isImageDropped = await this.handleImage(file, imageDropPoint);
+      const isImageDropped = await this.handleImage(file, imageDropPoint, tooLarge);
       if (isImageDropped) droppedImageCount++;
-      await this.handleAudio(file);
+      await this.handleAudio(file, tooLarge);
       await this.handleText(file, dropPoint);
-      await this.handleZip(file, dropPoint);
+      await this.handleZip(file, dropPoint, tooLarge);
       emitFileLoaded();
     }
   }
@@ -207,28 +221,36 @@ export class FileArchiver {
     return { images, oversized };
   }
 
-  private async handleImage(file: File, dropPoint?: { x: number; y: number }): Promise<boolean> {
+  private async handleImage(
+    file: File,
+    dropPoint: { x: number; y: number } | undefined,
+    tooLarge: FileTooLarge[]
+  ): Promise<boolean> {
     if (!file.type.startsWith('image/')) return false;
     // With no guard there is nothing to stop it.
     if (!(this.reloadCheck?.isLoadOk() ?? true)) return false;
     const image = await this.storeImage(file);
-    if (!image) return false;
+    if (!image) {
+      tooLarge.push({ name: file.name, kind: 'image', limitBytes: MAX_LOADED_IMAGE_BYTES });
+      return false;
+    }
     if (dropPoint) emitImageDropped({ identifier: image.identifier, fileName: file.name, dropPoint });
     return dropPoint != null;
   }
 
   private async storeImage(file: File): Promise<ImageFile | null> {
-    if (file.size > this.maxImageSize) {
+    if (file.size > MAX_LOADED_IMAGE_BYTES) {
       Logger.warn(`[FileArchiver] ファイルサイズ制限超過: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
       return null;
     }
     return ImageStorage.instance.addAsync(file);
   }
 
-  private async handleAudio(file: File) {
+  private async handleAudio(file: File, tooLarge: FileTooLarge[]) {
     if (!file.type.startsWith('audio/')) return;
-    if (file.size > this.maxAudioSize) {
+    if (file.size > MAX_LOADED_AUDIO_BYTES) {
       Logger.warn(`[FileArchiver] ファイルサイズ制限超過: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+      tooLarge.push({ name: file.name, kind: 'audio', limitBytes: MAX_LOADED_AUDIO_BYTES });
       return;
     }
     await AudioStorage.instance.addAsync(file);
@@ -259,7 +281,7 @@ export class FileArchiver {
     }
   }
 
-  private async handleZip(file: File, dropPoint?: { x: number; y: number }) {
+  private async handleZip(file: File, dropPoint: { x: number; y: number } | undefined, tooLarge: FileTooLarge[]) {
     if (!file.type.includes('application/') && file.type.length > 0) return;
     let entries: ZipEntry[];
     try {
@@ -275,7 +297,7 @@ export class FileArchiver {
 
     for (const entry of entries) {
       try {
-        await this.loadFiles([new File([entry.blob], entry.name, { type: entry.type })], dropPoint, false);
+        await this.loadFiles([new File([entry.blob], entry.name, { type: entry.type })], dropPoint, false, tooLarge);
       } catch (reason) {
         Logger.warn('[FileArchiver] ZIP展開エラー', reason);
       }

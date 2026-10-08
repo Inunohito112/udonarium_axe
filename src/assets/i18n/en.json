@@ -1538,6 +1538,13 @@
         "clearSecret": "Give up",
         "makeSecretHint": "Keeps the ticked pictures out of everyone else’s lists",
         "secretMark": "Kept back"
+      },
+      "tooLarge": {
+        "one": "“{{name}}” was not loaded because it is too large ({{limits}})",
+        "many": "“{{name}}” and {{count}} more were not loaded because they are too large ({{limits}})",
+        "audioLimit": "sounds up to {{mb}} MB",
+        "imageLimit": "images up to {{mb}} MB",
+        "separator": ", "
       }
     },
     "character": {

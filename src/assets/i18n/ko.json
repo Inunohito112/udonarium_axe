@@ -1538,6 +1538,13 @@
         "clearSecret": "숨김 해제",
         "makeSecretHint": "체크한 이미지를 GM 외의 목록에서 숨깁니다",
         "secretMark": "숨긴 이미지"
+      },
+      "tooLarge": {
+        "one": "「{{name}}」은(는) 너무 커서 불러오지 못했습니다({{limits}})",
+        "many": "「{{name}}」 외 {{count}}개는 너무 커서 불러오지 못했습니다({{limits}})",
+        "audioLimit": "음원은 {{mb}}MB까지",
+        "imageLimit": "이미지는 {{mb}}MB까지",
+        "separator": ", "
       }
     },
     "character": {
