@@ -49,8 +49,6 @@ Thumbs.db
 # Playwright
 /playwright-report
 
-# User config
-src/assets/config.json
 /blob-report
 /playwright/.cache
 /test-results
