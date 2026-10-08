@@ -61,6 +61,9 @@ async function makePlaylist(jukebox: Locator, name: string) {
   await jukebox.getByTestId('jukebox-tab-playlist').click();
   await jukebox.getByTestId('jukebox-playlist-create').click();
   const nameInput = jukebox.getByTestId('jukebox-playlist-name');
+  // The box takes the new playlist's stand-in name on the next redraw, which would write over a
+  // name typed before it.
+  await expect(nameInput).toHaveValue(/^再生リスト \d+$/);
   await nameInput.fill(name);
   await nameInput.press('Enter');
   await nameInput.blur();
