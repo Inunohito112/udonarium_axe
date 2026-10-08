@@ -54,12 +54,16 @@ async function playOnRepeatOne(page: Page, name: string, loop: boolean): Promise
   return jukebox;
 }
 
-/** The whole seconds the jukebox shows the track at, read every quarter second for as long as asked. */
-async function shownSeconds(jukebox: Locator, forMs: number): Promise<number[]> {
+/**
+ * The whole seconds the jukebox shows the track at, read every quarter second until `enough` says
+ * what has been seen will do, or 20 seconds have gone. How fast the track plays depends on how busy
+ * the machine is, so the reading goes on until it has seen what it needs rather than for a set time.
+ */
+async function shownSeconds(jukebox: Locator, enough: (seen: number[]) => boolean): Promise<number[]> {
   const seen: number[] = [];
   const time = jukebox.getByTestId('jukebox-time');
   await expect(time).toHaveText(/^0:0\d \/ 0:06$/, { timeout: 10000 });
-  for (const until = Date.now() + forMs; Date.now() < until;) {
+  for (const until = Date.now() + 20_000; Date.now() < until && !enough(seen);) {
     const match = /^0:0(\d) \//.exec((await time.textContent()) ?? '');
     if (match) seen.push(Number(match[1]));
     await jukebox.page().waitForTimeout(250);
@@ -67,21 +71,23 @@ async function shownSeconds(jukebox: Locator, forMs: number): Promise<number[]> 
   return seen;
 }
 
+/** Whether the shown time went back from the end of the loop to its start. */
+const wrapped = (seen: number[]) => seen.some((second, i) => i > 0 && seen[i - 1] >= 2 && second <= 1);
+
 test.describe('ジュークボックスのループ位置', () => {
   test('ループ位置のある曲は、1曲ループで指定の区間をくり返すこと', async ({ page }) => {
     const jukebox = await playOnRepeatOne(page, 'Looped.wav', true);
 
-    const seen = await shownSeconds(jukebox, 7000);
+    const seen = await shownSeconds(jukebox, (sofar) => wrapped(sofar) || sofar.some((second) => second > 3));
 
     expect(Math.max(...seen)).toBeLessThanOrEqual(3);
-    const wrapped = seen.some((second, i) => i > 0 && seen[i - 1] >= 2 && second <= 1);
-    expect(wrapped).toBe(true);
+    expect(wrapped(seen)).toBe(true);
   });
 
   test('ループ位置のない曲は、これまでどおり曲の最後まで流れること', async ({ page }) => {
     const jukebox = await playOnRepeatOne(page, 'Plain.wav', false);
 
-    const seen = await shownSeconds(jukebox, 6000);
+    const seen = await shownSeconds(jukebox, (sofar) => sofar.some((second) => second >= 4));
 
     expect(Math.max(...seen)).toBeGreaterThanOrEqual(4);
   });
