@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Title } from '@angular/platform-browser';
 import { AppComponent } from '@axe/app.component';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { ButtonGuideService } from '@axe/application/ui/button-guide.service';
@@ -10,6 +11,7 @@ import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { MENU_SURFACES, menuCommandOf } from '@axe/domain/ui/menu-command';
 import { parseMenuLayout } from '@axe/domain/ui/menu-layout';
+import { AC6TRPG_BROWSER_TITLE } from '@axe/features/ac6trpg/ac6trpg-config';
 import { MenuCommandService } from '@axe/features/menu/menu-command.service';
 import { RoomPanelService } from '@axe/features/panels/room-panel.service';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
@@ -56,6 +58,10 @@ describe('AppComponent', () => {
     afterEach(() => {
       for (const surface of MENU_SURFACES) TestBed.inject(MenuLayoutService).reset(surface);
       vi.restoreAllMocks();
+    });
+
+    it('identifies the AC6TRPG and upstream Axe versions in the browser title', () => {
+      expect(TestBed.inject(Title).getTitle()).toBe(AC6TRPG_BROWSER_TITLE);
     });
 
     it('is on the drawer button, which is no part of any arrangement', () => {

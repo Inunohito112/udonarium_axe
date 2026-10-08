@@ -50,6 +50,7 @@ import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { ReloadCheck } from '@axe/domain/peer/reload-check';
 import { MENU_SURFACES } from '@axe/domain/ui/menu-command';
 import { RoomPanelName } from '@axe/domain/ui/room-panel';
+import { AC6TRPG_BROWSER_TITLE } from '@axe/features/ac6trpg/ac6trpg-config';
 import { AlarmEventHandlerService } from '@axe/features/alarm/alarm-event-handler.service';
 import { ButtonGuideEventHandlerService } from '@axe/features/button-guide/button-guide-event-handler.service';
 import { CardStackListImageComponent } from '@axe/features/card/card-stack-list-img/card-stack-list-img.component';
@@ -129,7 +130,6 @@ import {
   fabSubmenuAnchor,
 } from '@axe/ui/fab-drawer';
 import { TranslocoModule } from '@jsverse/transloco';
-import { version as APP_VERSION } from '@pkg';
 
 /** How far from the corner the button starts, before anybody has put it anywhere. */
 const FAB_MARGIN_PX = 12;
@@ -398,7 +398,7 @@ export class AppComponent {
   isSaving = signal(false);
   progressPercent = signal(0);
   constructor() {
-    inject(Title).setTitle(`Udonarium Axe ${APP_VERSION}`);
+    inject(Title).setTitle(AC6TRPG_BROWSER_TITLE);
 
     // Saving the room and asking for files to load are the screen's own to do, and the menus
     // dispatch everything else by themselves; this is the one thing they cannot reach without
