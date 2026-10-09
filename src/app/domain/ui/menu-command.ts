@@ -180,7 +180,7 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
   panel('peerMenu', 'people', 'peerMenu', 'app.fab.peerMenu'),
   panel('chat', 'speaker_notes', 'chatWindow', 'app.fab.chat'),
   panel('roomSettings', 'room_preferences', 'roomSettings', 'app.fab.roomSettings'),
-  panel('tableSetting', 'layers', 'tableSetting', 'app.fab.tableSetting'),
+  panel('tableSetting', 'layers', 'tableSetting', 'app.fab.tableSetting', { audience: 'gameMaster' }),
   panel('mapEditor', 'architecture', 'mapEditor', 'feature.mapEditor.title', { audience: 'gameMaster' }),
   panel('dungeonGenerator', 'map', 'dungeonGenerator', 'feature.tabletop.dungeonGenerator.title', {
     audience: 'gameMaster',

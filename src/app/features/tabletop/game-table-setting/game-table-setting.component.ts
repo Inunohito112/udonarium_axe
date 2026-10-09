@@ -77,7 +77,7 @@ export class GameTableSettingComponent {
 
   readonly isReadOnly = computed(() => {
     this.objectChange.trackMyCursor();
-    return !this.rolePermission.canEditTabletop;
+    return !this.rolePermission.canEditShared;
   });
   private readonly saveDataService = inject(SaveDataService);
   private readonly imageService = inject(ImageService);
@@ -170,7 +170,7 @@ export class GameTableSettingComponent {
     return this.selectedTable?.gridShow ?? false;
   }
   set tableGridShow(tableGridShow: boolean) {
-    if (!this.selectedTable) return;
+    if (!this.isEditable || !this.selectedTable) return;
     this.selectedTable.gridShow = tableGridShow;
     if (tableGridShow) this.selectedTable.gridClipRect = null;
     triggerUpdateGameObject(this.selectedTable.toContext()); // 自分にだけイベントを発行してグリッド更新を誘発
@@ -181,7 +181,7 @@ export class GameTableSettingComponent {
     return this.selectedTable?.gridSnap ?? true;
   }
   set tableGridSnap(tableGridSnap: boolean) {
-    if (!this.selectedTable) return;
+    if (!this.isEditable || !this.selectedTable) return;
     this.selectedTable.gridSnap = tableGridSnap;
   }
 
@@ -194,7 +194,7 @@ export class GameTableSettingComponent {
     return this.selectedTable?.mode2d ? 'flat' : 'perspective';
   }
   set tableRecommendedView(value: 'perspective' | 'flat') {
-    if (!this.selectedTable) return;
+    if (!this.isEditable || !this.selectedTable) return;
     this.selectedTable.mode2d = value === 'flat';
     triggerUpdateGameObject(this.selectedTable.toContext());
   }
@@ -507,7 +507,7 @@ export class GameTableSettingComponent {
     }
   }
   set tableSnapMode(mode: string) {
-    if (!this.selectedTable) return;
+    if (!this.isEditable || !this.selectedTable) return;
     if (mode === 'off') {
       this.selectedTable.gridSnap = false;
     } else {
@@ -557,7 +557,7 @@ export class GameTableSettingComponent {
    * still exists.
    */
   get isEditable(): boolean {
-    return !this.isEmpty && !this.isDeleted;
+    return this.rolePermission.canEditShared && !this.isEmpty && !this.isDeleted;
   }
 
   readonly isSaving = signal(false);
@@ -582,6 +582,7 @@ export class GameTableSettingComponent {
    * Creating, restoring and loading a room go through selectGameTable() and stay quiet.
    */
   chooseGameTable(identifier: string): void {
+    if (!this.rolePermission.canEditShared) return;
     const wasShowing = this.tableSelecter.viewTableIdentifier;
     this.selectGameTable(identifier);
     if (identifier === wasShowing) return;
@@ -595,6 +596,7 @@ export class GameTableSettingComponent {
    * kept deleted table.
    */
   selectGameTable(identifier: string) {
+    if (!this.rolePermission.canEditShared) return;
     emitSelectGameTable({ identifier });
     this.selectedTable = this.objectStore.get<GameTable>(identifier);
     this.selectedTableXml = '';
@@ -642,7 +644,7 @@ export class GameTableSettingComponent {
    * nothing for a reader who may not edit the table.
    */
   createGameTable() {
-    if (!this.rolePermission.canEditTabletop) return;
+    if (!this.rolePermission.canEditShared) return;
     const gameTable = new GameTable();
     gameTable.name = this.t('feature.tabletop.tableSetting.defaultName');
     gameTable.imageIdentifier = ImageFile.Empty.identifier;
@@ -676,7 +678,7 @@ export class GameTableSettingComponent {
    * for a reader who may not edit the table.
    */
   delete() {
-    if (!this.rolePermission.canEditTabletop) return;
+    if (!this.rolePermission.canEditShared) return;
     if (!this.isEmpty && this.selectedTable) {
       this.selectedTableXml = this.selectedTable.toXml();
       this.selectedTable.destroy();
@@ -688,7 +690,7 @@ export class GameTableSettingComponent {
    * not edit the table or when nothing is kept.
    */
   restore() {
-    if (!this.rolePermission.canEditTabletop) return;
+    if (!this.rolePermission.canEditShared) return;
     if (this.selectedTable && this.selectedTableXml) {
       const restoreTable = this.objectSerializer.parseXml(this.selectedTableXml)!;
       this.selectGameTable(restoreTable.identifier);
@@ -899,7 +901,7 @@ export class GameTableSettingComponent {
    * nothing once the table is deleted.
    */
   openBgImageModal() {
-    if (this.isDeleted) return;
+    if (!this.isEditable) return;
     this.modalService.open<string>(FileSelecterComponent, { isAllowedEmpty: true }).then((value) => {
       if (!this.selectedTable || !value) return;
       this.selectedTable.imageIdentifier = value;
@@ -913,7 +915,7 @@ export class GameTableSettingComponent {
    * table. Cancelling either dialog leaves the table as it was.
    */
   openBgImageGridAdjust() {
-    if (this.isDeleted) return;
+    if (!this.isEditable) return;
     this.modalService.open<string>(FileSelecterComponent, { isAllowedEmpty: false }).then((imageIdentifier) => {
       if (!this.selectedTable || !imageIdentifier) return;
       const gridSize = this.selectedTable.gridSize;
@@ -939,7 +941,7 @@ export class GameTableSettingComponent {
 
   /** Opens the image picker and sets the chosen picture as the picked table's distant-view background. */
   openDistanceViewImageModal() {
-    if (this.isDeleted) return;
+    if (!this.isEditable) return;
     this.modalService.open<string>(FileSelecterComponent, { isAllowedEmpty: true }).then((value) => {
       if (!this.selectedTable || !value) return;
       this.selectedTable.backgroundImageIdentifier = value;
@@ -947,7 +949,7 @@ export class GameTableSettingComponent {
   }
 
   private openWallImageModal(apply: (table: GameTable, value: string) => void) {
-    if (this.isDeleted) return;
+    if (!this.isEditable) return;
     this.modalService.open<string>(FileSelecterComponent, { isAllowedEmpty: true }).then((value) => {
       if (!this.selectedTable || !value) return;
       apply(this.selectedTable, value);

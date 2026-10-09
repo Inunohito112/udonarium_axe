@@ -1,6 +1,8 @@
 import { ViewContainerRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { PanelOption, PanelService } from '@axe/application/ui/panel.service';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { DiceTableSettingComponent } from '@axe/features/dice/dice-table-setting/dice-table-setting.component';
 import { MapEditorPanelComponent } from '@axe/features/map-editor/editor/map-editor-panel.component';
 import { PanelWindowRequest, PanelWindowService } from '@axe/features/panels/panel-window.service';
@@ -19,7 +21,15 @@ describe('RoomPanelService', () => {
     service = TestBed.inject(RoomPanelService);
   });
 
-  afterEach(() => TestBed.resetTestingModule());
+  afterEach(() => {
+    PeerCursor.myCursor?.destroy();
+    PeerCursor.myCursor = null!;
+    TestBed.resetTestingModule();
+  });
+
+  function seatAs(role: PeerRole): void {
+    PeerCursor.createMyCursor().role = role;
+  }
 
   function option(call = 0): PanelOption {
     return openLazy.mock.calls[call][1] as PanelOption;
@@ -104,5 +114,21 @@ describe('RoomPanelService', () => {
 
     expect(option()).toEqual(expect.objectContaining({ width: 650, height: 400 }));
     await expect(openLazy.mock.calls[0][0]()).resolves.toBe(DiceTableSettingComponent);
+  });
+
+  it('refuses to open the shared table setting for a player', () => {
+    seatAs(PeerRole.Player);
+
+    service.open('tableSetting');
+
+    expect(openLazy).not.toHaveBeenCalled();
+  });
+
+  it('opens the shared table setting for the game master', () => {
+    seatAs(PeerRole.GameMaster);
+
+    service.open('tableSetting');
+
+    expect(openLazy).toHaveBeenCalledOnce();
   });
 });

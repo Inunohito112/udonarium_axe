@@ -4,6 +4,8 @@ import { ObjectChangeService } from '@axe/application/sync/object-change.service
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { CutIn } from '@axe/domain/media/cut-in';
 import { Config } from '@axe/domain/peer/config';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { FilterType, GameTable, GridSnapStyle, GridType } from '@axe/domain/tabletop/game-table';
 import { GameTableSettingComponent } from '@axe/features/tabletop/game-table-setting/game-table-setting.component';
 import { expectPanelDragRecovery, PanelDragTestHostComponent } from '@axe/testing/panel-drag-recovery';
@@ -21,6 +23,7 @@ describe('GameTableSettingComponent', () => {
   });
 
   beforeEach(() => {
+    PeerCursor.createMyCursor().role = PeerRole.GameMaster;
     // The component reads the config out of the store to find the default dice bot, so a
     // singleton has to be registered or a test run on its own dereferences nothing.
     if (!ObjectStore.instance.get('Config')) {
@@ -31,6 +34,11 @@ describe('GameTableSettingComponent', () => {
     component = fixture.componentInstance;
   });
 
+  afterEach(() => {
+    PeerCursor.myCursor?.destroy();
+    PeerCursor.myCursor = null!;
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
@@ -38,6 +46,24 @@ describe('GameTableSettingComponent', () => {
   it('asks for no change detector', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((component as any).changeDetector).toBeUndefined();
+  });
+
+  it('refuses table changes from a player even if the panel instance already exists', () => {
+    const table = new GameTable();
+    table.initialize();
+    component.selectedTable = table;
+    PeerCursor.myCursor.role = PeerRole.Player;
+
+    component.tableName = '書き換え';
+    component.tableGridShow = !table.gridShow;
+    component.tableRecommendedView = 'flat';
+
+    expect(component.isReadOnly()).toBe(true);
+    expect(component.isEditable).toBe(false);
+    expect(table.name).not.toBe('書き換え');
+    expect(table.mode2d).toBe(false);
+
+    table.destroy();
   });
 
   describe('with no table selected', () => {

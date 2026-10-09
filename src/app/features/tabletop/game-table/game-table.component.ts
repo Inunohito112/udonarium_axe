@@ -982,6 +982,7 @@ export class GameTableComponent {
   });
 
   private async openTableSetting(): Promise<void> {
+    if (!PeerCursor.isMyselfGameMaster) return;
     const { GameTableSettingComponent } =
       await import('@axe/features/tabletop/game-table-setting/game-table-setting.component');
     await this.modalService.open(GameTableSettingComponent);
@@ -1036,13 +1037,19 @@ export class GameTableComponent {
         });
       }
     }
-    const tableSettingAction: ContextMenuAction = {
-      name: this.t('feature.tabletop.tableSetting.title'),
-      action: () => {
-        void this.openTableSetting();
-      },
-    };
-    const tableSettingActions = [tableSettingAction, ...this.buildViewLockActions()];
+    const tableSettingActions: ContextMenuAction[] = [
+      ...(PeerCursor.isMyselfGameMaster
+        ? [
+            {
+              name: this.t('feature.tabletop.tableSetting.title'),
+              action: () => {
+                void this.openTableSetting();
+              },
+            },
+          ]
+        : []),
+      ...this.buildViewLockActions(),
+    ];
     // Empty for anybody but the master, and for a room with no parties in it.
     const partyActions = this.tabletopActionService.getGatherPartyMenu(objectPosition);
     // The entry goes in whole, the way the ambience entry does: the rotating menu opens what
@@ -1106,11 +1113,15 @@ export class GameTableComponent {
         ...(pressedActions.length > 0
           ? [{ name: this.t('feature.boardSwitch.menu.reset'), icon: 'restart_alt', actions: pressedActions }]
           : []),
-        {
-          name: this.t('feature.tabletop.tableSetting.title'),
-          icon: 'tune',
-          actions: tableSettingActions,
-        },
+        ...(tableSettingActions.length > 0
+          ? [
+              {
+                name: this.t('feature.tabletop.tableSetting.title'),
+                icon: 'tune',
+                actions: tableSettingActions,
+              },
+            ]
+          : []),
       ],
     };
   }

@@ -769,7 +769,7 @@ describe('GameTableComponent', () => {
       expect(groupedActions).toHaveLength(legacyActions.length);
     });
 
-    it('leaves every object-creation entry out for a player', () => {
+    it('leaves every object-creation and table-setting entry out for a player', () => {
       be(PeerRole.Player);
 
       const model = component.buildContextMenuModel(position);
@@ -779,6 +779,8 @@ describe('GameTableComponent', () => {
       expect(model.actions.map((action) => action.name)).not.toContain('キャラクターを作成');
       expect(model.actions.map((action) => action.name)).not.toContain('ダイスを作成');
       expect(model.actions.map((action) => action.name)).not.toContain('画像タグから山札を作成');
+      expect(model.actions.map((action) => action.name)).not.toContain('テーブル設定');
+      expect(model.rotatingGroups.map((group) => group.name)).not.toContain('テーブル設定');
     });
 
     describe('gathering a party', () => {

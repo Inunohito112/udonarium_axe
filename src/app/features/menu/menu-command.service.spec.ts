@@ -41,14 +41,20 @@ describe('MenuCommandService', () => {
       ],
     };
 
-    it('keeps a small menu whole for a menu that can open one', () => {
+    it("leaves out a small menu containing only a command the player isn't offered", () => {
       seatAs(PeerRole.Player);
 
-      expect(commands.viewOf(WITH_A_GROUP).map((node) => node.id)).toEqual(['chat', 'table']);
+      expect(commands.viewOf(WITH_A_GROUP).map((node) => node.id)).toEqual(['chat']);
     });
 
-    it('gives up what a small menu holds to a bar that has nowhere to open one', () => {
+    it("does not give a player's bar a command reserved for the game master", () => {
       seatAs(PeerRole.Player);
+
+      expect(commands.entriesOf(WITH_A_GROUP).map((entry) => entry.command.key)).toEqual(['chat']);
+    });
+
+    it('keeps the table setting available to the game master', () => {
+      seatAs(PeerRole.GameMaster);
 
       expect(commands.entriesOf(WITH_A_GROUP).map((entry) => entry.command.key)).toEqual(['chat', 'tableSetting']);
     });

@@ -1,5 +1,6 @@
 import { inject, Injectable, Injector, Type, ViewContainerRef } from '@angular/core';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
+import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { PanelOption, PanelService } from '@axe/application/ui/panel.service';
 import { panelLabelKey, RoomPanelName, STATUS_AILMENT_PANEL } from '@axe/domain/ui/room-panel';
 import { PanelWindowService } from '@axe/features/panels/panel-window.service';
@@ -14,6 +15,7 @@ export class RoomPanelService {
   private readonly panelService = inject(PanelService);
   private readonly t = inject(TRANSLATE_FN);
   private readonly injector = inject(Injector);
+  private readonly rolePermission = inject(RolePermissionService);
 
   private opened = 0;
 
@@ -31,6 +33,7 @@ export class RoomPanelService {
     setup?: (instance: T) => void,
     host?: ViewContainerRef
   ): void {
+    if (name === 'tableSetting' && !this.rolePermission.canEditShared) return;
     const panel = this.panelOf(name);
     const option: PanelOption = {
       title: this.t(panelLabelKey(name)),

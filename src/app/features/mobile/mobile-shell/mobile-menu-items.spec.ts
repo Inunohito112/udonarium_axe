@@ -22,6 +22,11 @@ describe('mobileMenuItems', () => {
     expect(sharedMobileMenuItems().map((item) => item.action)).toContain('zipLoad');
   });
 
+  it('keeps the table setting out of the player menu', () => {
+    expect(sharedMobileMenuItems().map((item) => item.action)).not.toContain('tableSetting');
+    expect(gameMasterMobileMenuItems().map((item) => item.action)).toContain('tableSetting');
+  });
+
   it('puts the room settings straight after the table they belong with', () => {
     const actions = MOBILE_MENU_ITEMS.map((item) => item.action);
     expect(actions.indexOf('roomSettings')).toBe(actions.indexOf('tableSetting') + 1);

@@ -34,7 +34,7 @@ export interface MobileMenuItem {
 
 export const MOBILE_MENU_ITEMS: readonly MobileMenuItem[] = [
   { action: 'peerMenu', icon: 'people', labelKey: 'app.fab.peerMenu' },
-  { action: 'tableSetting', icon: 'layers', labelKey: 'app.fab.tableSetting' },
+  { action: 'tableSetting', icon: 'layers', labelKey: 'app.fab.tableSetting', gameMasterOnly: true },
   { action: 'roomSettings', icon: 'tune', labelKey: 'app.fab.roomSettings', gameMasterOnly: true },
   { action: 'images', icon: 'photo_library', labelKey: 'app.fab.images' },
   { action: 'jukebox', icon: 'queue_music', labelKey: 'app.fab.jukebox' },
