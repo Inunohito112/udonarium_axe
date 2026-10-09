@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { MovableLike, MultiMovableService } from '@axe/application/ui/multi-movable.service';
 import { SelectionSignalService } from '@axe/application/ui/selection-signal.service';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { Terrain } from '@axe/domain/tabletop/terrain';
 import { makeFakeTabletopObject } from '@axe/testing/factories/tabletop-object.factory';
 
@@ -19,9 +21,16 @@ describe('MultiMovableService', () => {
   let selection: SelectionSignalService;
 
   beforeEach(() => {
+    const cursor = new PeerCursor();
+    cursor.role = PeerRole.GameMaster;
+    PeerCursor.myCursor = cursor;
     TestBed.configureTestingModule({});
     service = TestBed.inject(MultiMovableService);
     selection = TestBed.inject(SelectionSignalService);
+  });
+
+  afterEach(() => {
+    PeerCursor.myCursor = null!;
   });
 
   it('refuses to begin a drag when the leader is outside the selection', () => {
@@ -81,6 +90,23 @@ describe('MultiMovableService', () => {
     service.applyLeaderDelta(leader);
 
     expect(locked.posX).toBe(100);
+    wall.destroy();
+  });
+
+  it('skips an unlocked terrain follower for a player', () => {
+    PeerCursor.myCursor.role = PeerRole.Player;
+    const wall = Terrain.create('wall', 1, 1, 1, '', '');
+    const leader = makeMovable({ id: 'a', x: 0, y: 0 });
+    const follower: MovableLike = { identifier: wall.identifier, tabletopObject: wall, posX: 100, posY: 100 };
+    service.register(leader);
+    service.register(follower);
+    selection.replaceSelection(['a', wall.identifier]);
+
+    expect(service.beginDrag(leader)).toBe(false);
+    leader.posX = 30;
+    service.applyLeaderDelta(leader);
+
+    expect(follower.posX).toBe(100);
     wall.destroy();
   });
 

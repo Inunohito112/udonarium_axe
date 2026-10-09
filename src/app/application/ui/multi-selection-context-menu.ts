@@ -16,6 +16,8 @@ export interface MultiSelectionContextDeps {
   /** The pieces the selected dice can be put away into, and how to do it. */
   readonly diceOwners?: { identifier: string; name: string }[];
   readonly storeDice?: (dice: DiceSymbol[], ownerIdentifier: string) => void;
+  /** Whether this reader may move or copy one selected piece. */
+  readonly canManipulate?: (object: TabletopObject) => boolean;
 }
 
 /**
@@ -28,9 +30,9 @@ export function buildMultiSelectionContextMenu(
   objects: readonly TabletopObject[],
   deps: MultiSelectionContextDeps
 ): ContextMenuAction[] {
-  const { t, selectionSignalService, gridSize, rollDice, diceOwners, storeDice } = deps;
+  const { t, selectionSignalService, gridSize, rollDice, diceOwners, storeDice, canManipulate } = deps;
   const count = objects.length;
-  const movable = objects.filter((o) => !isLockedInPlace(o));
+  const movable = objects.filter((o) => (canManipulate?.(o) ?? true) && !isLockedInPlace(o));
   const dice = objects.filter((o): o is DiceSymbol => o instanceof DiceSymbol && o.isVisible);
 
   return [
@@ -95,6 +97,7 @@ export interface TryBuildMultiSelectionContextMenuOptions {
   readonly rollDice?: (dice: DiceSymbol[]) => void;
   readonly diceOwners?: { identifier: string; name: string }[];
   readonly storeDice?: (dice: DiceSymbol[], ownerIdentifier: string) => void;
+  readonly canManipulate?: (object: TabletopObject) => boolean;
 }
 
 /**
@@ -107,7 +110,8 @@ export interface TryBuildMultiSelectionContextMenuOptions {
 export function tryBuildMultiSelectionContextMenu(
   options: TryBuildMultiSelectionContextMenuOptions
 ): ContextMenuAction[] | null {
-  const { self, selectionSignalService, objectStore, t, gridSize, rollDice, diceOwners, storeDice } = options;
+  const { self, selectionSignalService, objectStore, t, gridSize, rollDice, diceOwners, storeDice, canManipulate } =
+    options;
   if (selectionSignalService.selectionSize() <= 1) return null;
   const selected = selectionSignalService.selectedObjects();
   if (!selected.has(self.identifier)) return null;
@@ -124,5 +128,6 @@ export function tryBuildMultiSelectionContextMenu(
     rollDice,
     diceOwners,
     storeDice,
+    canManipulate,
   });
 }

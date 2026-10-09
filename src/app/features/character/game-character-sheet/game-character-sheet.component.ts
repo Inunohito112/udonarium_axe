@@ -139,7 +139,10 @@ export class GameCharacterSheetComponent {
 
   readonly isReadOnly = computed(() => {
     this.objectChange.trackMyCursor();
-    return !this.rolePermission.canEditTabletop;
+    return (
+      !this.rolePermission.canEditTabletop ||
+      (this.tabletopObject instanceof Terrain && !this.rolePermission.canEditShared)
+    );
   });
 
   private readonly _tabletopObject = signal<CharacterSheetTarget | null>(null);
@@ -591,6 +594,7 @@ export class GameCharacterSheetComponent {
    * choice clears the face, and closing the picker changes nothing.
    */
   openTerrainFaceModal(face: TerrainFace) {
+    if (!this.rolePermission.canEditShared) return;
     const terrain = this.terrain;
     if (!terrain) return;
     this.modalService.open<string>(FileSelecterComponent, { isAllowedEmpty: true }).then((value) => {
@@ -854,6 +858,7 @@ export class GameCharacterSheetComponent {
    */
   clone() {
     if (!this.rolePermission.canEditTabletop) return;
+    if (this.tabletopObject instanceof Terrain && !this.rolePermission.canEditShared) return;
     if (this.tabletopObject) cloneTabletopObject(this.tabletopObject);
   }
 
@@ -958,8 +963,10 @@ export class GameCharacterSheetComponent {
    * Closing the picker, an empty choice, or a piece without that slot changes nothing.
    */
   openModal(name: string = '', isAllowedEmpty: boolean = false) {
+    if (this.tabletopObject instanceof Terrain && !this.rolePermission.canEditShared) return;
     this.modalService.open<string>(FileSelecterComponent, { isAllowedEmpty: isAllowedEmpty }).then((value) => {
       const obj = this.tabletopObject;
+      if (obj instanceof Terrain && !this.rolePermission.canEditShared) return;
       if (!obj || !obj.imageDataElement || !value) return;
       const element = obj.imageDataElement.getFirstElementByName(name);
       if (!element) return;

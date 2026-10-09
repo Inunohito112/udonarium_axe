@@ -52,12 +52,16 @@ describe('TerrainComponent', () => {
   });
 
   beforeEach(() => {
+    const cursor = new PeerCursor();
+    cursor.role = PeerRole.GameMaster;
+    PeerCursor.myCursor = cursor;
     stubCanvasContext();
     fixture = TestBed.createComponent(TerrainComponent);
     component = fixture.componentInstance;
   });
 
   afterEach(() => {
+    PeerCursor.myCursor = null!;
     perfCounters.enabled = false;
     perfCounters.clear();
     vi.restoreAllMocks();
@@ -547,6 +551,22 @@ describe('TerrainComponent', () => {
       expect(open).toHaveBeenCalledWith(terrain);
       expect(event.defaultPrevented).toBe(true);
       expect(stop).toHaveBeenCalled();
+      terrain.destroy();
+    });
+
+    it('keeps the terrain menu closed for a player', () => {
+      PeerCursor.myCursor.role = PeerRole.Player;
+      const terrain = Terrain.create('PLには触れない地形', 1, 1, 1, '', '');
+      fixture.componentRef.setInput('terrain', terrain);
+      fixture.detectChanges();
+      const open = vi.spyOn(TestBed.inject(TerrainMenuService), 'open').mockImplementation(() => undefined);
+      const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+
+      fixture.nativeElement.dispatchEvent(event);
+
+      expect(component.canManageMapObject()).toBe(false);
+      expect(open).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(true);
       terrain.destroy();
     });
   });

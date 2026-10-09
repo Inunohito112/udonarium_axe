@@ -452,7 +452,10 @@
         }
       </div>
     } @else if (terrain) {
-      <div class="bg-ui-panel box-border flex h-full flex-col gap-3 overflow-y-auto p-3">
+      <div
+        class="bg-ui-panel box-border flex h-full flex-col gap-3 overflow-y-auto p-3"
+        [attr.inert]="isReadOnly() ? '' : null"
+      >
         @if (tabletopObject.commonDataElement) {
           <section
             class="bg-ui-accent-bg border-ui-border-panel rounded-ui-sm border border-solid p-3 [&_.table-row>div:first-child]:w-[7em]"
@@ -495,6 +498,7 @@
                 value="isGrid"
                 [(ngModel)]="terrain.isGrid"
                 name="isGrid"
+                [attr.disabled]="isReadOnly() ? '' : null"
                 (click)="clickGrid()"
               />
               <span
@@ -522,6 +526,7 @@
             <button
               class="bg-ui-panel border-ui-border-panel hover:border-ui-accent text-ui-muted rounded-ui-sm flex w-full min-w-0 cursor-pointer flex-col items-stretch gap-1.5 border-2 border-solid p-2 transition-[border-color,box-shadow] hover:shadow-[0_0_0_2px_color-mix(in_srgb,var(--ui-accent)_20%,transparent)]"
               type="button"
+              [disabled]="isReadOnly()"
               (click)="openModal('floor')"
               [title]="'feature.inventory.sheet.floorImageTitle' | transloco"
             >
@@ -549,6 +554,7 @@
             <button
               class="bg-ui-panel border-ui-border-panel hover:border-ui-accent text-ui-muted rounded-ui-sm flex w-full min-w-0 cursor-pointer flex-col items-stretch gap-1.5 border-2 border-solid p-2 transition-[border-color,box-shadow] hover:shadow-[0_0_0_2px_color-mix(in_srgb,var(--ui-accent)_20%,transparent)]"
               type="button"
+              [disabled]="isReadOnly()"
               (click)="openModal('wall')"
               [title]="'feature.inventory.sheet.wallImageTitle' | transloco"
             >
@@ -582,6 +588,7 @@
               <button
                 class="bg-ui-panel border-ui-border-panel hover:border-ui-accent text-ui-muted rounded-ui-sm flex w-full min-w-0 cursor-pointer flex-col items-stretch gap-1 border-2 border-solid p-1.5 transition-[border-color,box-shadow] hover:shadow-[0_0_0_2px_color-mix(in_srgb,var(--ui-accent)_20%,transparent)]"
                 type="button"
+                [disabled]="isReadOnly()"
                 (click)="openTerrainFaceModal(face.face)"
                 [title]="face.label | transloco"
               >
@@ -607,6 +614,7 @@
           <button
             class="bg-ui-elevated border-ui-border-panel text-ui-muted hover:bg-ui-hover hover:text-ui-text rounded-ui-sm inline-flex cursor-pointer items-center gap-0.75 border border-solid px-2 py-0.75 text-[0.78em] leading-[1.4] whitespace-nowrap transition-[background,color] [&_.material-icons]:text-[13px]!"
             type="button"
+            [disabled]="isReadOnly()"
             (click)="clone()"
           >
             <i class="material-icons">content_copy</i>

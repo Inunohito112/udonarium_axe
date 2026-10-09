@@ -1,15 +1,15 @@
 @if (gameTableMask()) {
   <div
     class="group pointer-events-none absolute size-12.5 select-none [-moz-user-drag:none] [-webkit-user-drag:none] backface-hidden transform-3d"
-    [class.cursor-grab]="!isLock && !isScratching"
-    [class.cursor-pointer]="isScratching && gameTableMask()!.isMine"
+    [class.cursor-grab]="canManageMapObject() && !isLock && !isScratching"
+    [class.cursor-pointer]="canManageMapObject() && isScratching && gameTableMask()!.isMine"
     [attr.data-version]="maskVersion()"
     [style.width.px]="pixelWidth"
     [style.height.px]="pixelHeight"
     appMovable
     [movable.option]="movableOption()"
-    [movable.disable]="isLock || isScratching"
-    [appSelectable]="gameTableMask()"
+    [movable.disable]="!canManageMapObject() || isLock || isScratching"
+    [appSelectable]="canManageMapObject() ? gameTableMask() : null"
     (movable.ondragstart)="onMove()"
     (movable.ondragend)="onMoved()"
   >
@@ -48,7 +48,7 @@
           class="pointer-events-auto absolute size-full backface-hidden transform-3d"
           [class.block!]="imageFile().url.length >= 1"
           [class.box-border]="imageFile().url.length >= 1"
-          [attr.data-table-passthrough]="isLock && !isScratching ? '' : null"
+          [attr.data-table-passthrough]="(!canManageMapObject() || isLock) && !isScratching ? '' : null"
           (mousedown)="onMaskMouseDown($event)"
           [ngStyle]="{
             opacity: operateOpacity,

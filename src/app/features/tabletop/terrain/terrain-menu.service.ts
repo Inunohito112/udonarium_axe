@@ -3,6 +3,7 @@ import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { GameObjectInventoryService } from '@axe/application/inventory/game-object-inventory.service';
+import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { BoardSwitchService } from '@axe/application/tabletop/board-switch.service';
 import { ConcealmentService } from '@axe/application/tabletop/concealment.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
@@ -32,6 +33,7 @@ import { buildTerrainContextMenuModel } from '@axe/features/tabletop/terrain/ter
 @Injectable({ providedIn: 'root' })
 export class TerrainMenuService {
   private readonly contextMenuService = inject(ContextMenuService);
+  private readonly rolePermission = inject(RolePermissionService);
   private readonly pieceContextMenu = inject(PieceContextMenuService);
   private readonly objectPanels = inject(ObjectPanelService);
   private readonly pointerDeviceService = inject(PointerDeviceService);
@@ -52,6 +54,7 @@ export class TerrainMenuService {
    * In the flat view with a radial menu style chosen, it opens as a radial menu.
    */
   open(terrain: Terrain): void {
+    if (!this.rolePermission.canEditShared) return;
     if (!this.pointerDeviceService.isAllowedToOpenContextMenu) return;
 
     const gridSize = this.tabletopService.gridSize();

@@ -5,6 +5,8 @@ import { IPeerContext } from '@axe/core/network/peer-context';
 import { ImageStorage } from '@axe/core/storage/image-storage';
 import { PERF_HEX_MASK_SVG, perfCounters } from '@axe/core/util/perf-counters';
 import { SoundEffect } from '@axe/domain/media/sound-effect';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
 import { GameTableMask } from '@axe/domain/tabletop/game-table-mask';
 import { TableSelecter } from '@axe/domain/tabletop/table-selecter';
@@ -27,12 +29,34 @@ describe('GameTableMaskComponent', () => {
   });
 
   beforeEach(() => {
+    const cursor = new PeerCursor();
+    cursor.role = PeerRole.GameMaster;
+    PeerCursor.myCursor = cursor;
     fixture = TestBed.createComponent(GameTableMaskComponent);
     component = fixture.componentInstance;
   });
 
+  afterEach(() => {
+    PeerCursor.myCursor = null!;
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('does not let a player scratch the map mask', () => {
+    PeerCursor.myCursor.role = PeerRole.Player;
+    const mask = GameTableMask.create('GMのマスク', 2, 2, 100);
+    mask.scratchingGrids = '0:0';
+    fixture.componentRef.setInput('gameTableMask', mask);
+    fixture.detectChanges();
+
+    component.scratched();
+
+    expect(component.canManageMapObject()).toBe(false);
+    expect(mask.scratchedGrids).toBe('');
+    expect(mask.scratchingGrids).toBe('0:0');
+    mask.destroy();
   });
 
   describe('viewRotateZ computed signal', () => {

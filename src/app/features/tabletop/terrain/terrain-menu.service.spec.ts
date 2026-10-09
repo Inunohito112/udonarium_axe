@@ -4,6 +4,8 @@ import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { PieceContextMenuService } from '@axe/application/ui/piece-context-menu.service';
 import { TabletopOverlapService } from '@axe/application/ui/tabletop-overlap.service';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { Terrain } from '@axe/domain/tabletop/terrain';
 import { TerrainMenuService } from '@axe/features/tabletop/terrain/terrain-menu.service';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
@@ -13,6 +15,9 @@ describe('TerrainMenuService', () => {
   let terrain: Terrain;
 
   beforeEach(() => {
+    const cursor = new PeerCursor();
+    cursor.role = PeerRole.GameMaster;
+    PeerCursor.myCursor = cursor;
     TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
     service = TestBed.inject(TerrainMenuService);
     terrain = Terrain.create('地形メニュー', 2, 3, 1, '', '');
@@ -21,6 +26,7 @@ describe('TerrainMenuService', () => {
   });
 
   afterEach(() => {
+    PeerCursor.myCursor = null!;
     terrain.destroy();
     vi.restoreAllMocks();
   });
@@ -84,6 +90,17 @@ describe('TerrainMenuService', () => {
   it('opens nothing where the pointer allows no menu', () => {
     const pointer = TestBed.inject(PointerDeviceService);
     vi.spyOn(pointer, 'isAllowedToOpenContextMenu', 'get').mockReturnValue(false);
+    const forSelection = vi.spyOn(TestBed.inject(PieceContextMenuService), 'openForSelection');
+    const openOrdinary = vi.spyOn(TestBed.inject(ContextMenuService), 'open').mockImplementation(() => undefined);
+
+    service.open(terrain);
+
+    expect(forSelection).not.toHaveBeenCalled();
+    expect(openOrdinary).not.toHaveBeenCalled();
+  });
+
+  it('opens nothing for a player', () => {
+    PeerCursor.myCursor.role = PeerRole.Player;
     const forSelection = vi.spyOn(TestBed.inject(PieceContextMenuService), 'openForSelection');
     const openOrdinary = vi.spyOn(TestBed.inject(ContextMenuService), 'open').mockImplementation(() => undefined);
 

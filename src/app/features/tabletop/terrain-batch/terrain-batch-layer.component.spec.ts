@@ -3,6 +3,8 @@ import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { SelectionSignalService } from '@axe/application/ui/selection-signal.service';
 import { TabletopOverlapService } from '@axe/application/ui/tabletop-overlap.service';
 import { ObjectStore } from '@axe/core/sync/object-store';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { hexSideStepsAt } from '@axe/domain/tabletop/cell-steps';
 import { GameTable, GridType } from '@axe/domain/tabletop/game-table';
 import { blockOrigin } from '@axe/domain/tabletop/map-grid';
@@ -20,6 +22,9 @@ describe('TerrainBatchLayerComponent', () => {
   let table: GameTable;
 
   function setUp(type: GridType): void {
+    const cursor = new PeerCursor();
+    cursor.role = PeerRole.GameMaster;
+    PeerCursor.myCursor = cursor;
     TestBed.configureTestingModule({ imports: [TerrainBatchLayerComponent], providers: [...TEST_PROVIDERS] });
     table = new GameTable();
     table.width = 20;
@@ -31,6 +36,7 @@ describe('TerrainBatchLayerComponent', () => {
   }
 
   afterEach(() => {
+    PeerCursor.myCursor = null!;
     fixture?.destroy();
     vi.restoreAllMocks();
     for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
@@ -96,6 +102,18 @@ describe('TerrainBatchLayerComponent', () => {
 
       expect(TestBed.inject(SelectionSignalService).isSelected(block.identifier)).toBe(true);
       expect(event.defaultPrevented).toBe(true);
+    });
+
+    it('does not select map terrain for a player', async () => {
+      PeerCursor.myCursor.role = PeerRole.Player;
+      const block = wall(100, 100);
+      const host = await render();
+      const event = new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 });
+
+      host.querySelector(`[data-terrain="${block.identifier}"]`)!.dispatchEvent(event);
+
+      expect(TestBed.inject(SelectionSignalService).isSelected(block.identifier)).toBe(false);
+      expect(event.defaultPrevented).toBe(false);
     });
 
     it('holds the walls it draws in the overlap registry, and lets go of one drawn alone again', async () => {

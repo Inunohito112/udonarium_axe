@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signa
 import { FormsModule } from '@angular/forms';
 import { SaveDataService } from '@axe/application/file/save-data.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
+import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ImageService } from '@axe/application/storage/image.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
@@ -40,12 +41,16 @@ const SCRATCHED_COLOR_FALLBACK = '#808080';
 @Component({
   selector: 'game-table-mask-sheet',
   templateUrl: './game-table-mask-sheet.component.html',
-  host: { class: 'block box-border h-full overflow-y-auto p-3 text-ui-text bg-ui-panel' },
+  host: {
+    class: 'block box-border h-full overflow-y-auto p-3 text-ui-text bg-ui-panel',
+    '[attr.inert]': "isReadOnly() ? '' : null",
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, SafePipe, TranslocoModule],
 })
 export class GameTableMaskSheetComponent {
   private readonly modalService = inject(ModalService);
+  private readonly rolePermission = inject(RolePermissionService);
   private readonly panelService = inject(PanelService);
   private readonly saveDataService = inject(SaveDataService);
   private readonly imageService = inject(ImageService);
@@ -56,6 +61,11 @@ export class GameTableMaskSheetComponent {
   private readonly t = inject(TRANSLATE_FN);
 
   private readonly _gameTableMask = signal<GameTableMask | null>(null);
+
+  readonly isReadOnly = computed(() => {
+    this.objectChange.trackMyCursor();
+    return !this.rolePermission.canEditShared;
+  });
 
   /** The mask this sheet edits, handed in by whoever opens the panel. */
   get gameTableMask(): GameTableMask | null {
@@ -111,6 +121,7 @@ export class GameTableMaskSheetComponent {
     return this._gameTableMask()?.name ?? '';
   }
   set name(value: string) {
+    if (this.isReadOnly()) return;
     const mask = this._gameTableMask();
     if (mask) mask.name = value;
   }
@@ -123,6 +134,7 @@ export class GameTableMaskSheetComponent {
     return this._gameTableMask()?.width ?? 1;
   }
   set width(value: number) {
+    if (this.isReadOnly()) return;
     const mask = this._gameTableMask();
     const cells = wholeCells(value);
     if (mask && cells !== null) mask.width = cells;
@@ -136,6 +148,7 @@ export class GameTableMaskSheetComponent {
     return this._gameTableMask()?.height ?? 1;
   }
   set height(value: number) {
+    if (this.isReadOnly()) return;
     const mask = this._gameTableMask();
     const cells = wholeCells(value);
     if (mask && cells !== null) mask.height = cells;
@@ -153,6 +166,7 @@ export class GameTableMaskSheetComponent {
     return mask ? Math.round(mask.opacity * 100) : 100;
   }
   set opacity(value: number) {
+    if (this.isReadOnly()) return;
     const mask = this._gameTableMask();
     if (!mask || value === null || value === undefined || `${value}`.trim() === '') return;
     const percent = Number(value);
@@ -172,6 +186,7 @@ export class GameTableMaskSheetComponent {
 
   /** Fills the mask with a colour, adding its colour element on a mask that has none yet. */
   setMaskColor(color: string) {
+    if (this.isReadOnly()) return;
     this._gameTableMask()?.paintColor(color);
   }
 
@@ -187,12 +202,14 @@ export class GameTableMaskSheetComponent {
 
   /** Sets the colour shown in cells that have been scratched open. */
   setScratchedColor(color: string) {
+    if (this.isReadOnly()) return;
     const mask = this._gameTableMask();
     if (mask) mask.scratchedColor = color;
   }
 
   /** Takes the after-scratch colour away, so open cells show the picture or the table again. */
   clearScratchedColor() {
+    if (this.isReadOnly()) return;
     const mask = this._gameTableMask();
     if (mask) mask.scratchedColor = '';
   }
@@ -202,9 +219,11 @@ export class GameTableMaskSheetComponent {
    * was.
    */
   openMaskImageModal() {
+    if (this.isReadOnly()) return;
     const mask = this._gameTableMask();
     if (!mask) return;
     this.modalService.open<string>(FileSelecterComponent).then((value) => {
+      if (this.isReadOnly()) return;
       if (value == null) return;
       const element = mask.imageDataElement?.getFirstElementByName('imageIdentifier');
       if (element) element.value = value;
@@ -213,6 +232,7 @@ export class GameTableMaskSheetComponent {
 
   /** Takes the mask's own picture off, so it is filled with its colour again. */
   clearMaskImage() {
+    if (this.isReadOnly()) return;
     const element = this._gameTableMask()?.imageDataElement?.getFirstElementByName('imageIdentifier');
     if (element) element.value = '';
   }
@@ -222,9 +242,11 @@ export class GameTableMaskSheetComponent {
    * it as it was.
    */
   openScratchedImageModal() {
+    if (this.isReadOnly()) return;
     const mask = this._gameTableMask();
     if (!mask) return;
     this.modalService.open<string>(FileSelecterComponent).then((value) => {
+      if (this.isReadOnly()) return;
       if (value == null) return;
       mask.scratchedImageIdentifier = value;
     });
@@ -232,6 +254,7 @@ export class GameTableMaskSheetComponent {
 
   /** Takes the after-scratch picture away. */
   clearScratchedImage() {
+    if (this.isReadOnly()) return;
     const mask = this._gameTableMask();
     if (mask) mask.scratchedImageIdentifier = '';
   }
@@ -241,6 +264,7 @@ export class GameTableMaskSheetComponent {
    * added under its detail, and can move into a window of its own.
    */
   openDataSheet() {
+    if (this.isReadOnly()) return;
     const mask = this._gameTableMask();
     if (!mask) return;
     const title = sheetPanelTitle(this.t('feature.tabletop.panel.mask'), mask.name);
@@ -252,6 +276,7 @@ export class GameTableMaskSheetComponent {
    * put-down sound.
    */
   clone() {
+    if (this.isReadOnly()) return;
     const mask = this._gameTableMask();
     if (!mask) return;
     const gridSize = this.tabletopService.gridSize();

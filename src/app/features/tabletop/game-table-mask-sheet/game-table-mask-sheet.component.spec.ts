@@ -3,6 +3,8 @@ import { ObjectChangeService } from '@axe/application/sync/object-change.service
 import { ModalService } from '@axe/application/ui/modal.service';
 import { PanelService } from '@axe/application/ui/panel.service';
 import { ImageStorage } from '@axe/core/storage/image-storage';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { GameTableMask } from '@axe/domain/tabletop/game-table-mask';
 import { ObjectPanelService } from '@axe/features/panels/object-panel.service';
 import { GameTableMaskSheetComponent } from '@axe/features/tabletop/game-table-mask-sheet/game-table-mask-sheet.component';
@@ -44,6 +46,9 @@ describe('GameTableMaskSheetComponent', () => {
   }
 
   beforeEach(async () => {
+    const cursor = new PeerCursor();
+    cursor.role = PeerRole.GameMaster;
+    PeerCursor.myCursor = cursor;
     close = vi.fn();
     picked = null;
     await TestBed.configureTestingModule({
@@ -62,6 +67,7 @@ describe('GameTableMaskSheetComponent', () => {
   });
 
   afterEach(() => {
+    PeerCursor.myCursor = null!;
     mask.destroy();
     ImageStorage.instance.images.forEach((image) => ImageStorage.instance.delete(image.identifier));
   });
@@ -120,6 +126,22 @@ describe('GameTableMaskSheetComponent', () => {
       expect(element.currentValue).toBe(100);
       expect(component.opacity).toBe(50);
     });
+  });
+
+  it('makes every mask edit inert and rejects writes for a player', () => {
+    PeerCursor.myCursor.role = PeerRole.Player;
+    TestBed.inject(ObjectChangeService).notifyChanged(PeerCursor.myCursor.identifier);
+    fixture.detectChanges();
+
+    component.name = '書き換え';
+    component.width = 9;
+    component.setMaskColor('#ffffff');
+
+    expect(component.isReadOnly()).toBe(true);
+    expect(fixture.nativeElement.hasAttribute('inert')).toBe(true);
+    expect(mask.name).toBe('mask');
+    expect(mask.width).toBe(3);
+    expect(mask.bgcolor).not.toBe('#ffffff');
   });
 
   describe('the mask itself', () => {

@@ -13,6 +13,7 @@ import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { GameObjectInventoryService } from '@axe/application/inventory/game-object-inventory.service';
+import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
@@ -65,6 +66,7 @@ import { TranslocoModule } from '@jsverse/transloco';
 export class GameTableMaskComponent {
   private static readonly GRID_PATTERN = /^\d+:\d+$/;
   private readonly tabletopActionService = inject(TabletopActionService);
+  private readonly rolePermission = inject(RolePermissionService);
   private readonly contextMenuService = inject(ContextMenuService);
   private readonly pieceContextMenu = inject(PieceContextMenuService);
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -109,12 +111,19 @@ export class GameTableMaskComponent {
 
   readonly gameTableMask = input<GameTableMask | null>(null);
 
+  /** Only the game master may rearrange, scratch or edit a map mask. */
+  readonly canManageMapObject = computed(() => {
+    this.objectChange.trackMyCursor();
+    return this.rolePermission.canEditShared;
+  });
+
   /** Whether a locked mask shows its lock mark; setting it writes straight to the mask. */
   get dispLockMark(): boolean {
     const mask = this.gameTableMask();
     return mask?.dispLockMark ?? false;
   }
   set dispLockMark(disp: boolean) {
+    if (!this.rolePermission.canEditShared) return;
     const mask = this.gameTableMask();
     if (mask) mask.dispLockMark = disp;
   }
@@ -163,6 +172,7 @@ export class GameTableMaskComponent {
     return mask?.isLock ?? false;
   }
   set isLock(isLock: boolean) {
+    if (!this.rolePermission.canEditShared) return;
     const mask = this.gameTableMask();
     if (mask) mask.isLock = isLock;
   }
@@ -183,6 +193,7 @@ export class GameTableMaskComponent {
     return mask?.color ?? '';
   }
   set color(color: string) {
+    if (!this.rolePermission.canEditShared) return;
     const mask = this.gameTableMask();
     if (mask) mask.color = color;
   }
@@ -195,6 +206,7 @@ export class GameTableMaskComponent {
     return mask?.bgcolor ?? '';
   }
   set bgcolor(bgcolor: string) {
+    if (!this.rolePermission.canEditShared) return;
     const mask = this.gameTableMask();
     if (mask) mask.bgcolor = bgcolor;
   }
@@ -208,6 +220,7 @@ export class GameTableMaskComponent {
     return mask?.isPreview ?? false;
   }
   set isPreview(isPreview: boolean) {
+    if (!this.rolePermission.canEditShared) return;
     const mask = this.gameTableMask();
     if (mask) mask.isPreview = isPreview;
   }
@@ -235,6 +248,7 @@ export class GameTableMaskComponent {
     return mask?.scratchedGrids ?? '';
   }
   set scratchedGrids(scratchedGrids: string) {
+    if (!this.rolePermission.canEditShared) return;
     const mask = this.gameTableMask();
     if (mask) mask.scratchedGrids = scratchedGrids;
   }
@@ -248,6 +262,7 @@ export class GameTableMaskComponent {
     return mask?.scratchingGrids ?? '';
   }
   set scratchingGrids(scratchingGrids: string) {
+    if (!this.rolePermission.canEditShared) return;
     const mask = this.gameTableMask();
     if (mask) mask.scratchingGrids = scratchingGrids;
   }
@@ -368,6 +383,7 @@ export class GameTableMaskComponent {
     return mask?.altitude ?? 0;
   }
   set altitude(altitude: number) {
+    if (!this.rolePermission.canEditShared) return;
     const mask = this.gameTableMask();
     if (mask) mask.altitude = altitude;
   }
@@ -381,6 +397,7 @@ export class GameTableMaskComponent {
     return mask?.isAltitudeIndicate ?? false;
   }
   set isAltitudeIndicate(isAltitudeIndicate: boolean) {
+    if (!this.rolePermission.canEditShared) return;
     const mask = this.gameTableMask();
     if (mask) mask.isAltitudeIndicate = isAltitudeIndicate;
   }
@@ -511,7 +528,7 @@ export class GameTableMaskComponent {
 
   /** Stops a press on a locked mask from going any further, unless the mask is being scratched. */
   onMaskMouseDown(e: MouseEvent) {
-    if (this.isLock && !this.isScratching) {
+    if (!this.canManageMapObject() || (this.isLock && !this.isScratching)) {
       e.stopPropagation();
     }
   }
@@ -522,6 +539,10 @@ export class GameTableMaskComponent {
    * On a browser without pointer events, a left press by the scratcher picks the cell under it.
    */
   onInputStart(e: MouseEvent | TouchEvent) {
+    if (!this.canManageMapObject()) {
+      this.input?.cancel();
+      return;
+    }
     const mask = this.gameTableMask();
     if (!mask) return;
 
@@ -534,6 +555,7 @@ export class GameTableMaskComponent {
 
   /** Picks the cell under a left press when the local peer is scratching this mask. */
   onInputStartPointer(e: PointerEvent) {
+    if (!this.canManageMapObject()) return;
     const mask = this.gameTableMask();
     if (!mask) return;
 
@@ -546,6 +568,7 @@ export class GameTableMaskComponent {
   private _scratchingGridY = -1;
   /** Picks cells as the scratcher drags, on a browser without pointer events. */
   onInputMove(_e: MouseEvent | TouchEvent) {
+    if (!this.canManageMapObject()) return;
     const mask = this.gameTableMask();
     if (!window.PointerEvent && mask && this.isScratching && mask.isMine && this.input?.isDragging) {
       this.scratching(false);
@@ -556,6 +579,7 @@ export class GameTableMaskComponent {
    * Picks cells as the scratcher drags across the mask, and keeps the move from reaching the table.
    */
   onInputMovePointer(e: PointerEvent) {
+    if (!this.canManageMapObject()) return;
     const mask = this.gameTableMask();
     if (mask && this.isScratching && mask.isMine && this.input?.isDragging && e.buttons < 2) {
       this.scratching(false, { offsetX: e.offsetX, offsetY: e.offsetY });
@@ -592,6 +616,7 @@ export class GameTableMaskComponent {
    * hidden, its grid clip is cleared.
    */
   scratching(isStart: boolean, position: { offsetX: number; offsetY: number } | null = null) {
+    if (!this.canManageMapObject()) return;
     const mask = this.gameTableMask();
     if (!mask || !mask.isMine) return;
     const tableSelecter = this.tableSelecter;
@@ -666,6 +691,7 @@ export class GameTableMaskComponent {
    * caller to clear.
    */
   scratched() {
+    if (!this.canManageMapObject()) return;
     const mask = this.gameTableMask();
     if (!mask) return;
 
@@ -702,6 +728,7 @@ export class GameTableMaskComponent {
 
     const mask = this.gameTableMask();
     if (!mask) return;
+    if (!this.canManageMapObject()) return;
 
     if (!this.pointerDeviceService.isAllowedToOpenContextMenu) return;
     const menuPosition = this.pointerDeviceService.pointers[0];
@@ -771,6 +798,7 @@ export class GameTableMaskComponent {
       e.preventDefault();
       e.stopPropagation();
     }
+    if (!this.canManageMapObject()) return false;
     const mask = this.gameTableMask();
     if (!mask || !mask.isMine) return false;
     this.scratched();
@@ -794,6 +822,7 @@ export class GameTableMaskComponent {
       e.preventDefault();
       e.stopPropagation();
     }
+    if (!this.canManageMapObject()) return false;
     const mask = this.gameTableMask();
     if (mask && !mask.isMine && this.ownerIsOnline) return false;
     if (mask) mask.owner = '';
@@ -806,6 +835,7 @@ export class GameTableMaskComponent {
   }
 
   private showDetail(gameObject: GameTableMask) {
+    if (!this.rolePermission.canEditShared) return;
     this.selectionSignalService.selectObject(gameObject.identifier, gameObject.aliasName);
     const option: PanelOption = {
       title: sheetPanelTitle(this.translateFn('feature.tabletop.panel.mask'), gameObject.name),

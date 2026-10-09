@@ -1,7 +1,10 @@
 import { inject, Injectable } from '@angular/core';
+import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { SelectionSignalService } from '@axe/application/ui/selection-signal.service';
+import { GameTableMask } from '@axe/domain/tabletop/game-table-mask';
 import { isLockedInPlace } from '@axe/domain/tabletop/lockable';
 import { TabletopObject } from '@axe/domain/tabletop/tabletop-object';
+import { Terrain } from '@axe/domain/tabletop/terrain';
 
 export interface MovableLike {
   readonly identifier: string;
@@ -19,6 +22,7 @@ interface FollowerSnapshot {
 @Injectable({ providedIn: 'root' })
 export class MultiMovableService {
   private readonly selectionSignalService = inject(SelectionSignalService);
+  private readonly rolePermission = inject(RolePermissionService);
 
   private readonly registry = new Map<string, MovableLike>();
 
@@ -120,6 +124,7 @@ export class MultiMovableService {
   private isLocked(ref: MovableLike): boolean {
     const obj = ref.tabletopObject;
     if (!obj) return false;
+    if (!this.rolePermission.canEditShared && (obj instanceof Terrain || obj instanceof GameTableMask)) return true;
     return isLockedInPlace(obj);
   }
 }

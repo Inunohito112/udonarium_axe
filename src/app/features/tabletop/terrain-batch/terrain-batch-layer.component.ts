@@ -9,6 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { CoordinateService } from '@axe/application/input/coordinate.service';
+import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ImageService } from '@axe/application/storage/image.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
@@ -72,6 +73,7 @@ export class TerrainBatchLayerComponent {
   private readonly selection = inject(SelectionSignalService);
   private readonly overlap = inject(TabletopOverlapService);
   private readonly coordinateService = inject(CoordinateService);
+  private readonly rolePermission = inject(RolePermissionService);
   private readonly terrainMenu = inject(TerrainMenuService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
@@ -167,6 +169,7 @@ export class TerrainBatchLayerComponent {
 
   /** Selects the block pressed, as pressing a block drawn alone does. */
   protected onPointerDown(event: PointerEvent): void {
+    if (!this.rolePermission.canEditShared) return;
     if (event.button !== 0 || !(event.target instanceof Element)) return;
     const terrain = this.terrainUnder(event.target, event.pageX, event.pageY);
     if (!terrain) return;

@@ -95,6 +95,24 @@ describe('buildMultiSelectionContextMenu', () => {
     expect((a as unknown as { lastSetLocation?: string }).lastSetLocation).toBe('graveyard');
     expect((b as unknown as { lastSetLocation?: string }).lastSetLocation).toBeUndefined();
   });
+
+  it('leaves objects denied by the caller out of copy all and move all', () => {
+    const selection = new SelectionSignalService();
+    const allowed = makeObj('allowed');
+    const denied = makeObj('denied');
+    selection.replaceSelection(['allowed', 'denied']);
+    const menu = buildMultiSelectionContextMenu([allowed, denied], {
+      t,
+      selectionSignalService: selection,
+      gridSize: 50,
+      canManipulate: (object) => object.identifier !== 'denied',
+    });
+
+    (menu[3] as ContextMenuAction).action?.();
+
+    expect((allowed as unknown as { lastSetLocation?: string }).lastSetLocation).toBe('graveyard');
+    expect((denied as unknown as { lastSetLocation?: string }).lastSetLocation).toBeUndefined();
+  });
 });
 
 describe('the dice among a selection', () => {

@@ -1,9 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
+import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { Card, CardState } from '@axe/domain/card/card';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { DataElement, DataElementAttribute, DataElementRole } from '@axe/domain/data/data-element';
 import { DiceSymbol } from '@axe/domain/dice/dice-symbol';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { Terrain } from '@axe/domain/tabletop/terrain';
 import { GameCharacterSheetComponent } from '@axe/features/character/game-character-sheet/game-character-sheet.component';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
@@ -325,12 +328,16 @@ describe('GameCharacterSheetComponent', () => {
     let terrain: Terrain;
 
     beforeEach(() => {
+      const cursor = new PeerCursor();
+      cursor.role = PeerRole.GameMaster;
+      PeerCursor.myCursor = cursor;
       terrain = Terrain.create('地形', 3, 3, 2, '', '');
       component.tabletopObject = terrain;
       fixture.detectChanges();
     });
 
     afterEach(() => {
+      PeerCursor.myCursor = null!;
       terrain.destroy();
     });
 
@@ -353,6 +360,20 @@ describe('GameCharacterSheetComponent', () => {
       checkbox.click();
 
       expect(terrain.isGrid).toBe(true);
+    });
+
+    it('makes terrain controls read-only for a player', async () => {
+      PeerCursor.myCursor.role = PeerRole.Player;
+      TestBed.inject(ObjectChangeService).notifyChanged(PeerCursor.myCursor.identifier);
+      await Promise.resolve();
+      fixture.detectChanges();
+      const checkbox = fixture.nativeElement.querySelector('input[name="isGrid"]') as HTMLInputElement;
+
+      component.clone();
+
+      expect(component.isReadOnly()).toBe(true);
+      expect(checkbox.disabled).toBe(true);
+      expect(checkbox.closest('[inert]')).not.toBeNull();
     });
   });
 

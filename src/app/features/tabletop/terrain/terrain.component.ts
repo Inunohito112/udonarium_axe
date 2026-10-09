@@ -274,6 +274,11 @@ export class TerrainComponent {
     this.terrainVersion();
     return this.terrain().isLocked;
   });
+  /** Only the game master may rearrange or edit map scenery. */
+  readonly canManageMapObject = computed(() => {
+    this.objectChange.trackMyCursor();
+    return this.rolePermission.canEditShared;
+  });
   readonly hasWall = computed(() => {
     this.terrainVersion();
     return this.terrain().hasWall;
@@ -787,6 +792,7 @@ export class TerrainComponent {
   onContextMenu(e: Event) {
     e.stopPropagation();
     e.preventDefault();
+    if (!this.canManageMapObject()) return;
     this.terrainMenu.open(this.terrain());
   }
 
