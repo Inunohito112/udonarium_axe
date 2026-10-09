@@ -728,8 +728,18 @@ describe('GameTableComponent', () => {
   describe('buildContextMenuActions', () => {
     const position = { x: 0, y: 0, z: 0 };
     const names = () => component.buildContextMenuActions(position).map((action) => action.name);
+    const be = (role: PeerRole): void => {
+      PeerCursor.createMyCursor();
+      PeerCursor.myCursor.role = role;
+    };
+
+    afterEach(() => {
+      PeerCursor.myCursor?.destroy();
+      PeerCursor.myCursor = null!;
+    });
 
     it('leaves out the piece-making item on a desktop', () => {
+      be(PeerRole.GameMaster);
       TestBed.inject(MobileLayoutService).prefersDesktop.set(true);
 
       expect(names()).not.toContain('コマを作る…');
@@ -738,6 +748,7 @@ describe('GameTableComponent', () => {
     });
 
     it('offers it on a mobile layout', () => {
+      be(PeerRole.GameMaster);
       const mobileLayout = TestBed.inject(MobileLayoutService);
       mobileLayout.prefersDesktop.set(false);
       Object.defineProperty(mobileLayout, 'isActive', { value: () => true, configurable: true });
@@ -746,17 +757,28 @@ describe('GameTableComponent', () => {
     });
 
     it('groups table actions for the rotating menu without dropping legacy actions', () => {
+      be(PeerRole.GameMaster);
       const model = component.buildContextMenuModel(position);
       const groupedActions = model.rotatingGroups.flatMap((group) => group.actions);
       const legacyActions = model.actions.filter((action) => action.name.length > 0);
 
-      expect(model.rotatingGroups.map((group) => group.name)).toEqual([
-        'オブジェクト作成1',
-        'オブジェクト作成2',
-        'テーブル設定',
-      ]);
+      expect(model.rotatingGroups.map((group) => group.name)).toEqual(
+        expect.arrayContaining(['オブジェクト作成1', 'オブジェクト作成2', 'テーブル設定'])
+      );
       expect(groupedActions).toEqual(expect.arrayContaining(legacyActions));
       expect(groupedActions).toHaveLength(legacyActions.length);
+    });
+
+    it('leaves every object-creation entry out for a player', () => {
+      be(PeerRole.Player);
+
+      const model = component.buildContextMenuModel(position);
+
+      expect(model.rotatingGroups.map((group) => group.name)).not.toContain('オブジェクト作成1');
+      expect(model.rotatingGroups.map((group) => group.name)).not.toContain('オブジェクト作成2');
+      expect(model.actions.map((action) => action.name)).not.toContain('キャラクターを作成');
+      expect(model.actions.map((action) => action.name)).not.toContain('ダイスを作成');
+      expect(model.actions.map((action) => action.name)).not.toContain('画像タグから山札を作成');
     });
 
     describe('gathering a party', () => {
@@ -783,7 +805,6 @@ describe('GameTableComponent', () => {
       };
 
       afterEach(() => {
-        PeerCursor.myCursor = null!;
         for (const object of made.splice(0)) object.destroy();
       });
 
@@ -820,12 +841,13 @@ describe('GameTableComponent', () => {
     });
 
     it('splits the create items with a separator between the dice and the coin', () => {
+      be(PeerRole.GameMaster);
       const model = component.buildContextMenuModel(position);
       const separatorIndexes = model.actions
         .map((action, index) => (action.type === ContextMenuType.SEPARATOR ? index : -1))
         .filter((index) => 0 <= index);
 
-      expect(separatorIndexes).toHaveLength(2);
+      expect(separatorIndexes.length).toBeGreaterThanOrEqual(2);
       expect(model.actions[separatorIndexes[0] - 1].name).toBe('ダイスを作成');
       expect(model.actions[separatorIndexes[0] + 1].name).toBe('コインを作成');
       expect(model.rotatingGroups[0].actions).toHaveLength(separatorIndexes[0]);

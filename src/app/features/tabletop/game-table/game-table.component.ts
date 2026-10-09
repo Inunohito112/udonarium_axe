@@ -54,6 +54,7 @@ import { ImageFile, imageFileEqual } from '@axe/core/storage/image-file';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { PresetSound, SoundEffect } from '@axe/domain/media/sound-effect';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { BackdropCamera, backdropOffset } from '@axe/domain/tabletop/backdrop-offset';
 import {
   backgroundScrollAnimation,
@@ -1015,21 +1016,25 @@ export class GameTableComponent {
     actions: ContextMenuAction[];
     rotatingGroups: ContextMenuRadialGroup[];
   } {
-    const [primaryCreateActions, secondaryCreateActions] =
-      this.tabletopActionService.makeDefaultContextMenuActionGroups(objectPosition);
-    secondaryCreateActions.push({
-      name: this.t('feature.tabletop.action.createDeck'),
-      action: () => {
-        void this.openDeckBuilder(objectPosition);
-      },
-    });
-    if (this.mobileLayout.isActive()) {
+    const canCreateObjects = PeerCursor.isMyselfGameMaster;
+    const [primaryCreateActions, secondaryCreateActions] = canCreateObjects
+      ? this.tabletopActionService.makeDefaultContextMenuActionGroups(objectPosition)
+      : [[], []];
+    if (canCreateObjects) {
       secondaryCreateActions.push({
-        name: this.t('feature.tabletop.contextMenu.createWithOptions'),
+        name: this.t('feature.tabletop.action.createDeck'),
         action: () => {
-          this.roomPanels.open('characterGenerator', { width: 460, height: 420 });
+          void this.openDeckBuilder(objectPosition);
         },
       });
+      if (this.mobileLayout.isActive()) {
+        secondaryCreateActions.push({
+          name: this.t('feature.tabletop.contextMenu.createWithOptions'),
+          action: () => {
+            this.roomPanels.open('characterGenerator', { width: 460, height: 420 });
+          },
+        });
+      }
     }
     const tableSettingAction: ContextMenuAction = {
       name: this.t('feature.tabletop.tableSetting.title'),
@@ -1071,26 +1076,29 @@ export class GameTableComponent {
         : [];
     return {
       actions: [
-        ...primaryCreateActions,
-        ContextMenuSeparator,
-        ...secondaryCreateActions,
-        ContextMenuSeparator,
+        ...(canCreateObjects
+          ? [...primaryCreateActions, ContextMenuSeparator, ...secondaryCreateActions, ContextMenuSeparator]
+          : []),
         ...(partyActions.length > 0 ? [...partyActions, ContextMenuSeparator] : []),
         ...(revealActions.length > 0 ? [...revealActions, ContextMenuSeparator] : []),
         ...(pressedActions.length > 0 ? [...pressedActions, ContextMenuSeparator] : []),
         ...tableSettingActions,
       ],
       rotatingGroups: [
-        {
-          name: this.t('feature.tabletop.contextMenu.createObject1'),
-          icon: 'add_circle',
-          actions: primaryCreateActions,
-        },
-        {
-          name: this.t('feature.tabletop.contextMenu.createObject2'),
-          icon: 'add_box',
-          actions: secondaryCreateActions,
-        },
+        ...(canCreateObjects
+          ? [
+              {
+                name: this.t('feature.tabletop.contextMenu.createObject1'),
+                icon: 'add_circle',
+                actions: primaryCreateActions,
+              },
+              {
+                name: this.t('feature.tabletop.contextMenu.createObject2'),
+                icon: 'add_box',
+                actions: secondaryCreateActions,
+              },
+            ]
+          : []),
         ...partyGroups,
         ...(revealActions.length > 0
           ? [{ name: this.t('feature.boardSwitch.menu.concealed'), icon: 'visibility', actions: revealActions }]
