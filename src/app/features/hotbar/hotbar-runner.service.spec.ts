@@ -24,6 +24,7 @@ import { hotbarSlotTag } from '@axe/domain/hotbar/hotbar-tag';
 import { CutIn } from '@axe/domain/media/cut-in';
 import { SoundEffect } from '@axe/domain/media/sound-effect';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { RangeArea } from '@axe/domain/tabletop/range';
 import { HotbarRunnerService } from '@axe/features/hotbar/hotbar-runner.service';
 import { ObjectPanelService } from '@axe/features/panels/object-panel.service';
@@ -34,6 +35,7 @@ describe('HotbarRunnerService', () => {
   let runner: HotbarRunnerService;
   let hotbar: Hotbar;
   let character: GameCharacter;
+  const originalCursor = PeerCursor.myCursor;
 
   function slotOf(kind: HotbarSlotKind, value: string, payload?: HotbarPayload): HotbarSlot {
     const draft: HotbarSlotDraft = emptyHotbarSlotDraft(kind);
@@ -67,6 +69,7 @@ describe('HotbarRunnerService', () => {
   }
 
   beforeEach(() => {
+    PeerCursor.myCursor = { userId: 'test-gm', role: PeerRole.GameMaster } as PeerCursor;
     TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
     store = ObjectStore.instance;
     Hotbar.ownerId = 'me';
@@ -80,7 +83,7 @@ describe('HotbarRunnerService', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    PeerCursor.myCursor = null!;
+    PeerCursor.myCursor = originalCursor;
   });
 
   describe('what needs a character', () => {
@@ -88,6 +91,13 @@ describe('HotbarRunnerService', () => {
       for (const kind of ['chat', 'effect', 'range', 'diceDeploy', 'panel', 'focus'] as HotbarSlotKind[]) {
         expect(run(slotOf(kind, 'なにか'), null)).toEqual({ ok: false, reason: 'noCharacter' });
       }
+    });
+
+    it('does nothing through another players character', () => {
+      PeerCursor.myCursor = { userId: 'player-1', role: PeerRole.Player } as PeerCursor;
+      character.owner = 'player-2';
+
+      expect(run(slotOf('chat', '2d6'), character)).toEqual({ ok: false, reason: 'noCharacter' });
     });
 
     it('sends a chat macro as the character', () => {

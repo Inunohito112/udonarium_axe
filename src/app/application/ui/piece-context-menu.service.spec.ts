@@ -4,12 +4,15 @@ import { PieceContextMenuService } from '@axe/application/ui/piece-context-menu.
 import { SelectionSignalService } from '@axe/application/ui/selection-signal.service';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 describe('PieceContextMenuService', () => {
   let service: PieceContextMenuService;
   let contextMenu: ContextMenuService;
   let selection: SelectionSignalService;
+  const originalCursor = PeerCursor.myCursor;
 
   const position = { x: 10, y: 20, z: 0 };
 
@@ -18,6 +21,7 @@ describe('PieceContextMenuService', () => {
   }
 
   beforeEach(() => {
+    PeerCursor.myCursor = { userId: 'test-gm', role: PeerRole.GameMaster } as PeerCursor;
     TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
     service = TestBed.inject(PieceContextMenuService);
     contextMenu = TestBed.inject(ContextMenuService);
@@ -28,6 +32,7 @@ describe('PieceContextMenuService', () => {
     selection.clearSelection();
     for (const object of ObjectStore.instance.getObjects()) ObjectStore.instance.remove(object);
     ObjectStore.instance.clearDeleteHistory();
+    PeerCursor.myCursor = originalCursor;
   });
 
   it('offers nothing when only one thing is selected', () => {

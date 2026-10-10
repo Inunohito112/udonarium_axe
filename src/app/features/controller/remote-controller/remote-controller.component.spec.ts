@@ -18,7 +18,7 @@ describe('RemoteControllerComponent', () => {
   const createdChars: GameCharacter[] = [];
 
   beforeEach(async () => {
-    PeerCursor.createMyCursor();
+    PeerCursor.createMyCursor().userId = 'test-player';
     TestBed.configureTestingModule({
       imports: [RemoteControllerComponent, PanelDragTestHostComponent],
       providers: [...TEST_PROVIDERS],
@@ -39,6 +39,7 @@ describe('RemoteControllerComponent', () => {
 
   function createChar(name: string): GameCharacter {
     const char = GameCharacter.create(name, 1, '');
+    char.owner = PeerCursor.myCursor.userId;
     createdChars.push(char);
     return char;
   }

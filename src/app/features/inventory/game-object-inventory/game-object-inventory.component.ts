@@ -25,6 +25,7 @@ import {
   InventoryTableRow,
 } from '@axe/application/inventory/inventory-table';
 import { tableItemNames } from '@axe/application/inventory/summary-items';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { DisclosureService } from '@axe/application/permission/disclosure.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
@@ -154,6 +155,7 @@ export class GameObjectInventoryComponent {
   private readonly turnOrderService = inject(TurnOrderService);
   private readonly objectChange = inject(ObjectChangeService);
   private readonly rolePermission = inject(RolePermissionService);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly vision = inject(VisionService);
   private readonly ailmentService = inject(StatusAilmentService);
   private readonly viewPreference = inject(InventoryViewPreferenceService);
@@ -239,6 +241,7 @@ export class GameObjectInventoryComponent {
   /** Gives the turn to a piece from the button on its row, without the press selecting the row. */
   setTurnOrder(event: Event, gameObject: GameObject): void {
     event.stopPropagation();
+    if (gameObject instanceof GameCharacter && !this.characterPermission.canControl(gameObject)) return;
     this.turnOrderService.setCurrent(gameObject.identifier);
   }
 
@@ -336,7 +339,7 @@ export class GameObjectInventoryComponent {
   /** Puts a status on a character or takes it off, from its box in the table view. */
   toggleAilment(event: Event, object: TabletopObject, ailment: StatusAilment): void {
     event.stopPropagation();
-    if (!(object instanceof GameCharacter)) return;
+    if (!(object instanceof GameCharacter) || !this.characterPermission.canControl(object)) return;
     this.ailmentService.toggle(object, ailment, (event.target as HTMLInputElement).checked);
   }
 
@@ -510,6 +513,7 @@ export class GameObjectInventoryComponent {
 
   /** Gives the turn to the piece pressed in the turn order. */
   selectTurn(character: GameCharacter): void {
+    if (!this.characterPermission.canControl(character)) return;
     this.turnOrderService.setCurrent(character.identifier);
   }
 
@@ -1078,7 +1082,7 @@ export class GameObjectInventoryComponent {
         : this.filteredRows().filter((row) => isDescendantFolderPath(row.folderPath, folderPath));
     this.multiMoveTargets.update((current) => {
       const next = new Set(current);
-      rows.forEach((row) => next.add(row.identifier));
+      rows.filter((row) => this.canControl(row.object)).forEach((row) => next.add(row.identifier));
       return next;
     });
   }
@@ -1105,7 +1109,9 @@ export class GameObjectInventoryComponent {
     const normalized = normalizeFolderPath(folderPath);
     for (const identifier of identifiers) {
       const character = this.objectStore.get<GameCharacter>(identifier);
-      if (character instanceof GameCharacter) character.folderName = normalized;
+      if (character instanceof GameCharacter && this.characterPermission.canControl(character)) {
+        character.folderName = normalized;
+      }
     }
     this.inventoryService.notifyInventoryUpdate();
   }
@@ -1173,22 +1179,30 @@ export class GameObjectInventoryComponent {
     this.selectGameObject(gameObject);
 
     const position = this.pointerDeviceService.pointers[0];
-    const actions = buildInventoryObjectContextMenu(
-      gameObject,
-      this.inventoryService,
-      {
-        showDetail: (c) => this.showDetail(c),
-        showChatPalette: (c) => this.showChatPalette(c),
-        showRemoteController: (c) => this.showRemoteController(c),
-        focusOnTable: (o) => this.tableFocus.focusOn(o),
-        cloneGameObject: (o) => this.cloneGameObject(o),
-        deleteGameObject: (o) => this.deleteGameObject(o),
-        setFolder: (o, folderPath) => this.setFolder(o, folderPath),
-        createFolder: (o) => this.createFolderFor(o),
-      },
-      this.t,
-      this.foldersApply() ? this.knownFolderPaths() : null
-    );
+    const actions =
+      gameObject instanceof GameCharacter && !this.characterPermission.canControl(gameObject)
+        ? [
+            {
+              name: this.t('feature.character.contextMenu.showDetail'),
+              action: () => this.showDetail(gameObject),
+            },
+          ]
+        : buildInventoryObjectContextMenu(
+            gameObject,
+            this.inventoryService,
+            {
+              showDetail: (c) => this.showDetail(c),
+              showChatPalette: (c) => this.showChatPalette(c),
+              showRemoteController: (c) => this.showRemoteController(c),
+              focusOnTable: (o) => this.tableFocus.focusOn(o),
+              cloneGameObject: (o) => this.cloneGameObject(o),
+              deleteGameObject: (o) => this.deleteGameObject(o),
+              setFolder: (o, folderPath) => this.setFolder(o, folderPath),
+              createFolder: (o) => this.createFolderFor(o),
+            },
+            this.t,
+            this.foldersApply() ? this.knownFolderPaths() : null
+          );
 
     this.contextMenuService.open(position, actions, gameObject.name);
   }
@@ -1248,7 +1262,7 @@ export class GameObjectInventoryComponent {
    */
   async cleanInventory(): Promise<void> {
     if (!this.rolePermission.canEditTabletop) return;
-    const rows = this.filteredRows();
+    const rows = this.filteredRows().filter((row) => this.canControl(row.object));
     const message = this.hasQuery()
       ? this.t('feature.inventory.panel.confirmCleanFiltered', { count: rows.length })
       : this.t('feature.inventory.panel.confirmCleanTab', {
@@ -1269,6 +1283,7 @@ export class GameObjectInventoryComponent {
 
   /** Picks or unpicks a piece from its row's checkbox. */
   toggleMultiMoveTarget(e: Event, gameObject: GameCharacter) {
+    if (!this.characterPermission.canControl(gameObject)) return;
     if (!(e.target instanceof HTMLInputElement)) {
       return;
     }
@@ -1285,7 +1300,7 @@ export class GameObjectInventoryComponent {
 
   /** Unpicks every listed row when any of them is picked, and otherwise picks them all. */
   allTabBoxCheck() {
-    const rows = this.filteredRows();
+    const rows = this.filteredRows().filter((row) => this.canControl(row.object));
     if (this.existsMultiMoveSelectedInTab()) {
       this.multiMoveTargets.update((s) => {
         const n = new Set(s);
@@ -1327,7 +1342,7 @@ export class GameObjectInventoryComponent {
     if (!this.rolePermission.canEditTabletop) return;
     for (const gameObjectIdentifier of this.multiMoveTargets()) {
       const gameObject = this.objectStore.get(gameObjectIdentifier);
-      if (gameObject instanceof GameCharacter) {
+      if (gameObject instanceof GameCharacter && this.characterPermission.canControl(gameObject)) {
         gameObject.setLocation(location);
       }
     }
@@ -1349,7 +1364,7 @@ export class GameObjectInventoryComponent {
     if (!this.rolePermission.canEditTabletop) return;
     for (const gameObjectIdentifier of this.multiMoveTargets()) {
       const gameObject = this.objectStore.get<GameCharacter>(gameObjectIdentifier);
-      if (gameObject instanceof GameCharacter) {
+      if (gameObject instanceof GameCharacter && this.characterPermission.canControl(gameObject)) {
         gameObject.hideInventory = hide;
       }
     }
@@ -1380,7 +1395,11 @@ export class GameObjectInventoryComponent {
     const inGraveyard: Set<GameCharacter> = new Set();
     for (const gameObjectIdentifier of this.multiMoveTargets()) {
       const gameObject = this.objectStore.get<GameCharacter>(gameObjectIdentifier);
-      if (gameObject instanceof GameCharacter && gameObject.location.name == 'graveyard') {
+      if (
+        gameObject instanceof GameCharacter &&
+        this.characterPermission.canControl(gameObject) &&
+        gameObject.location.name == 'graveyard'
+      ) {
         inGraveyard.add(gameObject);
       }
     }
@@ -1400,6 +1419,7 @@ export class GameObjectInventoryComponent {
 
   private cloneGameObject(gameObject: TabletopObject) {
     if (!this.rolePermission.canEditTabletop) return;
+    if (gameObject instanceof GameCharacter && !this.characterPermission.canControl(gameObject)) return;
     gameObject.clone();
   }
 
@@ -1417,6 +1437,7 @@ export class GameObjectInventoryComponent {
 
   protected focusToObject(e: Event, gameObject: TabletopObject) {
     if (!this.canView(gameObject)) return;
+    if (gameObject instanceof GameCharacter && !this.characterPermission.canControl(gameObject)) return;
     if (!(e.target instanceof HTMLElement)) {
       return;
     }
@@ -1438,7 +1459,11 @@ export class GameObjectInventoryComponent {
    * be dragged goes through, and moves the panel as a press anywhere else in it does.
    */
   onObjectDragBlock(event: Event, gameObject: GameObject): void {
-    if (this.drag.canDrag(gameObject)) event.stopPropagation();
+    if (
+      this.drag.canDrag(gameObject) &&
+      (!(gameObject instanceof GameCharacter) || this.characterPermission.canControl(gameObject))
+    )
+      event.stopPropagation();
   }
 
   /**
@@ -1451,6 +1476,7 @@ export class GameObjectInventoryComponent {
     if (this.drag.takeSuppressedClick()) return;
     if (gameObject instanceof GameCharacter && !this.canView(gameObject)) return;
     if (this.isMultiMove()) {
+      if (gameObject instanceof GameCharacter && !this.characterPermission.canControl(gameObject)) return;
       if (this.multiMoveTargets().has(gameObject.identifier)) {
         this.multiMoveTargets.update((s) => {
           const n = new Set(s);
@@ -1467,6 +1493,12 @@ export class GameObjectInventoryComponent {
 
   private deleteGameObject(gameObject: GameObject) {
     if (!this.rolePermission.canEditTabletop) return;
+    if (gameObject instanceof GameCharacter && !this.characterPermission.canControl(gameObject)) return;
     gameObject.destroy();
+  }
+
+  /** Whether this seat may alter or act through this inventory object. */
+  canControl(gameObject: TabletopObject): boolean {
+    return !(gameObject instanceof GameCharacter) || this.characterPermission.canControl(gameObject);
   }
 }

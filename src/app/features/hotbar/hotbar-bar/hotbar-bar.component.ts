@@ -12,6 +12,7 @@ import { ChatSpeakerService } from '@axe/application/chat/chat-speaker.service';
 import { SaveDataService } from '@axe/application/file/save-data.service';
 import { HotbarStoreService } from '@axe/application/hotbar/hotbar-store.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { HotbarPreferenceService } from '@axe/application/ui/hotbar-preference.service';
@@ -45,7 +46,6 @@ import { HotbarSlotEditorComponent } from '@axe/features/hotbar/hotbar-editor/ho
 import { HotbarFailure, HotbarRunnerService } from '@axe/features/hotbar/hotbar-runner.service';
 import { hotbarKeyDown, isApplePlatform, isTypingTarget, pressEmptiesSlot } from '@axe/features/hotbar/hotbar-shortcut';
 import { ActiveCharacterService } from '@axe/features/pl-tools/active-character.service';
-import { selectControllableCharacters } from '@axe/features/pl-tools/owned-character-list/owned-characters';
 import { VisualNovelModeService } from '@axe/features/visual-novel/visual-novel-mode.service';
 import { DraggableDirective } from '@axe/ui/directives/draggable.directive';
 import { WidgetPlaceDirective } from '@axe/ui/directives/widget-place.directive';
@@ -71,6 +71,7 @@ export class HotbarBarComponent {
   private readonly objectStore = inject(ObjectStore);
   private readonly audioStorage = inject(AudioStorage);
   private readonly objectChange = inject(ObjectChangeService);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly activeCharacter = inject(ActiveCharacterService);
   private readonly runner = inject(HotbarRunnerService);
   private readonly layout = inject(WidgetLayoutService);
@@ -404,10 +405,9 @@ export class HotbarBarComponent {
   /** The pieces this reader may work, sifted once for the whole bar. */
   private controllableCharacters(): GameCharacter[] {
     this.objectChange.collectionOf(GameCharacter.aliasName)();
-    return selectControllableCharacters(
-      this.objectStore.getObjects<GameCharacter>(GameCharacter),
-      PeerCursor.myCursor?.userId ?? ''
-    );
+    return this.objectStore
+      .getObjects<GameCharacter>(GameCharacter)
+      .filter((character) => this.characterPermission.canControl(character));
   }
 
   /** Who a slot naming nobody acts as: whoever the chat is set to speak as. */

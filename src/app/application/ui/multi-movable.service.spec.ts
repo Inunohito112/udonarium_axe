@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { MovableLike, MultiMovableService } from '@axe/application/ui/multi-movable.service';
 import { SelectionSignalService } from '@axe/application/ui/selection-signal.service';
+import { GameCharacter } from '@axe/domain/character/game-character';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { PeerRole } from '@axe/domain/peer/peer-role';
 import { Terrain } from '@axe/domain/tabletop/terrain';
@@ -74,6 +75,32 @@ describe('MultiMovableService', () => {
     expect(locked.posY).toBe(100);
     expect(free.posX).toBe(230);
     expect(free.posY).toBe(240);
+  });
+
+  it('does not move another players selected character with an owned leader', () => {
+    PeerCursor.myCursor = { userId: 'player-1', role: PeerRole.Player } as PeerCursor;
+    const foreign = GameCharacter.create('他人のAC', 1, '');
+    foreign.owner = 'player-2';
+    const leader = makeMovable({ id: 'leader', x: 0, y: 0 });
+    const follower: MovableLike = {
+      identifier: foreign.identifier,
+      tabletopObject: foreign,
+      posX: 100,
+      posY: 100,
+    };
+    service.register(leader);
+    service.register(follower);
+    selection.replaceSelection([leader.identifier, foreign.identifier]);
+
+    try {
+      expect(service.beginDrag(leader)).toBe(false);
+      leader.posX = 50;
+      service.applyLeaderDelta(leader);
+      expect(follower.posX).toBe(100);
+      expect(follower.posY).toBe(100);
+    } finally {
+      foreign.destroy();
+    }
   });
 
   it('skips a locked terrain, which keeps its lock as isLocked', () => {

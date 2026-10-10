@@ -48,6 +48,7 @@ function orbitOf(facing: BillboardFacing): string {
 describe('GameCharacterComponent', () => {
   let component: GameCharacterComponent;
   let fixture: ComponentFixture<GameCharacterComponent>;
+  const originalCursor = PeerCursor.myCursor;
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
@@ -57,8 +58,16 @@ describe('GameCharacterComponent', () => {
   });
 
   beforeEach(() => {
+    const cursor = PeerCursor.createMyCursor();
+    cursor.userId = 'test-gm';
+    cursor.peerId = 'test-gm-peer';
+    cursor.role = PeerRole.GameMaster;
     fixture = TestBed.createComponent(GameCharacterComponent);
     component = fixture.componentInstance;
+  });
+
+  afterEach(() => {
+    PeerCursor.myCursor = originalCursor;
   });
 
   const useFlatTable = () => {
@@ -184,6 +193,7 @@ describe('GameCharacterComponent', () => {
   describe('showing where the piece could walk', () => {
     function pieceThatWalks(walk: number): GameCharacter {
       const character = GameCharacter.create('コマ', 1, '');
+      character.owner = 'me';
       DataElement.findElementByReference(character.rootDataElement!, '移動')!.value = walk;
       return character;
     }
@@ -529,9 +539,11 @@ describe('GameCharacterComponent', () => {
       tableMode2d: boolean,
       menuStyle: 'four-way' | 'radial' | 'standard',
       size = 1,
-      showRotatingName = false
+      showRotatingName = false,
+      owner = ''
     ) {
       const character = GameCharacter.create('menu-piece', size, '');
+      character.owner = owner;
       fixture.componentRef.setInput('gameCharacter', character);
       const table = TestBed.inject(TabletopService).currentTable;
       table.mode2d = tableMode2d;
@@ -556,6 +568,27 @@ describe('GameCharacterComponent', () => {
       component.onContextMenu(new Event('contextmenu', { cancelable: true }));
       return character;
     }
+
+    it('offers a player only the details of another users character', () => {
+      PeerCursor.myCursor.userId = 'player-1';
+      PeerCursor.myCursor.peerId = 'player-1-peer';
+      PeerCursor.myCursor.role = PeerRole.Player;
+      const menus = TestBed.inject(ContextMenuService);
+      const open = vi.spyOn(menus, 'open').mockImplementation(() => undefined);
+      const openRadial = vi.spyOn(menus, 'openRadial').mockImplementation(() => undefined);
+      const character = openMenu(false, 'standard', 1, false, 'player-2');
+
+      try {
+        const actions = open.mock.calls[0]?.[1] ?? [];
+        expect(actions.map((action) => action.name)).toEqual(['詳細を表示']);
+        expect(openRadial).not.toHaveBeenCalled();
+        expect(component.canControl()).toBe(false);
+        const movable = fixture.debugElement.query(By.directive(MovableDirective)).injector.get(MovableDirective);
+        expect(movable.isDisable()).toBe(true);
+      } finally {
+        character.destroy();
+      }
+    });
 
     it('uses the ordinary downward menu outside 2D mode', () => {
       const menus = TestBed.inject(ContextMenuService);
@@ -936,6 +969,7 @@ describe('GameCharacterComponent', () => {
     });
 
     it('keeps the readings back from whoever the piece is not open to', () => {
+      PeerCursor.myCursor.role = PeerRole.Player;
       const character = GameCharacter.create('秘密', 1, '');
       character.disclosureMode = DisclosureMode.GameMaster;
       fixture.componentRef.setInput('gameCharacter', character);

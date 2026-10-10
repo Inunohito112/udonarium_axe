@@ -18,6 +18,7 @@ import { DiceBotCatalogService } from '@axe/application/dice/dice-bot-catalog.se
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { GameObjectInventoryService } from '@axe/application/inventory/game-object-inventory.service';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { DisclosureService } from '@axe/application/permission/disclosure.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { PanelOption, PanelService } from '@axe/application/ui/panel.service';
@@ -85,6 +86,7 @@ export class RemoteControllerComponent {
   private readonly characterMacro = inject(CharacterMacroService);
   private readonly panelService = inject(PanelService);
   private readonly inventoryService = inject(GameObjectInventoryService);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly disclosureService = inject(DisclosureService);
   private readonly pointerDeviceService = inject(PointerDeviceService);
   private readonly objectStore = inject(ObjectStore);
@@ -125,7 +127,7 @@ export class RemoteControllerComponent {
     DiceBot.loadGameSystemAsync(gameType).then((gameSystem) => {
       this._gameSystem = gameSystem;
       const char = this.character();
-      if (char?.remoteController) {
+      if (char?.remoteController && this.characterPermission.canControl(char)) {
         char.remoteController.dicebot = gameSystem.ID;
       }
     });
@@ -178,6 +180,12 @@ export class RemoteControllerComponent {
       const dicebot = this.character()?.remoteController?.dicebot ?? '';
       if (0 < dicebot.length) {
         untracked(() => (this.gameType = dicebot));
+      }
+    });
+    effect(() => {
+      const character = this.character();
+      if (character && !this.characterPermission.canControl(character)) {
+        untracked(() => this.panelService.close());
       }
     });
     effect(() => {
@@ -244,6 +252,7 @@ export class RemoteControllerComponent {
   readonly controllerInputComponent = viewChild.required<ControllerInputComponent>('controllerInput');
   readonly paletteListRef = viewChild<ElementRef<HTMLDivElement>>('paletteList');
   readonly character = signal<GameCharacter | null>(null);
+  readonly canControlCharacter = computed(() => this.characterPermission.canControl(this.character()));
 
   readonly selectedLine = signal<number>(-1);
 
@@ -411,7 +420,11 @@ export class RemoteControllerComponent {
    */
   onSelectedCharacter(identifier: string) {
     const object = this.objectStore.get(identifier);
-    if (object instanceof GameCharacter && !this.disclosureService.canView(object)) return;
+    if (
+      object instanceof GameCharacter &&
+      (!this.disclosureService.canView(object) || !this.characterPermission.canControl(object))
+    )
+      return;
     if (this.isEdit()) {
       this.toggleEditMode();
     }
@@ -596,7 +609,9 @@ export class RemoteControllerComponent {
   getTargetCharacters(checkedOnly: boolean): GameCharacter[] {
     this.uiSignalService.targetChange();
     const objectList = this.getGameObjects(this.selectTab());
-    return getTargetCharacters(objectList, checkedOnly);
+    return getTargetCharacters(objectList, checkedOnly).filter((character) =>
+      this.characterPermission.canControl(character)
+    );
   }
 
   /**
@@ -699,6 +714,7 @@ export class RemoteControllerComponent {
 
   /** Opens a character's buff panel at the pointer, from the buff edit button on its row. */
   buffEdit(gameCharacter: GameCharacter) {
+    if (!this.characterPermission.canControl(gameCharacter)) return;
     const coordinate = this.pointerDeviceService.pointers[0];
     const option: PanelOption = {
       left: coordinate.x,

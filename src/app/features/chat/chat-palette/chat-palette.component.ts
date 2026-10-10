@@ -17,6 +17,7 @@ import { ChatTickerSelectionService } from '@axe/application/chat/chat-ticker-se
 import { DiceBotCatalogService } from '@axe/application/dice/dice-bot-catalog.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
@@ -63,6 +64,7 @@ export class ChatPaletteComponent {
   protected readonly isCompact = inject(ViewportService).isCompact;
   private readonly contextMenuService = inject(ContextMenuService);
   private readonly rolePermission = inject(RolePermissionService);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly hotbarFill = inject(HotbarFillService);
   private readonly pointerDeviceService = inject(PointerDeviceService);
   chatMessageService = inject(ChatMessageService);
@@ -82,6 +84,7 @@ export class ChatPaletteComponent {
   readonly completeSelectRef = viewChild<ElementRef<HTMLSelectElement>>('completeSelect');
   readonly editTextRef = viewChild<ElementRef<HTMLTextAreaElement>>('editText');
   readonly character = signal<GameCharacter | null>(null);
+  readonly canControlCharacter = computed(() => this.characterPermission.canControl(this.character()));
 
   readonly selectedLine = signal<number>(-1);
 
@@ -144,7 +147,7 @@ export class ChatPaletteComponent {
   set gameType(gameType: string) {
     this._gameType.set(gameType);
     const char = this.character();
-    if (char?.chatPalette) char.chatPalette.dicebot = gameType;
+    if (char?.chatPalette && this.characterPermission.canControl(char)) char.chatPalette.dicebot = gameType;
   }
 
   /**
@@ -243,6 +246,10 @@ export class ChatPaletteComponent {
       if (!visible.some((tab) => tab.identifier === current)) this.chatTabidentifier.set(visible[0]?.identifier ?? '');
     });
     effect(() => {
+      const character = this.character();
+      if (character && !this.characterPermission.canControl(character)) this.panelService.close();
+    });
+    effect(() => {
       const req = this.uiSignalService.jumpIndexRequest();
       if (!req || this._timeId != req.targetId) return;
       this.japmIndex(req.lineNo);
@@ -273,7 +280,7 @@ export class ChatPaletteComponent {
   onSelectedCharacter(identifier: string) {
     if (this.isEdit()) this.toggleEditMode();
     const object = this.objectStore.get(identifier);
-    if (object instanceof GameCharacter) {
+    if (object instanceof GameCharacter && this.characterPermission.canControl(object)) {
       this.character.set(object);
       const char = this.character()!;
       const gameType = char.chatPalette ? char.chatPalette.dicebot : '';
@@ -419,7 +426,7 @@ export class ChatPaletteComponent {
    */
   sendChat(value: ChatOutgoing) {
     const character = this.character();
-    if (!this.chatTab || !character || !this.palette) return;
+    if (!this.chatTab || !character || !this.palette || !this.characterPermission.canControl(character)) return;
 
     const sent = this.characterMacro.send(character, value.text, {
       tab: this.chatTab,
@@ -502,6 +509,7 @@ export class ChatPaletteComponent {
   onPaletteRowMenu(row: PaletteRow, event: MouseEvent): void {
     if (row.kind !== 'command') return;
     if (!this.rolePermission.canEditTabletop) return;
+    if (!this.canControlCharacter()) return;
     event.preventDefault();
     event.stopPropagation();
 
@@ -553,6 +561,10 @@ export class ChatPaletteComponent {
    * closes mid-edit, so an edit is never lost by closing.
    */
   toggleEditMode() {
+    if (!this.canControlCharacter()) {
+      this.isEdit.set(false);
+      return;
+    }
     this.isEdit.update((v) => !v);
     if (!this.palette) return;
     if (this.isEdit()) {

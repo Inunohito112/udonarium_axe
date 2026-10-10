@@ -16,6 +16,7 @@ import { FormsModule } from '@angular/forms';
 import { SaveDataService } from '@axe/application/file/save-data.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { BottomSheetService } from '@axe/application/ui/bottom-sheet.service';
@@ -105,6 +106,7 @@ export class GameCharacterSheetComponent {
   private readonly dataElementDrag = inject(DataElementDragService);
   private readonly translateFn = inject(TRANSLATE_FN);
   private readonly rolePermission = inject(RolePermissionService);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly dataElementDeletion = inject(DataElementDeletionService);
   private readonly bottomSheet = inject(BottomSheetService);
   private readonly injector = inject(Injector);
@@ -139,9 +141,11 @@ export class GameCharacterSheetComponent {
 
   readonly isReadOnly = computed(() => {
     this.objectChange.trackMyCursor();
+    const object = this.tabletopObject;
     return (
       !this.rolePermission.canEditTabletop ||
-      (this.tabletopObject instanceof Terrain && !this.rolePermission.canEditShared)
+      (object instanceof GameCharacter && !this.characterPermission.canControl(object)) ||
+      (object instanceof Terrain && !this.rolePermission.canEditShared)
     );
   });
 
@@ -174,6 +178,7 @@ export class GameCharacterSheetComponent {
 
   /** Opens a card of the sheet for editing or closes it, from its edit button. */
   toggleElementEdit(id: string) {
+    if (this.isReadOnly()) return;
     this.editingIds.update((set) => {
       const next = new Set(set);
       if (next.has(id)) next.delete(id);
@@ -190,6 +195,7 @@ export class GameCharacterSheetComponent {
    * panel or another.
    */
   onDragStart(event: DragEvent, id: string) {
+    if (this.isReadOnly()) return;
     this._draggedId = id;
     this.dataElementDrag.start(event, id);
     event.stopPropagation();
@@ -207,6 +213,7 @@ export class GameCharacterSheetComponent {
    * otherwise the drag passes on.
    */
   onDragOver(event: DragEvent, id: string) {
+    if (this.isReadOnly()) return;
     const draggedId = this.dataElementDrag.getDraggedId(event) ?? this._draggedId;
     if (!draggedId || draggedId === id || !canReorderDetailElement(this.character, this.objectStore, draggedId, id))
       return;
@@ -229,6 +236,7 @@ export class GameCharacterSheetComponent {
    * itself is ours all the same, and is answered for here rather than let out.
    */
   onDrop(event: DragEvent, targetId: string) {
+    if (this.isReadOnly()) return;
     this.dragOverId.set(null);
     const draggedId = this.dataElementDrag.getDraggedId(event) ?? this._draggedId;
     this._draggedId = null;
@@ -249,6 +257,7 @@ export class GameCharacterSheetComponent {
    * Cards are otherwise put in order by dragging, which a touch screen may not start.
    */
   onDetailCardContextMenu(event: MouseEvent, card: DataElement): void {
+    if (this.isReadOnly()) return;
     if (!this.pointerDeviceService.isAllowedToOpenContextMenu) return;
     const cards = this.detailElements();
     const index = cards.indexOf(card);
@@ -307,6 +316,7 @@ export class GameCharacterSheetComponent {
    * the width is saved on the card.
    */
   cycleCardColspan(el: DataElement) {
+    if (this.isReadOnly()) return;
     const cur = this.getCardColspan(el);
     const idx = GameCharacterSheetComponent.COLSPAN_CYCLE.indexOf(
       cur as (typeof GameCharacterSheetComponent.COLSPAN_CYCLE)[number]
@@ -655,6 +665,7 @@ export class GameCharacterSheetComponent {
    * sheet, which holds what the card's small buttons hold on a wide one.
    */
   openSectionEditor(card: DataElement, event?: Event): void {
+    if (this.isReadOnly()) return;
     openDataElementEditor(this.bottomSheet, this.translateFn, card, {
       host: event?.currentTarget instanceof Element ? event.currentTarget : null,
       injector: this.injector,
@@ -674,6 +685,7 @@ export class GameCharacterSheetComponent {
    * narrow sheet, where there is no column beside the game data to show them in.
    */
   openPortraitSheet(event?: Event): void {
+    if (this.isReadOnly()) return;
     const char = this.character;
     if (!char) return;
     this.bottomSheet.open(CharacterPortraitPanelComponent, {
@@ -692,11 +704,16 @@ export class GameCharacterSheetComponent {
     const button = event.currentTarget instanceof Element ? event.currentTarget : null;
     const rect = button?.getBoundingClientRect();
     const position = rect ? { x: rect.right, y: rect.bottom } : this.pointerDeviceService.pointers[0];
+    const objectActions = this.isReadOnly()
+      ? {}
+      : {
+          portraits: () => this.openPortraitSheet(event),
+          copy: () => this.clone(),
+          save: () => void this.saveToXML(),
+        };
     const actions = buildCharacterSheetMenu(
       {
-        portraits: () => this.openPortraitSheet(event),
-        copy: () => this.clone(),
-        save: () => void this.saveToXML(),
+        ...objectActions,
         collapseAll: () => this.setAllCardsFolded(true),
         expandAll: () => this.setAllCardsFolded(false),
       },
@@ -738,6 +755,9 @@ export class GameCharacterSheetComponent {
     effect(() => {
       const char = this.character;
       if (char) untracked(() => char.addExtendData());
+    });
+    effect(() => {
+      if (this.isReadOnly() && this.activeTab() === 'settings') this.activeTab.set('sheet');
     });
     // The row of sections follows the reader down the sheet: whichever card stands under the row
     // is the one lit up, and the row slides to keep it in sight.
@@ -795,6 +815,7 @@ export class GameCharacterSheetComponent {
 
   /** Switches the sheet between reading and editing, from its edit button. */
   toggleEditMode() {
+    if (this.isReadOnly()) return;
     this.isEdit.update((v) => !v);
   }
 
@@ -803,6 +824,7 @@ export class GameCharacterSheetComponent {
    * default name not already used beside it.
    */
   addDataElement() {
+    if (this.isReadOnly()) return;
     const obj = this.tabletopObject;
     if (obj?.detailDataElement) {
       const titleName = DataElement.createUniqueSiblingName(
@@ -839,6 +861,7 @@ export class GameCharacterSheetComponent {
    * offers to put it back, and forgets that it was open for editing.
    */
   deleteTopLevelElement(id: string) {
+    if (this.isReadOnly()) return;
     const char = this.character;
     if (!char?.detailDataElement) return;
     const el = char.detailDataElement.children.find((e) => e.identifier === id);
@@ -857,8 +880,7 @@ export class GameCharacterSheetComponent {
    * may not edit the table.
    */
   clone() {
-    if (!this.rolePermission.canEditTabletop) return;
-    if (this.tabletopObject instanceof Terrain && !this.rolePermission.canEditShared) return;
+    if (this.isReadOnly()) return;
     if (this.tabletopObject) cloneTabletopObject(this.tabletopObject);
   }
 
@@ -912,6 +934,7 @@ export class GameCharacterSheetComponent {
    * number keeps the current width.
    */
   chkPopWidth(width: number) {
+    if (this.isReadOnly()) return;
     const character = this.tabletopObject as GameCharacter;
     character.overViewWidth = clampInRange(width, 270, 800, character.overViewWidth);
   }
@@ -921,6 +944,7 @@ export class GameCharacterSheetComponent {
    * not a number keeps the current height.
    */
   chkPopMaxHeight(maxHeight: number) {
+    if (this.isReadOnly()) return;
     const character = this.tabletopObject as GameCharacter;
     character.overViewMaxHeight = clampInRange(maxHeight, 250, 1000, character.overViewMaxHeight);
   }
@@ -932,7 +956,7 @@ export class GameCharacterSheetComponent {
    */
   async saveToXML() {
     const obj = this.tabletopObject;
-    if (!obj || this.isSaving()) return;
+    if (!obj || this.isReadOnly() || this.isSaving()) return;
     this.isSaving.set(true);
     this.progressPercent.set(0);
     const element = obj.commonDataElement?.getFirstElementByName('name');
@@ -953,6 +977,7 @@ export class GameCharacterSheetComponent {
    * inventory or the graveyard.
    */
   setLocation(locationName: string) {
+    if (this.isReadOnly()) return;
     this.tabletopObject?.setLocation(locationName);
   }
 
@@ -999,6 +1024,7 @@ export class GameCharacterSheetComponent {
    * zero.
    */
   onChkLocationX(event: Event): void {
+    if (this.isReadOnly()) return;
     const character = this.tabletopObject as GameCharacter;
     const x = roundOr((event.target as HTMLInputElement).valueAsNumber, 0);
     character.location = { ...character.location, x };
@@ -1008,6 +1034,7 @@ export class GameCharacterSheetComponent {
    * zero.
    */
   onChkLocationY(event: Event): void {
+    if (this.isReadOnly()) return;
     const character = this.tabletopObject as GameCharacter;
     const y = roundOr((event.target as HTMLInputElement).valueAsNumber, 0);
     character.location = { ...character.location, y };
@@ -1054,6 +1081,7 @@ export class GameCharacterSheetComponent {
    */
   togglePopupDataElement(element: DataElement, event?: MouseEvent): void {
     event?.stopPropagation();
+    if (this.isReadOnly()) return;
     const char = this.character;
     if (!char) return;
 

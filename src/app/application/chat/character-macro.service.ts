@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { ActiveChatTabService } from '@axe/application/chat/active-chat-tab.service';
 import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { ObjectStore } from '@axe/core/sync/object-store';
 import { GameCharacter } from '@axe/domain/character/game-character';
 import { buildMacroMessage } from '@axe/domain/chat/character-macro';
@@ -45,6 +46,7 @@ export class CharacterMacroService {
   private readonly objectStore = inject(ObjectStore);
   private readonly chatMessageService = inject(ChatMessageService);
   private readonly activeChatTab = inject(ActiveChatTabService);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly t = inject(TRANSLATE_FN);
 
   /** The pieces on the table someone has marked, which a line aimed at a target speaks to. */
@@ -62,6 +64,7 @@ export class CharacterMacroService {
    * into.
    */
   send(character: GameCharacter, line: string, options: MacroSendOptions = {}): ChatMessage | null {
+    if (!this.characterPermission.canControl(character)) return null;
     const tab = this.resolveTab(options.tab);
     if (!tab) return null;
 
@@ -97,6 +100,7 @@ export class CharacterMacroService {
     line: string,
     options: MacroSendOptions = {}
   ): Promise<ChatMessage | null> {
+    if (!this.characterPermission.canControl(character)) return null;
     if (options.gameSystem !== undefined) return this.send(character, line, options);
 
     const gameType =
@@ -151,6 +155,7 @@ export class CharacterMacroService {
     character: GameCharacter | null,
     options: Pick<MacroSendOptions, 'tab' | 'gameType'> = {}
   ): Promise<ChatMessage | null> {
+    if (character && !this.characterPermission.canControl(character)) return null;
     const tab = this.resolveTab(options.tab);
     if (!tab) return null;
     const gameType =
@@ -169,6 +174,7 @@ export class CharacterMacroService {
    * A panel that has nobody picked still has things to announce, so the speaker may be absent.
    */
   announce(character: GameCharacter | null, text: string, options: MacroSendOptions = {}): ChatMessage | null {
+    if (character && !this.characterPermission.canControl(character)) return null;
     const tab = this.resolveTab(options.tab);
     if (!tab) return null;
 

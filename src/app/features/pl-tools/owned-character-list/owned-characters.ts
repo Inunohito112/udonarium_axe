@@ -18,20 +18,16 @@ export function selectOwnedCharacters(characters: readonly GameCharacter[], user
 }
 
 /**
- * Whose piece you may take up and work: your own, and the ones nobody has claimed.
+ * Whether a player may take up and work a piece: only one they own.
  *
- * An unclaimed piece is anyone's to move, so it is anyone's to point a hotbar at as well.
+ * Unclaimed pieces stay read-only until the game master assigns an owner.
  */
 export function isControllableByUser(character: GameCharacter, userId: string): boolean {
   if (character.location.name === GRAVEYARD_LOCATION) return false;
-  if (character.owner.length < 1) return true;
   return userId.length > 0 && character.owner === userId;
 }
 
-/**
- * The characters the user may take up, their own and the unclaimed, outside the graveyard and in
- * the order given.
- */
+/** The characters the player owns outside the graveyard, in the order given. */
 export function selectControllableCharacters(characters: readonly GameCharacter[], userId: string): GameCharacter[] {
   return characters.filter((character) => isControllableByUser(character, userId));
 }

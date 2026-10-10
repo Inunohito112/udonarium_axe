@@ -1,6 +1,7 @@
 <div
   class="text-ui-text bg-ui-panel flex h-full text-[13px]"
   [ngClass]="isCompact() ? 'h-auto! min-h-full flex-col' : ''"
+  [attr.inert]="canControlCharacter() ? null : ''"
 >
   <div
     class="border-ui-border-panel bg-ui-panel flex h-full w-[22em] max-w-[22em] min-w-[18em] flex-col overflow-x-hidden overflow-y-auto border-r border-solid"

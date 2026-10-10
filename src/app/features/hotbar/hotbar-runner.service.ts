@@ -6,6 +6,7 @@ import { EffectFieldService } from '@axe/application/effect/effect-field.service
 import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { CutInService } from '@axe/application/media/cut-in.service';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { RangeShapeInvokeService } from '@axe/application/tabletop/range-shape-invoke.service';
 import { TableFocusService } from '@axe/application/tabletop/table-focus.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
@@ -28,10 +29,9 @@ import { hotbarSlotNeedsCharacter } from '@axe/domain/hotbar/hotbar-slot-kind';
 import { hotbarSlotTag } from '@axe/domain/hotbar/hotbar-tag';
 import { CutIn } from '@axe/domain/media/cut-in';
 import { PresetSound, SoundEffect } from '@axe/domain/media/sound-effect';
-import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { RangeArea } from '@axe/domain/tabletop/range';
 import { DEFAULT_CHARACTER_PANEL } from '@axe/domain/ui/room-panel';
-import { findSlotActor } from '@axe/features/hotbar/hotbar-actor';
+import { findSlotActorAmong } from '@axe/features/hotbar/hotbar-actor';
 import { ObjectPanelService } from '@axe/features/panels/object-panel.service';
 
 /** Why a slot would not run. The bar says these to the reader, so each one has a word of its own. */
@@ -58,6 +58,7 @@ export class HotbarRunnerService {
   private readonly rangeShapeInvoke = inject(RangeShapeInvokeService);
   private readonly tabletopAction = inject(TabletopActionService);
   private readonly characterDice = inject(CharacterDiceService);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly objectPanels = inject(ObjectPanelService);
   private readonly panelService = inject(PanelService);
   private readonly tableFocus = inject(TableFocusService);
@@ -83,6 +84,9 @@ export class HotbarRunnerService {
   run(slot: HotbarSlot, character: GameCharacter | null, cell: HotbarCell): HotbarRunResult {
     const kind = slot.slotKind;
     if (hotbarSlotNeedsCharacter(kind) && !character) return failed('noCharacter');
+    if (hotbarSlotNeedsCharacter(kind) && !this.characterPermission.canControl(character)) {
+      return failed('noCharacter');
+    }
 
     switch (kind) {
       case 'chat':
@@ -229,7 +233,7 @@ export class HotbarRunnerService {
    */
   /** Takes down whatever a trial in the editor laid on the table, its cell belonging to no slot. */
   takeDownRehearsal(cell: HotbarCell, character: GameCharacter | null): boolean {
-    if (!character) return false;
+    if (!character || !this.characterPermission.canControl(character)) return false;
 
     const tag = hotbarSlotTag(Hotbar.ownerId, cell, character.identifier);
     const range = this.takeDownRange(tag);
@@ -389,8 +393,12 @@ export class HotbarRunnerService {
     if (!slot.characterIdentifier.trim() && !slot.characterName.trim()) return null;
 
     return (
-      findSlotActor(slot, this.objectStore.getObjects<GameCharacter>(GameCharacter), PeerCursor.myCursor?.userId ?? '')
-        ?.character ?? null
+      findSlotActorAmong(
+        slot,
+        this.objectStore
+          .getObjects<GameCharacter>(GameCharacter)
+          .filter((character) => this.characterPermission.canControl(character))
+      )?.character ?? null
     );
   }
 

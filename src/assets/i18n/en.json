@@ -3198,6 +3198,7 @@
       "settings": {
         "title": "Display settings",
         "typewriter": "Text speed",
+        "portraitVisibility": "Portraits",
         "portrait": "Portrait entrance",
         "textSize": "Text size",
         "motion": "Motion",
@@ -3206,10 +3207,18 @@
         "layout": "Layout",
         "asides": "Table talk"
       },
+      "portraitVisibility": {
+        "hidden": "Off",
+        "shown": "On"
+      },
       "direction": {
         "title": "Direction",
-        "stage": "Stage"
+        "stage": "Stage",
+        "chatHistory": "Chat history"
       },
+      "chatHistoryClear": "Clear all chat history",
+      "chatHistoryClearHint": "Removes every tab's history for everyone. This cannot be undone.",
+      "chatHistoryClearConfirm": "Clear the chat history from every tab? This cannot be undone.",
       "asides": {
         "skip": "Skip in the scene",
         "read": "Read it out",

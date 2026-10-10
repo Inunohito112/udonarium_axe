@@ -21,6 +21,7 @@ import { EffectPlaybackService } from '@axe/application/effect/effect-playback.s
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerCoordinate, PointerDeviceService } from '@axe/application/input/pointer-device.service';
 import { GameObjectInventoryService } from '@axe/application/inventory/game-object-inventory.service';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { DisclosureService } from '@axe/application/permission/disclosure.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
@@ -227,6 +228,7 @@ export class GameCharacterComponent {
   private readonly effectAutoPlay = inject(EffectAutoPlayService);
   private readonly effectPlayback = inject(EffectPlaybackService);
   private readonly rolePermission = inject(RolePermissionService);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly disclosureService = inject(DisclosureService);
   private readonly visionService = inject(VisionService);
 
@@ -325,6 +327,9 @@ export class GameCharacterComponent {
   readonly rootElementRef = viewChild<ElementRef<HTMLElement>>('root');
   private readonly movableRef = viewChild(MovableDirective);
 
+  /** Whether this seat may change or act through this piece. */
+  readonly canControl = computed(() => this.characterPermission.canControl(this.gameCharacter()));
+
   readonly isHiddenByVision = computed(() => {
     const char = this.gameCharacter();
     if (!char) return false;
@@ -342,7 +347,7 @@ export class GameCharacterComponent {
   }
   set isLock(isLock: boolean) {
     const char = this.gameCharacter();
-    if (char) char.isLock = isLock;
+    if (char && this.characterPermission.canControl(char)) char.isLock = isLock;
   }
 
   readonly name = computed(() => {
@@ -407,7 +412,7 @@ export class GameCharacterComponent {
   /** Sets the piece's height above the table in grid cells; does nothing while no character is bound. */
   setAltitude(altitude: number) {
     const char = this.gameCharacter();
-    if (char) char.altitude = altitude;
+    if (char && this.characterPermission.canControl(char)) char.altitude = altitude;
   }
   readonly imageFile = computed(
     () => {
@@ -429,7 +434,7 @@ export class GameCharacterComponent {
   }
   set rotate(rotate: number) {
     const char = this.gameCharacter();
-    if (char) char.rotate = rotate;
+    if (char && this.characterPermission.canControl(char)) char.rotate = rotate;
   }
   /**
    * The piece's tilt in degrees, read and written on the character and set by the roll handles; 0
@@ -441,7 +446,7 @@ export class GameCharacterComponent {
   }
   set roll(roll: number) {
     const char = this.gameCharacter();
-    if (char) char.roll = roll;
+    if (char && this.characterPermission.canControl(char)) char.roll = roll;
   }
   readonly rollSignal = computed(() => {
     const char = this.gameCharacter();
@@ -468,7 +473,7 @@ export class GameCharacterComponent {
   }
   set isDropShadow(isDropShadow: boolean) {
     const char = this.gameCharacter();
-    if (char) char.isDropShadow = isDropShadow;
+    if (char && this.characterPermission.canControl(char)) char.isDropShadow = isDropShadow;
   }
   /** Whether the piece shows its elevation label while it is raised or lowered by half a cell or more. */
   get isAltitudeIndicate(): boolean {
@@ -477,7 +482,7 @@ export class GameCharacterComponent {
   }
   set isAltitudeIndicate(isAltitudeIndicate: boolean) {
     const char = this.gameCharacter();
-    if (char) char.isAltitudeIndicate = isAltitudeIndicate;
+    if (char && this.characterPermission.canControl(char)) char.isAltitudeIndicate = isAltitudeIndicate;
   }
 
   protected readonly entryBounce = signal(true);
@@ -647,6 +652,7 @@ export class GameCharacterComponent {
    * facing has something to show, and hands the handles back.
    */
   readonly canTurn = computed(() => {
+    if (!this.canControl()) return false;
     if (this.isPoster()) return false;
     return !this.mode2dEnabled() || this.facingMark() !== 'none';
   });
@@ -1300,6 +1306,20 @@ export class GameCharacterComponent {
     const char = this.gameCharacter();
     if (!char || !this.disclosureService.canView(char)) return;
 
+    if (!this.characterPermission.canControl(char)) {
+      this.contextMenuService.open(
+        position,
+        [
+          {
+            name: this.translateFn('feature.character.contextMenu.showDetail'),
+            action: () => this.showDetail(char),
+          },
+        ],
+        this.name()
+      );
+      return;
+    }
+
     if (this.pieceContextMenu.openForSelection(char, this.gridSize, position)) return;
     const overlapEntries = buildOverlapContextMenu(
       this.tabletopOverlap,
@@ -1431,7 +1451,9 @@ export class GameCharacterComponent {
 
   /** Brings the piece to the top and plays the pick-up sound when a drag or turn starts. */
   onMove() {
-    this.gameCharacter()?.toTopmost();
+    const character = this.gameCharacter();
+    if (!this.characterPermission.canControl(character)) return;
+    character?.toTopmost();
     SoundEffect.play(PresetSound.piecePick);
   }
 
@@ -1468,7 +1490,7 @@ export class GameCharacterComponent {
     if (event.altKey) return;
     if (this.asksForTheOtherMove(event) === this.isStrictMove()) return;
     const character = this.gameCharacter();
-    if (!character || this.isLock) return;
+    if (!character || !this.characterPermission.canControl(character) || this.isLock) return;
     if (!this.movePlan.begin(character)) return;
     queueMicrotask(() => this.movableRef()?.cancel());
   }
@@ -1491,9 +1513,9 @@ export class GameCharacterComponent {
 
   /** Starts carrying the piece: raises it, shows how far it may move and fires its pick-up triggers. */
   onPickUp() {
-    this.onMove();
     const character = this.gameCharacter();
-    if (!character) return;
+    if (!character || !this.characterPermission.canControl(character)) return;
+    this.onMove();
     this.moveRangeService.show(character);
     this.triggerFire.pickedUp(character);
   }
@@ -1503,10 +1525,11 @@ export class GameCharacterComponent {
    * put-down triggers.
    */
   onPutDown() {
+    const character = this.gameCharacter();
+    if (!character || !this.characterPermission.canControl(character)) return;
     this.onMoved();
     this.moveRangeService.hide();
-    const character = this.gameCharacter();
-    if (character) this.triggerFire.putDown(character);
+    this.triggerFire.putDown(character);
   }
 
   /** Hides the move range once the press on the piece ends, whether or not it was dragged. */
@@ -1519,6 +1542,7 @@ export class GameCharacterComponent {
    * does not also start a drag.
    */
   checkKey(event: KeyboardEvent | MouseEvent) {
+    if (!this.canControl()) return;
     const key_event = (event || window.event) as KeyboardEvent | MouseEvent;
     const key_shift = key_event.shiftKey;
     const _key_ctrl = key_event.ctrlKey;
@@ -1542,7 +1566,7 @@ export class GameCharacterComponent {
   /** Marks the piece as one an effect is aimed at, or takes the mark off it. */
   toggleTarget(): void {
     const char = this.gameCharacter();
-    if (!char) return;
+    if (!char || !this.characterPermission.canControl(char)) return;
     char.targeted = !char.targeted;
     this.uiSignalService.notifyTargetChange(char.identifier, char.aliasName);
   }
@@ -1550,7 +1574,7 @@ export class GameCharacterComponent {
   /** Takes the aim mark off every character in the room, signalling each change so its marker redraws. */
   clearEveryTarget(): void {
     for (const object of this.objectStore.getObjects(GameCharacter)) {
-      if (!object.targeted) continue;
+      if (!object.targeted || !this.characterPermission.canControl(object)) continue;
       object.targeted = false;
       this.uiSignalService.notifyTargetChange(object.identifier, object.aliasName);
     }
@@ -1558,11 +1582,14 @@ export class GameCharacterComponent {
 
   /** Whether anything on the table is aimed at, which is what makes clearing worth offering. */
   private anythingTargeted(): boolean {
-    return this.objectStore.getObjects(GameCharacter).some((object) => object.targeted);
+    return this.objectStore
+      .getObjects(GameCharacter)
+      .some((object) => object.targeted && this.characterPermission.canControl(object));
   }
 
   /** Fires an effect from a character sheet. It is looked up by name, so the same row works in any room. */
   private invokeEffect(char: GameCharacter, name: string): void {
+    if (!this.characterPermission.canControl(char)) return;
     const preset = this.effectLibrary.findByName(name);
     if (preset) this.effectCast.fireFromCharacter(preset, char);
   }
@@ -1574,17 +1601,17 @@ export class GameCharacterComponent {
   }
 
   private showChatPalette(gameObject: GameCharacter) {
-    if (!this.disclosureService.canView(gameObject)) return;
+    if (!this.disclosureService.canView(gameObject) || !this.characterPermission.canControl(gameObject)) return;
     this.objectPanels.openChatPalette(gameObject);
   }
 
   private showRemoteController(gameObject: GameCharacter) {
-    if (!this.disclosureService.canView(gameObject)) return;
+    if (!this.disclosureService.canView(gameObject) || !this.characterPermission.canControl(gameObject)) return;
     this.objectPanels.openRemoteController(gameObject);
   }
 
   private showBuffEdit(gameObject: GameCharacter) {
-    if (!this.disclosureService.canView(gameObject)) return;
+    if (!this.disclosureService.canView(gameObject) || !this.characterPermission.canControl(gameObject)) return;
     const coordinate = this.pointerDeviceService.pointers[0];
     const option: PanelOption = {
       left: coordinate.x,
@@ -1598,6 +1625,7 @@ export class GameCharacterComponent {
   }
 
   private showLightSettings(gameObject: GameCharacter) {
+    if (!this.characterPermission.canControl(gameObject)) return;
     const coordinate = this.pointerDeviceService.pointers[0];
     const option: PanelOption = {
       title: this.translateFn('feature.character.contextMenu.lightSettings'),

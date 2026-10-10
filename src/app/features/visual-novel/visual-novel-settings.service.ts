@@ -30,6 +30,7 @@ const STORAGE_KEY = 'vn-settings';
 
 interface VnSettingsSnapshot {
   typewriterSpeed?: unknown;
+  showPortraits?: unknown;
   portraitAnimation?: unknown;
   textSize?: unknown;
   autoPlaySpeed?: unknown;
@@ -57,6 +58,7 @@ function pick<T extends string>(value: unknown, allowed: readonly T[], fallback:
 @Injectable({ providedIn: 'root' })
 export class VisualNovelSettingsService {
   private readonly _typewriterSpeed = signal<VnTypewriterSpeed>('normal');
+  private readonly _showPortraits = signal(false);
   private readonly _portraitAnimation = signal<VnPortraitAnimation>('slide');
   private readonly _textSize = signal<VnTextSize>('normal');
   private readonly _autoPlaySpeed = signal<number>(1);
@@ -67,6 +69,8 @@ export class VisualNovelSettingsService {
   private readonly _readPlayerAsides = signal(false);
 
   readonly typewriterSpeed = this._typewriterSpeed.asReadonly();
+  /** Whether character portraits are allowed onto the novel-mode stage. Off until explicitly enabled. */
+  readonly showPortraits = this._showPortraits.asReadonly();
   readonly portraitAnimation = this._portraitAnimation.asReadonly();
   readonly textSize = this._textSize.asReadonly();
   readonly autoPlaySpeed = this._autoPlaySpeed.asReadonly();
@@ -84,6 +88,12 @@ export class VisualNovelSettingsService {
   /** Sets how fast lines are typed out, `off` showing them whole; saved in this browser. */
   setTypewriterSpeed(speed: VnTypewriterSpeed): void {
     this._typewriterSpeed.set(speed);
+    this.save();
+  }
+
+  /** Shows or hides every portrait on the novel-mode stage; saved in this browser. */
+  setShowPortraits(show: boolean): void {
+    this._showPortraits.set(show);
     this.save();
   }
 
@@ -161,6 +171,8 @@ export class VisualNovelSettingsService {
     }
     if (!snapshot) return;
     this._typewriterSpeed.set(pick(snapshot.typewriterSpeed, VN_TYPEWRITER_SPEEDS, 'normal'));
+    // Missing and malformed values stay off: portraits appear only after an explicit opt-in.
+    this._showPortraits.set(snapshot.showPortraits === true);
     this._portraitAnimation.set(pick(snapshot.portraitAnimation, VN_PORTRAIT_ANIMATIONS, 'slide'));
     this._textSize.set(pick(snapshot.textSize, VN_TEXT_SIZES, 'normal'));
     this._autoPlaySpeed.set(clampSpeed(snapshot.autoPlaySpeed));
@@ -177,6 +189,7 @@ export class VisualNovelSettingsService {
         STORAGE_KEY,
         JSON.stringify({
           typewriterSpeed: this._typewriterSpeed(),
+          showPortraits: this._showPortraits(),
           portraitAnimation: this._portraitAnimation(),
           textSize: this._textSize(),
           autoPlaySpeed: this._autoPlaySpeed(),

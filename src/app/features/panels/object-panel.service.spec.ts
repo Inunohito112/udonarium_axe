@@ -4,6 +4,8 @@ import { PointerDeviceService } from '@axe/application/input/pointer-device.serv
 import { PanelService } from '@axe/application/ui/panel.service';
 import { SelectionSignalService } from '@axe/application/ui/selection-signal.service';
 import { GameCharacter } from '@axe/domain/character/game-character';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { Terrain } from '@axe/domain/tabletop/terrain';
 import { GameCharacterSheetComponent } from '@axe/features/character/game-character-sheet/game-character-sheet.component';
 import { ChatPaletteComponent } from '@axe/features/chat/chat-palette/chat-palette.component';
@@ -15,11 +17,13 @@ describe('ObjectPanelService', () => {
   let service: ObjectPanelService;
   let openLazy: ReturnType<typeof vi.fn>;
   let selectObject: ReturnType<typeof vi.spyOn>;
+  const originalCursor = PeerCursor.myCursor;
 
   const character = { identifier: 'c1', aliasName: 'character', name: 'Alice' } as GameCharacter;
   const terrain = { identifier: 't1', aliasName: 'terrain', name: 'Hill' } as Terrain;
 
   beforeEach(() => {
+    PeerCursor.myCursor = { userId: 'test-gm', role: PeerRole.GameMaster } as PeerCursor;
     openLazy = vi.fn();
     TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
     TestBed.overrideProvider(PanelService, { useValue: { openLazy } });
@@ -28,7 +32,10 @@ describe('ObjectPanelService', () => {
     service = TestBed.inject(ObjectPanelService);
   });
 
-  afterEach(() => TestBed.resetTestingModule());
+  afterEach(() => {
+    PeerCursor.myCursor = originalCursor;
+    TestBed.resetTestingModule();
+  });
 
   it('centres a sheet on the pointer and selects what it shows', async () => {
     service.openSheet(terrain, 'Terrain - Hill', { width: 600, height: 300 });
@@ -100,5 +107,20 @@ describe('ObjectPanelService', () => {
     expect(remote).toEqual(expect.objectContaining({ width: 700, height: 600, left: 750, top: 525 }));
     await expect(paletteLoad()).resolves.toBe(ChatPaletteComponent);
     await expect(remoteLoad()).resolves.toBe(RemoteControllerComponent);
+  });
+
+  it('does not open control panels for another players character', () => {
+    PeerCursor.myCursor = { userId: 'player-1', role: PeerRole.Player } as PeerCursor;
+    const other = {
+      identifier: 'other',
+      aliasName: 'character',
+      name: 'Other',
+      isOwnedBy: () => false,
+    } as unknown as GameCharacter;
+
+    service.openChatPalette(other);
+    service.openRemoteController(other);
+
+    expect(openLazy).not.toHaveBeenCalled();
   });
 });

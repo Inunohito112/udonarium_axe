@@ -47,6 +47,14 @@ describe('OwnedCharacterListPanelComponent', () => {
     expect(component.characters()).toEqual([mine]);
   });
 
+  it('does not let a player claim an unowned character', () => {
+    makeCharacter('未割り当てのAC', '', 'table');
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="claimable-character"]')).toBeNull();
+  });
+
   it('moves the camera only to one on the table', () => {
     const onTable = makeCharacter('卓上', 'me', 'table');
     const offTable = makeCharacter('手元', 'me', 'common');

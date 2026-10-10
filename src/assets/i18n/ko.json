@@ -3198,6 +3198,7 @@
       "settings": {
         "title": "표시 설정",
         "typewriter": "글자 보내기",
+        "portraitVisibility": "입화 표시",
         "portrait": "입화 등장 연출",
         "textSize": "글자 크기",
         "motion": "연출 세기",
@@ -3206,10 +3207,18 @@
         "layout": "표시 레이아웃",
         "asides": "플레이어의 잡담"
       },
+      "portraitVisibility": {
+        "hidden": "없음",
+        "shown": "있음"
+      },
       "direction": {
         "title": "진행",
-        "stage": "스테이지"
+        "stage": "스테이지",
+        "chatHistory": "채팅 기록"
       },
+      "chatHistoryClear": "채팅 기록 전체 삭제",
+      "chatHistoryClearHint": "모든 탭의 기록을 전원에게서 삭제합니다. 되돌릴 수 없습니다.",
+      "chatHistoryClearConfirm": "모든 탭의 채팅 기록을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
       "asides": {
         "skip": "본편에 내지 않기",
         "read": "그대로 읽기",

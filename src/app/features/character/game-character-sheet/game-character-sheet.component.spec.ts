@@ -15,6 +15,7 @@ describe('GameCharacterSheetComponent', () => {
   let component: GameCharacterSheetComponent;
   let fixture: ComponentFixture<GameCharacterSheetComponent>;
   let pointerDeviceService: PointerDeviceService;
+  const originalCursor = PeerCursor.myCursor;
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
@@ -24,13 +25,69 @@ describe('GameCharacterSheetComponent', () => {
   });
 
   beforeEach(() => {
+    PeerCursor.myCursor = {
+      identifier: 'test-gm-cursor',
+      userId: 'test-gm',
+      role: PeerRole.GameMaster,
+    } as PeerCursor;
     fixture = TestBed.createComponent(GameCharacterSheetComponent);
     component = fixture.componentInstance;
     pointerDeviceService = TestBed.inject(PointerDeviceService);
   });
 
+  afterEach(() => {
+    PeerCursor.myCursor = originalCursor;
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('shows another players character to a player as details only', () => {
+    PeerCursor.myCursor = {
+      identifier: 'player-1-cursor',
+      userId: 'player-1',
+      role: PeerRole.Player,
+    } as PeerCursor;
+    const character = GameCharacter.create('他人のAC', 1, '');
+    character.owner = 'player-2';
+    character.addExtendData();
+    component.tabletopObject = character;
+
+    try {
+      fixture.detectChanges();
+      const beforeCount = character.detailDataElement?.children.length ?? 0;
+      component.addDataElement();
+
+      expect(component.isReadOnly()).toBe(true);
+      expect(character.detailDataElement?.children.length).toBe(beforeCount);
+      expect(fixture.nativeElement.textContent).not.toContain('コピー');
+      expect(fixture.nativeElement.querySelector('game-character-settings-tab')).toBeNull();
+    } finally {
+      character.destroy();
+    }
+  });
+
+  it('keeps a players own character editable', () => {
+    PeerCursor.myCursor = {
+      identifier: 'player-1-cursor',
+      userId: 'player-1',
+      role: PeerRole.Player,
+    } as PeerCursor;
+    const character = GameCharacter.create('自分のAC', 1, '');
+    character.owner = 'player-1';
+    character.addExtendData();
+    component.tabletopObject = character;
+
+    try {
+      const beforeCount = character.detailDataElement?.children.length ?? 0;
+      component.addDataElement();
+
+      expect(component.isReadOnly()).toBe(false);
+      expect(character.detailDataElement?.children.length).toBe(beforeCount + 1);
+    } finally {
+      character.destroy();
+    }
   });
 
   describe('the width a card is set to', () => {
@@ -183,6 +240,7 @@ describe('GameCharacterSheetComponent', () => {
   });
 
   it('lets a colour be picked for the face text and keeps it from a hidden card', () => {
+    PeerCursor.myCursor.role = PeerRole.Player;
     const card = Card.create('Coloured card', 'front.png', 'back.png');
     component.tabletopObject = card;
     const picker = document.createElement('input');
@@ -207,6 +265,7 @@ describe('GameCharacterSheetComponent', () => {
   });
 
   it('does not put a hidden card face text into the editing DOM', () => {
+    PeerCursor.myCursor.role = PeerRole.Player;
     const card = Card.create('Hidden card', 'front.png', 'back.png');
     card.faceText = 'secret text';
     card.state = CardState.BACK;
@@ -225,6 +284,7 @@ describe('GameCharacterSheetComponent', () => {
   });
 
   it('ignores text updates while the card face is hidden', () => {
+    PeerCursor.myCursor.role = PeerRole.Player;
     const card = Card.create('Hidden card', 'front.png', 'back.png');
     card.faceText = 'original secret';
     card.state = CardState.BACK;
@@ -241,6 +301,7 @@ describe('GameCharacterSheetComponent', () => {
   });
 
   it('keeps another users claimed face out of the editor even if its state is front', () => {
+    PeerCursor.myCursor.role = PeerRole.Player;
     const card = Card.create('Claimed card', 'front.png', 'back.png');
     card.faceText = 'claimed secret';
     card.owner = 'another-user';

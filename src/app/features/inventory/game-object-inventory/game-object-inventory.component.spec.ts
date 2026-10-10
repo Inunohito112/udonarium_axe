@@ -32,6 +32,7 @@ describe('GameObjectInventoryComponent', () => {
 
   let component: GameObjectInventoryComponent;
   let fixture: ComponentFixture<GameObjectInventoryComponent>;
+  const originalCursor = PeerCursor.myCursor;
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
@@ -41,6 +42,11 @@ describe('GameObjectInventoryComponent', () => {
   });
 
   beforeEach(() => {
+    PeerCursor.myCursor = {
+      role: PeerRole.GameMaster,
+      identifier: 'test-gm-cursor',
+      userId: 'test-gm',
+    } as PeerCursor;
     // The way of reading it is remembered per browser, and the narrowing is shared by every
     // inventory window, so a spec that changes either would hand the next one its leavings.
     localStorage.removeItem('ui-inventory-view');
@@ -52,6 +58,7 @@ describe('GameObjectInventoryComponent', () => {
   afterEach(() => {
     localStorage.removeItem('ui-inventory-view');
     (Config as unknown as { _instance: Config | undefined })._instance = undefined;
+    PeerCursor.myCursor = originalCursor;
   });
 
   it('should create', () => {
@@ -1465,12 +1472,12 @@ describe('GameObjectInventoryComponent', () => {
         PeerCursor.myCursor = originalCursor;
       });
 
-      it('keeps the panel still when a player presses a row they can file into a folder', async () => {
+      it('lets a player move the panel by an unowned row they cannot operate', async () => {
         beSeat(PeerRole.Player);
         putInShared('ゴブリン');
         component.selectTab.set('common');
 
-        for (const type of presses) expect(await pressReachesPanel(type), type).toBe(false);
+        for (const type of presses) expect(await pressReachesPanel(type), type).toBe(true);
       });
 
       it('keeps the panel still when the game master presses a row they can hand over', async () => {
@@ -1550,6 +1557,35 @@ describe('GameObjectInventoryComponent', () => {
       row.dispatchEvent(new MouseEvent('dblclick'));
 
       expect(focusOn).toHaveBeenCalledWith(piece);
+    });
+
+    it('offers a player only the details of another users character', () => {
+      PeerCursor.myCursor = {
+        role: PeerRole.Player,
+        identifier: 'player-1-cursor',
+        userId: 'player-1',
+      } as PeerCursor;
+      const piece = onTheWall();
+      piece.owner = 'player-2';
+      const focusOn = spyOnFocus();
+      TestBed.inject(PointerDeviceService).primeForContextMenu(0, 0);
+      const open = vi.spyOn(TestBed.inject(ContextMenuService), 'open').mockImplementation(() => undefined);
+
+      try {
+        component.onContextMenu(new MouseEvent('contextmenu'), piece);
+        const actions = open.mock.calls[0]?.[1] ?? [];
+        expect(actions.map((action) => action.name)).toEqual([
+          TestBed.inject(TRANSLATE_FN)('feature.character.contextMenu.showDetail'),
+        ]);
+
+        (component as unknown as { focusToObject(e: Event, o: GameCharacter): void }).focusToObject(
+          new MouseEvent('dblclick'),
+          piece
+        );
+        expect(focusOn).not.toHaveBeenCalled();
+      } finally {
+        piece.destroy();
+      }
     });
   });
 });

@@ -15,6 +15,7 @@ import { SystemAvatarKind, SystemAvatarService } from '@axe/application/chat/sys
 import { DiceBotCatalogService } from '@axe/application/dice/dice-bot-catalog.service';
 import { LanguageService } from '@axe/application/i18n/language.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { ImageService } from '@axe/application/storage/image.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { VisionService } from '@axe/application/tabletop/vision.service';
@@ -148,6 +149,7 @@ type VisualNovelPopover = 'soundBoard' | 'slotGuide' | 'palette' | 'shortcutHelp
   ],
 })
 export class VisualNovelOverlayComponent {
+  private readonly characterPermission = inject(CharacterPermissionService);
   protected readonly isCompact = inject(ViewportService).isCompact;
   protected readonly keyboardInset = inject(KeyboardInsetService).inset;
   protected readonly isControlsOpen = signal(false);
@@ -252,7 +254,7 @@ export class VisualNovelOverlayComponent {
     return this._sendFrom();
   }
   set sendFrom(identifier: string) {
-    this._sendFrom.set(identifier);
+    if (this.canUseSpeaker(identifier)) this._sendFrom.set(identifier);
   }
 
   /**
@@ -393,6 +395,7 @@ export class VisualNovelOverlayComponent {
   }
 
   readonly stageCharacters = computed<VnStageCharacter[]>(() => {
+    if (!this.settings.showPortraits()) return [];
     this.objectChange.fileVersion();
     this.objectChange.collectionOf(GameCharacter.aliasName)();
     this.language.currentLang();
@@ -626,7 +629,8 @@ export class VisualNovelOverlayComponent {
 
   /**
    * The characters this seat may speak as. A piece on the table it cannot see is left out, as in
-   * the chat; the one already chosen stays.
+   * the chat; the one already chosen stays. A player is limited further to characters they own,
+   * while the game master keeps the whole cast.
    */
   readonly gameCharacters = computed(() => {
     this.objectChange.collectionOf(GameCharacter.aliasName)();
@@ -636,9 +640,26 @@ export class VisualNovelOverlayComponent {
     const chosen = this.sendFrom;
     return all.filter(
       (character) =>
-        allowsChat(character, myPeerId) && (character.identifier === chosen || this.vision.mayBeListed(character))
+        this.canUseCharacter(character) &&
+        allowsChat(character, myPeerId) &&
+        (character.identifier === chosen || this.vision.mayBeListed(character))
     );
   });
+
+  /** The game master may use any character; a player may use only one carrying their user id. */
+  private canUseCharacter(character: GameCharacter): boolean {
+    return this.characterPermission.canControl(character);
+  }
+
+  /** Whether an identifier is a character this seat may currently use, or the local user's own cursor. */
+  private canUseSpeaker(identifier: string): boolean {
+    const object = this.objectStore.get(identifier);
+    if (object instanceof GameCharacter) {
+      return this.gameCharacters().some((character) => character.identifier === object.identifier);
+    }
+    const cursor = PeerCursor.myCursor;
+    return cursor != null && identifier === cursor.identifier;
+  }
 
   /**
    * Who a line can be sent as.
@@ -650,10 +671,7 @@ export class VisualNovelOverlayComponent {
    */
   readonly speakerOptions = computed<{ identifier: string; name: string }[]>(() => {
     const characters = this.gameCharacters();
-    const current = this.objectStore.get(this._sendFrom());
-    const cast =
-      current instanceof GameCharacter && !characters.includes(current) ? [current, ...characters] : characters;
-    const options = cast.map((character) => ({ identifier: character.identifier, name: character.name }));
+    const options = characters.map((character) => ({ identifier: character.identifier, name: character.name }));
     const cursor = PeerCursor.myCursor;
     if (this.isGameMaster() && cursor) {
       options.unshift({ identifier: cursor.identifier, name: cursor.name + this.t('feature.chat.input.you') });
@@ -662,10 +680,8 @@ export class VisualNovelOverlayComponent {
   });
 
   readonly speakerPalette = computed(() => {
-    this.objectChange.collectionOf(GameCharacter.aliasName)();
-    const object = this.objectStore.get(this._sendFrom());
-    if (!(object instanceof GameCharacter)) return [] as string[];
-    this.objectChange.versionOf(object.identifier)();
+    const object = this.speakerCharacter();
+    if (!object) return [] as string[];
     return object.chatPalette?.getPalette() ?? [];
   });
 
@@ -676,6 +692,9 @@ export class VisualNovelOverlayComponent {
     return canRoleSpeakTab(tab, PeerCursor.myRole);
   });
 
+  /** Whether the selected speaker still belongs to the set this seat is allowed to use. */
+  readonly canUseCurrentSpeaker = computed(() => this.canUseSpeaker(this._sendFrom()));
+
   /**
    * A method rather than a computed: it hands back the same instance every time, so a computed
    * of it would compare equal and whatever read it would never hear about a change.
@@ -685,6 +704,8 @@ export class VisualNovelOverlayComponent {
     const object = this.objectStore.get(this._sendFrom());
     if (!(object instanceof GameCharacter)) return null;
     this.objectChange.versionOf(object.identifier)();
+    if (!this.canUseCharacter(object)) return null;
+    if (!allowsChat(object, PeerCursor.myCursor?.peerId ?? '')) return null;
     return object;
   }
 
@@ -714,11 +735,9 @@ export class VisualNovelOverlayComponent {
 
   readonly speakerPortrait = computed(() => {
     this.objectChange.fileVersion();
-    this.objectChange.collectionOf(GameCharacter.aliasName)();
     this._portraitTick();
-    const object = this.objectStore.get(this._sendFrom());
-    if (!(object instanceof GameCharacter)) return null;
-    this.objectChange.versionOf(object.identifier)();
+    const object = this.speakerCharacter();
+    if (!object) return null;
     const children = object.imageDataElement?.children ?? [];
     if (children.length < 1) return null;
     const index = Math.min(Math.max(0, object.selectedPortraitIndex), children.length - 1);
@@ -740,8 +759,8 @@ export class VisualNovelOverlayComponent {
    * Stops at either end. The choice is this user's own and is not shared with the room.
    */
   stepSpeakerPortrait(direction: number): void {
-    const object = this.objectStore.get(this._sendFrom());
-    if (!(object instanceof GameCharacter)) return;
+    const object = this.speakerCharacter();
+    if (!object) return;
     const count = object.imageDataElement?.children.length ?? 0;
     const next = object.selectedPortraitIndex + direction;
     if (next < 0 || next >= count) return;
@@ -770,10 +789,8 @@ export class VisualNovelOverlayComponent {
   }
 
   readonly speakerFlip = computed(() => {
-    this.objectChange.collectionOf(GameCharacter.aliasName)();
-    const object = this.objectStore.get(this._sendFrom());
-    if (!(object instanceof GameCharacter)) return null;
-    this.objectChange.versionOf(object.identifier)();
+    const object = this.speakerCharacter();
+    if (!object) return null;
     const element = object.detailDataElement?.getFirstElementByName('FLIP');
     return element ? Number(element.value) === 1 : false;
   });
@@ -785,8 +802,8 @@ export class VisualNovelOverlayComponent {
    * position when it has none.
    */
   toggleSpeakerFlip(): void {
-    const object = this.objectStore.get(this._sendFrom());
-    if (!(object instanceof GameCharacter)) return;
+    const object = this.speakerCharacter();
+    if (!object) return;
     let element = object.detailDataElement?.getFirstElementByName('FLIP') ?? null;
     if (!element) {
       const posElement = object.detailDataElement?.getFirstElementByName('POS');
@@ -817,9 +834,9 @@ export class VisualNovelOverlayComponent {
     effect(() => {
       const characters = this.gameCharacters();
       const current = untracked(() => this._sendFrom());
-      const object = untracked(() => this.objectStore.get(current));
-      if (object instanceof GameCharacter) return;
-      this._sendFrom.set(characters[0]?.identifier ?? '');
+      if (this.canUseSpeaker(current)) return;
+      const cursor = PeerCursor.myCursor;
+      this._sendFrom.set(characters[0]?.identifier ?? cursor?.identifier ?? '');
     });
     this.paletteRegistry.register(this.paletteHandle);
     this.destroyRef.onDestroy(() => this.paletteRegistry.unregister(this.paletteHandle));
@@ -1061,8 +1078,7 @@ export class VisualNovelOverlayComponent {
 
   private readonly paletteHandle: ChatPaletteHandle = {
     setCharacterById: (identifier: string) => {
-      const object = this.objectStore.get(identifier);
-      if (object instanceof GameCharacter) this._sendFrom.set(identifier);
+      this.sendFrom = identifier;
     },
   };
 
@@ -1082,8 +1098,8 @@ export class VisualNovelOverlayComponent {
     }
     this.sheetPanelService = null;
     this.sheetOpen.set(false);
-    const object = this.objectStore.get(this._sendFrom());
-    if (!(object instanceof GameCharacter)) return;
+    const object = this.speakerCharacter();
+    if (!object) return;
     this.closePopovers();
     const title = sheetPanelTitle(this.t('feature.character.panel.sheet'), object.name);
     const option: PanelOption = {
@@ -1102,11 +1118,13 @@ export class VisualNovelOverlayComponent {
 
   /** Opens or closes the balloon listing the speaker's chat palette. */
   togglePalette(): void {
+    if (!this.speakerCharacter()) return;
     this.togglePopover('palette');
   }
 
   /** Puts a chat palette line into the input and closes the palette. */
   pickPaletteLine(line: string): void {
+    if (!this.speakerPalette().includes(line)) return;
     this.text.set(line);
     this.closePopovers();
   }
@@ -1222,10 +1240,14 @@ export class VisualNovelOverlayComponent {
     const text = this.text().trim();
     if (!tab || text.length < 1 || !this.canSpeak()) return;
     let sendFrom = this._sendFrom();
-    if (!this.objectStore.get(sendFrom)) {
+    if (!this.canUseSpeaker(sendFrom)) {
+      // An existing but forbidden character is never silently replaced: a stale or forged
+      // selection must not turn into an action by somebody else's piece.
+      if (this.objectStore.get(sendFrom)) return;
       sendFrom = this.gameCharacters()[0]?.identifier ?? PeerCursor.myCursor?.identifier ?? '';
       this._sendFrom.set(sendFrom);
     }
+    if (!this.canUseSpeaker(sendFrom)) return;
     const speaker = this.objectStore.get(sendFrom);
     let evaluated = text;
     if (speaker instanceof GameCharacter) {
@@ -1235,6 +1257,8 @@ export class VisualNovelOverlayComponent {
     const emote = encodeVnEmote({ ...this.emoteSelection.emote(), flipped: this.speakerFlip() === true });
     const attachedSe = this.attachedSe();
     DiceBot.gameSystemForLineAsync(this.gameType, evaluated).then((gameSystem) => {
+      // Dice resolution is asynchronous. Ownership or role may have changed while it was running.
+      if (!this.canUseSpeaker(sendFrom) || !this.canSpeak()) return;
       this.chatMessageService.sendMessage(
         tab,
         evaluated,

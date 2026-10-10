@@ -8,6 +8,7 @@ import { ChatTabList } from '@axe/domain/chat/chat-tab-list';
 import { DiceBot } from '@axe/domain/dice/dice-bot';
 import { Config } from '@axe/domain/peer/config';
 import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
 describe('CharacterMacroService', () => {
@@ -15,6 +16,7 @@ describe('CharacterMacroService', () => {
   let chatMessageService: ChatMessageService;
   let sendMessage: ReturnType<typeof vi.spyOn>;
   let tab: ChatTab;
+  const originalCursor = PeerCursor.myCursor;
 
   function character(name: string): GameCharacter {
     return GameCharacter.create(name, 1, '');
@@ -27,6 +29,7 @@ describe('CharacterMacroService', () => {
   }
 
   beforeEach(() => {
+    PeerCursor.myCursor = { userId: 'test-gm', role: PeerRole.GameMaster } as PeerCursor;
     TestBed.configureTestingModule({ providers: [...TEST_PROVIDERS] });
     service = TestBed.inject(CharacterMacroService);
     chatMessageService = TestBed.inject(ChatMessageService);
@@ -48,6 +51,7 @@ describe('CharacterMacroService', () => {
     // The room outlives the fixture, so a system left on it turns up in whatever runs next.
     Config.instance.defaultDiceBot = '';
     (ChatTabList as unknown as { _instance: ChatTabList | undefined })._instance = undefined;
+    PeerCursor.myCursor = originalCursor;
   });
 
   it('speaks as the character, into the tab it was given', () => {
@@ -60,6 +64,15 @@ describe('CharacterMacroService', () => {
     expect(sentTab).toBe(tab);
     expect(text).toBe('こんばんは');
     expect(sendFrom).toBe(speaker.identifier);
+  });
+
+  it('does not speak as another players character', () => {
+    PeerCursor.myCursor = { userId: 'player-1', role: PeerRole.Player } as PeerCursor;
+    const speaker = character('他人のAC');
+    speaker.owner = 'player-2';
+
+    expect(service.send(speaker, '送信しない', { tab })).toBeNull();
+    expect(sendMessage).not.toHaveBeenCalled();
   });
 
   it('falls back to the tab the reader is on, then to the first one there is', () => {

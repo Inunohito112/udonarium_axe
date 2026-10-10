@@ -53,9 +53,9 @@ describe('owned-characters', () => {
   });
 
   describe('isControllableByUser', () => {
-    it('takes your own piece and one nobody has claimed', () => {
+    it('takes only your own piece', () => {
       expect(isControllableByUser(makeCharacter('me', 'table'), 'me')).toBe(true);
-      expect(isControllableByUser(makeCharacter('', 'table'), 'me')).toBe(true);
+      expect(isControllableByUser(makeCharacter('', 'table'), 'me')).toBe(false);
     });
 
     it('leaves the piece of another, and anything buried, alone', () => {
@@ -64,20 +64,20 @@ describe('owned-characters', () => {
       expect(isControllableByUser(makeCharacter('me', 'graveyard'), 'me')).toBe(false);
     });
 
-    it('still offers an unclaimed piece to someone the room does not know yet', () => {
-      expect(isControllableByUser(makeCharacter('', 'table'), '')).toBe(true);
+    it('offers nothing without a user', () => {
+      expect(isControllableByUser(makeCharacter('', 'table'), '')).toBe(false);
       expect(isControllableByUser(makeCharacter('me', 'table'), '')).toBe(false);
     });
   });
 
   describe('selectControllableCharacters', () => {
-    it('keeps yours and the unclaimed, in the order they were in', () => {
+    it('keeps only yours, in the order they were in', () => {
       const mine = makeCharacter('me', 'table');
       const unclaimed = makeCharacter('', 'table');
       const theirs = makeCharacter('other', 'table');
       const buried = makeCharacter('', 'graveyard');
 
-      expect(selectControllableCharacters([mine, unclaimed, theirs, buried], 'me')).toEqual([mine, unclaimed]);
+      expect(selectControllableCharacters([mine, unclaimed, theirs, buried], 'me')).toEqual([mine]);
     });
   });
 

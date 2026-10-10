@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { getMyPeerId } from '@axe/core/network/peer-context-source';
@@ -32,10 +33,11 @@ export class GameCharacterSettingsTabComponent {
   private readonly objectChange = inject(ObjectChangeService);
   private readonly pointerDeviceService = inject(PointerDeviceService);
   private readonly rolePermission = inject(RolePermissionService);
+  private readonly characterPermission = inject(CharacterPermissionService);
 
   readonly isReadOnly = computed(() => {
     this.objectChange.trackMyCursor();
-    return !this.rolePermission.canEditTabletop;
+    return !this.rolePermission.canEditTabletop || !this.characterPermission.canControl(this.character());
   });
 
   readonly character = input.required<GameCharacter>();
@@ -64,6 +66,7 @@ export class GameCharacterSettingsTabComponent {
 
   /** Turns the fixed piece image height on or off, from the settings tab's checkbox. */
   setSpecifyKomaImageFlag(value: boolean): void {
+    if (this.isReadOnly()) return;
     const character = this.character();
     character.specifyKomaImageFlag = value;
     this.objectChange.notifyChanged(character.identifier);
@@ -76,6 +79,7 @@ export class GameCharacterSettingsTabComponent {
    * views, and the pointer's dragging flag is cleared.
    */
   chkKomaSize(height: number): void {
+    if (this.isReadOnly()) return;
     const character = this.character();
     character.komaImageHeight = clampInRange(Number(height), 50, 750, character.komaImageHeight);
     this.objectChange.notifyChanged(character.identifier);
@@ -92,18 +96,21 @@ export class GameCharacterSettingsTabComponent {
    * empty field reads as zero.
    */
   onChkAltitude(event: Event): void {
+    if (this.isReadOnly()) return;
     const character = this.character();
     character.altitude = roundOr((event.target as HTMLInputElement).valueAsNumber, 0);
   }
 
   /** Sets the piece's rotation from the number field; an empty field reads as zero. */
   onChkRotate(event: Event): void {
+    if (this.isReadOnly()) return;
     const character = this.character();
     character.rotate = floatOr((event.target as HTMLInputElement).valueAsNumber, 0);
   }
 
   /** Turns the piece back to no rotation, from the reset button next to the rotation field. */
   resetRotate(): void {
+    if (this.isReadOnly()) return;
     const character = this.character();
     character.rotate = 0;
     SoundEffect.play(PresetSound.sweep);
@@ -114,12 +121,14 @@ export class GameCharacterSettingsTabComponent {
    * reads as zero.
    */
   onChkRoll(event: Event): void {
+    if (this.isReadOnly()) return;
     const character = this.character();
     character.roll = floatOr((event.target as HTMLInputElement).valueAsNumber, 0);
   }
 
   /** Stands the piece back up with no roll, from the reset button next to the roll field. */
   resetRoll(): void {
+    if (this.isReadOnly()) return;
     const character = this.character();
     character.roll = 0;
     SoundEffect.play(PresetSound.sweep);
@@ -130,6 +139,7 @@ export class GameCharacterSettingsTabComponent {
    * anything not a number keeps the current width.
    */
   onChkPopWidth(event: Event): void {
+    if (this.isReadOnly()) return;
     const character = this.character();
     character.overViewWidth = clampInRange(
       (event.target as HTMLInputElement).valueAsNumber,
@@ -144,6 +154,7 @@ export class GameCharacterSettingsTabComponent {
    * 1000 pixels; anything not a number keeps the current height.
    */
   onChkPopMaxHeight(event: Event): void {
+    if (this.isReadOnly()) return;
     const character = this.character();
     character.overViewMaxHeight = clampInRange(
       (event.target as HTMLInputElement).valueAsNumber,
@@ -158,6 +169,7 @@ export class GameCharacterSettingsTabComponent {
    * the sheet, which moves the piece there.
    */
   onSetLocation(event: Event): void {
+    if (this.isReadOnly()) return;
     this.locationChange.emit((event.target as HTMLSelectElement).value);
   }
 
@@ -168,7 +180,7 @@ export class GameCharacterSettingsTabComponent {
    * nothing, and an unchanged path is not written.
    */
   onSetFolder(event: Event): void {
-    if (!this.rolePermission.canEditTabletop) return;
+    if (this.isReadOnly()) return;
     const character = this.character();
     const input = event.target as HTMLInputElement;
     const folderName = normalizeFolderPath(input.value);
@@ -184,6 +196,7 @@ export class GameCharacterSettingsTabComponent {
    * button, and tells the room when any were converted.
    */
   convertLegacyCheckTables(): void {
+    if (this.isReadOnly()) return;
     const char = this.character();
     if (!char.detailDataElement) return;
     const convertedCount = convertLegacyCheckTableElements(char.detailDataElement);
@@ -207,6 +220,7 @@ export class GameCharacterSettingsTabComponent {
    * Does nothing when the character has no sheet or the template finds no place in it.
    */
   addTemplateToSheet(template: DataElement): void {
+    if (this.isReadOnly()) return;
     const char = this.character();
     if (!char.detailDataElement) return;
     const placed = appendElementTemplateToSheet(char.detailDataElement, template);

@@ -3198,6 +3198,7 @@
       "settings": {
         "title": "表示設定",
         "typewriter": "文字送り",
+        "portraitVisibility": "立ち絵表示",
         "portrait": "立ち絵の登場演出",
         "textSize": "文字サイズ",
         "motion": "演出の強さ",
@@ -3206,10 +3207,18 @@
         "layout": "表示レイアウト",
         "asides": "プレイヤーの雑談"
       },
+      "portraitVisibility": {
+        "hidden": "なし",
+        "shown": "あり"
+      },
       "direction": {
         "title": "進行",
-        "stage": "ステージ"
+        "stage": "ステージ",
+        "chatHistory": "チャット履歴"
       },
+      "chatHistoryClear": "チャット履歴を全削除",
+      "chatHistoryClearHint": "全タブの履歴を全員から削除します。元には戻せません。",
+      "chatHistoryClearConfirm": "全タブのチャット履歴を削除します。この操作は元に戻せません。削除しますか？",
       "asides": {
         "skip": "ノベルに出さない",
         "read": "そのまま読む",

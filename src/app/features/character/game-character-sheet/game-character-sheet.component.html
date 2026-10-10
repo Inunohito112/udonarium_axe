@@ -29,12 +29,14 @@
       [attr.data-narrow]="narrowLayout() ? '' : null"
       [attr.data-compact]="compactEditing() ? '' : null"
     >
-      <div
-        class="border-ui-border-panel [&_button]:bg-ui-elevated [&_button]:border-ui-border-panel [&_button]:text-ui-muted [&_button]:hover:bg-ui-hover [&_button]:hover:text-ui-text [&_button]:rounded-ui-sm mb-1 flex flex-wrap items-center gap-1 border-b border-solid px-1.5 pt-1.5 pb-1 group-data-narrow/sheet:hidden [&_button]:inline-flex [&_button]:cursor-pointer [&_button]:items-center [&_button]:gap-0.75 [&_button]:border [&_button]:border-solid [&_button]:px-2 [&_button]:py-0.75 [&_button]:text-[0.8em] [&_button]:whitespace-nowrap [&_button]:transition-[background,color]"
-      >
-        <button (click)="clone()">{{ 'feature.inventory.sheet.copy' | transloco }}</button>
-        <button (click)="saveToXML()">{{ 'feature.inventory.sheet.save' | transloco }}</button>
-      </div>
+      @if (!isReadOnly()) {
+        <div
+          class="border-ui-border-panel [&_button]:bg-ui-elevated [&_button]:border-ui-border-panel [&_button]:text-ui-muted [&_button]:hover:bg-ui-hover [&_button]:hover:text-ui-text [&_button]:rounded-ui-sm mb-1 flex flex-wrap items-center gap-1 border-b border-solid px-1.5 pt-1.5 pb-1 group-data-narrow/sheet:hidden [&_button]:inline-flex [&_button]:cursor-pointer [&_button]:items-center [&_button]:gap-0.75 [&_button]:border [&_button]:border-solid [&_button]:px-2 [&_button]:py-0.75 [&_button]:text-[0.8em] [&_button]:whitespace-nowrap [&_button]:transition-[background,color]"
+        >
+          <button (click)="clone()">{{ 'feature.inventory.sheet.copy' | transloco }}</button>
+          <button (click)="saveToXML()">{{ 'feature.inventory.sheet.save' | transloco }}</button>
+        </div>
+      }
       <div
         class="hidden items-center gap-3 px-3 pt-3 pb-2 group-data-narrow/sheet:flex"
         data-own-mobile-layout
@@ -44,6 +46,7 @@
           type="button"
           class="border-ui-border-panel bg-ui-elevated text-ui-dim active:border-ui-accent flex size-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-solid p-0"
           [attr.aria-label]="'feature.inventory.sheet.portraitsManage' | transloco"
+          [disabled]="isReadOnly()"
           (click)="openPortraitSheet($event)"
           data-testid="sheet-portrait-button"
         >
@@ -70,7 +73,9 @@
           <i class="material-icons text-[24px]!">more_vert</i>
         </button>
       </div>
-      <disclosure-control [object]="char" />
+      @if (!isReadOnly()) {
+        <disclosure-control [object]="char" />
+      }
       <div class="border-ui-border-panel bg-ui-surface flex items-end gap-px border-b border-solid px-2 pt-1.5">
         <button
           class="hover:text-ui-text text-ui-muted border-ui-border-panel -mb-px inline-flex cursor-pointer items-center gap-1 rounded-t-xs border border-solid bg-[color-mix(in_srgb,var(--ui-elevated)_58%,var(--ui-surface))] px-3.5 py-1.5 text-[0.8em] font-semibold whitespace-nowrap transition-[background,border-color,color,box-shadow] hover:bg-[color-mix(in_srgb,var(--ui-elevated)_82%,var(--ui-surface))] [&_.material-icons]:text-[14px]!"
@@ -85,19 +90,21 @@
         >
           <i class="material-icons">article</i>{{ 'feature.inventory.sheet.tabSheet' | transloco }}
         </button>
-        <button
-          class="hover:text-ui-text text-ui-muted border-ui-border-panel -mb-px inline-flex cursor-pointer items-center gap-1 rounded-t-xs border border-solid bg-[color-mix(in_srgb,var(--ui-elevated)_58%,var(--ui-surface))] px-3.5 py-1.5 text-[0.8em] font-semibold whitespace-nowrap transition-[background,border-color,color,box-shadow] hover:bg-[color-mix(in_srgb,var(--ui-elevated)_82%,var(--ui-surface))] [&_.material-icons]:text-[14px]!"
-          [class.relative]="activeTab() === 'settings'"
-          [class.z-1]="activeTab() === 'settings'"
-          [class.bg-ui-elevated!]="activeTab() === 'settings'"
-          [class.border-b-ui-elevated!]="activeTab() === 'settings'"
-          [class.text-ui-accent!]="activeTab() === 'settings'"
-          [class.shadow-[inset_0_2px_0_var(--ui-accent)]]="activeTab() === 'settings'"
-          type="button"
-          (click)="activeTab.set('settings')"
-        >
-          <i class="material-icons">settings</i>{{ 'feature.inventory.sheet.tabSettings' | transloco }}
-        </button>
+        @if (!isReadOnly()) {
+          <button
+            class="hover:text-ui-text text-ui-muted border-ui-border-panel -mb-px inline-flex cursor-pointer items-center gap-1 rounded-t-xs border border-solid bg-[color-mix(in_srgb,var(--ui-elevated)_58%,var(--ui-surface))] px-3.5 py-1.5 text-[0.8em] font-semibold whitespace-nowrap transition-[background,border-color,color,box-shadow] hover:bg-[color-mix(in_srgb,var(--ui-elevated)_82%,var(--ui-surface))] [&_.material-icons]:text-[14px]!"
+            [class.relative]="activeTab() === 'settings'"
+            [class.z-1]="activeTab() === 'settings'"
+            [class.bg-ui-elevated!]="activeTab() === 'settings'"
+            [class.border-b-ui-elevated!]="activeTab() === 'settings'"
+            [class.text-ui-accent!]="activeTab() === 'settings'"
+            [class.shadow-[inset_0_2px_0_var(--ui-accent)]]="activeTab() === 'settings'"
+            type="button"
+            (click)="activeTab.set('settings')"
+          >
+            <i class="material-icons">settings</i>{{ 'feature.inventory.sheet.tabSettings' | transloco }}
+          </button>
+        }
       </div>
 
       @if (activeTab() === 'sheet') {
@@ -298,19 +305,21 @@
                 }
               </div>
             }
-            <div class="px-2.5 pt-1 pb-2">
-              <button
-                class="bg-ui-elevated border-ui-border-panel text-ui-muted hover:bg-ui-hover hover:text-ui-text rounded-ui-sm inline-flex w-full cursor-pointer items-center gap-0.75 border border-solid px-2 py-0.75 text-[0.78em] leading-[1.4] whitespace-nowrap transition-[background,color] [&_.material-icons]:text-[13px]!"
-                (click)="addDataElement()"
-              >
-                {{ 'feature.inventory.sheet.addNewItem' | transloco }}
-              </button>
-            </div>
+            @if (!isReadOnly()) {
+              <div class="px-2.5 pt-1 pb-2">
+                <button
+                  class="bg-ui-elevated border-ui-border-panel text-ui-muted hover:bg-ui-hover hover:text-ui-text rounded-ui-sm inline-flex w-full cursor-pointer items-center gap-0.75 border border-solid px-2 py-0.75 text-[0.78em] leading-[1.4] whitespace-nowrap transition-[background,color] [&_.material-icons]:text-[13px]!"
+                  (click)="addDataElement()"
+                >
+                  {{ 'feature.inventory.sheet.addNewItem' | transloco }}
+                </button>
+              </div>
+            }
           </div>
         </div>
       }
 
-      @if (activeTab() === 'settings') {
+      @if (activeTab() === 'settings' && !isReadOnly()) {
         <game-character-settings-tab [character]="character" (locationChange)="setLocation($event)" />
       }
     </div>

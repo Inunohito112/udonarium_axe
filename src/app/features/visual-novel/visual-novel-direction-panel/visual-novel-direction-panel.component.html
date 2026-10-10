@@ -32,6 +32,23 @@
   </div>
   <div class="border-ui-border-separator mb-2 border-t border-solid"></div>
   <div class="text-ui-muted mb-1 text-[11px] font-semibold">
+    {{ 'feature.visualNovel.direction.chatHistory' | transloco }}
+  </div>
+  <div class="mb-2 flex flex-col gap-1">
+    <button
+      type="button"
+      class="border-ui-danger-ring text-ui-danger hover:border-ui-danger hover:bg-ui-danger-bg hover:text-ui-danger rounded-ui flex cursor-pointer items-center justify-center gap-1 border border-solid bg-transparent p-1 text-[11px] transition-[background,color] [&_i]:text-[14px]"
+      (click)="clearAllChatHistory()"
+    >
+      <i class="material-icons">delete_forever</i>
+      {{ 'feature.visualNovel.chatHistoryClear' | transloco }}
+    </button>
+    <p class="text-ui-dim m-0 text-[10px] leading-snug">
+      {{ 'feature.visualNovel.chatHistoryClearHint' | transloco }}
+    </p>
+  </div>
+  <div class="border-ui-border-separator mb-2 border-t border-solid"></div>
+  <div class="text-ui-muted mb-1 text-[11px] font-semibold">
     {{ 'feature.visualNovel.settings.background' | transloco }}
   </div>
   <div class="mb-2 flex items-center gap-1">

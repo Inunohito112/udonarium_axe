@@ -12,7 +12,19 @@ describe('VisualNovelSettingsService', () => {
   it('starts plain, and slides', () => {
     const service = new VisualNovelSettingsService();
     expect(service.typewriterSpeed()).toBe('normal');
+    expect(service.showPortraits()).toBe(false);
     expect(service.portraitAnimation()).toBe('slide');
+  });
+
+  it('shows portraits only after they were explicitly enabled', () => {
+    const service = new VisualNovelSettingsService();
+    service.setShowPortraits(true);
+    expect(new VisualNovelSettingsService().showPortraits()).toBe(true);
+  });
+
+  it('keeps portraits hidden when an older saved setting has no answer', () => {
+    localStorage.setItem('vn-settings', JSON.stringify({ portraitAnimation: 'bounce' }));
+    expect(new VisualNovelSettingsService().showPortraits()).toBe(false);
   });
 
   it('starts with nothing over the backdrop', () => {

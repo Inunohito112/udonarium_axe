@@ -4,6 +4,7 @@ import { ChatSpeakerService } from '@axe/application/chat/chat-speaker.service';
 import { EffectLibraryService } from '@axe/application/effect/effect-library.service';
 import { HotbarStoreService } from '@axe/application/hotbar/hotbar-store.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { TabletopActionService } from '@axe/application/tabletop/tabletop-action.service';
 import { getRangeMenuItems } from '@axe/application/tabletop/tabletop-action-helpers';
@@ -38,12 +39,10 @@ import {
 } from '@axe/domain/hotbar/hotbar-slot-kind';
 import { CutIn } from '@axe/domain/media/cut-in';
 import { presetSoundLabelKey, soundFileName } from '@axe/domain/media/preset-sound-labels';
-import { PeerCursor } from '@axe/domain/peer/peer-cursor';
 import { RANGE_DEFAULT_BORDER_COLOR, RANGE_DEFAULT_FILL_COLOR } from '@axe/domain/tabletop/range';
 import { CHARACTER_PANELS, DEFAULT_CHARACTER_PANEL, panelLabelKey } from '@axe/domain/ui/room-panel';
-import { findSlotActor } from '@axe/features/hotbar/hotbar-actor';
+import { findSlotActorAmong } from '@axe/features/hotbar/hotbar-actor';
 import { HotbarRunnerService } from '@axe/features/hotbar/hotbar-runner.service';
-import { selectControllableCharacters } from '@axe/features/pl-tools/owned-character-list/owned-characters';
 import { TranslocoModule } from '@jsverse/transloco';
 
 /**
@@ -74,6 +73,7 @@ export class HotbarSlotEditorComponent {
   }
   private readonly objectStore = inject(ObjectStore);
   private readonly objectChange = inject(ObjectChangeService);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly audioStorage = inject(AudioStorage);
   private readonly effectLibrary = inject(EffectLibraryService);
   private readonly tabletopAction = inject(TabletopActionService);
@@ -144,10 +144,11 @@ export class HotbarSlotEditorComponent {
     const draft = this.draft();
     if (!draft.characterIdentifier.trim() && !draft.characterName.trim()) return this.chatSpeaker.current();
 
-    const found = findSlotActor(
+    const found = findSlotActorAmong(
       draft,
-      this.objectStore.getObjects<GameCharacter>(GameCharacter),
-      PeerCursor.myCursor?.userId ?? ''
+      this.objectStore
+        .getObjects<GameCharacter>(GameCharacter)
+        .filter((character) => this.characterPermission.canControl(character))
     );
     return found?.character ?? null;
   });
@@ -361,10 +362,10 @@ export class HotbarSlotEditorComponent {
   /** The pieces a slot may be told to act as, with an entry for leaving it to the moment. */
   protected readonly actors = computed<{ value: string; name: string }[]>(() => {
     this.objectChange.collectionOf(GameCharacter.aliasName)();
-    return selectControllableCharacters(
-      this.objectStore.getObjects<GameCharacter>(GameCharacter),
-      PeerCursor.myCursor?.userId ?? ''
-    ).map((character) => ({ value: character.identifier, name: character.name }));
+    return this.objectStore
+      .getObjects<GameCharacter>(GameCharacter)
+      .filter((character) => this.characterPermission.canControl(character))
+      .map((character) => ({ value: character.identifier, name: character.name }));
   });
 
   protected readonly panelLabelKey = panelLabelKey;

@@ -694,10 +694,11 @@
         <div class="relative">
           <button
             type="button"
-            class="text-ui-dim hover:text-ui-accent hover:bg-ui-accent-bg rounded-ui flex size-8 cursor-pointer items-center justify-center border-0 bg-transparent transition-[color,background] [&_i]:text-[18px]"
+            class="text-ui-dim hover:text-ui-accent hover:bg-ui-accent-bg rounded-ui flex size-8 cursor-pointer items-center justify-center border-0 bg-transparent transition-[color,background] disabled:cursor-default disabled:opacity-40 [&_i]:text-[18px]"
             [class.text-ui-accent]="isPopover('palette')"
             [title]="'feature.visualNovel.palette' | transloco"
             [attr.aria-label]="'feature.visualNovel.palette' | transloco"
+            [disabled]="!canUseCurrentSpeaker()"
             (click)="togglePalette()"
           >
             <i class="material-icons">menu_book</i>
@@ -757,7 +758,7 @@
           (isCompact() ? 'feature.visualNovel.inputPlaceholderCompact' : 'feature.visualNovel.inputPlaceholder')
             | transloco
         "
-        [disabled]="!canSpeak()"
+        [disabled]="!canSpeak() || !canUseCurrentSpeaker()"
         [ngModel]="text()"
         (ngModelChange)="text.set($event)"
         (keydown)="onInputKeydown($event)"
@@ -766,7 +767,7 @@
         type="button"
         class="bg-ui-accent-bg border-ui-accent text-ui-accent hover:bg-ui-accent-glow rounded-ui flex h-8 cursor-pointer items-center gap-1 border border-solid px-2.5 text-xs font-medium transition-[background] disabled:cursor-default disabled:opacity-40 [&_i]:text-[15px]"
         [title]="'feature.visualNovel.send' | transloco"
-        [disabled]="!canSpeak()"
+        [disabled]="!canSpeak() || !canUseCurrentSpeaker()"
         (click)="send()"
       >
         <i class="material-icons">send</i>

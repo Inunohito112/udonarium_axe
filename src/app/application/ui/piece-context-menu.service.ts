@@ -3,6 +3,7 @@ import { CharacterDiceService } from '@axe/application/dice/character-dice.servi
 import { DiceRollService } from '@axe/application/dice/dice-roll.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerCoordinate } from '@axe/application/input/pointer-device.service';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { RolePermissionService } from '@axe/application/permission/role-permission.service';
 import { ContextMenuService } from '@axe/application/ui/context-menu.service';
 import { tryBuildMultiSelectionContextMenu } from '@axe/application/ui/multi-selection-context-menu';
@@ -24,6 +25,7 @@ import { Terrain } from '@axe/domain/tabletop/terrain';
 export class PieceContextMenuService {
   private readonly contextMenuService = inject(ContextMenuService);
   private readonly rolePermission = inject(RolePermissionService);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly selectionSignalService = inject(SelectionSignalService);
   private readonly objectStore = inject(ObjectStore);
   private readonly diceRollService = inject(DiceRollService);
@@ -41,11 +43,12 @@ export class PieceContextMenuService {
       rollDice: (dice) => this.diceRollService.roll(dice),
       diceOwners: this.objectStore
         .getObjects<GameCharacter>(GameCharacter)
-        .filter((character) => character.isVisibleOnTable)
+        .filter((character) => character.isVisibleOnTable && this.characterPermission.canControl(character))
         .map((character) => ({ identifier: character.identifier, name: character.name })),
       storeDice: (dice, ownerIdentifier) => this.storeDice(dice, ownerIdentifier),
       canManipulate: (object) =>
-        this.rolePermission.canEditShared || (!(object instanceof Terrain) && !(object instanceof GameTableMask)),
+        (this.rolePermission.canEditShared || (!(object instanceof Terrain) && !(object instanceof GameTableMask))) &&
+        (!(object instanceof GameCharacter) || this.characterPermission.canControl(object)),
     });
     if (!multi) return false;
 
@@ -55,7 +58,7 @@ export class PieceContextMenuService {
 
   private storeDice(dice: DiceSymbol[], ownerIdentifier: string): void {
     const owner = this.objectStore.get<GameCharacter>(ownerIdentifier);
-    if (!(owner instanceof GameCharacter)) return;
+    if (!(owner instanceof GameCharacter) || !this.characterPermission.canControl(owner)) return;
 
     for (const die of dice) this.characterDice.store(owner, die);
     this.selectionSignalService.clearSelection();

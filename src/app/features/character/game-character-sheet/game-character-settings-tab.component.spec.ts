@@ -12,6 +12,8 @@ import {
   DataElementViewMode,
 } from '@axe/domain/data/data-element';
 import { saveElementTemplate } from '@axe/domain/data/data-element-templates';
+import { PeerCursor } from '@axe/domain/peer/peer-cursor';
+import { PeerRole } from '@axe/domain/peer/peer-role';
 import { GameCharacterSettingsTabComponent } from '@axe/features/character/game-character-sheet/game-character-settings-tab.component';
 import { TEST_PROVIDERS } from '@axe/testing/test-providers';
 
@@ -21,8 +23,10 @@ describe('GameCharacterSettingsTabComponent', () => {
   let componentRef: ComponentRef<GameCharacterSettingsTabComponent>;
   let pointerDeviceService: PointerDeviceService;
   let character: GameCharacter;
+  const originalCursor = PeerCursor.myCursor;
 
   beforeEach(async () => {
+    PeerCursor.myCursor = { userId: 'test-gm', role: PeerRole.GameMaster } as PeerCursor;
     TestBed.configureTestingModule({
       imports: [GameCharacterSettingsTabComponent],
       providers: [...TEST_PROVIDERS],
@@ -38,6 +42,7 @@ describe('GameCharacterSettingsTabComponent', () => {
 
   afterEach(() => {
     character.destroy();
+    PeerCursor.myCursor = originalCursor;
   });
 
   it('can be created', () => {

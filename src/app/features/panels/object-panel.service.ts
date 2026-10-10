@@ -1,6 +1,7 @@
 import { inject, Injectable, Injector, ViewContainerRef } from '@angular/core';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { PanelOption, PanelService } from '@axe/application/ui/panel.service';
 import { SelectionSignalService } from '@axe/application/ui/selection-signal.service';
 import { GameCharacter } from '@axe/domain/character/game-character';
@@ -38,6 +39,7 @@ export class ObjectPanelService {
   private readonly panelService = inject(PanelService);
   private readonly selectionSignalService = inject(SelectionSignalService);
   private readonly pointerDeviceService = inject(PointerDeviceService);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly t = inject(TRANSLATE_FN);
   private readonly injector = inject(Injector);
 
@@ -84,6 +86,7 @@ export class ObjectPanelService {
    * Like the sheet, it can be moved into a window of its own, and `host` draws it into one.
    */
   openChatPalette(character: GameCharacter, place: ObjectPanelPlace = {}, host?: ViewContainerRef): void {
+    if (!this.characterPermission.canControl(character)) return;
     const load = () =>
       import('@axe/features/chat/chat-palette/chat-palette.component').then((m) => m.ChatPaletteComponent);
     const option = this.option(
@@ -107,6 +110,7 @@ export class ObjectPanelService {
    * Like the sheet, it can be moved into a window of its own, and `host` draws it into one.
    */
   openRemoteController(character: GameCharacter, place: ObjectPanelPlace = {}, host?: ViewContainerRef): void {
+    if (!this.characterPermission.canControl(character)) return;
     const load = () =>
       import('@axe/features/controller/remote-controller/remote-controller.component').then(
         (m) => m.RemoteControllerComponent

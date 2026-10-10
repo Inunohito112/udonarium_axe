@@ -34,7 +34,7 @@ describe('ChatInputComponent', () => {
   const gameSystem = { ID: 'DiceBot' } as unknown as Awaited<ReturnType<typeof DiceBot.loadGameSystemAsync>>;
 
   beforeEach(async () => {
-    PeerCursor.createMyCursor();
+    PeerCursor.createMyCursor().userId = 'test-player';
     TestBed.configureTestingModule({
       imports: [ChatInputComponent],
       providers: [...TEST_PROVIDERS],
@@ -57,6 +57,7 @@ describe('ChatInputComponent', () => {
 
   function speaker(name: string): GameCharacter {
     const character = GameCharacter.create(name, 1, '');
+    character.owner = PeerCursor.myCursor.userId;
     character.chatColorCode = ['#111111', '#222222', '#333333'];
     character.chatBubbleLight = ['#aaaaaa', '#bbbbbb', '#cccccc'];
     character.chatBubbleDark = ['#444444', '#555555', '#666666'];
@@ -130,6 +131,20 @@ describe('ChatInputComponent', () => {
       expect(component.gameCharacters()).toContain(unseen);
       seen.destroy();
       unseen.destroy();
+    });
+
+    it('does not offer another players character or send as it from a stale selection', () => {
+      const other = speaker('他人のAC');
+      other.owner = 'another-player';
+      component.sendFrom = other.identifier;
+      component.text = '送信しない';
+      const outgoing = vi.fn();
+      component.chat.subscribe(outgoing);
+
+      expect(component.gameCharacters()).not.toContain(other);
+      component.sendChat(null);
+      expect(outgoing).not.toHaveBeenCalled();
+      other.destroy();
     });
   });
 

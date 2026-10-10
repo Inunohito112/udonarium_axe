@@ -24,7 +24,7 @@ describe('ChatPaletteComponent', () => {
   const createdChars: GameCharacter[] = [];
 
   beforeEach(async () => {
-    PeerCursor.createMyCursor();
+    PeerCursor.createMyCursor().userId = 'test-player';
     TestBed.configureTestingModule({
       imports: [ChatPaletteComponent, PanelDragTestHostComponent],
       providers: [...TEST_PROVIDERS],
@@ -47,12 +47,38 @@ describe('ChatPaletteComponent', () => {
 
   function createChar(name: string): GameCharacter {
     const char = GameCharacter.create(name, 1, '');
+    char.owner = PeerCursor.myCursor.userId;
     createdChars.push(char);
     return char;
   }
 
   it('should be created', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('does not select or send as another players character', () => {
+    const other = createChar('他人のAC');
+    other.owner = 'another-player';
+    const tab = ChatTabList.instance.addChatTab('テストタブ');
+    component.chatTabidentifier.set(tab.identifier);
+    const send = vi.spyOn(TestBed.inject(CharacterMacroService), 'send').mockReturnValue(null);
+
+    component.onSelectedCharacter(other.identifier);
+    expect(component.character()).toBeNull();
+    component.character.set(other);
+    component.sendChat({
+      text: '送信しない',
+      gameSystem: null as unknown as GameSystemClass,
+      sendFrom: other.identifier,
+      sendTo: '',
+      portraitIndex: 0,
+      messColor: '#112233',
+      replyTo: '',
+      quoteOf: '',
+      toTicker: false,
+    });
+
+    expect(send).not.toHaveBeenCalled();
   });
 
   it('lets the panel take the pointer again once the drag ends', async () => {
@@ -159,6 +185,7 @@ describe('ChatPaletteComponent', () => {
     }
 
     it('offers a line that is actually said', () => {
+      component.character.set(createChar('術者'));
       const open = vi.spyOn(TestBed.inject(ContextMenuService), 'open').mockImplementation(() => undefined);
 
       press('command');

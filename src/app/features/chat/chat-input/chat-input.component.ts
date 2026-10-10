@@ -19,6 +19,7 @@ import { ChatMessageService } from '@axe/application/chat/chat-message.service';
 import { DiceBotCatalogService } from '@axe/application/dice/dice-bot-catalog.service';
 import { TRANSLATE_FN } from '@axe/application/i18n/translate.token';
 import { PointerDeviceService } from '@axe/application/input/pointer-device.service';
+import { CharacterPermissionService } from '@axe/application/permission/character-permission.service';
 import { ObjectChangeService } from '@axe/application/sync/object-change.service';
 import { TabletopService } from '@axe/application/tabletop/tabletop.service';
 import { TabletopDisplayService } from '@axe/application/tabletop/tabletop-display.service';
@@ -130,6 +131,7 @@ export class ChatInputComponent {
   private readonly panelService = inject(PanelService);
   private readonly pointerDeviceService = inject(PointerDeviceService);
   private readonly objectStore = inject(ObjectStore);
+  private readonly characterPermission = inject(CharacterPermissionService);
   private readonly vision = inject(VisionService);
   private readonly imageStorage = inject(ImageStorage);
   private readonly uiSignalService = inject(UiSignalService);
@@ -274,7 +276,11 @@ export class ChatInputComponent {
       (event) => {
         if (event.identifier !== this.sendFrom) return;
         const gameCharacter = this.objectStore.get<GameCharacter>(event.identifier);
-        if (gameCharacter && !allowsChat(gameCharacter, this.myPeer.peerId, this.onlyCharacters())) {
+        if (
+          gameCharacter &&
+          (!this.characterPermission.canControl(gameCharacter) ||
+            !allowsChat(gameCharacter, this.myPeer.peerId, this.onlyCharacters()))
+        ) {
           if (0 < this.gameCharacters().length && this.onlyCharacters()) {
             this.sendFrom = this.gameCharacters()[0].identifier;
           } else {
@@ -363,7 +369,7 @@ export class ChatInputComponent {
 
   set portraitIndex(num: number) {
     const object = this.objectStore.get(this.sendFrom);
-    if (object instanceof GameCharacter) {
+    if (object instanceof GameCharacter && this.characterPermission.canControl(object)) {
       object.selectedPortraitIndex = num;
     }
   }
@@ -499,6 +505,7 @@ export class ChatInputComponent {
     const chosen = this.sendFrom;
     return all.filter(
       (character) =>
+        this.characterPermission.canControl(character) &&
         allowsChat(character, this.myPeer.peerId, ignoreNonTalk) &&
         (character.identifier === chosen || this.vision.mayBeListed(character))
     );
@@ -596,6 +603,8 @@ export class ChatInputComponent {
     }
 
     if (!this.sendFrom.length) this.sendFrom = this.myPeer.identifier;
+    const speaker = this.objectStore.get(this.sendFrom);
+    if (speaker instanceof GameCharacter && !this.characterPermission.canControl(speaker)) return;
 
     this.chatHistory.push(this.text);
 

@@ -45,6 +45,7 @@ describe('VisualNovelOverlayComponent', () => {
     let character = charactersByName.get(name);
     if (!character) {
       character = new GameCharacter(`vn-char-${nextCharacterId++}`);
+      character.owner = PeerCursor.myCursor.userId;
       character.initialize();
       charactersByName.set(name, character);
     }
@@ -88,7 +89,8 @@ describe('VisualNovelOverlayComponent', () => {
   }
 
   beforeEach(async () => {
-    PeerCursor.createMyCursor();
+    PeerCursor.createMyCursor().userId = 'test-player';
+    PeerCursor.myCursor.userId = 'spec-reader';
     TestBed.configureTestingModule({
       imports: [VisualNovelOverlayComponent],
       providers: [...TEST_PROVIDERS],
@@ -96,6 +98,7 @@ describe('VisualNovelOverlayComponent', () => {
   });
 
   beforeEach(() => {
+    TestBed.inject(VisualNovelSettingsService).setShowPortraits(true);
     tab = ChatTabList.instance.addChatTab('テストタブ');
     removePanelLayer = installPanelLayer();
   });
@@ -292,6 +295,16 @@ describe('VisualNovelOverlayComponent', () => {
     expect(stage.map((chara) => chara.name)).toContain('アリス');
     expect(stage.find((chara) => chara.isActive)?.name).toBe('ボブ');
     expect(stage.every((chara) => chara.url.length > 0)).toBe(true);
+  });
+
+  it('keeps every portrait off stage unless the display setting enables them', () => {
+    TestBed.inject(VisualNovelSettingsService).setShowPortraits(false);
+    addMessage('こんにちは', 'アリス', addImage(), 4);
+    createComponent();
+
+    expect(component.stageCharacters()).toEqual([]);
+    expect(component.bubbleAnchor()).toBeNull();
+    expect(component.speechLayout()).toBe('adv');
   });
 
   it('keeps a player off it', () => {
@@ -1196,6 +1209,7 @@ describe('VisualNovelOverlayComponent', () => {
 
   it('records the flip on a line sent while it is flipped', async () => {
     const character = GameCharacter.create('反転テスト', 1, addImage());
+    character.owner = PeerCursor.myCursor.userId;
     createComponent();
     component.sendFrom = character.identifier;
     const chatMessageService = TestBed.inject(ChatMessageService);
@@ -1217,6 +1231,7 @@ describe('VisualNovelOverlayComponent', () => {
 
   it('reads the palette of the chosen character and puts a clicked row into the box', () => {
     const character = GameCharacter.create('パレットテスト', 1, addImage());
+    character.owner = PeerCursor.myCursor.userId;
     createComponent();
     component.sendFrom = character.identifier;
     fixture.detectChanges();
@@ -1229,6 +1244,7 @@ describe('VisualNovelOverlayComponent', () => {
 
   it('evaluates the references on a palette row as it sends', async () => {
     const character = GameCharacter.create('評価テスト', 1, addImage());
+    character.owner = PeerCursor.myCursor.userId;
     createComponent();
     component.sendFrom = character.identifier;
     const palette = character.chatPalette;
@@ -1248,12 +1264,70 @@ describe('VisualNovelOverlayComponent', () => {
 
   it('follows the character chosen in the non-player tool', () => {
     const npc = GameCharacter.create('NPCテスト', 1, addImage());
+    npc.owner = PeerCursor.myCursor.userId;
     createComponent();
     const registry = TestBed.inject(ChatPaletteRegistryService);
     expect(registry.active()).not.toBeNull();
     registry.active()!.setCharacterById(npc.identifier);
     expect(component.sendFrom).toBe(npc.identifier);
     npc.destroy();
+  });
+
+  it('offers a player only their own characters and refuses a foreign palette selection', () => {
+    const own = GameCharacter.create('自分のAC', 1, addImage());
+    own.owner = PeerCursor.myCursor.userId;
+    const foreign = GameCharacter.create('他PLのAC', 1, addImage());
+    foreign.owner = 'other-user';
+    foreign.chatPalette?.setPalette('FOREIGN_ONLY');
+    try {
+      createComponent();
+      const registry = TestBed.inject(ChatPaletteRegistryService);
+
+      expect(component.speakerOptions().map((option) => option.identifier)).toContain(own.identifier);
+      expect(component.speakerOptions().map((option) => option.identifier)).not.toContain(foreign.identifier);
+
+      registry.active()!.setCharacterById(foreign.identifier);
+      expect(component.sendFrom).not.toBe(foreign.identifier);
+      expect(component.speakerPalette()).not.toContain('FOREIGN_ONLY');
+    } finally {
+      own.destroy();
+      foreign.destroy();
+    }
+  });
+
+  it('does not send as another players character even if a stale selection points at it', async () => {
+    const foreign = GameCharacter.create('他PLのAC', 1, addImage());
+    foreign.owner = 'other-user';
+    try {
+      createComponent();
+      const sendSpy = vi.spyOn(TestBed.inject(ChatMessageService), 'sendMessage');
+      vi.spyOn(DiceBot, 'gameSystemForLineAsync').mockResolvedValue(null as unknown as GameSystemClass);
+      (component as unknown as { _sendFrom: { set(identifier: string): void } })._sendFrom.set(foreign.identifier);
+      component.text.set('他人のパレットで発言');
+
+      component.send();
+      await Promise.resolve();
+
+      expect(sendSpy).not.toHaveBeenCalled();
+    } finally {
+      foreign.destroy();
+    }
+  });
+
+  it('keeps every character available to the game master', () => {
+    const foreign = GameCharacter.create('他PLのAC', 1, addImage());
+    foreign.owner = 'other-user';
+    try {
+      PeerCursor.myCursor.role = PeerRole.GameMaster;
+      TestBed.inject(ObjectChangeService).notifyChanged(PeerCursor.myCursor.identifier);
+      createComponent();
+
+      expect(component.speakerOptions().map((option) => option.identifier)).toContain(foreign.identifier);
+      TestBed.inject(ChatPaletteRegistryService).active()!.setCharacterById(foreign.identifier);
+      expect(component.sendFrom).toBe(foreign.identifier);
+    } finally {
+      foreign.destroy();
+    }
   });
 
   it('waits less at a higher speed', () => {

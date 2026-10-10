@@ -5,7 +5,7 @@
     [style.height.px]="size() * gridSize"
     appMovable
     [movable.option]="movableOption()"
-    [movable.disable]="isLock || isPlanningMove()"
+    [movable.disable]="isLock || isPlanningMove() || !canControl()"
     [appSelectable]="gameCharacter()"
     (movable.onstart)="onGrab($event)"
     (movable.ondragstart)="onPickUp()"
@@ -193,7 +193,7 @@
               [style.height.px]="size() * gridSize"
               appRotable
               [rotable.value]="rollSignal()"
-              [rotable.disable]="mode2dEnabled()"
+              [rotable.disable]="mode2dEnabled() || !canControl()"
               (rotable.valueChange)="roll = $event"
               (rotable.ondragstart)="onMove()"
               (rotable.ondragend)="onMoved()"
